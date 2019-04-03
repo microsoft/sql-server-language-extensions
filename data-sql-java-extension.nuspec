@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package >
+    <metadata minClientVersion="2.5">
+        <id>data-sql-java-extension</id>
+        <version>1.0</version>
+        <authors>brnieb</authors>
+        <owners>brnieb</owners>
+        <description>SQL Java Language Extension</description>
+    </metadata>
+    <files>
+        <!-- relwithdebinfo -->
+        <file src=".\**\mssql-java-lang-extension.jar" target="java" />
+    </files>
+</package>
