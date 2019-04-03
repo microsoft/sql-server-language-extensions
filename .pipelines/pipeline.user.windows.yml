@@ -101,4 +101,5 @@ static_analysis_options:
   moderncop_options:           
     disable_tool_scan: true
   binskim_options:
-    disable_tool_scan: true
+    files_to_scan:     
+      - from: '.build\java-extension\target\bin\'
