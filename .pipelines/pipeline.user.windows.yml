@@ -1,0 +1,97 @@
+# For full annotated example, please visit
+#   https://onebranch.visualstudio.com/Pipeline/_wiki/wikis/Pipeline.wiki?wikiVersion=GBwikiMaster&pagePath=%2FWelcome%20to%20OneBranch%20Pipeline%2FCross%20Platform%20Cloud%20Delivery%20Pipeline%20(CDPx)%2FYAML%20Format%2FAnnotated%20Example
+
+# The following section is a metadata section that describes what kind of environment this pipeline should be executing in. Some of the
+# information is redundant and will be removed in a future version.
+environment:
+  host:
+    os: 'windows'                                                       # used to verify at runtime that correct host pool is being used
+    flavor: 'server'                                                    # not used and will be removed in future
+    version: '2016'                                                     # not used and will be removed in future
+  runtime:
+    provider: 'appcontainer'                                            # Currently only appcontainer is supported
+                                                                        # future will bring oscontainer and virtualmachine
+    image: 'cdpxwin.azurecr.io/legacy/global/vse2017u7-external-azsdk-mobile-ext-winltsc2016:latest' # This is the image that your pipeline will run in.
+                                                                        # For (appcontainer), Docker Hub public Microsoft repository images
+                                                                        # can be used.
+                                                                        # Example microsoft/dotnet:1.1.1-sdk-nanoserver.
+                                                                        # Or the CDP team vended and custom images can be used.
+                                                                        # These are cdpxwin.azurecr.io/user/<user-image-name> or
+                                                                        # cdpxwin.azurecr.io/legacy/samples/wsmobile (for now).
+    source_mode: 'link'                                                 # 'copy' or 'link'. There is a known bug for npm and ruby on some of
+                                                                        # our images that linked folder in container may cause errors on
+                                                                        # these languages, for that case, use 'copy' here and pipeline will
+                                                                        # full copy source into container from host before each step and full
+                                                                        # copy out back to host after each step. It may be very slow if you
+                                                                        # have a giant repository.
+
+package_sources:
+  nuget:
+    feeds:
+      Nuget: https://api.nuget.org/v3/index.json
+    config_files:                               # A list of glob patterns specifying the configuration files. Use this if you already have NuGet.Config files in your repository.
+          - include:                                # Configuration files to include for automatic inference.
+            - "NuGet.Config"
+
+# The following is an optional user defined stage. This is the only stage that will have network connectivity
+# starting July 1, 2018. This stage should be utilized for restoring package dependencies.
+restore:                                         # Stage for restoring dependencies.
+ commands:                                       # Sequence of commands to execute in this stage.
+   - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+     name: 'Restore Packages'                    # A user defined name for this step.
+     command: 'restore-packages.cmd'         # The repository relative path to the script to run to restore packages.
+
+# The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
+# generate content in the .version folder for use by your custom versioning steps.
+# In fact, in this sample, a file named .version\PipelineAssemblyInfo.cs will be generated that contains the following code (ignore the
+# actual versions because those are dummy values).
+#
+# // This is a CDPX pipeline generated file
+# using System.Reflection;
+# [assembly: AssemblyVersion("1.0.060517.1000")]
+# [assembly: AssemblyFileVersion("1.0.060517.1000")]
+# [assembly: AssemblyInformationalVersion("1.0.060517.1000-test-31f791f1")]
+#
+# The key point is that this file is not checked in by CDPX. So, we check in a dummy file with similar content and add this file as a compile
+# item with a link. When the code is built in CDPX, the file is first overwritten with actual version numbers. Thus, when the code compiles,
+# the new version numbers are picked up.
+#
+# Obviously, this may not work for everyone. So, in addition to these template files, CDPX writes out several info files whose content is some
+# part of the version number. Which part is hinted at by the name of the file.
+# For example, package.semantic.info will contain patch semantic version number in the form 1.0.MMddyyrrrr-tag-commit.
+version:
+  name: 'mssql-language-extensions'                                     # The uber name to attach to the artifacts generated by this pipeline.
+                                                                        # Currently unused, but will be used in the future to refer to the
+                                                                        # artifacts as a group by name.
+  major: 1                                                              # The major version number.
+  minor: 0                                                              # The minor version number
+  tag: 'alpha'                                                          # Tag to use for semantic versioning.
+  system: 'patch'                                                       # Versioning scheme to use.
+                                                                        # patch         - 1.0.MMddyyrrrr will be generated
+                                                                        # buildrevision - 1.0.MMddyy.rrrr will be generated.
+
+# An optional user defined stage for performing any compilation, code generation etc.
+# All files in the artifacts sections will be collected, saved off and signed.
+# The signed files will be restored back to the original locations before the next stage is invoked.
+# Eventually, network access will be limited or cut-off in this stage.
+build:
+  commands:                                                             # This is a sequence of script files to be executed one after another
+    - !!buildcommand
+      name: 'Build mssql-java-lang-extension Java package'
+      command: 'build-java-package.cmd'
+      artifacts:
+        - from: '.build\java-extension\target\bin'
+          to: 'java-extension'
+          include:
+            - 'mssql-java-lang-extension.jar'
+
+# There are no dlls to perform static analysis yet
+static_analysis_options:                          
+  fxcop_options:  
+    disable_tool_scan: true            
+  policheck_options:           
+    disable_tool_scan: true     
+  moderncop_options:           
+    disable_tool_scan: true
+  binskim_options:
+    disable_tool_scan: true
