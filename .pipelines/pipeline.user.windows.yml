@@ -26,7 +26,7 @@ environment:
                                                                         # have a giant repository.
 
 signing_options:
-  profile: 'external_distribution'   # Signing profile for libraries or applications being shipped outside of Microsoft.
+  profile: '135020002'   # Signing profile for libraries or applications being shipped outside of Microsoft.
 
 package_sources:
   nuget:
@@ -87,8 +87,6 @@ build:
           to: 'java-extension'
           include:
             - 'mssql-java-lang-extension.jar'
-          signing_options:
-            profile: '170'  # Java Object Signing
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:                          
