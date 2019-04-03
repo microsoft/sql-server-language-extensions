@@ -25,6 +25,9 @@ environment:
                                                                         # copy out back to host after each step. It may be very slow if you
                                                                         # have a giant repository.
 
+signing_options:
+  profile: 'external_distribution'   # Signing profile for libraries or applications being shipped outside of Microsoft.
+
 package_sources:
   nuget:
     feeds:
@@ -84,13 +87,17 @@ build:
           to: 'java-extension'
           include:
             - 'mssql-java-lang-extension.jar'
+          signing_options:
+            profile: '170'  # Java Object Signing
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:                          
   fxcop_options:  
     disable_tool_scan: true            
-  policheck_options:           
-    disable_tool_scan: true     
+  policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
+    files_to_scan:
+      - exclude:
+        - '**/*.txt'
   moderncop_options:           
     disable_tool_scan: true
   binskim_options:
