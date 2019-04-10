@@ -84,9 +84,15 @@ build:
       command: 'build-java-package.cmd'
       artifacts:
         - from: '.build\java-extension\target\bin'
-          to: 'java-extension'
+          to: 'out\java-extension'
           include:
             - 'mssql-java-lang-extension.jar'
+          signing_options:
+            profile: '170'
+        - from: '.'
+          to: 'out\java-extension'
+          include:
+            - 'data-sql-java-extension.nuspec'
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:                          
