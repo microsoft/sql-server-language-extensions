@@ -2,6 +2,8 @@ package com.microsoft.sqlserver.javalangextension;
 
 import com.microsoft.sqlserver.javalangextension.AbstractSqlServerExtensionDataset;
 import java.lang.IllegalArgumentException;
+import java.math.BigDecimal;
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -180,6 +182,16 @@ public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
 		columns.put(columnId, rows);
 	}
 
+	public void addDateColumn(int columnId, Date[] rows) {
+		checkColumnMetadata(columnId);
+		columns.put(columnId, rows);
+	}
+
+	public void addNumericColumn(int columnId, BigDecimal[] rows) {
+		checkColumnMetadata(columnId);
+		columns.put(columnId, rows);
+	}
+
 	/**
 	 * Retreiving column data interfaces. For primitive types, calling getColumnNullMap() for the column ID
 	 * will return the boolean array indicating null values.
@@ -257,9 +269,19 @@ public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
 	}
 
 	public Date[] getDateColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
+		checkColumnMetadata(columnId);
+		return (Date[])columns.get(columnId);
+	}
+
+	public BigDecimal[] getNumericColumn(int columnId) {
+		checkColumnMetadata(columnId);
+		return (BigDecimal[])columns.get(columnId);
+	}
+
+	private void checkColumnMetadata(int columnId)
+	{
+		if (!columnTypes.containsKey(columnId)) {
+			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exist");
 		}
 
 		return (Date[])columns.get(columnId);
