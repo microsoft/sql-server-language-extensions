@@ -4,10 +4,10 @@ import com.microsoft.sqlserver.javalangextension.AbstractSqlServerExtensionDatas
 import java.lang.IllegalArgumentException;
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.sql.Date;
 
 /**
  * Implementation of AbstractSqlServerExtensionDataset that stores
@@ -50,47 +50,27 @@ public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
 	}
 
 	public String getColumnName(int columnId) {
-		if (!columnNames.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return columnNames.get(columnId);
 	}
 
 	public int getColumnPrecision(int columnId) {
-		if (!columnPrecisions.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return columnPrecisions.get(columnId).intValue();
 	}
 
 	public int getColumnScale(int columnId) {
-		if (!columnScales.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return columnScales.get(columnId).intValue();
 	}
 
 	public int getColumnType(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return columnTypes.get(columnId).intValue();
 	}
 
 	public boolean[] getColumnNullMap(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return columnNullMaps.get(columnId);
 	}
 
@@ -101,84 +81,48 @@ public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
 	 * A null indicator array indicates that there are no null values in that column.
 	 */
 	public void addIntColumn(int columnId, int[] rows, boolean[] nullMap) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 		columnNullMaps.put(columnId, nullMap);
 	}
 
 	public void addBooleanColumn(int columnId, boolean[] rows, boolean[] nullMap) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 		columnNullMaps.put(columnId, nullMap);
 	};
 
 	public void addLongColumn(int columnId, long[] rows, boolean[] nullMap) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 		columnNullMaps.put(columnId, nullMap);
 	}
 
 	public void addFloatColumn(int columnId, float[] rows, boolean[] nullMap) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 		columnNullMaps.put(columnId, nullMap);
 	}
 
 	public void addDoubleColumn(int columnId, double[] rows, boolean[] nullMap) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 		columnNullMaps.put(columnId, nullMap);
 	}
 
 	public void addShortColumn(int columnId, short[] rows, boolean[] nullMap) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 		columnNullMaps.put(columnId, nullMap);
 	}
 
 	public void addStringColumn(int columnId, String[] rows) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 	}
 
 	public void addBinaryColumn(int columnId, byte[][] rows) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
-		columns.put(columnId, rows);
-	}
-
-	public void addDateColumn(int columnId, Date[] rows) {
+		checkColumnMetadata(columnId);
 		columns.put(columnId, rows);
 	}
 
@@ -192,79 +136,52 @@ public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
 		columns.put(columnId, rows);
 	}
 
+	public void addTimestampColumn(int columnId, Timestamp[] rows) {
+		checkColumnMetadata(columnId);
+		columns.put(columnId, rows);
+	}
+
 	/**
 	 * Retreiving column data interfaces. For primitive types, calling getColumnNullMap() for the column ID
 	 * will return the boolean array indicating null values.
 	 */
 	public int[] getIntColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (int[])columns.get(columnId);
 	}
 
 	public long[] getLongColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (long[])columns.get(columnId);
 	}
 
 	public float[] getFloatColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (float[])columns.get(columnId);
 	}
 
 	public short[] getShortColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (short[])columns.get(columnId);
 	}
 
 	public boolean[] getBooleanColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (boolean[])columns.get(columnId);
 	}
 
 	public double[] getDoubleColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (double[])columns.get(columnId);
 	}
 
 	public String[] getStringColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (String[])columns.get(columnId);
 	}
 
 	public byte[][] getBinaryColumn(int columnId) {
-		if (!columnTypes.containsKey(columnId))
-		{
-			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exists");
-		}
-
+		checkColumnMetadata(columnId);
 		return (byte[][])columns.get(columnId);
 	}
 
@@ -278,12 +195,15 @@ public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
 		return (BigDecimal[])columns.get(columnId);
 	}
 
+	public Timestamp[] getTimestampColumn(int columnId) {
+		checkColumnMetadata(columnId);
+		return (Timestamp[])columns.get(columnId);
+	}
+
 	private void checkColumnMetadata(int columnId)
 	{
 		if (!columnTypes.containsKey(columnId)) {
 			throw new IllegalArgumentException("Metadata for column ID #: " + columnId + " does not exist");
 		}
-
-		return (Date[])columns.get(columnId);
 	}
 }
