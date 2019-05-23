@@ -1,9 +1,9 @@
 
-# Language extensions for Microsoft SQL Server 2019 (preview)
+# Microsoft SQL Server Language Extensions (preview)
 
-Welcome to the language extensions for SQL Server project!
+Welcome to the SQL Server Language Extensions project!
 
-In SQL Server 2019 (preview), we have added support for language extensibility, which means that you can now execute external languages like Java from SQL Server.
+Starting in SQL Server 2019 (preview), we have added support for language extensibility, which means that you can now execute code in various languages like Java from SQL Server.
 
 We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
@@ -26,7 +26,7 @@ You can read more about how to use language extensions in SQL Server 2019 (previ
 
 ## Get Started
 
-This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository.
+This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository.
 
 ## Contributing
 
