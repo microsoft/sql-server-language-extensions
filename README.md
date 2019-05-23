@@ -26,7 +26,7 @@ You can read more about how to use language extensions in SQL Server 2019 (previ
 
 ## Get Started
 
-This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository. [Sample code files](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/samples) are also available in this repository.
+This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository. [Sample code files](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/samples/regex) are also available in this repository.
 
 ## Contributing
 
