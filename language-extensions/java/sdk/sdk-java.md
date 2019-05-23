@@ -24,7 +24,7 @@ For an example of how you can use the SDK, see [Tutorial: Search for a string us
 
 ### SDK CLasses
 
-The SDK consists of three classes.
+The SDK consists of three Java classes. [Source code](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/sdk/src/main/java/com/microsoft/sqlserver/javalangextension)
 
 Two abstract classes that define the interface the Java extension uses to exchange data with SQL Server:
 
@@ -51,7 +51,7 @@ The abstract class `AbstractSqlServerExtensionDataset` contains the interface fo
 The class `PrimitiveDataset` is an implementation of `AbstractSqlServerExtensionDataset` that stores simple types as primitives arrays.
 
 It is provided in the SDK simply as an optional helper class. If you don't use this class, you need to implement your own class that inherits from `AbstractSqlServerExtensionDataset`. 
- 
+
 ### Sample
 
 This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository.
