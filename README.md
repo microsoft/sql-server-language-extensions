@@ -11,7 +11,7 @@ We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
 ## Announcements
 
-* In SQL Server 2019 CTP 3.0, we are open sourcing the SDK for our Java language extension: **Microsoft Extensibility SDK for Java for Microsoft SQL Server​**
+* In SQL Server 2019 CTP 3.0, we are open sourcing the SDK for our Java language extension: [**Microsoft Extensibility SDK for Java for Microsoft SQL Server​**](https://github.com/microsoft/sql-server-language-extensions/blob/master/language-extensions/java/sdk/sdk-java.md)
 
 ## Things to Know
 
@@ -22,7 +22,7 @@ We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
 ## Documentation
 
-You can read more about how to use language extensions in SQL Server in the Microsoft [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sqlallproducts-allversions).
+You can read more about how to use language extensions in SQL Server 2019 (preview) in the Microsoft [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sqlallproducts-allversions).
 
 ## Get Started
 
