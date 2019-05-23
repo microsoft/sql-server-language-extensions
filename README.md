@@ -9,6 +9,10 @@ We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
 -SQL Server Team
 
+## Announcements
+
+* In SQL Server 2019 CTP 3.0, we are open sourcing the SDK for our Java language extension: **Microsoft Extensibility SDK for Java for Microsoft SQL Server​**
+
 ## Things to Know
 
 * The Java components in this project are built on Java 8
