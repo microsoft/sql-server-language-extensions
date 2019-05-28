@@ -11,10 +11,14 @@
 
 The Microsoft Extensibility SDK for Java will help you to implement a Java program that can be called from SQL Server 2019 (preview). The SDK is an interface for the Java language extension and is used to exchange data with SQL Server and to execute Java code from SQL Server.
 
-+ Download the [Microsoft Extensibility SDK for Java for Microsoft SQL Server](http://aka.ms/mssql-java-lang-extension).
-Very soon, the SDK will be available under releases in this repository.
+The SDK is installed as part of SQL Server 2019 CTP 3.0 preview on both Windows as Linux.
+Very soon, the SDK will also be available under releases in this repository.
 
-Read more about the [​Microsoft Extensibility SDK for Java for Microsoft SQL Server​](https://docs.microsoft.com/en-us/sql/language-extensions/how-to/extensibility-sdk-java-sql-server?view=sqlallproducts-allversions)
++ Default installation path on Windows: **[instance installation home directory]\MSSQL\Binn\mssql-java-lang-extension.jar**
+
++ Default installation path on Linux: **/opt/mssql/lib/mssql-java-lang-extension.jar**
+
+Read more about the [​Microsoft Extensibility SDK for Java for Microsoft SQL Server​](https://docs.microsoft.com/en-us/sql/language-extensions/how-to/extensibility-sdk-java-sql-server?view=sqlallproducts-allversions) on our Microsoft Docs.
 
 #### Implementation requirements
 
