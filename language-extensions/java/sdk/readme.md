@@ -24,7 +24,7 @@ Read more about the [​Microsoft Extensibility SDK for Java for Microsoft SQL S
 
 The SDK interface defines a set of requirements that need to be fulfilled for SQL Server to communicate with the Java runtime. To use the SDK, you need to follow some implementation rules in your main class. SQL Server can then execute a specific method in the Java class and exchange data using the Java language extension.
 
-For an example of how you can use the SDK, see [Tutorial: Search for a string using regular expressions (regex) in Java](../tutorials/search-for-string-using-regular-expressions-in-java.md).
+For an example of how you can use the SDK, see [Tutorial: Search for a string using regular expressions (regex) in Java](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions).
 
 ### SDK CLasses
 
