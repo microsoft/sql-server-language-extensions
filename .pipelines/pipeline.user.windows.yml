@@ -33,7 +33,7 @@ package_sources:
     feeds:
       Nuget: https://api.nuget.org/v3/index.json
     config_files:                               # A list of glob patterns specifying the configuration files. Use this if you already have NuGet.Config files in your repository.
-          - include:                                # Configuration files to include for automatic inference.
+          - include:                            # Configuration files to include for automatic inference.
             - "NuGet.Config"
 
 # The following is an optional user defined stage. This is the only stage that will have network connectivity
@@ -80,30 +80,83 @@ version:
 build:
   commands:                                                             # This is a sequence of script files to be executed one after another
     - !!buildcommand
-      name: 'Build mssql-java-lang-extension Java package'
-      command: 'build-java-package.cmd'
+      name: 'Build Java extension'
+      command: 'build-java-extension.cmd'
+      arguments:  'debug release'
       artifacts:
-        - from: '.build\java-extension\target\bin'
-          to: 'out\java-extension'
+        - from: '.build\java-extension\target\debug'
+          to: 'out\java-extension\debug'
           include:
             - 'mssql-java-lang-extension.jar'
           signing_options:
             profile: '170'
+        - from: 'language-extensions\java\build\windows\x64\debug'
+          to: 'out\java-extension\debug'
+          include:
+            - 'javaextension.dll'
+          signing_options:
+            profile: '135020002'
+        - from: 'language-extensions\java\build\windows\x64\debug'
+          to: 'out\java-extension\debug\symbols'
+          include:
+            - 'javaextension.pdb'
+          signing_options:
+            profile: 'none'
+        - from: '.build\java-extension\target\release'
+          to: 'out\java-extension\release'
+          include:
+            - 'mssql-java-lang-extension.jar'
+          signing_options:
+            profile: '170'
+        - from: 'language-extensions\java\build\windows\x64\release'
+          to: 'out\java-extension\release'
+          include:
+            - 'javaextension.dll'
+          signing_options:
+            profile: '135020002'
+        - from: 'language-extensions\java\build\windows\x64\release'
+          to: 'out\java-extension\release\symbols'
+          include:
+            - 'javaextension.pdb'
+          signing_options:
+            profile: 'none'
         - from: '.'
           to: 'out\java-extension'
           include:
             - 'data-sql-java-extension.nuspec'
+          signing_options:
+            profile: 'none'
+
+package:
+  commands:                                                             # This is a sequence of script files to be executed one after another
+    - !!buildcommand
+      name: 'Create Java extension zip'
+      command: 'create-java-extension-zip.cmd'
+      artifacts:
+        - from: 'language-extensions\java\build\windows\x64\debug\packages'
+          to: 'out\java-extension\packages\debug'
+          include:
+            - 'java-lang-extension.zip'
+          signing_options:
+            profile: '135020002'
+        - from: 'language-extensions\java\build\windows\x64\release\packages'
+          to: 'out\java-extension\packages\release'
+          include:
+            - 'java-lang-extension.zip'
+          signing_options:
+            profile: '135020002'
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:                          
-  fxcop_options:  
-    disable_tool_scan: true            
+  fxcop_options:
+    disable_tool_scan: false
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
       - exclude:
         - '**/*.txt'
   moderncop_options:           
-    disable_tool_scan: true
+    disable_tool_scan: false
   binskim_options:
     files_to_scan:     
-      - from: '.build\java-extension\target\bin\'
+      - from: 'out\java-extension\release\'
+      - from: 'out\java-extension\debug\'

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{11D757F2-3345-41BF-83A0-107A35958F02}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>
+		_WIN64;
+		_WINDOWS;
+		%(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+	  <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>
+		_WIN64;
+		_WINDOWS;
+		%(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalIncludeDirectories>
+		$(JAVA_HOME)\include;
+		$(JAVA_HOME)\include\win32;
+		..\..\include;
+		..\..\..\..\extension-host\include;
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\JavaArgContainer.cpp" />
+    <ClCompile Include="..\..\src\JavaDataset.cpp" />
+    <ClCompile Include="..\..\src\javaextension.cpp" />
+    <ClCompile Include="..\..\src\JavaExtensionUtils.cpp" />
+    <ClCompile Include="..\..\src\JavaLibraryUtils.cpp" />
+    <ClCompile Include="..\..\src\JavaSession.cpp" />
+    <ClCompile Include="..\..\src\JavaSqlTypeHelper.cpp" />
+    <ClCompile Include="..\..\src\JniHelper.cpp" />
+    <ClCompile Include="..\..\src\Logger.cpp" />
+    <ClCompile Include="..\..\src\windows\Logger_win.cpp" />
+    <ClCompile Include="..\..\src\windows\JavaLibraryUtils_win.cpp" />
+    <ClCompile Include="..\..\src\windows\JavaExtensionUtils_win.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="JavaArgContainer.h" />
+    <ClInclude Include="JavaDataset.h" />
+    <ClInclude Include="JavaExtensionUtils.h" />
+    <ClInclude Include="JavaLibraryUtils.h" />
+    <ClInclude Include="JavaSession.h" />
+    <ClInclude Include="JavaSqlTypeHelper.h" />
+    <ClInclude Include="JniHelper.h" />
+    <ClInclude Include="JniTypeHelper.h" />
+    <ClInclude Include="Logger.h" />	 
+    <ClInclude Include="sqlexternallanguage.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="JniTypeHelper.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

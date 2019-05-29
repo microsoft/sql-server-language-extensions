@@ -8,7 +8,7 @@
         <description>SQL Java Language Extension</description>
     </metadata>
     <files>
-        <!-- Java Extension SDK -->
-        <file src=".\**\mssql-java-lang-extension.jar" target="java" />
+        <file src=".\**\debug\**\*.*" target="debug" />
+        <file src=".\**\release\**\*.*" target="release" />
     </files>
 </package>
