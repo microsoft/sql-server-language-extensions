@@ -137,14 +137,10 @@ package:
           to: 'out\java-extension\packages\debug'
           include:
             - 'java-lang-extension.zip'
-          signing_options:
-            profile: '135020002'
         - from: 'language-extensions\java\build\windows\x64\release\packages'
           to: 'out\java-extension\packages\release'
           include:
             - 'java-lang-extension.zip'
-          signing_options:
-            profile: '135020002'
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:                          
