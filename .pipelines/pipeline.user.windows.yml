@@ -145,13 +145,15 @@ package:
 # There are no dlls to perform static analysis yet
 static_analysis_options:                          
   fxcop_options:
-    disable_tool_scan: false
+    files_to_scan:
+      - from: 'out\java-extension\release\'
+      - from: 'out\java-extension\debug\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
       - exclude:
         - '**/*.txt'
   moderncop_options:           
-    disable_tool_scan: false
+    disable_tool_scan: true
   binskim_options:
     files_to_scan:     
       - from: 'out\java-extension\release\'

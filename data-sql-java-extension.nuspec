@@ -10,5 +10,7 @@
     <files>
         <file src=".\**\debug\**\*.*" target="debug" />
         <file src=".\**\release\**\*.*" target="release" />
+        <file src="..\..\..\package\**\debug\**\*.*" target="debug" />
+        <file src="..\..\..\package\**\release\**\*.*" target="release" />
     </files>
 </package>
