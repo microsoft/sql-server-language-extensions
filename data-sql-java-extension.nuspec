@@ -8,9 +8,9 @@
         <description>SQL Java Language Extension</description>
     </metadata>
     <files>
-        <file src=".\**\debug\**\*.*" target="debug" />
-        <file src=".\**\release\**\*.*" target="release" />
-        <file src="..\..\..\package\**\debug\**\*.*" target="debug" />
-        <file src="..\..\..\package\**\release\**\*.*" target="release" />
+        <file src=".\**\debug\**\*.*" target="build" />
+        <file src=".\**\release\**\*.*" target="build" />
+        <file src="..\..\..\package\out\java-extension\packages\debug\java-lang-extension.zip" target="build\debug" />
+        <file src="..\..\..\package\out\java-extension\packages\release\java-lang-extension.zip" target="build\release" />
     </files>
 </package>
