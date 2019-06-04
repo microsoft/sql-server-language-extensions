@@ -235,6 +235,7 @@ private:
 
 	// Internal get string column
 	//
+	template<bool isUTF8>
 	void GetStringColumnInternal(
 		_In_ jint							 colId,
 		_In_ SQLSMALLINT					 colType,
@@ -296,10 +297,10 @@ private:
 
 	// Calculates max size of variable length output
 	//
-	template<typename jType>
+	template<typename jType, bool isUTF8 = false>
 	void CalculateMaxForVarLengthOutputData(
 		_In_ jobjectArray		 jArray,
-		_Out_ unsigned long long &totalSizeInChars,
+		_Out_ unsigned long long &totalSizeInBytes,
 		_Out_ SQLULEN			 &dataTypeSizeInBytes);
 
 	// Finds Add<type>Column method in Dataset class

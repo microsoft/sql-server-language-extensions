@@ -112,9 +112,9 @@ unordered_map<SQLSMALLINT, JavaDataset::fnAddColumn> JavaDataset::m_fnAddColumnM
 	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
 	 static_cast<fnAddColumn>(&JavaDataset::AddColumnInternal<jlongArray, jlong, SQLBIGINT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
-	 static_cast<fnAddColumn>(&JavaDataset::AddStringColumnInternal<false>)},
-	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
 	 static_cast<fnAddColumn>(&JavaDataset::AddStringColumnInternal<true>)},
+	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
+	 static_cast<fnAddColumn>(&JavaDataset::AddStringColumnInternal<false>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnAddColumn>(&JavaDataset::AddBinaryColumnInternal)},
 	{static_cast<SQLSMALLINT>(SQL_C_GUID),
@@ -146,9 +146,9 @@ unordered_map<SQLSMALLINT, JavaDataset::fnGetColumn> JavaDataset::m_fnGetColumnM
 	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
 	 static_cast<fnGetColumn>(&JavaDataset::GetColumnInternal<jlongArray, jlong, SQLBIGINT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
-	 static_cast<fnGetColumn>(&JavaDataset::GetStringColumnInternal)},
+	 static_cast<fnGetColumn>(&JavaDataset::GetStringColumnInternal<true>)},
 	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
-	 static_cast<fnGetColumn>(&JavaDataset::GetStringColumnInternal)},
+	 static_cast<fnGetColumn>(&JavaDataset::GetStringColumnInternal<false>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnGetColumn>(&JavaDataset::GetBinaryColumnInternal)},
 	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
@@ -237,13 +237,16 @@ SQLINTEGER* JavaDataset::CreateSqlNullMap(
 //	Iterate over all the variable length values in the java array to calculate their combined
 //	length and find the longest one.
 //
-template<typename jType>
+template<typename jType, bool isUTF8>
 void JavaDataset::CalculateMaxForVarLengthOutputData(
 	_In_ jobjectArray		 jArray,
 	_Out_ unsigned long long &totalSizeInBytes,
 	_Out_ SQLULEN			 &dataTypeSizeInBytes)
 {
 	LOG("JavaDataset::CalculateMaxForVarLengthOutputData");
+
+	totalSizeInBytes = 0;
+	dataTypeSizeInBytes = 0;
 
 	// The size of the longest element
 	//
@@ -262,7 +265,7 @@ void JavaDataset::CalculateMaxForVarLengthOutputData(
 		{
 			// Get the size of the element
 			//
-			jsize elemSizeInBytes = JniTypeHelper::GetSizeInBytes<jType>(m_env, jElem);
+			jsize elemSizeInBytes = JniTypeHelper::GetSizeInBytes<jType, isUTF8>(m_env, jElem);
 			totalSizeInBytes += elemSizeInBytes;
 
 			if (maxSizeInBytes < elemSizeInBytes)
@@ -662,6 +665,7 @@ void JavaDataset::GetColumnInternal(
 // Description:
 //	Internal function to get the string column data.
 //
+template<bool isUTF8>
 void JavaDataset::GetStringColumnInternal(
 	_In_ jint							 colId,
 	_In_ SQLSMALLINT					 colType,
@@ -700,23 +704,21 @@ void JavaDataset::GetStringColumnInternal(
 		//
 		unsigned long long totalSizeInBytes = 0;
 
-		CalculateMaxForVarLengthOutputData<jstring>(stringArray,
-													totalSizeInBytes,
-													dataSizeInBytes);
-
-		unsigned long long totalSizeInChars = totalSizeInBytes / sizeof(jchar);
+		CalculateMaxForVarLengthOutputData<jstring, isUTF8>(stringArray,
+															totalSizeInBytes,
+															dataSizeInBytes);
 
 		// Declare a new buffer to hold the return data
 		//
-		*data = new jchar[totalSizeInChars];
+		*data = new char[totalSizeInBytes];
 		*nullMap = new SQLINTEGER[numRows];
 
-		JniTypeHelper::CopyUnicodeStringOutputData(m_env,
-												   stringArray,
-												   jNumRows,
-												   totalSizeInChars,
-												   static_cast<jchar*>(*data),
-												   *nullMap);
+		JniTypeHelper::CopyStringOutputData<isUTF8>(m_env,
+													stringArray,
+													jNumRows,
+													totalSizeInBytes,
+													static_cast<char*>(*data),
+													*nullMap);
 	}
 
 	dataSizeInBytes = max(dataSizeInBytes, 2ul);
@@ -1179,7 +1181,7 @@ void JavaDataset::AddColumnInternal(
 // Description:
 //	Internal template function to add the string column data.
 //
-template<bool isUnicode>
+template<bool isUTF8>
 void JavaDataset::AddStringColumnInternal(
 	_In_ jint								 colId,
 	_In_ SQLSMALLINT						 colType,
@@ -1195,11 +1197,11 @@ void JavaDataset::AddStringColumnInternal(
 	jobjectArray jArray = m_env->NewObjectArray(numRows, stringClass, nullptr);
 	JniHelper::ThrowOnJavaException(m_env);
 
-	JniTypeHelper::CopyStringInputData<isUnicode>(m_env,
-												  numRows,
-												  data,
-												  nullMap,
-												  jArray);
+	JniTypeHelper::CopyStringInputData<isUTF8>(m_env,
+											   numRows,
+											   data,
+											   nullMap,
+											   jArray);
 
 	jmethodID method = FindAddColumnMethod(colType);
 

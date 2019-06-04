@@ -11,7 +11,7 @@
 //*********************************************************************
 #pragma once
 
-#ifndef GOLDEN_BITS
+#ifndef DEBUG
 #define LOG(msg) Logger::Log(msg)
 #else
 #define LOG(msg)

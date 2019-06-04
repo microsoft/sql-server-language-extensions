@@ -30,7 +30,7 @@ public:
 
 	// Get length of type
 	//
-	template<typename jType>
+	template<typename jType, bool isUTF8 = false>
 	static jsize GetSizeInBytes(_In_ JNIEnv *env, _In_ jType value);
 
 	// Copies data to JNI
@@ -39,19 +39,38 @@ public:
 	static void CopyInputData(
 		_In_ JNIEnv                         * env,
 		_In_ jsize numRows,
-		_In_reads_(numRows) SQLPOINTER values,
+		_In_reads_(numRows) const SQLPOINTER values,
 		_In_reads_opt_(numRows) const SQLINTEGER  * nullMap,
 		_Out_writes_(numRows) jType         * jData);
 
-	// Copies string data to JNI
+	// Copies string data from JNI
 	//
-	template<bool isUnicode>
+	template<bool isUTF8>
+	static void CopyStringOutputData(
+		_In_ JNIEnv                             * env,
+		_In_ jobjectArray source,
+		_In_ jsize numRows,
+		_In_ unsigned long long totalSizeInBytes,
+		_Out_writes_(totalSizeInBytes) char    *target,
+		_Out_writes_(numRows) SQLINTEGER        * nullMap);
+
+	// Copies UTF-8 string data to JNI
+	//
+	template<bool isUTF8>
 	static void CopyStringInputData(
 		_In_ JNIEnv                                 * env,
 		_In_ SQLULEN numRows,
 		_In_reads_(numRows) SQLPOINTER values,
 		_In_reads_opt_(numRows) const SQLINTEGER    * nullMap,
 		_Inout_ jobjectArray jArray);
+
+	// Create a string object from value
+	//
+	template<bool isUTF8>
+	static jstring CreateString(
+		_In_ JNIEnv			  *env,
+		_In_ const SQLPOINTER value,
+		_In_ const jsize	  len);
 
 	// Copies binary data to JNI
 	//

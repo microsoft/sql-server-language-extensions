@@ -143,9 +143,7 @@ string JavaExtensionUtils::GetEnvVariable(_In_ const string &name)
 //
 JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPath)
 {
-	g_jvmDll = LoadLibraryExA(jvmPath.c_str(),
-							  nullptr,
-							  0);
+	g_jvmDll = LoadLibraryExA(jvmPath.c_str(), nullptr, 0);
 
 	if (g_jvmDll == nullptr)
 	{

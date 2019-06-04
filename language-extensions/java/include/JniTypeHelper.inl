@@ -19,7 +19,7 @@
 
 // The format used for TIMESTAMP data type
 //
-#define TimestampFormat "%04hd-%02hu-%02hu %02hu:%02hu:%02hu.%09lu"
+#define TimestampFormat "%04hd-%02hu-%02hu %02hu:%02hu:%02hu.%09u"
 
 //--------------------------------------------------------------------------------------------------
 // Name: JniTypeHelper::CreateJniArray
@@ -268,7 +268,11 @@ inline jfloat* JniTypeHelper::GetJniArrayElems<jfloatArray, jfloat>(_In_ JNIEnv	
 	return env->GetFloatArrayElements(jArray, nullptr);
 }
 
-// Get length of type
+//--------------------------------------------------------------------------------------------------
+// Name: JniTypeHelper::GetSizeInBytes
+//
+// Description:
+//	Specialized template function for getting the size in bytes of Java byte array
 //
 template<>
 inline jsize JniTypeHelper::GetSizeInBytes<jbyteArray>(
@@ -278,14 +282,53 @@ inline jsize JniTypeHelper::GetSizeInBytes<jbyteArray>(
 	return env->GetArrayLength(value);
 }
 
-// Get length of type
+//--------------------------------------------------------------------------------------------------
+// Name: JniTypeHelper::GetSizeInBytes
+//
+// Description:
+//	Specialized template function for getting the size in bytes of Java Unicode string
 //
 template<>
-inline jsize JniTypeHelper::GetSizeInBytes<jstring>(
+inline jsize JniTypeHelper::GetSizeInBytes<jstring, false>(
 	_In_ JNIEnv	 *env,
 	_In_ jstring value)
 {
 	return env->GetStringLength(value) * sizeof(jchar);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: JniTypeHelper::GetSizeInBytes
+//
+// Description:
+//	Specialized template function for getting the size in bytes of Java UTF8 string
+//
+template<>
+inline jsize JniTypeHelper::GetSizeInBytes<jstring, true>(
+	_In_ JNIEnv	 *env,
+	_In_ jstring value)
+{
+	jsize totalBytes = 0;
+
+	// Get the byte array with the character set as UTF-8
+	//
+	jclass jClass = env->FindClass("java/lang/String");
+	jstring jUtf8Label = env->NewStringUTF("UTF-8");
+	JniHelper::ThrowOnJavaException(env);
+
+	jmethodID jMethod = JniHelper::FindMethod(env,
+											  jClass,
+											  "getBytes",
+											  "(Ljava/lang/String;)[B");
+
+	jobject jUtf8Bytes = env->CallObjectMethod(value, jMethod, jUtf8Label);
+	JniHelper::ThrowOnJavaException(env);
+
+	totalBytes = env->GetArrayLength(static_cast<jbyteArray>(jUtf8Bytes));
+
+	env->DeleteLocalRef(jUtf8Bytes);
+	env->DeleteLocalRef(jUtf8Label);
+
+	return totalBytes;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -299,12 +342,12 @@ template<typename jType, typename cType>
 inline void JniTypeHelper::CopyInputData(
 	_In_ JNIEnv								 *env,
 	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
+	_In_reads_(numRows) const SQLPOINTER	 values,
 	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
 	_Out_writes_(numRows) jType				 *jData)
 {
 	char defaultNullVal = 0;
-	cType *odbcData = static_cast<cType*>(values);
+	const cType *odbcData = static_cast<const cType*>(values);
 
 	if (odbcData != nullptr)
 	{
@@ -327,7 +370,7 @@ inline void JniTypeHelper::CopyInputData(
 // Description:
 //  Copy unicode string values one by one into the Java array
 //
-template<bool isUnicode>
+template<bool isUTF8>
 inline void JniTypeHelper::CopyStringInputData(
 	_In_ JNIEnv								 *env,
 	_In_ SQLULEN							 numRows,
@@ -345,7 +388,7 @@ inline void JniTypeHelper::CopyStringInputData(
 		{
 			// The current string being copied
 			//
-			jstring str = nullptr;
+			jstring jStr = nullptr;
 
 			if (nullMap[i] != SQL_NULL_DATA)
 			{
@@ -355,52 +398,103 @@ inline void JniTypeHelper::CopyStringInputData(
 				//
 				SQLINTEGER cbLen = nullMap[i];
 
-				if (isUnicode)
-				{
-					const jchar *dataPos = reinterpret_cast<const jchar*>(pos);
-
-					// Create a new java string
-					//
-					str =
-						env->NewString(dataPos,
-									   cbLen /
-									   sizeof(jchar) /* the length of the string in characters */);
-				}
-				else
-				{
-					const char *dataPos = reinterpret_cast<const char*>(pos);
-
-					// Create a C string
-					//
-					long long cStrSize = cbLen + 1;	// +1 for null terminator
-
-					std::unique_ptr<char[]> cStr = std::make_unique<char[]>(cStrSize);
-					memcpy(cStr.get(), dataPos, cbLen);
-
-					// Ensure the C string is null-terminated
-					//
-					cStr[cStrSize - 1] = '\0';
-
-					// Currently only UTF-8 is supported
-					// (this code assumes the string is encoded as UTF-8 and creates a UTF-8 encoded
-					// java string)
-					//
-					str = env->NewStringUTF(cStr.get());
-				}
+				jStr = CreateString<isUTF8>(env, pos, cbLen);
 
 				// Advance the pointer to the next string
 				//
 				pos += cbLen;
 			}
 
-			env->SetObjectArrayElement(jData, i, str);
+			env->SetObjectArrayElement(jData, i, jStr);
 
-			if (str != nullptr)
+			if (jStr != nullptr)
 			{
-				env->DeleteLocalRef(str);
+				env->DeleteLocalRef(jStr);
 			}
 		}
 	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: JniTypeHelper::CreateString
+//
+// Description:
+// Creates a Java string from a Unicode string and returns a local reference
+//
+// Note:
+// The caller of this function is responsible for freeing the local reference returned
+//
+template<>
+inline jstring JniTypeHelper::CreateString<false>(
+	_In_ JNIEnv			  *env,
+	_In_ const SQLPOINTER value,
+	_In_ const jsize	  len)
+{
+	const jchar *dataPos = reinterpret_cast<const jchar*>(value);
+
+	// Create a new java string
+	//
+	jstring jStr = env->NewString(dataPos, len / sizeof(jchar));
+	JniHelper::ThrowOnJavaException(env);
+
+	return jStr;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: JniTypeHelper::CreateString
+//
+// Description:
+// Creates a Java string from a UTF-8 string and returns a local reference
+//
+// Note:
+// JNI has a function NewStringUTF, but this uses Java modified UTF-8, which doesn't support
+// all of the UTF-8 characters such as supplementary characters.
+//
+// The caller of this function is responsible for freeing the local reference returned
+//
+template<>
+inline jstring JniTypeHelper::CreateString<true>(
+	_In_ JNIEnv			  *env,
+	_In_ const SQLPOINTER value,
+	_In_ const jsize	  len)
+{
+	jstring jStrResult = nullptr;
+	jclass jClass = env->FindClass("java/lang/String");
+	jstring jUtf8Label = env->NewStringUTF("UTF-8");
+	JniHelper::ThrowOnJavaException(env);
+
+	// Create a UTF-8 string by initializing a string from bytes with a character set of UTF-8
+	//
+	jbyteArray jByteArr = env->NewByteArray(len);
+	JniHelper::ThrowOnJavaException(env);
+
+	jbyte *jByteData = env->GetByteArrayElements(jByteArr, nullptr);
+
+	// Copy the UTF-8 bytes into the java array
+	//
+	CopyInputData<jbyte, char>(env,
+							   len,
+							   reinterpret_cast<SQLPOINTER>(value),
+							   nullptr /* nullMap */,
+							   jByteData);
+
+	env->ReleaseByteArrayElements(jByteArr, jByteData, 0);
+
+	// Create the string from bytes with UTF-8 as the character set
+	//
+	jmethodID jMethod = JniHelper::FindMethod(env,
+											  jClass,
+											  "<init>",
+											  "([BLjava/lang/String;)V");
+
+	jStrResult = static_cast<jstring>(env->NewObject(jClass, jMethod, jByteArr, jUtf8Label));
+	JniHelper::ThrowOnJavaException(env);
+
+	env->DeleteLocalRef(jByteArr);
+	env->DeleteLocalRef(jUtf8Label);
+	env->DeleteLocalRef(jClass);
+
+	return jStrResult;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -514,21 +608,21 @@ inline void* JniTypeHelper::CopyOutputData(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Name: CopyUnicodeStringOutputData
+// Name: CopyStringOutputData
 //
 // Description:
-//	Copy unicode strings one by one out of the Java array into the array to return back to
-//	ExtHost.
+//	Copy Unicode strings one by one out of the Java array into the array to return back to ExtHost.
 //	This is done by iterating over all the strings in the java array while copying them to
 //	the allocated buffer
 //
-inline void JniTypeHelper::CopyUnicodeStringOutputData(
-	_In_ JNIEnv							 *env,
-	_In_ jobjectArray					 source,
-	_In_ jsize							 numRows,
-	_In_ unsigned long long				 totalSizeInChars,
-	_Out_writes_(totalSizeInChars) jchar *target,
-	_Out_writes_(numRows) SQLINTEGER	 *nullMap)
+template<>
+inline void JniTypeHelper::CopyStringOutputData<false>(
+	_In_ JNIEnv							*env,
+	_In_ jobjectArray					source,
+	_In_ jsize							numRows,
+	_In_ unsigned long long				totalSizeInBytes,
+	_Out_writes_(totalSizeInBytes) char *target,
+	_Out_writes_(numRows) SQLINTEGER	*nullMap)
 {
 	for (jsize i = 0; i < numRows; ++i)
 	{
@@ -547,14 +641,86 @@ inline void JniTypeHelper::CopyUnicodeStringOutputData(
 
 			// Commit the string to the output buffer
 			//
-			env->GetStringRegion(str, 0, strLenInChars, target);
+			env->GetStringRegion(str, 0, strLenInChars, reinterpret_cast<jchar*>(target));
 			env->DeleteLocalRef(str);
 
 			// Advance the pointer past the string
 			//
-			target += strLenInChars;
+			target += strLenInBytes;
 
 			nullMap[i] = strLenInBytes;
+		}
+		else
+		{
+			nullMap[i] = SQL_NULL_DATA;
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: CopyStringOutputData
+//
+// Description:
+//	Copy UTF-8 strings one by one out of the Java array into the array to return back to ExtHost.
+//	This is done by iterating over all the strings in the java array while copying them to
+//	the allocated buffer
+//
+template<>
+inline void JniTypeHelper::CopyStringOutputData<true>(
+	_In_ JNIEnv							*env,
+	_In_ jobjectArray					source,
+	_In_ jsize							numRows,
+	_In_ unsigned long long				totalSizeInBytes,
+	_Out_writes_(totalSizeInBytes) char *target,
+	_Out_writes_(numRows) SQLINTEGER	*nullMap)
+{
+	jclass jClass = env->FindClass("java/lang/String");
+	jstring jUtf8Str = env->NewStringUTF("UTF-8");
+	JniHelper::ThrowOnJavaException(env);
+
+	for (jsize i = 0; i < numRows; ++i)
+	{
+		// Get the string
+		//
+		jstring str =
+			reinterpret_cast<jstring>(env->GetObjectArrayElement(source, i));
+
+		if (str != nullptr)
+		{
+			jmethodID jMethod = JniHelper::FindMethod(env,
+													  jClass,
+													  "getBytes",
+													  "(Ljava/lang/String;)[B");
+
+			jbyteArray jUtf8BytesArr =
+				static_cast<jbyteArray>(env->CallObjectMethod(str, jMethod, jUtf8Str));
+			JniHelper::ThrowOnJavaException(env);
+
+			jsize jNumOfBytes = env->GetArrayLength(static_cast<jarray>(jUtf8BytesArr));
+
+			SQLINTEGER strLenInBytes = static_cast<SQLINTEGER>(jNumOfBytes);
+
+			// Commit the size of the string to the output buffer
+			//
+			nullMap[i] = strLenInBytes;
+
+			// Commit the element to the output buffer
+			//
+			jbyte *byteData = env->GetByteArrayElements(jUtf8BytesArr, nullptr);
+
+			memcpy(target,
+				   byteData,
+				   strLenInBytes);
+
+			// Commit the string to the output buffer
+			//
+			env->ReleaseByteArrayElements(jUtf8BytesArr, byteData, 0);
+
+			env->DeleteLocalRef(jUtf8BytesArr);
+
+			// Advance the pointer past the string
+			//
+			target += strLenInBytes;
 		}
 		else
 		{

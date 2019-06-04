@@ -504,7 +504,7 @@ jobject JavaArgContainer::CreateArgMap(_In_ JNIEnv *env)
 
 		jobject jObj = nullptr;
 
-		if (arg->GetValue() != nullptr)
+		if (arg->GetStrLenOrInd() != SQL_NULL_DATA)
 		{
 			// Create the Object
 			//
@@ -618,22 +618,8 @@ jobject JavaArgContainer::CreateJavaArgObject(_In_ JNIEnv *env, _In_ const JavaA
 	}
 	case SQL_C_CHAR:
 	{
-		// Create a C string
-		//
-		long long cStrSize = arg->GetStrLenOrInd() + 1;	// +1 for null terminator
+		obj = JniTypeHelper::CreateString<true>(env, arg->GetValue(), arg->GetStrLenOrInd());
 
-		unique_ptr<char[]> cStr = make_unique<char[]>(cStrSize);
-		memcpy(cStr.get(), arg->GetValue(), arg->GetStrLenOrInd());
-
-		// Ensure the C string is null-terminated
-		//
-		cStr[cStrSize - 1] = '\0';
-
-		// Currently only UTF-8 is supported
-		// (this code assumes the string is encoded as UTF-8 and creates a UTF-8 encoded
-		// java string)
-		//
-		obj = env->NewStringUTF(cStr.get());
 		break;
 	}
 	case SQL_C_WCHAR:
