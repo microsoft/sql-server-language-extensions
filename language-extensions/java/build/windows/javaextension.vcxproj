@@ -27,25 +27,22 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>
-		_WIN64;
-		_WINDOWS;
-		%(PreprocessorDefinitions)
+        _WIN64;
+        _WINDOWS;
+        %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-	  <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+	    <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>
-		_WIN64;
-		_WINDOWS;
-		%(PreprocessorDefinitions)
+        _WIN64;
+        _WINDOWS;
+        %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -53,14 +50,19 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <PropertyGroup Label="Locals">
+    <SourceDirectory>..\..\src\</SourceDirectory>
+	<IncludeDirectory>..\..\include</IncludeDirectory>
+	<ExtensionApiIncludeDirectory>..\..\..\..\extension-host\include</ExtensionApiIncludeDirectory>
+	</PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>
-		$(JAVA_HOME)\include;
-		$(JAVA_HOME)\include\win32;
-		..\..\include;
-		..\..\..\..\extension-host\include;
+        $(JAVA_HOME)\include;
+        $(JAVA_HOME)\include\win32;
+        $(IncludeDirectory);
+        $(ExtensionApiIncludeDirectory);
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
@@ -69,35 +71,42 @@
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
+    <Link>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\JavaArgContainer.cpp" />
-    <ClCompile Include="..\..\src\JavaDataset.cpp" />
-    <ClCompile Include="..\..\src\javaextension.cpp" />
-    <ClCompile Include="..\..\src\JavaExtensionUtils.cpp" />
-    <ClCompile Include="..\..\src\JavaLibraryUtils.cpp" />
-    <ClCompile Include="..\..\src\JavaSession.cpp" />
-    <ClCompile Include="..\..\src\JavaSqlTypeHelper.cpp" />
-    <ClCompile Include="..\..\src\JniHelper.cpp" />
-    <ClCompile Include="..\..\src\Logger.cpp" />
-    <ClCompile Include="..\..\src\windows\Logger_win.cpp" />
-    <ClCompile Include="..\..\src\windows\JavaLibraryUtils_win.cpp" />
-    <ClCompile Include="..\..\src\windows\JavaExtensionUtils_win.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JavaArgContainer.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JavaDataset.cpp" />
+    <ClCompile Include="$(SourceDirectory)\javaextension.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JavaExtensionUtils.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JavaLibraryUtils.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JavaSession.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JavaSqlTypeHelper.cpp" />
+    <ClCompile Include="$(SourceDirectory)\JniHelper.cpp" />
+    <ClCompile Include="$(SourceDirectory)\Logger.cpp" />
+    <ClCompile Include="$(SourceDirectory)\windows\Logger_win.cpp" />
+    <ClCompile Include="$(SourceDirectory)\windows\JavaLibraryUtils_win.cpp" />
+    <ClCompile Include="$(SourceDirectory)\windows\JavaExtensionUtils_win.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="JavaArgContainer.h" />
-    <ClInclude Include="JavaDataset.h" />
-    <ClInclude Include="JavaExtensionUtils.h" />
-    <ClInclude Include="JavaLibraryUtils.h" />
-    <ClInclude Include="JavaSession.h" />
-    <ClInclude Include="JavaSqlTypeHelper.h" />
-    <ClInclude Include="JniHelper.h" />
-    <ClInclude Include="JniTypeHelper.h" />
-    <ClInclude Include="Logger.h" />	 
-    <ClInclude Include="sqlexternallanguage.h" />
+    <ClInclude Include="$(IncludeDirectory)\JavaArgContainer.h" />
+    <ClInclude Include="$(IncludeDirectory)\JavaDataset.h" />
+    <ClInclude Include="$(IncludeDirectory)\JavaExtensionUtils.h" />
+    <ClInclude Include="$(IncludeDirectory)\JavaLibraryUtils.h" />
+    <ClInclude Include="$(IncludeDirectory)\JavaSession.h" />
+    <ClInclude Include="$(IncludeDirectory)\JavaSqlTypeHelper.h" />
+    <ClInclude Include="$(IncludeDirectory)\JniHelper.h" />
+    <ClInclude Include="$(IncludeDirectory)\JniTypeHelper.h" />
+    <ClInclude Include="$(IncludeDirectory)\Logger.h" />	 
+    <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallanguage.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="JniTypeHelper.inl" />
+    <None Include="$(IncludeDirectory)\JniTypeHelper.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

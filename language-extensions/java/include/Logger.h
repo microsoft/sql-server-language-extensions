@@ -11,7 +11,7 @@
 //*********************************************************************
 #pragma once
 
-#ifndef DEBUG
+#ifdef DEBUG
 #define LOG(msg) Logger::Log(msg)
 #else
 #define LOG(msg)
