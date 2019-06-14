@@ -185,6 +185,16 @@ public:
 	//
 	static std::string ConvertGuidToString(_In_ const SQLGUID *guid);
 
+	// Convert a java string to an ODBC SQLGUID struct
+	//
+	static SQLGUID* JavaStringToGuidStruct(
+		_In_ JNIEnv		   *env,
+		_In_ const jstring jStr,
+		_In_ jclass		   uuidClass,
+		_In_ jmethodID	   fromStringMethod,
+		_In_ jmethodID	   lsbMethod,
+		_In_ jmethodID	   msbMethod);
+
 	// Converts an ODBC SQL_DATE_STRUCT to a java.sql.Date object
 	//
 	static void DateStructToJavaSqlDate(
@@ -243,13 +253,13 @@ public:
 	// Converts a java.sql.Timestamp object to an ODBC SQL_TIMESTAMP_STRUCT
 	//
 	static void JavaTimestampToTimestampStruct(
-		_In_ JNIEnv					 *env,
-		_In_ jobject				 jTimestamp,
-		_In_ jclass					 tsClass,
-		_In_ jmethodID				 tsToStringMethod,
-		_In_ jmethodID				 tsGetNanosMethod,
-		_In_ jmethodID				 tsValueOfMethod,
-		_Inout_ SQL_TIMESTAMP_STRUCT &odbcTimestamp);
+		_In_ JNIEnv				   *env,
+		_In_ jobject			   jTimestamp,
+		_In_ jclass				   tsClass,
+		_In_ jmethodID			   tsToStringMethod,
+		_In_ jmethodID			   tsGetNanosMethod,
+		_In_ jmethodID			   tsValueOfMethod,
+		_Out_ SQL_TIMESTAMP_STRUCT &odbcTimestamp);
 };
 
 #include "JniTypeHelper.inl"

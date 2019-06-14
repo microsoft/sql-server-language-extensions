@@ -142,7 +142,7 @@ void JavaSession::InitColumn(
 	_In_ SQLSMALLINT   OrderByNumber
 	)
 {
-	LOG("Initializing column " + to_string(ColumnNumber));
+	LOG("Initializing column #" + to_string(ColumnNumber));
 
 	if (ColumnName == nullptr)
 	{
@@ -150,7 +150,7 @@ void JavaSession::InitColumn(
 	}
 	else if (ColumnNumber >= m_inputSchemaColumnsNumber || ColumnNumber < 0)
 	{
-		throw invalid_argument("Invalid input column id supplied");
+		throw invalid_argument("Invalid input column id supplied: " + to_string(ColumnNumber));
 	}
 
 	// Store the information for this column
@@ -181,13 +181,15 @@ void JavaSession::InitParam(
 	SQLSMALLINT	  InputOutputType
 	)
 {
+	LOG("Initializing input parameter #" + to_string(ParamNumber));
+
 	if (ParamName == nullptr)
 	{
 		throw invalid_argument("Invalid input parameter name supplied");
 	}
 	else if (ParamNumber >= m_args.GetCount() || ParamNumber < 0)
 	{
-		throw invalid_argument("Invalid input parameter id supplied");
+		throw invalid_argument("Invalid input parameter id supplied: " + to_string(ParamNumber));
 	}
 
 	SQLRETURN result = m_args.AddArg(
@@ -217,7 +219,7 @@ void JavaSession::InitParam(
 // Name: JavaSession::InitParam
 //
 // Description:
-//  Initializes the parameter for this session
+//  Execute the workflow for the session
 //
 void JavaSession::ExecuteWorkflow(
 	_In_ SQLULEN		RowsNumber,
@@ -371,6 +373,8 @@ void JavaSession::CallUserExecute(
 //
 void JavaSession::CallUserCleanup()
 {
+	LOG("JavaSession::CallUserCleanup");
+
 	jmethodID methodId = JniHelper::FindMethod(
 		m_env,
 		m_userClass,
@@ -719,6 +723,8 @@ void JavaSession::GetResultColumn(
 	_Out_ SQLSMALLINT *Nullable
 	)
 {
+	LOG("Retrieving metadata for result column #" + to_string(ColumnNumber));
+
 	*DataType = SQL_UNKNOWN_TYPE;
 	*ColumnSize = 0;
 	*Nullable = 0;
@@ -733,7 +739,8 @@ void JavaSession::GetResultColumn(
 	}
 	else
 	{
-		throw runtime_error("Invalid arguments to GetResultColumn()");
+		throw runtime_error("Invalid column id provided to GetResultColumn():" +
+							to_string(ColumnNumber));
 	}
 }
 
@@ -748,6 +755,8 @@ void JavaSession::GetResults(
 	_Outptr_ SQLPOINTER **Data,
 	_Outptr_ SQLINTEGER ***StrLen_or_Ind)
 {
+	LOG("JavaSession::GetResults");
+
 	*RowsNumber = 0;
 	*Data = nullptr;
 	*StrLen_or_Ind = nullptr;
@@ -760,6 +769,34 @@ void JavaSession::GetResults(
 	}
 	else
 	{
-		throw runtime_error("Invalid parameters to GetResults()");
+		throw runtime_error("Invalid parameters provided to GetResults()");
 	}
 }
+
+//--------------------------------------------------------------------------------------------------
+// Name: JavaSession::GetOutputParam
+//
+// Description:
+//  Returns the data and size of the output parameter
+//
+void JavaSession::GetOutputParam(
+	_In_ SQLUSMALLINT ParamNumber,
+	_Out_ SQLPOINTER  *ParamValue,
+	_Out_ SQLINTEGER  *StrLen_or_Ind)
+{
+	LOG("Initializing output parameter #" + to_string(ParamNumber));
+
+	if (0 <= ParamNumber && ParamNumber < m_args.GetCount())
+	{
+		// Replace the input parameter with the updated output value from the
+		// execution parameters' hash map
+		//
+		m_args.ReplaceArgValue(m_env, ParamNumber, m_argMap, ParamValue, StrLen_or_Ind);
+	}
+	else
+	{
+		throw invalid_argument("Invalid output parameter id supplied to GetOutputParam(): " +
+							   to_string(ParamNumber));
+	}
+}
+

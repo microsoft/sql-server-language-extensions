@@ -17,8 +17,11 @@
 #endif
 #include <jni.h>
 #include <string>
+#include <sqltypes.h>
+#include <sqlext.h>
 #include "JavaExtensionUtils.h"
 #include "JavaLibraryUtils.h"
+#include "JavaPathSettings.h"
 
 using namespace std;
 
@@ -40,22 +43,22 @@ string JavaLibraryUtils::GetLibrariesClassPath()
 {
 	string classPath = "";
 
-	// Check if the 'PrivateLibPath' enviroment variable exists.
+	// Check if private library path was sent from SQL Server.
 	//
-	string envValue = JavaExtensionUtils::GetEnvVariable("PrivateLibPath");
+	const string & privateLibraryPath = JavaPathSettings::GetPrivateLibraryPath();
 
-	if (!envValue.empty())
+	if (!privateLibraryPath.empty())
 	{
-		FindAppendFileNames(envValue, classPath);
+		FindAppendFileNames(privateLibraryPath, classPath);
 	}
 
-	// Check if the 'PublicLibPath' enviroment variable exists.
+	// Check if the public library path was sent from SQL Server.
 	//
-	envValue = JavaExtensionUtils::GetEnvVariable("PublicLibPath");
+	const string & publicLibraryPath = JavaPathSettings::GetPublicLibraryPath();
 
-	if (!envValue.empty())
+	if (!publicLibraryPath.empty())
 	{
-		FindAppendFileNames(envValue, classPath);
+		FindAppendFileNames(publicLibraryPath, classPath);
 	}
 
 	return classPath;

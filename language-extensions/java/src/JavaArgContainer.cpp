@@ -312,6 +312,7 @@ void JavaArg::Cleanup()
 	}
 
 	m_value = nullptr;
+	m_strLenOrInd = SQL_NULL_DATA;
 }
 
 //---------------------------------------------------------------------
@@ -728,3 +729,310 @@ jobject JavaArgContainer::CreateJavaArgObject(_In_ JNIEnv *env, _In_ const JavaA
 
 	return obj;
 }
+
+//---------------------------------------------------------------------
+// Name: JavaArgContainer::ReplaceArgValue
+//
+// Description:
+//	Replaces the parameter's ODBC-format input value stored in the container
+//	with the updated output value from execution parameters' hash map
+//
+void JavaArgContainer::ReplaceArgValue(
+	_In_ JNIEnv		  *env,
+	_In_ SQLUSMALLINT id,
+	_In_ jobject	  javaArgMap,
+	_Out_ SQLPOINTER  *value,
+	_Out_ SQLINTEGER  *strLen_or_Ind)
+{
+	// Auto cleanup any local references
+	// 1 reference for LinkedHashMap class
+	// 1 reference for the parameter name
+	// 1 reference for the parameter value object retrieved from the hash map
+	//
+	AutoJniLocalFrame jFrame(env, 3);
+
+	jclass mapClass = env->FindClass("java/util/LinkedHashMap");
+
+	jmethodID containsKeyMethod = JniHelper::FindMethod(env,
+														mapClass,
+														"containsKey",
+														"(Ljava/lang/Object;)Z");
+
+	// Find the parameter
+	//
+	JavaArg *arg = GetArg(id);
+
+	// Get the parameter name
+	//
+	const string &paramName = GetParamName(id);
+	const jstring paramStr = env->NewStringUTF(paramName.c_str());
+	JniHelper::ThrowOnJavaException(env);
+
+	// Check if a parameter by that name exists in the hash map
+	//
+	jboolean containsKeyVal = env->CallBooleanMethod(javaArgMap, containsKeyMethod, paramStr);
+	JniHelper::ThrowOnJavaException(env);
+
+	if (containsKeyVal == JNI_TRUE)
+	{
+		// Get the param value
+		//
+		jmethodID getMethod = JniHelper::FindMethod(env,
+													mapClass,
+													"get",
+													"(Ljava/lang/Object;)Ljava/lang/Object;");
+
+		jobject jObj = env->CallObjectMethod(javaArgMap, getMethod, paramStr);
+		JniHelper::ThrowOnJavaException(env);
+
+		// Clean up the previous value from the container
+		//
+		arg->Cleanup();
+
+		// Convert the new parameter value to ODBC format
+		//
+		if (jObj != nullptr)
+		{
+			CreateOdbcArgObject(env, jObj, arg);
+
+			*value = arg->m_value;
+			*strLen_or_Ind = arg->m_strLenOrInd;
+		}
+		else
+		{
+			*value = nullptr;
+			*strLen_or_Ind = SQL_NULL_DATA;
+		}
+	}
+	else
+	{
+		throw runtime_error(
+				  "Failed to find output parameter '" + paramName + "' in the parameters hash map");
+	}
+}
+
+//---------------------------------------------------------------------
+// Name: JavaArgContainer::CreateOdbcArgObject
+//
+// Description:
+//	Creates an ODBC object for the argument
+//
+void JavaArgContainer::CreateOdbcArgObject(
+	_In_ JNIEnv	 *env,
+	_In_ jobject jObj,
+	_In_ JavaArg *arg)
+{
+	// Auto cleanup any local references
+	// 1 reference for the class
+	// 1 reference for the additional class required by guid type
+	//
+	AutoJniLocalFrame jFrame(env, 2);
+
+	switch (arg->GetType())
+	{
+	case SQL_C_SLONG:
+	{
+		jclass objectClass = env->FindClass("java/lang/Integer");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Integer");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "intValue",
+														 "()I");
+
+		jint val = env->CallIntMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		arg->m_value = new int(static_cast<int>(val));
+		arg->m_strLenOrInd = sizeof(int);
+
+		break;
+	}
+
+	case SQL_C_BIT:
+	{
+		jclass objectClass = env->FindClass("java/lang/Boolean");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Boolean");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "booleanValue",
+														 "()Z");
+
+		jboolean val = env->CallBooleanMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		arg->m_value = new bool(static_cast<bool>(val));
+		arg->m_strLenOrInd = sizeof(bool);
+
+		break;
+	}
+
+	case SQL_C_DOUBLE:
+	{
+		jclass objectClass = env->FindClass("java/lang/Double");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Double");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "doubleValue",
+														 "()D");
+
+		jdouble val = env->CallDoubleMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		arg->m_value = new double(static_cast<double>(val));
+		arg->m_strLenOrInd = sizeof(double);
+
+		break;
+	}
+
+	case SQL_C_FLOAT:
+	{
+		jclass objectClass = env->FindClass("java/lang/Float");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Float");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "floatValue",
+														 "()F");
+
+		jfloat val = env->CallFloatMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		arg->m_value = new float(static_cast<float>(val));
+		arg->m_strLenOrInd = sizeof(float);
+
+		break;
+	}
+
+	case SQL_C_SBIGINT:
+	{
+		jclass objectClass = env->FindClass("java/lang/Long");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Long");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "longValue",
+														 "()J");
+
+		jlong val = env->CallLongMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		arg->m_value = new long long(static_cast<long long>(val));
+		arg->m_strLenOrInd = sizeof(long long);
+
+		break;
+	}
+
+	case SQL_C_UTINYINT:
+	{
+		jclass objectClass = env->FindClass("java/lang/Short");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Short");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "shortValue",
+														 "()S");
+
+		jshort val = env->CallShortMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		if (val < 0 || 255 < val)
+		{
+			throw runtime_error(
+					  "The value of output parameter #" +
+					  to_string(arg->GetId()) +
+					  " is out of range for tinyint data type");
+		}
+
+		arg->m_value = new unsigned char(static_cast<unsigned char>(val));
+		arg->m_strLenOrInd = sizeof(char);
+
+		break;
+	}
+
+	case SQL_C_SSHORT:
+	{
+		jclass objectClass = env->FindClass("java/lang/Short");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/Short");
+
+		jmethodID getValueMethod = JniHelper::FindMethod(env,
+														 objectClass,
+														 "shortValue",
+														 "()S");
+
+		jshort val = env->CallShortMethod(jObj, getValueMethod);
+		JniHelper::ThrowOnJavaException(env);
+
+		arg->m_value = new short(static_cast<short>(val));
+		arg->m_strLenOrInd = sizeof(short);
+
+		break;
+	}
+
+	case SQL_C_GUID:
+	{
+		jclass stringClass = env->FindClass("java/lang/String");
+		ValidateOutputClass(env, arg->GetId(), jObj, stringClass, "java/lang/String");
+
+		jclass uuidClass = env->FindClass("java/util/UUID");
+		jmethodID fromStringMethod = env->GetStaticMethodID(uuidClass,
+															"fromString",
+															"(Ljava/lang/String;)Ljava/util/UUID;");
+
+		jmethodID lsbMethod = JniHelper::FindMethod(env,
+													uuidClass,
+													"getLeastSignificantBits",
+													"()J");
+
+		jmethodID msbMethod = JniHelper::FindMethod(env,
+													uuidClass,
+													"getMostSignificantBits",
+													"()J");
+
+		arg->m_value = JniTypeHelper::JavaStringToGuidStruct(
+			env,
+			reinterpret_cast<jstring>(jObj),
+			uuidClass,
+			fromStringMethod,
+			lsbMethod,
+			msbMethod);
+		arg->m_strLenOrInd = sizeof(SQLGUID);
+
+		break;
+	}
+
+	default:
+		throw runtime_error("Unsupported output parameter type encountered");
+	}
+}
+
+//---------------------------------------------------------------------
+// Name: JavaArgContainer::ValidateOutputClass
+//
+// Description:
+//	Verify that the given output parameter jObj is of the expected java class.
+//	If not, a runtime_error exception is thrown.
+//
+void JavaArgContainer::ValidateOutputClass(
+	_In_ JNIEnv		  *env,
+	_In_ SQLUSMALLINT paramId,
+	_In_ jobject	  jObj,
+	_In_ jclass		  objectClass,
+	_In_ string		  &&objectClassName)
+{
+	jboolean isRightClass = env->IsInstanceOf(jObj, objectClass);
+	if (isRightClass == JNI_FALSE)
+	{
+		const string &paramName = GetParamName(paramId);
+
+		throw runtime_error(
+				  "Output parameter #" +
+				  to_string(paramId) +
+				  " is of a different data type than the expected [" +
+				  objectClassName +
+				  "]");
+	}
+}
+

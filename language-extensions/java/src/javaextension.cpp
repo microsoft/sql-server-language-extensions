@@ -47,6 +47,7 @@
 #include "JniTypeHelper.h"
 #include "JavaDataset.h"
 #include "JavaSession.h"
+#include "JavaPathSettings.h"
 #include "sqlexternallanguage.h"
 
 using namespace std;
@@ -59,6 +60,25 @@ static JNIEnv *g_env = nullptr;
 // java class information, and output data information
 //
 static JavaSession *g_sessionData = nullptr;
+
+//--------------------------------------------------------------------------------------------------
+// Name: CheckSessionEnvInitialized
+//
+// Description:
+//	Throws a runtime_error exception of a function is called before the session environment has
+//	been initialized
+//
+void CheckSessionEnvInitialized(string &&FuncName)
+{
+	if (g_env == nullptr)
+	{
+		throw runtime_error("Function " + FuncName + " called before extension is initialized");
+	}
+	else if (g_sessionData == nullptr)
+	{
+		throw runtime_error("Function " + FuncName + " called before session is initialized");
+	}
+}
 
 //--------------------------------------------------------------------------------------------------
 // Name: GetInterfaceVersion
@@ -83,7 +103,15 @@ SQLUSMALLINT GetInterfaceVersion()
 // Returns:
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
-SQLRETURN Init(_In_ SQLPOINTER PropertyBag)
+SQLRETURN Init(
+	_In_ SQLCHAR *languageParams,
+	_In_ SQLULEN languageParamsLen,
+	_In_ SQLCHAR *languagePath,
+	_In_ SQLULEN languagePathLen,
+	_In_ SQLCHAR *publicLibraryPath,
+	_In_ SQLULEN publicLibraryPathLen,
+	_In_ SQLCHAR *privateLibraryPath,
+	_In_ SQLULEN privateLibraryPathLen)
 {
 	SQLRETURN result = SQL_SUCCESS;
 
@@ -91,6 +119,11 @@ SQLRETURN Init(_In_ SQLPOINTER PropertyBag)
 
 	try
 	{
+		JavaPathSettings::Init(
+			languageParams,
+			languagePath,
+			publicLibraryPath,
+			privateLibraryPath);
 		g_env = JavaExtensionUtils::CreateJvm();
 	}
 	catch (exception &ex)
@@ -221,14 +254,7 @@ SQLRETURN InitColumn(
 
 	try
 	{
-		if (g_env == nullptr)
-		{
-			throw runtime_error("Function InitColumn() called before extension is initialized");
-		}
-		else if (g_sessionData == nullptr)
-		{
-			throw runtime_error("Function InitColumn() called before session is initialized");
-		}
+		CheckSessionEnvInitialized("InitColumn");
 
 		g_sessionData->InitColumn(
 			ColumnNumber,
@@ -269,7 +295,7 @@ SQLRETURN InitColumn(
 // Name: InitParam
 //
 // Description:
-//	Initializes param-specific data.
+//	Initializes parameter-specific data.
 //
 // Returns:
 //	SQL_SUCCESS on success, else SQL_ERROR
@@ -295,14 +321,7 @@ SQLRETURN InitParam(
 
 	try
 	{
-		if (g_env == nullptr)
-		{
-			throw runtime_error("Function InitParam() called before extension is initialized");
-		}
-		else if (g_sessionData == nullptr)
-		{
-			throw runtime_error("Function InitParam() called before session is initialized");
-		}
+		CheckSessionEnvInitialized("InitParam");
 
 		g_sessionData->InitParam(
 			ParamNumber,
@@ -367,14 +386,7 @@ SQLRETURN Execute(
 
 	try
 	{
-		if (g_env == nullptr)
-		{
-			throw runtime_error("Function Execute() called before extension is initialized");
-		}
-		else if (g_sessionData == nullptr)
-		{
-			throw runtime_error("Function Execute() called before session is initialized");
-		}
+		CheckSessionEnvInitialized("Execute");
 
 		g_sessionData->ExecuteWorkflow(
 			RowsNumber,
@@ -425,10 +437,14 @@ SQLRETURN GetResultColumn(
 	_Out_ SQLSMALLINT *Nullable
 	)
 {
+	LOG("JavaExtension::GetResultColumn");
+
 	SQLRETURN result = SQL_SUCCESS;
 
 	try
 	{
+		CheckSessionEnvInitialized("GetResultColumn");
+
 		g_sessionData->GetResultColumn(
 			ColumnNumber,
 			DataType,
@@ -469,10 +485,14 @@ SQLRETURN GetResults(
 	_Outptr_ SQLINTEGER ***StrLen_or_Ind
 	)
 {
+	LOG("JavaExtension::GetResults");
+
 	SQLRETURN result = SQL_SUCCESS;
 
 	try
 	{
+		CheckSessionEnvInitialized("GetResults");
+
 		g_sessionData->GetResults(
 			RowsNumber,
 			Data,
@@ -495,6 +515,59 @@ SQLRETURN GetResults(
 }
 
 //--------------------------------------------------------------------------------------------------
+// Name: GetOutputParam
+//
+// Description:
+//	Returns the output parameter's data.
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN GetOutputParam(
+	_In_ SQLGUID	  SessionId,
+	_In_ SQLUSMALLINT TaskId,
+	_In_ SQLUSMALLINT ParamNumber,
+	_Out_ SQLPOINTER  *ParamValue,
+	_Out_ SQLINTEGER  *StrLen_or_Ind)
+{
+	LOG("JavaExtension::GetOutputParam");
+
+	SQLRETURN result = SQL_SUCCESS;
+
+	try
+	{
+		CheckSessionEnvInitialized("GetOutputParam");
+
+		g_sessionData->GetOutputParam(
+			ParamNumber,
+			ParamValue,
+			StrLen_or_Ind);
+	}
+	catch (const java_exception_error &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+
+		JniHelper::LogJavaException(g_env);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function GetOutputParam()");
+	}
+
+	return result;
+}
+
+//--------------------------------------------------------------------------------------------------
 // Name: CleanupSession
 //
 // Description:
@@ -509,6 +582,8 @@ SQLRETURN CleanupSession(
 	_In_ SQLUSMALLINT TaskId
 	)
 {
+	LOG("JavaExtension::CleanupSession");
+
 	// Clean up the session
 	//
 	if (g_sessionData != nullptr)

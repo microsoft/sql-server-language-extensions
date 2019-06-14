@@ -1558,7 +1558,7 @@ inline void JniTypeHelper::JavaTimestampToTimestampStruct(
 	// Sanity check:
 	// Convert the string back to timestamp object to verify its validity
 	//
-	jobject jTimestampValidate =
+	const jobject jTimestampValidate =
 		env->CallStaticObjectMethod(tsClass, tsValueOfMethod, timestampJString);
 	JniHelper::ThrowOnJavaException(env);
 
@@ -1588,5 +1588,54 @@ inline void JniTypeHelper::JavaTimestampToTimestampStruct(
 	odbcTimestamp.fraction = nanos;
 
 	env->ReleaseStringUTFChars(timestampJString, timestampCStr);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: JniTypeHelper::JavaStringToGuidStruct
+//
+// Description:
+//  Converts a java string object that represents a guid to an ODBC SQLGUID struct
+//
+inline SQLGUID* JniTypeHelper::JavaStringToGuidStruct(
+	_In_ JNIEnv		   *env,
+	_In_ const jstring jStr,
+	_In_ jclass		   uuidClass,
+	_In_ jmethodID	   fromStringMethod,
+	_In_ jmethodID	   lsbMethod,
+	_In_ jmethodID	   msbMethod)
+{
+	std::unique_ptr<SQLGUID> odbcGuid(new SQLGUID());
+
+	// Auto cleanup any local references
+	// 1 reference for the UUID object
+	//
+	AutoJniLocalFrame jFrame(env, 1);
+
+	// Convert the string to UUID object and make sure it's properly formatted
+	//
+	jobject uuidObj = env->CallStaticObjectMethod(uuidClass, fromStringMethod, jStr);
+	JniHelper::ThrowOnJavaException(env);
+
+	// Get the byte representation of the UUID - most and least significant bits
+	//
+	jlong msb = env->CallLongMethod(uuidObj, msbMethod);
+	JniHelper::ThrowOnJavaException(env);
+
+	jlong lsb = env->CallLongMethod(uuidObj, lsbMethod);
+	JniHelper::ThrowOnJavaException(env);
+
+	// Java uses big endian format, while SQL uses small endian.
+	// So we need to reverse the byte order before sending to the server.
+	//
+	*reinterpret_cast<jint*>(&odbcGuid->Data1) = static_cast<jint>((msb >> 32) & 0xFFFFFFFF);
+	*reinterpret_cast<jshort*>(&odbcGuid->Data2) = static_cast<jshort>((msb >> 16) & 0xFFFF);
+	*reinterpret_cast<jshort*>(&odbcGuid->Data3) = static_cast<jshort>((msb & 0xFFFF));
+
+	*reinterpret_cast<jlong*>(&odbcGuid->Data4) = lsb;
+	char *iStart = reinterpret_cast<char*>(&odbcGuid->Data4);
+	char *iEnd = iStart + sizeof(jlong);
+	std::reverse(iStart, iEnd);
+
+	return odbcGuid.release();
 }
 

@@ -166,10 +166,36 @@ public:
 	//
 	jobject CreateArgMap(_In_ JNIEnv *env);
 
+	// Replaces the parameter's ODBC-format input value stored in the container
+	// with the updated output value from execution parameters' hash map
+	//
+	void ReplaceArgValue(
+		_In_ JNIEnv		  *env,
+		_In_ SQLUSMALLINT id,
+		_In_ jobject	  javaArgMap,
+		_Out_ SQLPOINTER  *value,
+		_Out_ SQLINTEGER  *strLen_or_Ind);
+
 private:
 	// Creates a Java object for the argument
 	//
 	jobject CreateJavaArgObject(_In_ JNIEnv *env, _In_ const JavaArg *arg);
+
+	// Creates an ODBC object for the argument
+	//
+	void CreateOdbcArgObject(
+		_In_ JNIEnv	 *env,
+		_In_ jobject jObj,
+		_In_ JavaArg *arg);
+
+	// Verify that the given output parameter jObj is of the expected java class
+	//
+	void ValidateOutputClass(
+		_In_ JNIEnv       * env,
+		_In_ SQLUSMALLINT paramId,
+		_In_ jobject jObj,
+		_In_ jclass objectClass,
+		_In_ std::string && objectClassName);
 
 	// Names of parameters, stored in order of parameter id. This
 	// is used for accessing parameters by id, in order to get the

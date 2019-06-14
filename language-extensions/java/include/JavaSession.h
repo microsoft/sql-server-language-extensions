@@ -86,8 +86,7 @@ public:
 		_In_ SQLSMALLINT   DecimalDigits,
 		_In_ SQLSMALLINT   Nullable,
 		_In_ SQLSMALLINT   PartitionByNumber,
-		_In_ SQLSMALLINT   OrderByNumber
-		);
+		_In_ SQLSMALLINT   OrderByNumber);
 
 	// Init the input parameter
 	//
@@ -100,8 +99,7 @@ public:
 		SQLSMALLINT	  DecimalDigits,
 		SQLPOINTER	  ArgValue,
 		SQLINTEGER	  StrLen_or_Ind,
-		SQLSMALLINT	  InputOutputType
-		);
+		SQLSMALLINT	  InputOutputType);
 
 	// Execute the workflow for the session
 	//
@@ -126,6 +124,13 @@ public:
 		_Out_ SQLULEN		*RowsNumber,
 		_Outptr_ SQLPOINTER **Data,
 		_Outptr_ SQLINTEGER ***StrLen_or_Ind);
+
+	// Get the the output parameter
+	//
+	void GetOutputParam(
+		_In_ SQLUSMALLINT ParamNumber,
+		_Out_ SQLPOINTER  *ParamValue,
+		_Out_ SQLINTEGER  *StrLen_or_Ind);
 
 	// Cleanup session
 	//

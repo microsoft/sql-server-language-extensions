@@ -69,7 +69,7 @@ void Logger::LogJavaException(_In_ const string &exceptionMsg)
 //
 void Logger::Log(_In_ const string &msg)
 {
-#ifndef GOLDEN_BITS
+#ifdef DEBUG
 	cout << GetCurrentTimestamp() << msg << endl;
 #endif
 }
