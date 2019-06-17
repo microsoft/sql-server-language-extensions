@@ -35,7 +35,14 @@ SQLUSMALLINT GetInterfaceVersion();
 
 SQLEXTENSION_INTERFACE
 SQLRETURN Init(
-	SQLPOINTER PropertyBag
+	SQLCHAR *ExtensionParams,
+	SQLULEN ExtensionParamsLength,
+	SQLCHAR *ExtensionPath,
+	SQLULEN ExtensionPathLength,
+	SQLCHAR *PublicLibraryPath,
+	SQLULEN PublicLibraryPathLength,
+	SQLCHAR *PrivateLibraryPath,
+	SQLULEN PrivateLibraryPathLength
 	);
 
 SQLEXTENSION_INTERFACE
