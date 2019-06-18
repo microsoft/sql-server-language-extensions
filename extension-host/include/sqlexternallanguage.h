@@ -120,6 +120,15 @@ SQLRETURN GetResults(
 	);
 
 SQLEXTENSION_INTERFACE
+SQLRETURN GetOutputParam(
+	SQLGUID		 SessionId,
+	SQLUSMALLINT TaskId,
+	SQLUSMALLINT ParamNumber,
+	SQLPOINTER	 *ParamValue,
+	SQLINTEGER	 *StrLen_or_Ind
+	);
+
+SQLEXTENSION_INTERFACE
 SQLRETURN CleanupSession(
 	SQLGUID		 SessionId,
 	SQLUSMALLINT TaskId
@@ -133,4 +142,3 @@ SQLRETURN Cleanup();
 #endif	/* __cplusplus */
 
 #endif	/* __SQLEXTERNALLANGUAGE */
-
