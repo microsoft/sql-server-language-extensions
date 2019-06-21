@@ -824,7 +824,7 @@ void JavaArgContainer::CreateOdbcArgObject(
 {
 	// Auto cleanup any local references
 	// 1 reference for the class
-	// 1 reference for the additional class required by guid type
+	// 2 references for the additional classes/temp objects required by other types (guid, string)
 	//
 	AutoJniLocalFrame jFrame(env, 2);
 
@@ -938,16 +938,18 @@ void JavaArgContainer::CreateOdbcArgObject(
 		jshort val = env->CallShortMethod(jObj, getValueMethod);
 		JniHelper::ThrowOnJavaException(env);
 
-		if (val < 0 || 255 < val)
+		if (0 <= val && val <= 255)
+		{
+			arg->m_value = new unsigned char(static_cast<unsigned char>(val));
+			arg->m_strLenOrInd = sizeof(char);
+		}
+		else
 		{
 			throw runtime_error(
 					  "The value of output parameter #" +
 					  to_string(arg->GetId()) +
 					  " is out of range for tinyint data type");
 		}
-
-		arg->m_value = new unsigned char(static_cast<unsigned char>(val));
-		arg->m_strLenOrInd = sizeof(char);
 
 		break;
 	}
@@ -999,6 +1001,121 @@ void JavaArgContainer::CreateOdbcArgObject(
 			lsbMethod,
 			msbMethod);
 		arg->m_strLenOrInd = sizeof(SQLGUID);
+
+		break;
+	}
+
+	case SQL_C_BINARY:
+	{
+		jclass objectClass = env->FindClass("[B");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "[B");
+
+		// Get the size of the parameter
+		//
+		jbyteArray byteArray = reinterpret_cast<jbyteArray>(jObj);
+		jsize jNumOfBytes = env->GetArrayLength(byteArray);
+
+		// Allocate space for the parameter
+		//
+		std::unique_ptr<jbyte[]> tempArr(new jbyte[jNumOfBytes]);
+
+		// Copy the value to the output buffer
+		//
+		jbyte *byteData = static_cast<jbyte*>(env->GetPrimitiveArrayCritical(byteArray, nullptr));
+		if (byteData)
+		{
+			memcpy(tempArr.get(),
+				   byteData,
+				   jNumOfBytes);
+
+			env->ReleasePrimitiveArrayCritical(byteArray, byteData, 0);
+		}
+		else
+		{
+			JniHelper::ThrowOnJavaException(env);
+		}
+
+		arg->m_value = tempArr.release();
+		arg->m_strLenOrInd = jNumOfBytes;
+
+		break;
+	}
+
+	case SQL_C_CHAR:
+	{
+		jclass objectClass = env->FindClass("java/lang/String");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/String");
+
+		jstring jStr = reinterpret_cast<jstring>(jObj);
+
+		const jstring jUtf8Str = env->NewStringUTF("UTF-8");
+		JniHelper::ThrowOnJavaException(env);
+
+		jmethodID jMethod = JniHelper::FindMethod(env,
+												  objectClass,
+												  "getBytes",
+												  "(Ljava/lang/String;)[B");
+
+		// Get the string in UTF-8 encoding
+		//
+		jbyteArray jUtf8BytesArr =
+			static_cast<jbyteArray>(env->CallObjectMethod(jStr, jMethod, jUtf8Str));
+		JniHelper::ThrowOnJavaException(env);
+
+		// Get the size of the string
+		//
+		jsize jNumOfBytes = env->GetArrayLength(static_cast<jarray>(jUtf8BytesArr));
+
+		// Allocate space for the string
+		//
+		std::unique_ptr<jbyte[]> tempArr(new jbyte[jNumOfBytes]);
+
+		// Copy the string to the output buffer
+		//
+		jbyte *byteData =
+			static_cast<jbyte*>(env->GetPrimitiveArrayCritical(jUtf8BytesArr, nullptr));
+		if (byteData)
+		{
+			memcpy(tempArr.get(),
+				   byteData,
+				   jNumOfBytes);
+
+			env->ReleasePrimitiveArrayCritical(jUtf8BytesArr, byteData, 0);
+		}
+		else
+		{
+			JniHelper::ThrowOnJavaException(env);
+		}
+
+		arg->m_value = tempArr.release();
+		arg->m_strLenOrInd = jNumOfBytes;
+
+		break;
+	}
+
+	case SQL_C_WCHAR:
+	{
+		jclass objectClass = env->FindClass("java/lang/String");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/lang/String");
+
+		jstring jStr = reinterpret_cast<jstring>(jObj);
+
+		// Get the size of the string
+		//
+		jsize strLenInChars = env->GetStringLength(jStr);
+
+		// Allocate space for the string
+		//
+		std::unique_ptr<jchar[]> tempArr(new jchar[strLenInChars]);
+
+		// Copy the string to the output buffer
+		//
+		env->GetStringRegion(jStr, 0, strLenInChars, tempArr.get());
+
+		SQLINTEGER strLenInBytes = static_cast<SQLINTEGER>(strLenInChars * sizeof(jchar));
+
+		arg->m_value = tempArr.release();
+		arg->m_strLenOrInd = strLenInBytes;
 
 		break;
 	}

@@ -325,6 +325,7 @@ inline jsize JniTypeHelper::GetSizeInBytes<jstring, true>(
 
 	totalBytes = env->GetArrayLength(static_cast<jbyteArray>(jUtf8Bytes));
 
+	env->DeleteLocalRef(jClass);
 	env->DeleteLocalRef(jUtf8Bytes);
 	env->DeleteLocalRef(jUtf8Label);
 
@@ -637,7 +638,7 @@ inline void JniTypeHelper::CopyStringOutputData<false>(
 			//
 			jsize strLenInChars = env->GetStringLength(str);
 
-			SQLINTEGER strLenInBytes = static_cast<SQLINTEGER>(strLenInChars * 2);
+			SQLINTEGER strLenInBytes = static_cast<SQLINTEGER>(strLenInChars * sizeof(jchar));
 
 			// Commit the string to the output buffer
 			//
@@ -678,6 +679,11 @@ inline void JniTypeHelper::CopyStringOutputData<true>(
 	jstring jUtf8Str = env->NewStringUTF("UTF-8");
 	JniHelper::ThrowOnJavaException(env);
 
+	jmethodID jMethod = JniHelper::FindMethod(env,
+											  jClass,
+											  "getBytes",
+											  "(Ljava/lang/String;)[B");
+
 	for (jsize i = 0; i < numRows; ++i)
 	{
 		// Get the string
@@ -687,11 +693,6 @@ inline void JniTypeHelper::CopyStringOutputData<true>(
 
 		if (str != nullptr)
 		{
-			jmethodID jMethod = JniHelper::FindMethod(env,
-													  jClass,
-													  "getBytes",
-													  "(Ljava/lang/String;)[B");
-
 			jbyteArray jUtf8BytesArr =
 				static_cast<jbyteArray>(env->CallObjectMethod(str, jMethod, jUtf8Str));
 			JniHelper::ThrowOnJavaException(env);
@@ -704,19 +705,25 @@ inline void JniTypeHelper::CopyStringOutputData<true>(
 			//
 			nullMap[i] = strLenInBytes;
 
-			// Commit the element to the output buffer
-			//
-			jbyte *byteData = env->GetByteArrayElements(jUtf8BytesArr, nullptr);
-
-			memcpy(target,
-				   byteData,
-				   strLenInBytes);
-
 			// Commit the string to the output buffer
 			//
-			env->ReleaseByteArrayElements(jUtf8BytesArr, byteData, 0);
+			jbyte *byteData =
+				static_cast<jbyte*>(env->GetPrimitiveArrayCritical(jUtf8BytesArr, nullptr));
+			if (byteData)
+			{
+				memcpy(target,
+					   byteData,
+					   strLenInBytes);
+
+				env->ReleasePrimitiveArrayCritical(jUtf8BytesArr, byteData, 0);
+			}
+			else
+			{
+				JniHelper::ThrowOnJavaException(env);
+			}
 
 			env->DeleteLocalRef(jUtf8BytesArr);
+			env->DeleteLocalRef(str);
 
 			// Advance the pointer past the string
 			//
@@ -761,15 +768,21 @@ inline void JniTypeHelper::CopyBinaryOutputData(
 
 			// Commit the element to the output buffer
 			//
-			jbyte *byteData = env->GetByteArrayElements(byteArray, nullptr);
+			jbyte *byteData =
+				static_cast<jbyte*>(env->GetPrimitiveArrayCritical(byteArray, nullptr));
+			if (byteData)
+			{
+				memcpy(target,
+					   byteData,
+					   elemSizeInBytes);
 
-			memcpy(target,
-				   byteData,
-				   elemSizeInBytes);
+				env->ReleasePrimitiveArrayCritical(byteArray, byteData, 0);
+			}
+			else
+			{
+				JniHelper::ThrowOnJavaException(env);
+			}
 
-			// Release the java array reference
-			//
-			env->ReleaseByteArrayElements(byteArray, byteData, 0);
 			env->DeleteLocalRef(byteArray);
 
 			// Advance the pointer past the binary string
