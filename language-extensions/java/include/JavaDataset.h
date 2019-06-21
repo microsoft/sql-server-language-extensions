@@ -156,7 +156,7 @@ private:
 
 	// Internal add string column
 	//
-	template<bool isUnicode>
+	template<bool isUTF8>
 	void AddStringColumnInternal(
 		_In_ jint colId,
 		_In_ SQLSMALLINT colType,

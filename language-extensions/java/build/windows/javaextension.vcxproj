@@ -29,7 +29,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -37,6 +37,7 @@
         _WIN64;
         _WINDOWS;
         _DEBUG;
+        DEBUG
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
