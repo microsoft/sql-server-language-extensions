@@ -36,8 +36,7 @@
       <PreprocessorDefinitions>
         _WIN64;
         _WINDOWS;
-        _DEBUG;
-        DEBUG
+        DEBUG;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
