@@ -1120,6 +1120,33 @@ void JavaArgContainer::CreateOdbcArgObject(
 		break;
 	}
 
+	case SQL_C_TYPE_DATE:
+	{
+		jclass objectClass = env->FindClass("java/sql/Date");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/sql/Date");
+
+		jmethodID dateToStringMethod = env->GetMethodID(objectClass,
+														"toString",
+														"()Ljava/lang/String;");
+		jmethodID dateValueOfMethod = env->GetStaticMethodID(objectClass,
+															 "valueOf",
+															 "(Ljava/lang/String;)Ljava/sql/Date;");
+
+		std::unique_ptr<SQL_DATE_STRUCT> tempDate(new SQL_DATE_STRUCT());
+		JniTypeHelper::JavaSqlDateToDateStruct(
+			env,
+			jObj,
+			objectClass,
+			dateToStringMethod,
+			dateValueOfMethod,
+			*tempDate.get());
+
+		arg->m_value = tempDate.release();
+		arg->m_strLenOrInd = sizeof(SQL_DATE_STRUCT);
+
+		break;
+	}
+
 	default:
 		throw runtime_error("Unsupported output parameter type encountered");
 	}
