@@ -1132,17 +1132,49 @@ void JavaArgContainer::CreateOdbcArgObject(
 															 "valueOf",
 															 "(Ljava/lang/String;)Ljava/sql/Date;");
 
-		std::unique_ptr<SQL_DATE_STRUCT> tempDate(new SQL_DATE_STRUCT());
+		std::unique_ptr<SQL_DATE_STRUCT> tempValue(new SQL_DATE_STRUCT());
 		JniTypeHelper::JavaSqlDateToDateStruct(
 			env,
 			jObj,
 			objectClass,
 			dateToStringMethod,
 			dateValueOfMethod,
-			*tempDate.get());
+			*tempValue.get());
 
-		arg->m_value = tempDate.release();
+		arg->m_value = tempValue.release();
 		arg->m_strLenOrInd = sizeof(SQL_DATE_STRUCT);
+
+		break;
+	}
+
+	case SQL_C_TYPE_TIMESTAMP:
+	{
+		jclass objectClass = env->FindClass("java/sql/Timestamp");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/sql/Timestamp");
+
+		jmethodID tsToStringMethod = JniHelper::FindMethod(env,
+													   objectClass,
+													   "toString",
+													   "()Ljava/lang/String;");
+		jmethodID tsGetNanosMethod = JniHelper::FindMethod(env, objectClass, "getNanos", "()I");
+
+		jmethodID tsValueOfMethod = env->GetStaticMethodID(objectClass,
+														   "valueOf",
+														   "(Ljava/lang/String;)Ljava/sql/Timestamp;");
+		JniHelper::ThrowOnJavaException(env);
+
+		std::unique_ptr<SQL_TIMESTAMP_STRUCT> tempValue(new SQL_TIMESTAMP_STRUCT());
+		JniTypeHelper::JavaTimestampToTimestampStruct(
+			env,
+			jObj,
+			objectClass,
+			tsToStringMethod,
+			tsGetNanosMethod,
+			tsValueOfMethod,
+			*tempValue.get());
+
+		arg->m_value = tempValue.release();
+		arg->m_strLenOrInd = sizeof(SQL_TIMESTAMP_STRUCT);
 
 		break;
 	}
