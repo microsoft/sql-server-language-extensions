@@ -1179,6 +1179,42 @@ void JavaArgContainer::CreateOdbcArgObject(
 		break;
 	}
 
+	case SQL_C_NUMERIC:
+	{
+		jclass objectClass = env->FindClass("java/math/BigDecimal");
+		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/math/BigDecimal");
+
+		jmethodID bigDecUnscaledValue = JniHelper::FindMethod(env,
+														  objectClass,
+														  "unscaledValue",
+														  "()Ljava/math/BigInteger;");
+		jclass bigIntegerClass = env->FindClass("java/math/BigInteger");
+		jmethodID bigIntToByteArr = JniHelper::FindMethod(env, bigIntegerClass, "toByteArray", "()[B");
+		jmethodID bigIntSignum = JniHelper::FindMethod(env, bigIntegerClass, "signum", "()I");
+		jmethodID bigIntAbs = JniHelper::FindMethod(env,
+													bigIntegerClass,
+													"abs",
+													"()Ljava/math/BigInteger;");
+
+		std::unique_ptr<SQL_NUMERIC_STRUCT> tempValue(new SQL_NUMERIC_STRUCT());
+		JniTypeHelper::BigDecimalToNumericStruct(
+			env,
+			jObj,
+			static_cast<SQLCHAR>(arg->GetSize()),
+			arg->GetDecimalDigits(),
+			bigDecUnscaledValue,
+			bigIntToByteArr,
+			bigIntSignum,
+			bigIntAbs,
+			"output parameter ID " + std::to_string(arg->GetId()),
+			*tempValue.get());
+
+		arg->m_value = tempValue.release();
+		arg->m_strLenOrInd = sizeof(SQL_NUMERIC_STRUCT);
+
+		break;
+	}
+
 	default:
 		throw runtime_error("Unsupported output parameter type encountered");
 	}

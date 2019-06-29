@@ -1255,17 +1255,17 @@ inline void JniTypeHelper::CopyNumericOutputData(
 
 		if (bigDecimal != nullptr)
 		{
-			BigDecimalToNumericStruct(env,
-									  bigDecimal,
-									  colPrecision,
-									  colScale,
-									  bigDecUnscaledValue,
-									  bigIntToByteArr,
-									  bigIntSignum,
-									  bigIntAbs,
-									  colId,
-									  i,
-									  target[i]);
+			BigDecimalToNumericStruct(
+				env,
+				bigDecimal,
+				colPrecision,
+				colScale,
+				bigDecUnscaledValue,
+				bigIntToByteArr,
+				bigIntSignum,
+				bigIntAbs,
+				"output column ID " + std::to_string(colId) + " and row ID " + std::to_string(i),
+				target[i]);
 
 			env->DeleteLocalRef(bigDecimal);
 
@@ -1296,8 +1296,7 @@ inline void JniTypeHelper::BigDecimalToNumericStruct(
 	_In_ jmethodID			 bigIntToByteArr,
 	_In_ jmethodID			 bigIntSignum,
 	_In_ jmethodID			 bigIntAbs,
-	_In_ jint				 colId,
-	_In_ jsize				 rowId,
+	_In_ std::string		 &&argDescription,
 	_Out_ SQL_NUMERIC_STRUCT &odbcNumeric)
 {
 	// Number of required references:
@@ -1345,8 +1344,7 @@ inline void JniTypeHelper::BigDecimalToNumericStruct(
 
 	if (size > SQL_MAX_NUMERIC_LEN)
 	{
-		throw std::runtime_error("The numeric value in output column ID " + std::to_string(colId) +
-								 " and row ID " + std::to_string(rowId) +
+		throw std::runtime_error("The numeric value in " + argDescription + 
 								 " is out of range for SQL Server numeric representation");
 	}
 
