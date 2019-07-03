@@ -237,8 +237,7 @@ public:
 		_In_ jmethodID			 bigIntToByteArr,
 		_In_ jmethodID			 bigIntSignum,
 		_In_ jmethodID			 bigIntAbs,
-		_In_ jint				 colId,
-		_In_ jsize				 rowId,
+		_In_ std::string		 &&argDescription,
 		_Out_ SQL_NUMERIC_STRUCT &odbcNumeric);
 
 	// Converts an ODBC SQL_TIMESTAMP_STRUCT to a java.sql.Timestamp object
