@@ -108,21 +108,20 @@ bool JavaExtensionUtils::IsValidFile(_In_ const string &file)
 //
 string JavaExtensionUtils::GetEnvVariable(_In_ const string &name)
 {
-	size_t valueLen = 0;
 	string result = "";
 
 	// Check if the enviroment variable exists
 	//
-	if (0 == getenv_s(&valueLen, nullptr, 0, name.c_str()))
-	{
-		if (valueLen != 0)
-		{
-			unique_ptr<char[]> value = make_unique<char[]>(valueLen);
+	DWORD valueLen = GetEnvironmentVariableA(name.c_str(), nullptr, 0);
 
-			if (0 == getenv_s(&valueLen, value.get(), valueLen, name.c_str()))
-			{
-				result = value.get();
-			}
+	if (valueLen != 0)
+	{
+		unique_ptr<char[]> value = make_unique<char[]>(valueLen + 1);
+
+		DWORD valueLen2 = GetEnvironmentVariableA(name.c_str(), value.get(), valueLen + 1);
+		if (valueLen2 + 1 == valueLen)
+		{
+			result = value.get();
 		}
 	}
 
