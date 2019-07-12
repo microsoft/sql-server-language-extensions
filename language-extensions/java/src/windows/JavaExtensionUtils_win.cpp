@@ -113,12 +113,11 @@ string JavaExtensionUtils::GetEnvVariable(_In_ const string &name)
 	// Check if the enviroment variable exists
 	//
 	DWORD valueLen = GetEnvironmentVariableA(name.c_str(), nullptr, 0);
-
 	if (valueLen != 0)
 	{
-		unique_ptr<char[]> value = make_unique<char[]>(valueLen + 1);
+		unique_ptr<char[]> value = make_unique<char[]>(valueLen);
 
-		DWORD valueLen2 = GetEnvironmentVariableA(name.c_str(), value.get(), valueLen + 1);
+		DWORD valueLen2 = GetEnvironmentVariableA(name.c_str(), value.get(), valueLen);
 		if (valueLen2 + 1 == valueLen)
 		{
 			result = value.get();
