@@ -25,7 +25,7 @@ GO
 -- You might need to set read permisisons for SQLRUserGroup and ALL APPLICATION PACKAGES, depending on where you save the .zip file
 CREATE EXTERNAL LANGUAGE Java
 FROM
-(CONTENT = N'[Path to .zip file]\javaextension.zip', FILE_NAME = 'javaextension.dll')
+(CONTENT = N'[Path to .zip file]\java-lang-extension.zip', FILE_NAME = 'javaextension.dll')
 GO
 
 --The extension jar is also saved under a predefined path as part of the sql server installation
