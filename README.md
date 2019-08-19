@@ -6,7 +6,7 @@ Overview:
 The directory \extension-host\ contains the extension API, while \language-extensions\ contains all of the extensions (i.e. language-extensions\java).
 
 # Build and Test
-Each extension should contain it's own building process.
+Each extension should contain its own building process.
 
 Java Extension:
 There are multiple ways to build the Java Extension.
