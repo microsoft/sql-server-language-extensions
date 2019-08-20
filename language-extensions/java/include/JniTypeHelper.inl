@@ -1322,7 +1322,9 @@ inline void JniTypeHelper::BigDecimalToNumericStruct(
 	jint signum = env->CallIntMethod(jBigInteger, bigIntSignum);
 	JniHelper::ThrowOnJavaException(env);
 
-	if (signum == 1)
+	// Positive and 0 values are marked as positive
+	//
+	if (signum == 1 || signum == 0)
 	{
 		odbcNumeric.sign = 1;
 	}
