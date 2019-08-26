@@ -33,7 +33,7 @@ GO
 --The extension jar is also saved under a predefined path as part of the sql server installation
 --Linux path: /opt/mssql-extensibility/lib/mssql-java-lang-extension.jar
 CREATE EXTERNAL LIBRARY sdk
-FROM (CONTENT = '/opt/mssql/lib/mssql-java-lang-extension.jar')
+FROM (CONTENT = '/opt/mssql-extensibility/lib/mssql-java-lang-extension.jar')
 WITH (LANGUAGE = 'Java');
 
 --Create external library for the sample jar (including the RegexSample class you compiled)
