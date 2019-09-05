@@ -21,13 +21,13 @@ INSERT INTO testdata(id, "text") VALUES (2, 'This sentence does not')
 INSERT INTO testdata(id, "text") VALUES (3, 'I love Java!')
 GO
 
---CTP 3.0: Make sure you create a .zip file from the javaextension.dll file saved here: [SQL Server install path]\MSSQL\Binn\javaextension.dll
--- You might need to set read permisisons for SQLRUserGroup and ALL APPLICATION PACKAGES, depending on where you save the .zip file
+--The javaextension.dll file saved here: [SQL Server install path]\MSSQL\Binn\javaextension.dll
 CREATE EXTERNAL LANGUAGE Java
 FROM
-(CONTENT = N'[Path to .zip file]\java-lang-extension.zip', FILE_NAME = 'javaextension.dll',
+(CONTENT = N'[SQL Server install path]\MSSQL\Binn\java-lang-extension.zip', FILE_NAME = 'javaextension.dll',
 ENVIRONMENT_VARIABLES = N'{"JRE_HOME":"<path to JRE>"}' );
 GO
+
 
 --The extension jar is also saved under a predefined path as part of the sql server installation
 --Win path: <SQL Server installation directory>\MSSQL\Binn\mssql-java-lang-extension.jar
