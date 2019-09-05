@@ -29,14 +29,6 @@ FROM
 ENVIRONMENT_VARIABLES = N'{"JRE_HOME":"<path to JRE>"}' );
 GO
 
-CREATE EXTERNAL LANGUAGE Java
-FROM (CONTENT = N'/opt/mssql-extensibility/lib/java-lang-extension.tar.gz', 
-file_name = 'javaextension.so',
---Note that if you chose to install the Microsoft supported Zulu Java runtime upon setup, 
--- or if you are using big data clusters, you should set the env. variable JRE_HOME:
-ENVIRONMENT_VARIABLES = N'{"JRE_HOME":"/opt/mssql/lib/zulu-jre-11"}');
-GO
-
 --The extension jar is also saved under a predefined path as part of the sql server installation
 --Win path: <SQL Server installation directory>\MSSQL\Binn\mssql-java-lang-extension.jar
 CREATE EXTERNAL LIBRARY sdk
