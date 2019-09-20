@@ -388,11 +388,13 @@ void JavaDataset::Init(_In_ JNIEnv *env, _In_ const string &className)
 					}
 					else
 					{
+						JniHelper::ThrowOnJavaException(m_env, "Could not create dataset object");
 						throw runtime_error("Could not create dataset object");
 					}
 				}
 				else
 				{
+					JniHelper::ThrowOnJavaException(m_env, "Could not find dataset constructor");
 					throw runtime_error("Could not find dataset constructor");
 				}
 			}
@@ -403,6 +405,7 @@ void JavaDataset::Init(_In_ JNIEnv *env, _In_ const string &className)
 		}
 		else
 		{
+			JniHelper::ThrowOnJavaException(m_env, "Could not find dataset class");
 			throw runtime_error("Could not find dataset class");
 		}
 	}
@@ -648,13 +651,10 @@ void JavaDataset::GetColumnInternal(
 
 		GetColumnNullMap(colId, numNullMapRows, nullMap);
 
-		if (numNullMapRows != 0)
+		if (numNullMapRows != 0 && numNullMapRows != numRows)
 		{
-			if (numNullMapRows != numRows)
-			{
-				throw runtime_error(
-						  "Number of rows in null map does not equal number of rows in column data");
-			}
+			throw runtime_error(
+					  "Number of rows in null map does not equal number of rows in column data");
 		}
 	}
 }

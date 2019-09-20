@@ -17,13 +17,13 @@
 class JniHelper
 {
 public:
-	// Checks if an exception occurred in JVM and logs the exception
-	//
-	static SQLRETURN HandleJavaException(_In_ JNIEnv *env);
-
-	// Checks if an Java exception occurred and throws a exception
+	// Checks if an Java exception occurred and throws an exception
 	//
 	static void ThrowOnJavaException(_In_ JNIEnv *env);
+
+	// Checks if an Java exception occurred and throws an exception
+	//
+	static void ThrowOnJavaException(_In_ JNIEnv *env, _In_ std::string &&errorMsg);
 
 	// Logs the Java exception
 	//

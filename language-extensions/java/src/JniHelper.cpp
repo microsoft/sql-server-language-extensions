@@ -30,55 +30,6 @@
 
 using namespace std;
 
-// The name of the method to invoke to retrieve an exception's details
-//
-const std::string x_getExceptionMsgMethodName = "printStackTrace";
-
-//--------------------------------------------------------------------------------------------------
-// Name: JniHelper::HandleJavaException
-//
-// Description:
-//  When an exception occurs in the user program, attempt to
-//  print out relevant information given the exception
-//
-SQLRETURN JniHelper::HandleJavaException(_In_ JNIEnv *env)
-{
-	// Auto release local references
-	// 1 for the exception object
-	// 1 for the exception class
-	//
-	AutoJniLocalFrame jFrame(env, 2);
-
-	SQLRETURN status = SQL_SUCCESS;
-
-	jthrowable exception = env->ExceptionOccurred();
-
-	if (exception != nullptr)
-	{
-		status = SQL_ERROR;
-
-		// Clear the exception and attempt to log it if the exception class can be found
-		// and the exception details can be found.
-		//
-		env->ExceptionClear();
-		jclass exceptionClass = env->GetObjectClass(exception);
-		if (exceptionClass != nullptr)
-		{
-			jmethodID getStringId = env->GetMethodID(exceptionClass,
-													 x_getExceptionMsgMethodName.c_str(),
-													 "()V");
-
-			if (getStringId != nullptr)
-			{
-				LOG_JAVA_EXCEPTION("");
-				env->CallObjectMethod(exception, getStringId);
-			}
-		}
-	}
-
-	return status;
-}
-
 //--------------------------------------------------------------------------------------------------
 // Name: JniHelper::ThrownOnJavaException
 //
@@ -87,14 +38,22 @@ SQLRETURN JniHelper::HandleJavaException(_In_ JNIEnv *env)
 //
 void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env)
 {
-	// Auto cleanup reference to the exception
-	//
-	AutoJniLocalFrame jFrame(env, 1);
-	jthrowable exception = env->ExceptionOccurred();
+	ThrowOnJavaException(env, "");
+}
 
-	if (exception != nullptr)
+//--------------------------------------------------------------------------------------------------
+// Name: JniHelper::ThrownOnJavaException
+//
+// Description:
+//  Throw exception with the provided error message when a Java exception has occurred.
+//
+void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env, _In_ std::string &&errorMsg)
+{
+	jboolean isException = env->ExceptionCheck();
+
+	if (isException == JNI_TRUE)
 	{
-		throw java_exception_error("An exception has occurred in Java");
+		throw java_exception_error(errorMsg);
 	}
 }
 
@@ -106,33 +65,12 @@ void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env)
 //
 void JniHelper::LogJavaException(_In_ JNIEnv *env)
 {
-	// Auto release local references
-	// 1 for the exception object
-	// 1 for the exception class
-	//
-	AutoJniLocalFrame jFrame(env, 2);
+	jboolean isException = env->ExceptionCheck();
 
-	jthrowable exception = env->ExceptionOccurred();
-
-	if (exception != nullptr)
+	if (isException == JNI_TRUE)
 	{
-		// Clear the exception and attempt to log it if the exception class can be found
-		// and the exception details can be found.
-		//
+		env->ExceptionDescribe();
 		env->ExceptionClear();
-		jclass exceptionClass = env->GetObjectClass(exception);
-
-		if (exceptionClass != nullptr)
-		{
-			jmethodID getStringId = env->GetMethodID(exceptionClass,
-													 x_getExceptionMsgMethodName.c_str(),
-													 "()V");
-
-			if (getStringId != nullptr)
-			{
-				env->CallObjectMethod(exception, getStringId);
-			}
-		}
 	}
 }
 

@@ -397,12 +397,14 @@ void JavaSession::InitUserClassObject()
 	jclass jUserClass = m_env->FindClass(m_mainClassName.c_str());
 	if (jUserClass == nullptr)
 	{
+		JniHelper::ThrowOnJavaException(m_env, "Failed to find class " + m_mainClassName);
 		throw runtime_error("Failed to find class " + m_mainClassName);
 	}
 
 	jclass jBaseClass = m_env->FindClass(x_javaSdkBaseExecutorClass.c_str());
 	if (jBaseClass == nullptr)
 	{
+		JniHelper::ThrowOnJavaException(m_env, "Failed to find class " + x_javaSdkBaseExecutorClass);
 		throw runtime_error("Failed to find class " + x_javaSdkBaseExecutorClass);
 	}
 
@@ -418,16 +420,16 @@ void JavaSession::InitUserClassObject()
 	// Create the object and call the default constructor
 	//
 	jmethodID methodId = m_env->GetMethodID(jUserClass, "<init>", "()V");
-
 	if (methodId == nullptr)
 	{
+		JniHelper::ThrowOnJavaException(m_env, "Failed to find default constructor for class " + m_mainClassName);
 		throw runtime_error("Failed to find default constructor for class " + m_mainClassName);
 	}
 
 	jobject jUserObj = m_env->NewObject(jUserClass, methodId);
-
 	if (jUserObj == nullptr)
 	{
+		JniHelper::ThrowOnJavaException(m_env, "Failed to create object for class " + m_mainClassName);
 		throw runtime_error("Failed to create object for class " + m_mainClassName);
 	}
 
@@ -471,9 +473,14 @@ void JavaSession::GetUserClassInfo()
 		// Since these are members of the abstract executor class, and we verified the user class
 		// derives the base class this is unlikely to happen.
 		//
+		JniHelper::ThrowOnJavaException(
+			m_env,
+			"Failed to find class members " + x_javaExtensionVersionMemberName + "," + x_inputDatasetMemberName + "," +
+			x_outputDatasetMemberName);
+
 		throw runtime_error(
-				  "Failed to class members " + x_javaExtensionVersionMemberName + "," + x_inputDatasetMemberName + "," +
-				  x_outputDatasetMemberName);
+			"Failed to find class members " + x_javaExtensionVersionMemberName + "," + x_inputDatasetMemberName + "," +
+			x_outputDatasetMemberName);
 	}
 
 	jint version = m_env->GetIntField(m_userObject, versionId);

@@ -203,7 +203,7 @@ SQLRETURN InitSession(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_JAVA_EXCEPTION(ex.what());
 
 		JniHelper::LogJavaException(g_env);
 	}
@@ -271,7 +271,7 @@ SQLRETURN InitColumn(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_JAVA_EXCEPTION(ex.what());
 
 		JniHelper::LogJavaException(g_env);
 	}
@@ -338,7 +338,7 @@ SQLRETURN InitParam(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_JAVA_EXCEPTION(ex.what());
 
 		JniHelper::LogJavaException(g_env);
 	}
@@ -398,7 +398,7 @@ SQLRETURN Execute(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_JAVA_EXCEPTION(ex.what());
 
 		JniHelper::LogJavaException(g_env);
 	}
@@ -547,7 +547,7 @@ SQLRETURN GetOutputParam(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_JAVA_EXCEPTION(ex.what());
 
 		JniHelper::LogJavaException(g_env);
 	}
