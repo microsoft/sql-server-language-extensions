@@ -142,7 +142,22 @@ build:
           signing_options:
             profile: 'none'
 
-# An optional user defined stage for running tests that need network access. Note that unit tests and others that do not 
+package:
+  commands:                                      # This is a sequence of script files to be executed one after another
+    - !!buildcommand
+      name: 'Create Java extension zip'
+      command: 'build\create-java-extension-zip.cmd'
+      artifacts:
+        - from: 'language-extensions\java\build\windows\x64\debug\packages'
+          to: 'out\java-extension\packages\debug'
+          include:
+            - 'java-lang-extension.zip'
+        - from: 'language-extensions\java\build\windows\x64\release\packages'
+          to: 'out\java-extension\packages\release'
+          include:
+            - 'java-lang-extension.zip'
+
+# An optional user defined stage for running tests that need network access. Note that unit tests and others that do not
 # need network access can be run in build or package stages itself. Any artifacts built in this stage will be separated
 # out and will not be signed. However, we recommend that tests always be run in the test stage.
 # Eventually, we may even skip test artifacts completely.
@@ -160,21 +175,6 @@ test:
           type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
           include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
             - 'TestReport*.xml'
-
-package:
-  commands:                                      # This is a sequence of script files to be executed one after another
-    - !!buildcommand
-      name: 'Create Java extension zip'
-      command: 'build\create-java-extension-zip.cmd'
-      artifacts:
-        - from: 'language-extensions\java\build\windows\x64\debug\packages'
-          to: 'out\java-extension\packages\debug'
-          include:
-            - 'java-lang-extension.zip'
-        - from: 'language-extensions\java\build\windows\x64\release\packages'
-          to: 'out\java-extension\packages\release'
-          include:
-            - 'java-lang-extension.zip'
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:
