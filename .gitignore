@@ -33,6 +33,9 @@
 
 # Build ouput
 .build/
+*.err
+*.wrn
+*.log
 
 # Nuget Packages
 packages/
