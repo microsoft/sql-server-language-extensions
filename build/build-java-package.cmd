@@ -1,5 +1,4 @@
 
-@ECHO off
 
 REM Nuget packages directory and location of the JDK
 SET PACKAGES_ROOT="%~dp0..\packages"

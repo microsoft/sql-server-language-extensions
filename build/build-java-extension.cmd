@@ -1,4 +1,3 @@
-@ECHO off
 SETLOCAL
 
 REM Nuget packages directory and location of the JDK
@@ -18,7 +17,7 @@ IF NOT DEFINED CONFIGURATION (SET CONFIGURATION=debug)
 IF /I %CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
 
 REM Output directory and output JAR name
-SET TARGET="%~dp0..\.build\java-extension\target\%MSVC_BUILD_CONFIGURATION%"
+SET TARGET="%~dp0\..\.build\java-extension\target\%MSVC_BUILD_CONFIGURATION%"
 SET TARGET_CLASSES=%TARGET%\classes
 SET OUTPUT_JAR=%TARGET%\mssql-java-lang-extension.jar
 
@@ -27,7 +26,7 @@ mkdir %TARGET%
 mkdir %TARGET_CLASSES%
 
 REM Save current location, while moving to the Java source directory
-pushd "%~dp0..\language-extensions\java\sdk\src\java\main\java"
+pushd "%~dp0\..\language-extensions\java\sdk\src\java\main\java"
 
 REM Write all of the sources to file for compilation
 dir /s /B *.java > %TARGET%\sources.txt
@@ -68,7 +67,7 @@ if not defined DevEnvDir (
 )
 
 REM Build the project
-msbuild %EnlRoot%language-extensions\java\build\windows\javaextension.vcxproj /m /p:JAVA_HOME=%JAVA_HOME% /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64 
+msbuild %EnlRoot%language-extensions\java\build\windows\javaextension.vcxproj /m /p:JAVA_HOME=%JAVA_HOME% /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
 IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
 
 SET BUILD_OUTPUT=%EnlRoot%language-extensions\java\build\windows\x64\%MSVC_BUILD_CONFIGURATION%
