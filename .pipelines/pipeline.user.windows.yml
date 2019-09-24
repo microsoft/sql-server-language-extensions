@@ -42,7 +42,7 @@ restore:                                         # Stage for restoring dependenc
  commands:                                       # Sequence of commands to execute in this stage.
    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
      name: 'Restore Packages'                    # A user defined name for this step.
-     command: 'restore-packages.cmd'         # The repository relative path to the script to run to restore packages.
+     command: 'build\restore-packages.cmd'         # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
@@ -80,8 +80,12 @@ version:
 build:
   commands:                                                             # This is a sequence of script files to be executed one after another
     - !!buildcommand
+      name: 'Build Google Test'
+      command: 'build\build-gtest.cmd'
+      arguments:  'debug relwithdebinfo'
+    - !!buildcommand
       name: 'Build Java extension'
-      command: 'build-java-extension.cmd'
+      command: 'build\build-java-extension.cmd'
       arguments:  'debug release'
       artifacts:
         - from: '.build\java-extension\target\debug'
@@ -131,7 +135,7 @@ package:
   commands:                                                             # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Create Java extension zip'
-      command: 'create-java-extension-zip.cmd'
+      command: 'build\create-java-extension-zip.cmd'
       artifacts:
         - from: 'language-extensions\java\build\windows\x64\debug\packages'
           to: 'out\java-extension\packages\debug'
@@ -143,7 +147,7 @@ package:
             - 'java-lang-extension.zip'
 
 # There are no dlls to perform static analysis yet
-static_analysis_options:                          
+static_analysis_options:
   fxcop_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
@@ -152,9 +156,9 @@ static_analysis_options:
     files_to_scan:
       - exclude:
         - '**/*.txt'
-  moderncop_options:           
+  moderncop_options:
     disable_tool_scan: true
   binskim_options:
-    files_to_scan:     
+    files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
