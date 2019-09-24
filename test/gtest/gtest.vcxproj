@@ -34,7 +34,7 @@
 
 	Need set the following environment variables. This is set in $(EnlistmentRoot)\build\build-gtest.cmd
 		ARROW_BUILD_TOOLCHAIN = $(EnlistmentRoot)\submodules\Data-ThirdParty-Apache-ArrowDevToolChain
-		GTEST_HOME = $(EnlistmentRoot)\.build\gtest
+		GTEST_HOME = $(EnlistmentRoot)\test\gtest
 
 	Other important variables like SUBMODULES,  are defined in $(EnlistmentRoot)\Directory.Build.props.
 	-->
@@ -50,7 +50,7 @@
 
 	<Target Name="Clean">
 		<Exec Command="rd /s /q &quot;$(GTEST_WORKING_DIR)&quot;" />
-		<Exec Command="rd /s /q &quot;$(EnlistmentRoot)\.build\gtest\x64&quot;" />
+		<Exec Command="rd /s /q &quot;$(GTEST_HOME)\x64&quot;" />
 	</Target>
 
 	<!-- create working directory for storing generated vcxproj files and obj files -->
