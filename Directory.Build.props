@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<!-- Set common platform properties. -->
+	<PropertyGroup>
+		<Platforms>x64</Platforms>
+		<Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+		<BuildInParallel Condition=" '$(BuildInParallel)' == '' " >True</BuildInParallel>
+
+		<!-- If Configuration is not set, Debug is default -->
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+
+		<!-- If CMAKE_CONFIGURATION is not set, we infer CMAKE_CONFIGURATION from $(Configuration). -->
+		<CMAKE_CONFIGURATION Condition=" '$(CMAKE_CONFIGURATION)' == '' and '$(Configuration.ToLower())' != 'debug' " >RelWithDebInfo</CMAKE_CONFIGURATION>
+		<CMAKE_CONFIGURATION Condition=" '$(CMAKE_CONFIGURATION)' == '' and '$(Configuration.ToLower())' == 'debug' " >Debug</CMAKE_CONFIGURATION>
+
+		<!-- When CMAKE_CONFIGURATION is set, we infer MSVC_BUILD_CONFIGURATION from CMAKE_CONFIGURATION.
+			 MSVC (non-cmake) build configuration is used to build vcxproj files that have been checked in -->
+		<MSVC_BUILD_CONFIGURATION Condition=" '$(CMAKE_CONFIGURATION.ToLower())' == 'debug' ">debug</MSVC_BUILD_CONFIGURATION>
+		<MSVC_BUILD_CONFIGURATION Condition=" '$(CMAKE_CONFIGURATION.ToLower())' != 'debug' ">release</MSVC_BUILD_CONFIGURATION>
+	</PropertyGroup>
+
+	<!-- Set values for common variables. -->
+	<PropertyGroup>
+		<EnlistmentRoot>$(MSBuildThisFileDirectory.TrimEnd('\\'))</EnlistmentRoot>
+		<SUBMODULES>$(EnlistmentRoot)\submodules</SUBMODULES>
+		<ARROW_BUILD_TOOLCHAIN>$(SUBMODULES)\Data-ThirdParty-Apache-ArrowDevToolChain</ARROW_BUILD_TOOLCHAIN>
+		<LANGUAGE_EXTENSIONS_ROOT>$(EnlistmentRoot)\language-extensions</LANGUAGE_EXTENSIONS_ROOT>
+		<TEST_ROOT>$(EnlistmentRoot)\test</TEST_ROOT>
+	</PropertyGroup>
+
+	<!-- Version properties for NuGets consumed in the solution. -->
+	<PropertyGroup>
+		<GTestPackageVersion Condition=" '$(GTestPackageVersion)' == '' ">1.8.0</GTestPackageVersion>
+	</PropertyGroup>
+</Project>

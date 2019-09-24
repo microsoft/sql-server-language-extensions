@@ -36,3 +36,6 @@
 
 # Nuget Packages
 packages/
+
+# Build states
+*.lastbuildstate

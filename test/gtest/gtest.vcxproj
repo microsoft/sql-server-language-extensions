@@ -1,0 +1,80 @@
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup Label="ProjectConfigurations">
+		<ProjectConfiguration Include="Debug|x64">
+			<Configuration>Debug</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="RelWithDebInfo|x64">
+			<Configuration>RelWithDebInfo</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+	</ItemGroup>
+	<PropertyGroup Label="Globals">
+		<VCProjectVersion>15.0</VCProjectVersion>
+		<ProjectGuid>{85BCFFBC-4C2C-4960-BAEF-6FCDF1E6E16B}</ProjectGuid>
+		<Keyword>Win32Proj</Keyword>
+		<Platform>x64</Platform>
+	</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+	<!--
+	These are the variable that cmake used for generating and building vcxproj files.
+
+	Need set the following environment variables. This is set in $(EnlistmentRoot)\build\build-gtest.cmd
+		ARROW_BUILD_TOOLCHAIN = $(EnlistmentRoot)\submodules\Data-ThirdParty-Apache-ArrowDevToolChain
+		GTEST_HOME = $(EnlistmentRoot)\.build\gtest
+
+	Other important variables like SUBMODULES,  are defined in $(EnlistmentRoot)\Directory.Build.props.
+	-->
+	<PropertyGroup>
+		<GENERATOR>Visual Studio 15 2017 Win64</GENERATOR>
+		<ADDITIONAL_CMAKE_COMPILER_FLAG>/WX /MP /guard:cf /Qspectre</ADDITIONAL_CMAKE_COMPILER_FLAG>
+		<GFLAGS_SHARED_LIB>$(SUBMODULES)\Data-ThirdParty-Apache-ArrowDevToolChain\lib\gflags.lib</GFLAGS_SHARED_LIB>
+		<GFLAGS_STATIC_LIB>$(SUBMODULES)\Data-ThirdParty-Apache-ArrowDevToolChain\lib\gflags_static.lib</GFLAGS_STATIC_LIB>
+		<GFLAGS_INCLUDE_DIR>$(SUBMODULES)\Data-ThirdParty-Apache-ArrowDevToolChain\include</GFLAGS_INCLUDE_DIR>
+		<GTEST_SRC>$(SUBMODULES)\Data-ThirdParty-Google-GoogleTest</GTEST_SRC>
+		<GTEST_WORKING_DIR>$(EnlistmentRoot)\.build\gtest</GTEST_WORKING_DIR>
+	</PropertyGroup>
+
+	<Target Name="Clean">
+		<Exec Command="rd /s /q &quot;$(GTEST_WORKING_DIR)&quot;" />
+		<Exec Command="rd /s /q &quot;$(EnlistmentRoot)\.build\gtest\x64&quot;" />
+	</Target>
+
+	<!-- create working directory for storing generated vcxproj files and obj files -->
+	<Target Name="CreateDir">
+		<Exec Command="if not exist $(GTEST_WORKING_DIR) mkdir $(GTEST_WORKING_DIR)"
+			  WorkingDirectory="$(EnlistmentRoot)" />
+	</Target>
+
+	<!-- Use cmake to generate vcxproj file for building gtest -->
+	<Target Name="GenerateGtest"
+			DependsOnTargets="CreateDir" >
+		<Exec Command="$(ARROW_BUILD_TOOLCHAIN)\bin\cmake ^
+					   -G &quot;$(GENERATOR)&quot; ^
+					   -Dgtest_force_shared_crt=ON ^
+					   -DCMAKE_INSTALL_PREFIX=&quot;$(GTEST_WORKING_DIR)&quot; ^
+					   &quot;$(GTEST_SRC)&quot;"
+			  WorkingDirectory="$(GTEST_WORKING_DIR)" />
+	</Target>
+
+	<!-- Build gtest -->
+	<Target Name="BuildGtest"
+			DependsOnTargets="CreateDir;GenerateGtest"
+			BeforeTargets="Build" >
+		<Exec Command="$(ARROW_BUILD_TOOLCHAIN)\bin\cmake --build . --config $(CMAKE_CONFIGURATION) --target INSTALL"
+			  WorkingDirectory="$(GTEST_WORKING_DIR)" />
+	</Target>
+</Project>
