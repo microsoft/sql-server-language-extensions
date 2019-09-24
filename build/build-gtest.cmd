@@ -2,8 +2,7 @@ SETLOCAL
 
 REM Set environment variables
 SET EnlRoot=%~dp0\..\
-SET ARROW_BUILD_TOOLCHAIN=%EnlRoot%submodules\Data-ThirdParty-Apache-ArrowDevToolChain
-SET GTEST_HOME=%EnlRoot%.build\gtest\
+SET GTEST_HOME=%EnlRoot%test\gtest\
 
 :LOOP
 
