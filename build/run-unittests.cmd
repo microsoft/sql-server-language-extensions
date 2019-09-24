@@ -8,7 +8,7 @@ IF "%~1"=="" GOTO USAGE
 REM Set cmake config to first arg
 SET MSVC_BUILD_CONFIGURATION=%1
 
-IF NOT DEFINED CDP_USER_SOURCE_FOLDER_CONTAINER_PATH (SET EnlistmentRoot=%~dp0\..\) ELSE (SET EnlistmentRoot=%CDP_USER_SOURCE_FOLDER_CONTAINER_PATH%\)
+IF NOT DEFINED CDP_USER_SOURCE_FOLDER_CONTAINER_PATH (SET EnlistmentRoot=%~dp0..\) ELSE (SET EnlistmentRoot=%CDP_USER_SOURCE_FOLDER_CONTAINER_PATH%\)
 
 pushd %EnlistmentRoot%out\sample-test\
 sample-test.exe --gtest_output=xml:%EnlistmentRoot%out\TestReport_sample-test.xml

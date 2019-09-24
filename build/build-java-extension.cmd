@@ -2,8 +2,8 @@
 SETLOCAL
 
 REM Nuget packages directory and location of the JDK
-SET EnlRoot=%~dp0
-SET PACKAGES_ROOT="%~dp0packages"
+SET EnlRoot=%~dp0..\
+SET PACKAGES_ROOT="%~dp0..\packages"
 SET AZUL_PACKAGE=AzulSystems.Zulu.DPG.8.33.0.1
 SET JAVA_HOME=%PACKAGES_ROOT%\%AZUL_PACKAGE%\tools
 SET JAVA_BIN=%PACKAGES_ROOT%\%AZUL_PACKAGE%\tools\bin
@@ -18,7 +18,7 @@ IF NOT DEFINED CONFIGURATION (SET CONFIGURATION=debug)
 IF /I %CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
 
 REM Output directory and output JAR name
-SET TARGET="%~dp0.build\java-extension\target\%MSVC_BUILD_CONFIGURATION%"
+SET TARGET="%~dp0..\.build\java-extension\target\%MSVC_BUILD_CONFIGURATION%"
 SET TARGET_CLASSES=%TARGET%\classes
 SET OUTPUT_JAR=%TARGET%\mssql-java-lang-extension.jar
 
@@ -27,7 +27,7 @@ mkdir %TARGET%
 mkdir %TARGET_CLASSES%
 
 REM Save current location, while moving to the Java source directory
-pushd "%~dp0language-extensions\java\sdk\src\java\main\java"
+pushd "%~dp0..\language-extensions\java\sdk\src\java\main\java"
 
 REM Write all of the sources to file for compilation
 dir /s /B *.java > %TARGET%\sources.txt

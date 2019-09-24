@@ -1,7 +1,7 @@
 SETLOCAL
 
 REM Set environment variables
-SET EnlRoot=%~dp0\..\
+SET EnlRoot=%~dp0..\
 SET GTEST_HOME=%EnlRoot%test\gtest\
 SET SAMPLETEST_HOME=%EnlRoot%test\sample-test\
 
