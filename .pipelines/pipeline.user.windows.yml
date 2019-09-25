@@ -134,8 +134,8 @@ build:
       command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
       arguments:  'release'
       artifacts:
-        - from: '.build\sample-test\release'
-          to: 'out\sample-test\release'
+        - from: '.build\sample-test\x64\release'
+          to: 'out\sample-test\x64\release'
           include:
             - 'sample-test.exe'
           signing_options:
@@ -166,7 +166,7 @@ test:
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
       name: 'Test The Code'                      # If your test run does not have a name, this will be used.
       command: 'test\run-unittests.cmd'          # Script that runs tests.
-      arguments:  'Debug Release'
+      arguments:  'release'
       fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
       testresults:                               # Sequence of entries indicating which test results files to collect.

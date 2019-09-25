@@ -48,6 +48,7 @@ out/
 # Visual Studio Files
 *.vs
 *.user
+*.sln
 
 # Nuget Packages
 packages/
