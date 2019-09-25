@@ -1,6 +1,0 @@
-[submodule "submodules/Data-ThirdParty-Apache-ArrowDevToolChain"]
-	path = submodules/Data-ThirdParty-Apache-ArrowDevToolChain
-	url = https://msazure.visualstudio.com/DefaultCollection/One/_git/Data-ThirdParty-Apache-ArrowDevToolChain
-[submodule "submodules/Data-ThirdParty-Google-GoogleTest"]
-	path = submodules/Data-ThirdParty-Google-GoogleTest
-	url = https://msazure.visualstudio.com/DefaultCollection/One/_git/Data-ThirdParty-Google-GoogleTest
