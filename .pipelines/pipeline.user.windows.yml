@@ -166,7 +166,7 @@ test:
         - title: 'All Tests'                     # Test run title. Used by VSTS.
           type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
           include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
-            - 'TestReport*.xml'
+            - 'out\TestReport*.xml'
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:
