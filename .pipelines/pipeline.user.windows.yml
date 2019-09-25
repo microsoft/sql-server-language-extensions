@@ -177,7 +177,8 @@ static_analysis_options:
       - from: 'out\sample-test\relwithdebinfo\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
-        - '**/*.txt'
+        - exclude:
+          - '**/*.txt'
   moderncop_options:
     disable_tool_scan: true
   binskim_options:
