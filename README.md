@@ -4,12 +4,10 @@ This repo contains 3rd-party language extensions for SQL Server. Currently, ther
 # Getting Started
 Overview:
 The directory \extension-host\ contains the extension API, while \language-extensions\ contains all of the extensions (i.e. language-extensions\java).
-All the scripts to trigger the builds of all extensions are in their respective build\scripts folders (i.e. language-extensions\java\build).
-gtest is added as a nuget package restored in packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.0
-Sample test using gtest framework is in \test\ (i.e. \test\gtest).
 
-# Build and Test
+# Build
 Each extension should contain its own building process.
+All the scripts to trigger the build of an extension should be located in its respective build\scripts folders (i.e. language-extensions\java\build).
 
 Java Extension:
 There are multiple ways to build the Java Extension.
@@ -24,15 +22,19 @@ For the first time building the Java Extension, run \language-extensions\java\bu
 
 3) Run \language-extensions\java\build\scripts\build-java-package.cmd to build mssql-java-lang-extension.jar
 
-Currently, there is no local testing for the Java extension in this repo. Full coverage and testing is done via TestShell and SQL labruns.
+# Test
+Each extension is responsible for its own unit testing, which should be located in its respective test folder. e.g. language-extensions\java\test
 
+Currently, there is no local testing for the Java extension in this repo. Full coverage and testing is done via TestShell and SQL labruns.
 For local validation of changes, the recommended practice is to do the following steps:
 1) Make your changes and run build-java-extension.cmd
 2) Copy java-lang-extension.zip to one of the locations
 	-Full Setup: SQL Server\binn\
 	-XCopy: <build drop>\amd64\, TestShell setup() will copy from here to binn. If setup() is skipped, then copy to binn\.
-3) Where possible, add unit tests using the testing framework of your choice. language-extension related tests should go in their respective folders.
-(i.e. \language-extensions\java\test)
+3) Where possible, add unit tests using the testing framework of your choice.
+
+gtest is provided as one of the test frameworks added as a nuget package restored in packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.0
+Sample test using gtest framework is in \test\ (i.e. \test\gtest\sample-test).
 
 # Release Pipeline
 The complete release pipeline does the following:
