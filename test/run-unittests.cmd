@@ -1,3 +1,4 @@
+@ECHO off
 SETLOCAL
 
 :LOOP
