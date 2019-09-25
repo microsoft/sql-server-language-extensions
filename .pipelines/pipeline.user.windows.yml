@@ -129,17 +129,10 @@ build:
             - 'data-sql-java-extension.nuspec'
           signing_options:
             profile: 'none'
-    - !!buildcommand
+    - !!defaultcommand
       name: 'Build Sample Test'
       command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
-      arguments:  'release'
-      artifacts:
-        - from: '.build\sample-test\x64\release'
-          to: 'out\sample-test\x64\release'
-          include:
-            - 'sample-test.exe'
-          signing_options:
-            profile: 'none'
+      arguments:  'debug release'
 
 package:
   commands:                                      # This is a sequence of script files to be executed one after another
@@ -166,7 +159,7 @@ test:
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
       name: 'Test The Code'                      # If your test run does not have a name, this will be used.
       command: 'test\run-unittests.cmd'          # Script that runs tests.
-      arguments:  'release'
+      arguments:  'debug release'
       fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
       testresults:                               # Sequence of entries indicating which test results files to collect.
@@ -182,14 +175,8 @@ static_analysis_options:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
       - from: 'out\sample-test\relwithdebinfo\'
-      - exclude:
-        - 'submodules\Data-ThirdParty-Apache-ArrowDevToolChain\**'
-        - 'submodules\Data-ThirdParty-Google-GoogleTest\**'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
-      - exclude:
-        - 'submodules\Data-ThirdParty-Apache-ArrowDevToolChain\**'
-        - 'submodules\Data-ThirdParty-Google-GoogleTest\**'
         - '**/*.txt'
   moderncop_options:
     disable_tool_scan: true
@@ -197,4 +184,4 @@ static_analysis_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
-      - from: 'out\sample-test\relwithdebinfo\'
+      - from: 'out\sample-test\x64\'
