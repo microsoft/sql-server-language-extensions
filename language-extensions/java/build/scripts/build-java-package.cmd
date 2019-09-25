@@ -1,4 +1,4 @@
-
+@ECHO off
 
 REM Nuget packages directory and location of the JDK
 SET EnlRoot=%~dp0..\..\..\..\

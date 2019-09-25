@@ -1,3 +1,4 @@
+@ECHO off
 SETLOCAL
 
 SET EnlRoot=%~dp0..\..\..\..\

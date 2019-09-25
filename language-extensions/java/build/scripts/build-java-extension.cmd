@@ -1,3 +1,4 @@
+@ECHO off
 SETLOCAL
 
 REM Nuget packages directory and location of the JDK

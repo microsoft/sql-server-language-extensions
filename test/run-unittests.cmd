@@ -26,4 +26,4 @@ EXIT /b %ERRORLEVEL%
 :USAGE
 echo.
 echo Usage:
-echo %0 { debug ^| relwithdebinfo }
+echo %0 { debug ^| release }
