@@ -42,7 +42,10 @@ restore:                                         # Stage for restoring dependenc
  commands:                                       # Sequence of commands to execute in this stage.
    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
      name: 'Restore Packages'                    # A user defined name for this step.
-     command: 'build\restore-packages.cmd'         # The repository relative path to the script to run to restore packages.
+     command: 'restore-packages.cmd'             # The repository relative path to the script to run to restore packages.
+   - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+     name: 'Restore Java Packages'               # A user defined name for this step.
+     command: 'language-extensions\java\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
@@ -79,13 +82,9 @@ version:
 # Eventually, network access will be limited or cut-off in this stage.
 build:
   commands:                                                             # This is a sequence of script files to be executed one after another
-    - !!defaultcommand
-      name: 'Build Google Test'
-      command: 'build\build-gtest.cmd'
-      arguments:  'relwithdebinfo'
     - !!buildcommand
       name: 'Build Java extension'
-      command: 'build\build-java-extension.cmd'
+      command: 'language-extensions\java\build\scripts\build-java-extension.cmd'
       arguments:  'debug release'
       artifacts:
         - from: '.build\java-extension\target\debug'
@@ -132,11 +131,11 @@ build:
             profile: 'none'
     - !!buildcommand
       name: 'Build Sample Test'
-      command: 'build\build-sample-test.cmd'
-      arguments:  'relwithdebinfo'
+      command: 'test\gtest\sample-test\scripts\build-sample-test.cmd'
+      arguments:  'release'
       artifacts:
-        - from: '.build\sample-test\relwithdebinfo'
-          to: 'out\sample-test\relwithdebinfo'
+        - from: '.build\sample-test\release'
+          to: 'out\sample-test\release'
           include:
             - 'sample-test.exe'
           signing_options:
@@ -146,7 +145,7 @@ package:
   commands:                                      # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Create Java extension zip'
-      command: 'build\create-java-extension-zip.cmd'
+      command: 'language-extensions\java\build\scripts\create-java-extension-zip.cmd'
       artifacts:
         - from: 'language-extensions\java\build\windows\x64\debug\packages'
           to: 'out\java-extension\packages\debug'
@@ -166,7 +165,7 @@ test:
   commands: # This is a sequence of script files to be executed one after another in the order they appear here.
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
       name: 'Test The Code'                      # If your test run does not have a name, this will be used.
-      command: 'build\run-unittests.cmd'         # Script that runs tests.
+      command: 'test\run-unittests.cmd'          # Script that runs tests.
       arguments:  'Debug Release'
       fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
