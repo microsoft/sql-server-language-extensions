@@ -37,12 +37,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup>
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\..\..\.build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup>
     <GtestHome>..\..\..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.0\</GtestHome>
