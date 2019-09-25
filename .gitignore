@@ -7,6 +7,9 @@
 *.o
 *.obj
 
+# Debug files
+*.pdb
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -15,6 +18,10 @@
 *.so
 *.dylib
 *.dll
+*.exp
+
+# Linker files
+*.ilk
 
 # Fortran module files
 *.mod
@@ -38,8 +45,13 @@
 *.log
 out/
 
+# Visual Studio Files
+*.vs
+*.user
+
 # Nuget Packages
 packages/
 
 # Build states
 *.lastbuildstate
+*.tlog
