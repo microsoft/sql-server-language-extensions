@@ -131,7 +131,7 @@ build:
             profile: 'none'
     - !!buildcommand
       name: 'Build Sample Test'
-      command: 'test\gtest\sample-test\scripts\build-sample-test.cmd'
+      command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
       arguments:  'release'
       artifacts:
         - from: '.build\sample-test\release'
