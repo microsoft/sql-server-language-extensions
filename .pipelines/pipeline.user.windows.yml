@@ -184,4 +184,3 @@ static_analysis_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
-      - from: 'out\sample-test\x64\'
