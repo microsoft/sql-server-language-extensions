@@ -12,5 +12,5 @@ int main(int argc, const char **argv)
   ::testing::InitGoogleTest(&argc, const_cast<char**>(argv));
   int rc = RUN_ALL_TESTS();
 
-  return 0;
+  return rc;
 }

@@ -12,8 +12,8 @@ IF NOT DEFINED CDP_USER_SOURCE_FOLDER_CONTAINER_PATH (SET EnlistmentRoot=%~dp0..
 
 pushd %EnlistmentRoot%.build\sample-test\x64\%MSVC_BUILD_CONFIGURATION%
 sample-test.exe --gtest_output=xml:%EnlistmentRoot%out\TestReport_sample-test.xml
-popd
 IF %ERRORLEVEL% NEQ 0 GOTO error
+popd
 
 REM Advance arg passed to build_all.cmd
 SHIFT
