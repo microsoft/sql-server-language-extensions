@@ -42,7 +42,10 @@ restore:                                         # Stage for restoring dependenc
  commands:                                       # Sequence of commands to execute in this stage.
    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
      name: 'Restore Packages'                    # A user defined name for this step.
-     command: 'restore-packages.cmd'         # The repository relative path to the script to run to restore packages.
+     command: 'restore-packages.cmd'             # The repository relative path to the script to run to restore packages.
+   - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+     name: 'Restore Java Packages'               # A user defined name for this step.
+     command: 'language-extensions\java\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
@@ -81,7 +84,7 @@ build:
   commands:                                                             # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Build Java extension'
-      command: 'build-java-extension.cmd'
+      command: 'language-extensions\java\build\scripts\build-java-extension.cmd'
       arguments:  'debug release'
       artifacts:
         - from: '.build\java-extension\target\debug'
@@ -126,12 +129,16 @@ build:
             - 'data-sql-java-extension.nuspec'
           signing_options:
             profile: 'none'
+    - !!defaultcommand
+      name: 'Build Sample Test'
+      command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
+      arguments:  'debug release'
 
 package:
-  commands:                                                             # This is a sequence of script files to be executed one after another
+  commands:                                      # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Create Java extension zip'
-      command: 'create-java-extension-zip.cmd'
+      command: 'language-extensions\java\build\scripts\create-java-extension-zip.cmd'
       artifacts:
         - from: 'language-extensions\java\build\windows\x64\debug\packages'
           to: 'out\java-extension\packages\debug'
@@ -142,19 +149,39 @@ package:
           include:
             - 'java-lang-extension.zip'
 
+# An optional user defined stage for running tests that need network access. Note that unit tests and others that do not
+# need network access can be run in build or package stages itself. Any artifacts built in this stage will be separated
+# out and will not be signed. However, we recommend that tests always be run in the test stage.
+# Eventually, we may even skip test artifacts completely.
+
+test:
+  commands: # This is a sequence of script files to be executed one after another in the order they appear here.
+    - !!testcommand                              # We are going to run tests and collect back the test results for publishing
+      name: 'Test The Code'                      # If your test run does not have a name, this will be used.
+      command: 'test\run-unittests.cmd'          # Script that runs tests.
+      arguments:  'debug release'
+      fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
+      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
+      testresults:                               # Sequence of entries indicating which test results files to collect.
+        - title: 'All Tests'                     # Test run title. Used by VSTS.
+          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
+          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
+            - 'out\TestReport*.xml'
+
 # There are no dlls to perform static analysis yet
-static_analysis_options:                          
+static_analysis_options:
   fxcop_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
+      - from: 'out\sample-test\relwithdebinfo\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
-      - exclude:
-        - '**/*.txt'
-  moderncop_options:           
+        - exclude:
+          - '**/*.txt'
+  moderncop_options:
     disable_tool_scan: true
   binskim_options:
-    files_to_scan:     
+    files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'

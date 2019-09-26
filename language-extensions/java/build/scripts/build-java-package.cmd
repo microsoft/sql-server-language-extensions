@@ -1,13 +1,13 @@
-
 @ECHO off
 
 REM Nuget packages directory and location of the JDK
-SET PACKAGES_ROOT="%~dp0\packages"
+SET EnlRoot=%~dp0..\..\..\..\
+SET PACKAGES_ROOT=%EnlRoot%packages
 SET AZUL_PACKAGE=AzulSystems.Zulu.DPG.8.33.0.1
 SET JAVA_BIN=%PACKAGES_ROOT%\%AZUL_PACKAGE%\tools\bin
 
 REM Output directory and output JAR name
-SET TARGET="%~dp0.build\java-extension\target"
+SET TARGET="%EnlRoot%.build\java-extension\target"
 SET TARGET_CLASSES=%TARGET%\classes
 SET OUTPUT_JAR=mssql-java-lang-extension.jar
 
@@ -15,7 +15,7 @@ REM Create the output directory
 mkdir %TARGET_CLASSES%
 
 REM Save current location, while moving to the Java source directory
-pushd "%~dp0language-extensions\java\sdk\src\java\main\java"
+pushd "%EnlRoot%language-extensions\java\sdk\src\java\main\java"
 
 REM Write all of the sources to file for compilation
 dir /s /B *.java > %TARGET%\sources.txt
@@ -58,4 +58,3 @@ popd
 
 REM Return the error from compilation
 exit /B %EX%
-
