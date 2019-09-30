@@ -57,8 +57,8 @@ The complete release pipeline does the following:
 	<package>/build/release/symbols/javaextension.pdb
 
 To create a release do the following:
-1) Run an official build from master, this will perform steps 1-4) mentioned above.
-2) From the official build, create a new release which will perform step 5).
+1) Run an official build from master, this will perform steps 1-6) mentioned above.
+2) From the official build, create a new release which will perform step 7).
 3) Update the nuget version numbers in DS_Main_Dev and run PVS before checking in.
 
 # Contribute
