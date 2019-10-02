@@ -10,10 +10,10 @@ SET REXTENSION_HOME=%EnlRoot%language-extensions\R\
 REM Set cmake config to first arg
 SET CMAKE_CONFIGURATION=%1
 
-REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "release".
+REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "relwithdebinfo".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=debug)
-IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
+IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=relwithdebinfo)
 
 REM Output directory and output dll name
 SET TARGET="%EnlRoot%.build\R-extension\target\%MSVC_BUILD_CONFIGURATION%"

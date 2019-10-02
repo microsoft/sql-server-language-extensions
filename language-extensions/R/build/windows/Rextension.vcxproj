@@ -4,8 +4,8 @@
             <Configuration>Debug</Configuration>
             <Platform>x64</Platform>
         </ProjectConfiguration>
-        <ProjectConfiguration Include="Release|x64">
-            <Configuration>Release</Configuration>
+        <ProjectConfiguration Include="RelWithDebInfo|x64">
+            <Configuration>RelWithDebInfo</Configuration>
             <Platform>x64</Platform>
         </ProjectConfiguration>
     </ItemGroup>
@@ -20,7 +20,7 @@
         <UseDebugLibraries>true</UseDebugLibraries>
         <PlatformToolset>v140</PlatformToolset>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
         <ConfigurationType>DynamicLibrary</ConfigurationType>
         <UseDebugLibraries>false</UseDebugLibraries>
         <PlatformToolset>v140</PlatformToolset>
