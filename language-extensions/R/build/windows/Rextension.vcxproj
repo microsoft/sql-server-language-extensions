@@ -1,0 +1,79 @@
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64">
+            <Configuration>Debug</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+    </ItemGroup>
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>15.0</VCProjectVersion>
+        <ProjectGuid>{85BCFFBC-4C2C-4960-BAEF-6FCDF1E6E16B}</ProjectGuid>
+        <Keyword>Win32Proj</Keyword>
+        <Platform>x64</Platform>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+        <ConfigurationType>DynamicLibrary</ConfigurationType>
+        <UseDebugLibraries>true</UseDebugLibraries>
+        <PlatformToolset>v140</PlatformToolset>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+        <ConfigurationType>DynamicLibrary</ConfigurationType>
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <PlatformToolset>v140</PlatformToolset>
+        <WholeProgramOptimization>true</WholeProgramOptimization>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <!--
+    These are the variable that cmake used for generating and building vcxproj files.
+    Need to set the following environment variables. Some are set in ..\scripts\build-R-extension.cmd
+    -->
+    <PropertyGroup>
+        <GENERATOR>Visual Studio 14 2015 Win64</GENERATOR>
+        <PACKAGES_ROOT>$(EnlRoot)\packages</PACKAGES_ROOT>
+        <CMAKE_ROOT>$(PACKAGES_ROOT)\cmake.3.5.2</CMAKE_ROOT>
+        <R_HOME>$(PACKAGES_ROOT)\External-R.MRO-3.5.2.R.3.5.2.229\Windows</R_HOME>
+        <REXTENSION_SRC_DIR>$(REXTENSION_HOME)src</REXTENSION_SRC_DIR>
+        <R_LIB_DIR>$(EnlRoot)\packages\RLib.3.5.0</R_LIB_DIR>
+        <REXTENSION_WORKING_DIR>$(EnlRoot).build\R-extension\windows</REXTENSION_WORKING_DIR>
+    </PropertyGroup>
+    <Target Name="Clean">
+        <Exec Command="rd /s /q &quot;$(REXTENSION_WORKING_DIR)&quot;" />
+        <Exec Command="rd /s /q &quot;$(REXTENSION_HOME)\x64&quot;" />
+    </Target>
+
+    <!-- create working directory for storing generated vcxproj files and obj files -->
+    <Target Name="CreateDir">
+        <Exec Command="if not exist $(REXTENSION_WORKING_DIR) mkdir $(REXTENSION_WORKING_DIR)"
+                WorkingDirectory="$(EnlRoot)" />
+    </Target>
+
+    <!-- Use cmake to generate vcxproj file for building RExtension -->
+    <Target Name="GenerateRextension"
+            DependsOnTargets="CreateDir" >
+        <Exec Command="$(CMAKE_ROOT)\bin\cmake ^
+                        -G &quot;$(GENERATOR)&quot; ^
+                        -DCMAKE_BUILD_TYPE=&quot;$(CMAKE_CONFIGURATION)&quot; ^
+                        -DR_INCLUDE_DIR=&quot;$(R_HOME)\include&quot; ^
+                        -DR_LIB_DIR=&quot;$(R_LIB_DIR)&quot; ^
+                        -DREXTENSION_INCLUDE_DIR=&quot;$(REXTENSION_HOME)include&quot; ^
+                        -DCMAKE_INSTALL_PREFIX=&quot;$(REXTENSION_WORKING_DIR)&quot; ^
+                        -DREXTENSION_WORKING_DIR=&quot;$(REXTENSION_WORKING_DIR)&quot; ^
+                        -DREXTENSION_SRC_DIR=&quot;$(REXTENSION_SRC_DIR)&quot; ^
+                        &quot;$(REXTENSION_SRC_DIR)&quot;"
+                WorkingDirectory="$(REXTENSION_WORKING_DIR)" />
+    </Target>
+
+    <!-- Build gtest -->
+    <Target Name="BuildRextension"
+            DependsOnTargets="CreateDir;GenerateRextension"
+            BeforeTargets="Build" >
+        <Exec Command="$(CMAKE_ROOT)\bin\cmake --build . --config $(CMAKE_CONFIGURATION) --target INSTALL"
+                WorkingDirectory="$(REXTENSION_WORKING_DIR)" />
+    </Target>
+    </Project>
