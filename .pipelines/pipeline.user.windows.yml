@@ -182,7 +182,7 @@ package:
             - 'java-lang-extension.zip'
     - !!buildcommand
       name: 'Create R extension zip'
-      command: 'language-extensions\R\build\windows\create-java-extension-zip.cmd'
+      command: 'language-extensions\R\build\windows\create-R-extension-zip.cmd'
       artifacts:
         - from: '.build\R-extension\windows\debug\packages'
           to: 'out\R-extension\packages\debug'
