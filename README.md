@@ -1,13 +1,13 @@
 # Introduction
-This repo contains 3rd-party language extensions for SQL Server. Currently, there is only the Java Extension. This repo is built and released via CDPx pipeline and SQL Server consumes the output via a Nuget package.
+This repo contains 3rd-party language extensions for SQL Server. This repo is built and released via CDPx pipeline and SQL Server consumes the output via a Nuget package.
 
 # Getting Started
 Overview:
-The directory \extension-host\ contains the extension API, while \language-extensions\ contains all of the extensions (i.e. language-extensions\java).
+The directory \extension-host\ contains the extension API, while \language-extensions\ contains all of the extensions (e.g. language-extensions\java).
 
 # Build
 Each extension should contain its own building process.
-All the scripts to trigger the build of an extension should be located in its respective build\scripts folders (i.e. language-extensions\java\build).
+All the scripts to trigger the build of an extension should be located in its respective build\scripts folders (e.g. language-extensions\java\build).
 
 Java Extension:
 There are multiple ways to build the Java Extension.
@@ -57,8 +57,8 @@ The complete release pipeline does the following:
 	<package>/build/release/symbols/javaextension.pdb
 
 To create a release do the following:
-1) Run an official build from master, this will perform steps 1-4) mentioned above.
-2) From the official build, create a new release which will perform step 5).
+1) Run an official build from master, this will perform steps 1-6) mentioned above.
+2) From the official build, create a new release which will perform step 7).
 3) Update the nuget version numbers in DS_Main_Dev and run PVS before checking in.
 
 # Contribute
