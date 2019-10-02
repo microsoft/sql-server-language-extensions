@@ -137,8 +137,6 @@ build:
       command: 'language-extensions\R\build\windows\build-R-extension.cmd'
       arguments:  'debug relwithdebinfo'
       artifacts:
-          signing_options:
-            profile: '170'
         - from: '.build\R-extension\windows\debug'
           to: 'out\R-extension\debug'
           include:
@@ -161,6 +159,8 @@ build:
           to: 'out\R-extension\relwithdebinfo\symbols'
           include:
             - 'Rextension.pdb'
+          signing_options:
+            profile: 'none'
     - !!defaultcommand
       name: 'Build Sample Test'
       command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
