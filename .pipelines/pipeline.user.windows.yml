@@ -48,10 +48,10 @@ restore:                                         # Stage for restoring dependenc
       command: 'language-extensions\java\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
       name: 'Restore R Packages'                  # A user defined name for this step.
-      command: 'language-extensions\R\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+      command: 'language-extensions\R\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
       name: 'Restore Python Packages'                  # A user defined name for this step.
-      command: 'language-extensions\python\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+      command: 'language-extensions\python\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
