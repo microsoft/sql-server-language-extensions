@@ -45,10 +45,10 @@ restore:                                         # Stage for restoring dependenc
       command: 'restore-packages.cmd'             # The repository relative path to the script to run to restore packages.
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
       name: 'Restore Java Packages'               # A user defined name for this step.
-      command: 'language-extensions\java\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+      command: 'language-extensions\java\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
       name: 'Restore R Packages'                  # A user defined name for this step.
-      command: 'language-extensions\R\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+      command: 'language-extensions\R\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
@@ -87,7 +87,7 @@ build:
   commands:                                                             # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Build Java extension'
-      command: 'language-extensions\java\build\scripts\build-java-extension.cmd'
+      command: 'language-extensions\java\build\windows\build-java-extension.cmd'
       arguments:  'debug release'
       artifacts:
         - from: '.build\java-extension\target\debug'
@@ -132,6 +132,35 @@ build:
             - 'data-sql-java-extension.nuspec'
           signing_options:
             profile: 'none'
+    - !!buildcommand
+      name: 'Build R extension'
+      command: 'language-extensions\R\build\windows\build-R-extension.cmd'
+      arguments:  'debug relwithdebinfo'
+      artifacts:
+          signing_options:
+            profile: '170'
+        - from: '.build\R-extension\windows\debug'
+          to: 'out\R-extension\debug'
+          include:
+            - 'Rextension.dll'
+          signing_options:
+            profile: '135020002'
+        - from: '.build\R-extension\windows\debug'
+          to: 'out\R-extension\debug\symbols'
+          include:
+            - 'Rextension.pdb'
+          signing_options:
+            profile: '170'
+        - from: '.build\R-extension\windows\relwithdebinfo'
+          to: 'out\R-extension\relwithdebinfo'
+          include:
+            - 'Rextension.dll'
+          signing_options:
+            profile: '135020002'
+        - from: '.build\R-extension\windows\relwithdebinfo'
+          to: 'out\R-extension\relwithdebinfo\symbols'
+          include:
+            - 'Rextension.pdb'
     - !!defaultcommand
       name: 'Build Sample Test'
       command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
@@ -141,7 +170,7 @@ package:
   commands:                                      # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Create Java extension zip'
-      command: 'language-extensions\java\build\scripts\create-java-extension-zip.cmd'
+      command: 'language-extensions\java\build\windows\create-java-extension-zip.cmd'
       artifacts:
         - from: 'language-extensions\java\build\windows\x64\debug\packages'
           to: 'out\java-extension\packages\debug'
@@ -151,6 +180,18 @@ package:
           to: 'out\java-extension\packages\release'
           include:
             - 'java-lang-extension.zip'
+    - !!buildcommand
+      name: 'Create R extension zip'
+      command: 'language-extensions\R\build\windows\create-java-extension-zip.cmd'
+      artifacts:
+        - from: '.build\R-extension\windows\debug\packages'
+          to: 'out\R-extension\packages\debug'
+          include:
+            - 'R-lang-extension.zip'
+        - from: '.build\R-extension\windows\relwithdebinfo\packages'
+          to: 'out\R-extension\packages\relwithdebinfo'
+          include:
+            - 'R-lang-extension.zip'
 
 # An optional user defined stage for running tests that need network access. Note that unit tests and others that do not
 # need network access can be run in build or package stages itself. Any artifacts built in this stage will be separated
@@ -177,7 +218,8 @@ static_analysis_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
-      - from: 'out\sample-test\relwithdebinfo\'
+      - from: 'out\R-extension\debug\'
+      - from: 'out\R-extension\release\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
         - exclude:
@@ -188,3 +230,5 @@ static_analysis_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
+      - from: 'out\R-extension\debug\'
+      - from: 'out\R-extension\release\'
