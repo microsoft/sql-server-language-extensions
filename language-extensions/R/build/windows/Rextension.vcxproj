@@ -76,4 +76,4 @@
         <Exec Command="$(CMAKE_ROOT)\bin\cmake --build . --config $(CMAKE_CONFIGURATION) --target INSTALL"
                 WorkingDirectory="$(REXTENSION_WORKING_DIR)" />
     </Target>
-    </Project>
+</Project>

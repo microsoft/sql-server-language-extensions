@@ -163,7 +163,7 @@ build:
             profile: 'none'
     - !!defaultcommand
       name: 'Build Sample Test'
-      command: 'test\gtest\sample-test\build\scripts\build-sample-test.cmd'
+      command: 'test\gtest\sample-test\build\windows\build-sample-test.cmd'
       arguments:  'debug release'
 
 package:
