@@ -28,7 +28,7 @@ SET VSCMD_START_DIR=%EnlRoot%
 REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
 REM to the PATH environment variable and it will be too long for windows to handle.
 if not defined DevEnvDir (
-    call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 REM Build the project
@@ -68,4 +68,4 @@ if "%EX%" neq "0" (
     echo "Build failed"
 )
 
-EXIT /b %ERRORLEVEL%
+EXIT /b %EX%
