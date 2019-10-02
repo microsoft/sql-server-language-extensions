@@ -39,13 +39,16 @@ package_sources:
 # The following is an optional user defined stage. This is the only stage that will have network connectivity
 # starting July 1, 2018. This stage should be utilized for restoring package dependencies.
 restore:                                         # Stage for restoring dependencies.
- commands:                                       # Sequence of commands to execute in this stage.
-   - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-     name: 'Restore Packages'                    # A user defined name for this step.
-     command: 'restore-packages.cmd'             # The repository relative path to the script to run to restore packages.
-   - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-     name: 'Restore Java Packages'               # A user defined name for this step.
-     command: 'language-extensions\java\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+  commands:                                       # Sequence of commands to execute in this stage.
+    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore Packages'                    # A user defined name for this step.
+      command: 'restore-packages.cmd'             # The repository relative path to the script to run to restore packages.
+    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore Java Packages'               # A user defined name for this step.
+      command: 'language-extensions\java\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore R Packages'                  # A user defined name for this step.
+      command: 'language-extensions\R\build\scripts\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
