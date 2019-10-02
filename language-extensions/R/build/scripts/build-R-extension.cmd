@@ -39,7 +39,7 @@ SET EX=%ERRORLEVEL%
 
 REM Check the exit code of the compiler and exit appropriately so that build will fail.
 IF %EX% NEQ 0 (
-    echo "Error: Failed to create zip for R extension"
+    echo "Error: Failed to build R extension"
     GOTO CLEANUP
 )
 
@@ -56,7 +56,7 @@ if "%EX%" neq "0" (
     GOTO CLEANUP
 )
 
-REM Advance arg passed to build_all.cmd
+REM Advance arg passed to build-R-extension.cmd
 SHIFT
 
 REM Continue building using more configs until argv has been exhausted
