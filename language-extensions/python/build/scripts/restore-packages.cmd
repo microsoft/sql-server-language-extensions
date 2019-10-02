@@ -1,2 +1,2 @@
 SET EnlRoot=%~dp0..\..\..\..\
-nuget restore %EnlRoot%language-extensions\pythonextension\packages.config -PackagesDirectory %EnlRoot%packages
+nuget restore %EnlRoot%language-extensions\python\packages.config -PackagesDirectory %EnlRoot%packages

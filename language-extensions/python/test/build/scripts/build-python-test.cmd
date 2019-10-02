@@ -3,8 +3,8 @@ SETLOCAL
 
 REM Set environment variables
 SET EnlRoot=%~dp0..\..\..\..\..\
-SET PYTHONTEST_HOME=%EnlRoot%language-extensions\pythonextension\test\
-SET PYTHONTEST_BUILD=%EnlRoot%language-extensions\pythonextension\test\build\
+SET PYTHONTEST_HOME=%EnlRoot%language-extensions\python\test\
+SET PYTHONTEST_BUILD=%EnlRoot%language-extensions\python\test\build\
 
 :LOOP
 
