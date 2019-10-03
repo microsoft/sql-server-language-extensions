@@ -49,6 +49,9 @@ restore:                                         # Stage for restoring dependenc
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
       name: 'Restore R Packages'                  # A user defined name for this step.
       command: 'language-extensions\R\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
+    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore Python Packages'                  # A user defined name for this step.
+      command: 'language-extensions\python\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
@@ -165,6 +168,10 @@ build:
       name: 'Build Sample Test'
       command: 'test\gtest\sample-test\build\windows\build-sample-test.cmd'
       arguments:  'debug release'
+    - !!defaultcommand
+      name: 'Build Python Test'
+      command: 'language-extensions\python\test\build\windows\build-python-test.cmd'
+      arguments:  'debug release'  
 
 package:
   commands:                                      # This is a sequence of script files to be executed one after another

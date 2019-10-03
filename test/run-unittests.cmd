@@ -15,6 +15,11 @@ sample-test.exe --gtest_output=xml:%EnlistmentRoot%out\TestReport_sample-test.xm
 IF %ERRORLEVEL% NEQ 0 GOTO error
 popd
 
+pushd %EnlistmentRoot%.build\python-test\x64\%MSVC_BUILD_CONFIGURATION%
+python-test.exe --gtest_output=xml:%EnlistmentRoot%out\TestReport_python-test.xml
+IF %ERRORLEVEL% NEQ 0 GOTO error
+popd
+
 REM Advance arg passed to build_all.cmd
 SHIFT
 
