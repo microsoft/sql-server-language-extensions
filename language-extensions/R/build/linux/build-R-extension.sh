@@ -58,7 +58,7 @@ REXTENSION_HOME=${EnlRoot}language-extensions/R/
 
 # Set environment variables required in Cmake
 PACKAGES_ROOT=${EnlRoot}packages/
-R_HOME=${PACKAGES_ROOT}External-R.MRO-3.5.2.R.3.5.2.229/Linux/lib64/R/
+R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R/
 REXTENSION_SRC_DIR=${REXTENSION_HOME}src/
 R_LIB_DIR=${R_HOME}lib/
 REXTENSION_WORKING_DIR=${EnlRoot}.build/R-extension/linux/
