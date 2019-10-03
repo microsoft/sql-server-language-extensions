@@ -168,6 +168,10 @@ build:
       name: 'Build Sample Test'
       command: 'test\gtest\sample-test\build\windows\build-sample-test.cmd'
       arguments:  'debug release'
+    - !!defaultcommand
+      name: 'Build Python Test'
+      command: 'python\test\build\scripts\build-python-test.cmd'
+      arguments:  'debug release'  
 
 package:
   commands:                                      # This is a sequence of script files to be executed one after another
