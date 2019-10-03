@@ -170,7 +170,7 @@ build:
       arguments:  'debug release'
     - !!defaultcommand
       name: 'Build Python Test'
-      command: 'python\test\build\scripts\build-python-test.cmd'
+      command: 'language-extensions\python\test\build\scripts\build-python-test.cmd'
       arguments:  'debug release'  
 
 package:
