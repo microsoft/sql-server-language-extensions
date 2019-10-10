@@ -151,7 +151,7 @@ build:
           include:
             - 'Rextension.pdb'
           signing_options:
-            profile: '170'
+            profile: 'none'
         - from: '.build\R-extension\windows\relwithdebinfo'
           to: 'out\R-extension\relwithdebinfo'
           include:
@@ -162,6 +162,35 @@ build:
           to: 'out\R-extension\relwithdebinfo\symbols'
           include:
             - 'Rextension.pdb'
+          signing_options:
+            profile: 'none'
+    - !!buildcommand
+      name: 'Build python extension'
+      command: 'language-extensions\python\build\windows\build-python-extension.cmd'
+      arguments:  'debug release'
+      artifacts:
+        - from: '.build\python-extension\windows\debug'
+          to: 'out\python-extension\debug'
+          include:
+            - 'pythonextension.dll'
+          signing_options:
+            profile: '135020002'
+        - from: '.build\python-extension\windows\debug'
+          to: 'out\python-extension\debug\symbols'
+          include:
+            - 'pythonextension.pdb'
+          signing_options:
+            profile: 'none'
+        - from: '.build\python-extension\windows\release'
+          to: 'out\python-extension\release'
+          include:
+            - 'pythonextension.dll'
+          signing_options:
+            profile: '135020002'
+        - from: '.build\python-extension\windows\release'
+          to: 'out\python-extension\release\symbols'
+          include:
+            - 'pythonextension.pdb'
           signing_options:
             profile: 'none'
     - !!defaultcommand
@@ -199,6 +228,18 @@ package:
           to: 'out\R-extension\packages\relwithdebinfo'
           include:
             - 'R-lang-extension.zip'
+    - !!buildcommand
+      name: 'Create python extension zip'
+      command: 'language-extensions\python\build\windows\create-python-extension-zip.cmd'
+      artifacts:
+        - from: '.build\python-extension\windows\debug\packages'
+          to: 'out\python-extension\packages\debug'
+          include:
+            - 'python-lang-extension.zip'
+        - from: '.build\python-extension\windows\release\packages'
+          to: 'out\python-extension\packages\release'
+          include:
+            - 'python-lang-extension.zip'
 
 # An optional user defined stage for running tests that need network access. Note that unit tests and others that do not
 # need network access can be run in build or package stages itself. Any artifacts built in this stage will be separated
@@ -227,6 +268,8 @@ static_analysis_options:
       - from: 'out\java-extension\debug\'
       - from: 'out\R-extension\debug\'
       - from: 'out\R-extension\release\'
+      - from: 'out\python-extension\debug\'
+      - from: 'out\python-extension\release\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
         - exclude:
@@ -239,3 +282,5 @@ static_analysis_options:
       - from: 'out\java-extension\debug\'
       - from: 'out\R-extension\debug\'
       - from: 'out\R-extension\release\'
+      - from: 'out\python-extension\debug\'
+      - from: 'out\python-extension\release\'

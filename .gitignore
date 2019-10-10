@@ -49,6 +49,7 @@ out/
 *.vs
 *.user
 *.sln
+*.filters
 
 # Nuget Packages
 packages/
