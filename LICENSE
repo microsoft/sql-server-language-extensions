@@ -1,3 +1,13 @@
+    
+    
+    Microsoft SQL Server Language Extensions
+
+    Copyright (c) Microsoft Corporation. All rights reserved.
+
+    This repository contains language extensions for SQL Server that are separately licensed. Each language extension is contained in a separate folder accessible from the main repository and is licensed in accordance with the LICENSE.TXT file present in such folder.
+
+    For all other material that is available from this repository, the following license applies.
+  
     MIT License
 
     Copyright (c) Microsoft Corporation. All rights reserved.
