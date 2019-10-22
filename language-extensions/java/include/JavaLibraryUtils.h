@@ -10,6 +10,8 @@
 //*********************************************************************
 #pragma once
 
+#include "Common.h"
+
 //---------------------------------------------------------------------
 // Description:
 //	Library utility functions for the Java extension.
@@ -20,5 +22,5 @@ public:
 	static std::string GetLibrariesClassPath();
 
 private:
-	static void FindAppendFileNames(_In_ const std::string &basePath, _Inout_ std::string &output);
+	static void FindAppendFileNames(const std::string &basePath, std::string &output);
 };

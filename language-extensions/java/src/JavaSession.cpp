@@ -8,41 +8,14 @@
 //  Class encapsulating operations performed per session
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <assert.h>
-#include <jni.h>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <sstream>
-#include <sqltypes.h>
-#include <sqlext.h>
-#include <algorithm>
-#include <unordered_map>
-#include <cassert>
-#include <memory>
-#include <locale>
-#include <codecvt>
-#include <regex>
-#include <stdlib.h>
-#ifndef _WIN64
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include "Logger.h"
+#include "JavaSession.h"
+#include "JavaDataset.h"
 #include "JavaArgContainer.h"
-#include "JavaExtensionUtils.h"
-#include "JavaSqlTypeHelper.h"
 #include "JniHelper.h"
 #include "JniTypeHelper.h"
-#include "JavaDataset.h"
-#include "JavaSession.h"
+#include "Logger.h"
+#include <cassert>
+#include <regex>
 
 using namespace std;
 
@@ -76,18 +49,18 @@ const string x_javaSdkBaseDatasetClass =
 //  validity of the user class
 //
 void JavaSession::Init(
-	_In_ JNIEnv		   *env,
-	_In_ const SQLGUID &SessionId,
-	_In_ SQLUSMALLINT  TaskId,
-	_In_ SQLUSMALLINT  NumTasks,
-	_In_ const SQLCHAR *Script,
-	_In_ SQLULEN	   ScriptLength,
-	_In_ SQLUSMALLINT  InputSchemaColumnsNumber,
-	_In_ SQLUSMALLINT  ParametersNumber,
-	_In_ const SQLCHAR *InputDataName,
-	_In_ SQLUSMALLINT  InputDataNameLength,
-	_In_ const SQLCHAR *OutputDataName,
-	_In_ SQLUSMALLINT  OutputDataNameLength)
+	JNIEnv			*env,
+	const SQLGUID	&sessionId,
+	SQLUSMALLINT	taskId,
+	SQLUSMALLINT	numTasks,
+	const SQLCHAR	*script,
+	SQLULEN			scriptLength,
+	SQLUSMALLINT	inputSchemaColumnsNumber,
+	SQLUSMALLINT	parametersNumber,
+	const SQLCHAR	*inputDataName,
+	SQLUSMALLINT	inputDataNameLength,
+	const SQLCHAR	*outputDataName,
+	SQLUSMALLINT	outputDataNameLength)
 {
 	if (env == nullptr)
 	{
@@ -95,25 +68,25 @@ void JavaSession::Init(
 	}
 
 	m_env = env;
-	m_sessionId = SessionId;
-	m_taskId = TaskId;
-	m_numTasks = NumTasks;
+	m_sessionId = sessionId;
+	m_taskId = taskId;
+	m_numTasks = numTasks;
 
 	// Initialize the rest of the parameters like storing the schema
 	//
-	m_inputSchemaColumnsNumber = InputSchemaColumnsNumber;
+	m_inputSchemaColumnsNumber = inputSchemaColumnsNumber;
 
 	// Allocate space for the vectors so they can be populated later
 	//
-	m_inputDataTypes.resize(InputSchemaColumnsNumber);
-	m_inputColumnNames.resize(InputSchemaColumnsNumber);
-	m_inputColumnSizes.resize(InputSchemaColumnsNumber);
-	m_inputNullColumns.resize(InputSchemaColumnsNumber);
-	m_inputDecimalDigits.resize(InputSchemaColumnsNumber);
+	m_inputDataTypes.resize(inputSchemaColumnsNumber);
+	m_inputColumnNames.resize(inputSchemaColumnsNumber);
+	m_inputColumnSizes.resize(inputSchemaColumnsNumber);
+	m_inputNullColumns.resize(inputSchemaColumnsNumber);
+	m_inputDecimalDigits.resize(inputSchemaColumnsNumber);
 
 	// Get the user defined class name from the script
 	//
-	m_mainClassName = GetUserDefinedClass(Script, ScriptLength);
+	m_mainClassName = GetUserDefinedClass(script, scriptLength);
 
 	InitUserClassObject();
 
@@ -121,7 +94,7 @@ void JavaSession::Init(
 
 	CallUserInit();
 
-	m_args.Init(ParametersNumber);
+	m_args.Init(parametersNumber);
 }
 
 //----------------------------------------------------------------------------
@@ -131,36 +104,36 @@ void JavaSession::Init(
 //  Initializes the input column for this session
 //
 void JavaSession::InitColumn(
-	_In_ SQLUSMALLINT  ColumnNumber,
-	_In_ const SQLCHAR *ColumnName,
-	_In_ SQLSMALLINT   ColumnNameLength,
-	_In_ SQLSMALLINT   DataType,
-	_In_ SQLULEN	   ColumnSize,
-	_In_ SQLSMALLINT   DecimalDigits,
-	_In_ SQLSMALLINT   Nullable,
-	_In_ SQLSMALLINT   PartitionByNumber,
-	_In_ SQLSMALLINT   OrderByNumber
+	SQLUSMALLINT	columnNumber,
+	const SQLCHAR	*columnName,
+	SQLSMALLINT		columnNameLength,
+	SQLSMALLINT		dataType,
+	SQLULEN			columnSize,
+	SQLSMALLINT		decimalDigits,
+	SQLSMALLINT		nullable,
+	SQLSMALLINT		partitionByNumber,
+	SQLSMALLINT		orderByNumber
 	)
 {
-	LOG("Initializing column #" + to_string(ColumnNumber));
+	LOG("Initializing column #" + to_string(columnNumber));
 
-	if (ColumnName == nullptr)
+	if (columnName == nullptr)
 	{
 		throw invalid_argument("Invalid input column name supplied");
 	}
-	else if (ColumnNumber >= m_inputSchemaColumnsNumber || ColumnNumber < 0)
+	else if (columnNumber >= m_inputSchemaColumnsNumber || columnNumber < 0)
 	{
-		throw invalid_argument("Invalid input column id supplied: " + to_string(ColumnNumber));
+		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
 	}
 
 	// Store the information for this column
 	//
-	m_inputColumnNames[ColumnNumber] =
-		string(reinterpret_cast<const char*>(ColumnName), ColumnNameLength);
-	m_inputColumnSizes[ColumnNumber] = ColumnSize;
-	m_inputDataTypes[ColumnNumber] = DataType;
-	m_inputNullColumns[ColumnNumber] = Nullable;
-	m_inputDecimalDigits[ColumnNumber] = DecimalDigits;
+	m_inputColumnNames[columnNumber] =
+		string(reinterpret_cast<const char*>(columnName), columnNameLength);
+	m_inputColumnSizes[columnNumber] = columnSize;
+	m_inputDataTypes[columnNumber] = dataType;
+	m_inputNullColumns[columnNumber] = nullable;
+	m_inputDecimalDigits[columnNumber] = decimalDigits;
 }
 
 //----------------------------------------------------------------------------
@@ -170,49 +143,38 @@ void JavaSession::InitColumn(
 //  Initializes the parameter for this session
 //
 void JavaSession::InitParam(
-	SQLUSMALLINT  ParamNumber,
-	const SQLCHAR *ParamName,
-	SQLSMALLINT	  ParamNameLength,
-	SQLSMALLINT	  DataType,
-	SQLULEN		  ArgSize,
-	SQLSMALLINT	  DecimalDigits,
-	SQLPOINTER	  ArgValue,
-	SQLINTEGER	  StrLen_or_Ind,
-	SQLSMALLINT	  InputOutputType
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT	  paramNameLength,
+	SQLSMALLINT	  dataType,
+	SQLULEN		  argSize,
+	SQLSMALLINT	  decimalDigits,
+	SQLPOINTER	  argValue,
+	SQLINTEGER	  strLen_or_Ind,
+	SQLSMALLINT	  inputOutputType
 	)
 {
-	LOG("Initializing input parameter #" + to_string(ParamNumber));
+	LOG("Initializing input parameter #" + to_string(paramNumber));
 
-	if (ParamName == nullptr)
+	if (paramName == nullptr)
 	{
 		throw invalid_argument("Invalid input parameter name supplied");
 	}
-	else if (ParamNumber >= m_args.GetCount() || ParamNumber < 0)
+	else if (paramNumber >= m_args.GetCount() || paramNumber < 0)
 	{
-		throw invalid_argument("Invalid input parameter id supplied: " + to_string(ParamNumber));
+		throw invalid_argument("Invalid input parameter id supplied: " + to_string(paramNumber));
 	}
 
 	SQLRETURN result = m_args.AddArg(
-		ParamNumber,
-		ParamName,
-		ParamNameLength,
-		DataType,
-		ArgSize,
-		DecimalDigits,
-		ArgValue,
-		StrLen_or_Ind,
-		InputOutputType);
-
-	// TODO (VSTS #12734107):
-	// V1 still uses this AddArg code, once V1 is removed AddArg will switch
-	// to throwing exceptions on errors
-	//
-	if (result != SQL_SUCCESS)
-	{
-		// AddArg() will have outputted the correct error
-		//
-		throw runtime_error("Error adding script argument");
-	}
+		paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		argSize,
+		decimalDigits,
+		argValue,
+		strLen_or_Ind,
+		inputOutputType);
 }
 
 //----------------------------------------------------------------------------
@@ -222,20 +184,20 @@ void JavaSession::InitParam(
 //  Execute the workflow for the session
 //
 void JavaSession::ExecuteWorkflow(
-	_In_ SQLULEN		RowsNumber,
-	_In_opt_ SQLPOINTER *Data,
-	_In_opt_ SQLINTEGER **StrLen_or_Ind,
-	_Out_ SQLUSMALLINT	*OutputSchemaColumnsNumber)
+	SQLULEN			rowsNumber,
+	SQLPOINTER		*data,
+	SQLINTEGER		**strLen_or_Ind,
+	SQLUSMALLINT	*outputSchemaColumnsNumber)
 {
 	LOG("JavaSession::ExecuteWorkflow");
 
-	*OutputSchemaColumnsNumber = 0;
+	*outputSchemaColumnsNumber = 0;
 
-	// In the streaming case clean up output buffers
+	// In case of streaming clean up the previous stream batch's output buffers
 	//
 	CleanupOutputDataBuffers();
 
-	CallUserExecute(RowsNumber, Data, StrLen_or_Ind, OutputSchemaColumnsNumber);
+	CallUserExecute(rowsNumber, data, strLen_or_Ind, outputSchemaColumnsNumber);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -302,14 +264,14 @@ void JavaSession::CallUserInit()
 //	Populates the input dataset, calls user execute, and extracts the output dataset
 //
 void JavaSession::CallUserExecute(
-	_In_ SQLULEN		RowsNumber,
-	_In_opt_ SQLPOINTER *Data,
-	_In_opt_ SQLINTEGER **StrLen_or_Ind,
-	_Out_ SQLUSMALLINT	*OutputSchemaColumnsNumber)
+	SQLULEN			rowsNumber,
+	SQLPOINTER		*data,
+	SQLINTEGER		**strLen_or_Ind,
+	SQLUSMALLINT	*outputSchemaColumnsNumber)
 {
 	LOG("JavaSession::CallUserExecute");
 
-	*OutputSchemaColumnsNumber = 0;
+	*outputSchemaColumnsNumber = 0;
 
 	JavaDataset inputDataset;
 
@@ -319,14 +281,14 @@ void JavaSession::CallUserExecute(
 	//
 	inputDataset.AddColumns(
 		m_inputSchemaColumnsNumber,
-		RowsNumber,
+		rowsNumber,
 		m_inputDataTypes,
 		m_inputColumnNames,
 		m_inputColumnSizes,
 		m_inputDecimalDigits,
 		m_inputNullColumns,
-		Data,
-		StrLen_or_Ind);
+		data,
+		strLen_or_Ind);
 
 	// Create the map for input/output parameters
 	//
@@ -361,7 +323,7 @@ void JavaSession::CallUserExecute(
 			m_outputData,
 			m_outputNullMap);
 
-		*OutputSchemaColumnsNumber = m_outputSchemaColumnsNumber;
+		*outputSchemaColumnsNumber = m_outputSchemaColumnsNumber;
 	}
 }
 
@@ -622,9 +584,7 @@ jmethodID JavaSession::FindUserExecuteMethod()
 // Note:
 //  Throws runtime_exception if script is invalid
 //
-string JavaSession::GetUserDefinedClass(
-	_In_reads_(sqlScriptLength) const SQLCHAR *sqlScript,
-	_In_ SQLULEN							  sqlScriptLength)
+string JavaSession::GetUserDefinedClass(const SQLCHAR *sqlScript, SQLULEN sqlScriptLength)
 {
 	if (sqlScript == nullptr)
 	{
@@ -723,31 +683,31 @@ void JavaSession::CleanupOutputDataBuffers()
 //  Returns information about the output column
 //
 void JavaSession::GetResultColumn(
-	_In_ SQLUSMALLINT ColumnNumber,
-	_Out_ SQLSMALLINT *DataType,
-	_Out_ SQLULEN	  *ColumnSize,
-	_Out_ SQLSMALLINT *DecimalDigits,
-	_Out_ SQLSMALLINT *Nullable
+	SQLUSMALLINT	columnNumber,
+	SQLSMALLINT		*dataType,
+	SQLULEN			*columnSize,
+	SQLSMALLINT		*decimalDigits,
+	SQLSMALLINT		*nullable
 	)
 {
-	LOG("Retrieving metadata for result column #" + to_string(ColumnNumber));
+	LOG("Retrieving metadata for result column #" + to_string(columnNumber));
 
-	*DataType = SQL_UNKNOWN_TYPE;
-	*ColumnSize = 0;
-	*Nullable = 0;
-	*DecimalDigits = 0;
+	*dataType = SQL_UNKNOWN_TYPE;
+	*columnSize = 0;
+	*nullable = 0;
+	*decimalDigits = 0;
 
-	if (0 <= ColumnNumber && ColumnNumber < m_outputDataTypes.size())
+	if (0 <= columnNumber && columnNumber < m_outputDataTypes.size())
 	{
-		*DataType = m_outputDataTypes[ColumnNumber];
-		*ColumnSize = m_outputColumnSizes[ColumnNumber];
-		*DecimalDigits = m_outputDecimalDigits[ColumnNumber];
-		*Nullable = m_outputNullColumns[ColumnNumber];
+		*dataType = m_outputDataTypes[columnNumber];
+		*columnSize = m_outputColumnSizes[columnNumber];
+		*decimalDigits = m_outputDecimalDigits[columnNumber];
+		*nullable = m_outputNullColumns[columnNumber];
 	}
 	else
 	{
 		throw runtime_error("Invalid column id provided to GetResultColumn():" +
-							to_string(ColumnNumber));
+							to_string(columnNumber));
 	}
 }
 
@@ -758,21 +718,21 @@ void JavaSession::GetResultColumn(
 //	Returns the output data and the null map retrieved from the user program
 //
 void JavaSession::GetResults(
-	_Out_ SQLULEN		*RowsNumber,
-	_Outptr_ SQLPOINTER **Data,
-	_Outptr_ SQLINTEGER ***StrLen_or_Ind)
+	SQLULEN		*rowsNumber,
+	SQLPOINTER	**data,
+	SQLINTEGER	***strLen_or_Ind)
 {
 	LOG("JavaSession::GetResults");
 
-	*RowsNumber = 0;
-	*Data = nullptr;
-	*StrLen_or_Ind = nullptr;
+	*rowsNumber = 0;
+	*data = nullptr;
+	*strLen_or_Ind = nullptr;
 
-	if (RowsNumber != nullptr && Data != nullptr && StrLen_or_Ind != nullptr)
+	if (rowsNumber != nullptr && data != nullptr && strLen_or_Ind != nullptr)
 	{
-		*RowsNumber = m_numberOfOutputRows;
-		*Data = &m_outputData[0];
-		*StrLen_or_Ind = &m_outputNullMap[0];
+		*rowsNumber = m_numberOfOutputRows;
+		*data = &m_outputData[0];
+		*strLen_or_Ind = &m_outputNullMap[0];
 	}
 	else
 	{
@@ -787,9 +747,9 @@ void JavaSession::GetResults(
 //  Returns the data and size of the output parameter
 //
 void JavaSession::GetOutputParam(
-	_In_ SQLUSMALLINT ParamNumber,
-	_Out_ SQLPOINTER  *ParamValue,
-	_Out_ SQLINTEGER  *StrLen_or_Ind)
+	SQLUSMALLINT ParamNumber,
+	SQLPOINTER  *ParamValue,
+	SQLINTEGER  *StrLen_or_Ind)
 {
 	LOG("Initializing output parameter #" + to_string(ParamNumber));
 

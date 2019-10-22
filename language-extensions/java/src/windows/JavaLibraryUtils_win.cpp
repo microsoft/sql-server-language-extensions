@@ -9,11 +9,8 @@
 //	 for the Java extension.
 //
 //*********************************************************************
-#include <windows.h>
-#include <jni.h>
-#include <string>
-#include "JavaExtensionUtils.h"
 #include "JavaLibraryUtils.h"
+#include "JavaExtensionUtils.h"
 
 using namespace std;
 
@@ -30,8 +27,7 @@ using namespace std;
 // Returns:
 //  none
 //
-void JavaLibraryUtils::FindAppendFileNames(_In_ const std::string &basePath,
-										   _Inout_ std::string	  &output)
+void JavaLibraryUtils::FindAppendFileNames(const string &basePath, string &output)
 {
 	// String to indicate we should find all files under this directory
 	//

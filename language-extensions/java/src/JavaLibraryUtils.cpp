@@ -9,19 +9,9 @@
 //	 the Java extension.
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#else
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include <jni.h>
-#include <string>
-#include <sqltypes.h>
-#include <sqlext.h>
-#include "JavaExtensionUtils.h"
 #include "JavaLibraryUtils.h"
 #include "JavaPathSettings.h"
+#include "Logger.h"
 
 using namespace std;
 

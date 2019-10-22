@@ -11,6 +11,8 @@
 //*********************************************************************
 #pragma once
 
+#include "Common.h"
+
 #ifdef DEBUG
 #define LOG(msg) Logger::Log(msg)
 #else
@@ -25,19 +27,19 @@ class Logger
 public:
 	// Log an error to stderr
 	//
-	static void LogError(_In_ const std::string &errorMsg);
+	static void LogError(const std::string &errorMsg);
 
 	// Log a extension exception to stderr
 	//
-	static void LogException(_In_ const std::exception &e);
+	static void LogException(const std::exception &e);
 
 	// Log a java exception to stderr
 	//
-	static void LogJavaException(_In_ const std::string &errorMsg);
+	static void LogJavaException(const std::string &errorMsg);
 
 	// Log a message to stdout
 	//
-	static void Log(_In_ const std::string &errorMsg);
+	static void Log(const std::string &errorMsg);
 
 private:
 	// Get a string of the current timestamp in the same format

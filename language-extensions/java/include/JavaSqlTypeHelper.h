@@ -10,12 +10,12 @@
 //*********************************************************************
 #pragma once
 
+#include "Common.h"
+
 class JavaSqlTypeHelper
 {
 public:
-	_Success_(return )
-	static bool GetJavaSqlType(_In_ SQLSMALLINT sqlType, _Out_ jint &jdbcType);
+	static bool GetJavaSqlType(SQLSMALLINT sqlType, jint &jdbcType);
 
-	_Success_(return )
-	static bool GetOdbcType(_In_ jint jdbcType, _Out_ SQLSMALLINT &odbcType);
+	static bool GetOdbcType(jint jdbcType, SQLSMALLINT &odbcType);
 };

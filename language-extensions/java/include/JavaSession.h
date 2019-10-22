@@ -10,7 +10,8 @@
 //*********************************************************************
 #pragma once
 
-class JavaArgContainer;
+#include "Common.h"
+#include "JavaArgContainer.h"
 
 // Data pertaining to a session
 //
@@ -62,75 +63,75 @@ public:
 	// Init the session
 	//
 	void Init(
-		_In_ JNIEnv		   *env,
-		_In_ const SQLGUID &SessionId,
-		_In_ SQLUSMALLINT  TaskId,
-		_In_ SQLUSMALLINT  NumTasks,
-		_In_ const SQLCHAR *Script,
-		_In_ SQLULEN	   ScriptLength,
-		_In_ SQLUSMALLINT  InputSchemaColumnsNumber,
-		_In_ SQLUSMALLINT  ParametersNumber,
-		_In_ const SQLCHAR *InputDataName,
-		_In_ SQLUSMALLINT  InputDataNameLength,
-		_In_ const SQLCHAR *OutputDataName,
-		_In_ SQLUSMALLINT  OutputDataNameLength);
+		JNIEnv			*env,
+		const SQLGUID	&sessionId,
+		SQLUSMALLINT	taskId,
+		SQLUSMALLINT	numTasks,
+		const SQLCHAR	*script,
+		SQLULEN			scriptLength,
+		SQLUSMALLINT	inputSchemaColumnsNumber,
+		SQLUSMALLINT	parametersNumber,
+		const SQLCHAR	*inputDataName,
+		SQLUSMALLINT	inputDataNameLength,
+		const SQLCHAR	*outputDataName,
+		SQLUSMALLINT	outputDataNameLength);
 
 	// Init the input column
 	//
 	void InitColumn(
-		_In_ SQLUSMALLINT  ColumnNumber,
-		_In_ const SQLCHAR *ColumnName,
-		_In_ SQLSMALLINT   ColumnNameLength,
-		_In_ SQLSMALLINT   DataType,
-		_In_ SQLULEN	   ColumnSize,
-		_In_ SQLSMALLINT   DecimalDigits,
-		_In_ SQLSMALLINT   Nullable,
-		_In_ SQLSMALLINT   PartitionByNumber,
-		_In_ SQLSMALLINT   OrderByNumber);
+		SQLUSMALLINT	columnNumber,
+		const SQLCHAR	*columnName,
+		SQLSMALLINT		columnNameLength,
+		SQLSMALLINT		dataType,
+		SQLULEN			columnSize,
+		SQLSMALLINT		decimalDigits,
+		SQLSMALLINT		nullable,
+		SQLSMALLINT		partitionByNumber,
+		SQLSMALLINT		orderByNumber);
 
 	// Init the input parameter
 	//
 	void InitParam(
-		SQLUSMALLINT  ParamNumber,
-		const SQLCHAR *ParamName,
-		SQLSMALLINT	  ParamNameLength,
-		SQLSMALLINT	  DataType,
-		SQLULEN		  ArgSize,
-		SQLSMALLINT	  DecimalDigits,
-		SQLPOINTER	  ArgValue,
-		SQLINTEGER	  StrLen_or_Ind,
-		SQLSMALLINT	  InputOutputType);
+		SQLUSMALLINT	paramNumber,
+		const SQLCHAR	*paramName,
+		SQLSMALLINT		paramNameLength,
+		SQLSMALLINT		dataType,
+		SQLULEN			argSize,
+		SQLSMALLINT		decimalDigits,
+		SQLPOINTER		argValue,
+		SQLINTEGER		strLen_or_Ind,
+		SQLSMALLINT		inputOutputType);
 
 	// Execute the workflow for the session
 	//
 	void ExecuteWorkflow(
-		_In_ SQLULEN		RowsNumber,
-		_In_opt_ SQLPOINTER *Data,
-		_In_opt_ SQLINTEGER **StrLen_or_Ind,
-		_Out_ SQLUSMALLINT	*OutputSchemaColumnsNumber);
+		SQLULEN			rowsNumber,
+		SQLPOINTER		*data,
+		SQLINTEGER		**strLen_or_Ind,
+		SQLUSMALLINT	*outputSchemaColumnsNumber);
 
 	// Get the metadata for the output column
 	//
 	void GetResultColumn(
-		_In_ SQLUSMALLINT ColumnNumber,
-		_Out_ SQLSMALLINT *DataType,
-		_Out_ SQLULEN	  *ColumnSize,
-		_Out_ SQLSMALLINT *DecimalDigits,
-		_Out_ SQLSMALLINT *Nullable);
+		SQLUSMALLINT	columnNumber,
+		SQLSMALLINT		*dataType,
+		SQLULEN			*columnSize,
+		SQLSMALLINT		*decimalDigits,
+		SQLSMALLINT		*nullable);
 
 	// Get the results
 	//
 	void GetResults(
-		_Out_ SQLULEN		*RowsNumber,
-		_Outptr_ SQLPOINTER **Data,
-		_Outptr_ SQLINTEGER ***StrLen_or_Ind);
+		SQLULEN		*rowsNumber,
+		SQLPOINTER	**data,
+		SQLINTEGER	***strLen_or_Ind);
 
 	// Get the the output parameter
 	//
 	void GetOutputParam(
-		_In_ SQLUSMALLINT ParamNumber,
-		_Out_ SQLPOINTER  *ParamValue,
-		_Out_ SQLINTEGER  *StrLen_or_Ind);
+		SQLUSMALLINT	paramNumber,
+		SQLPOINTER		*paramValue,
+		SQLINTEGER		*strLen_or_Ind);
 
 	// Cleanup session
 	//
@@ -144,10 +145,10 @@ private:
 	// Call execute() on the user object
 	//
 	void CallUserExecute(
-		_In_ SQLULEN		RowsNumber,
-		_In_opt_ SQLPOINTER *Data,
-		_In_opt_ SQLINTEGER **StrLen_or_Ind,
-		_Out_ SQLUSMALLINT	*OutputSchemaColumnsNumber);
+		SQLULEN			rowsNumber,
+		SQLPOINTER		*data,
+		SQLINTEGER		**strLen_or_Ind,
+		SQLUSMALLINT	*outputSchemaColumnsNumber);
 
 	// Call cleanup() on the user object
 	//
@@ -155,9 +156,7 @@ private:
 
 	// Gets the user class from the supplied script
 	//
-	static std::string GetUserDefinedClass(
-		_In_reads_(sqlScriptLength) const SQLCHAR   * sqlScript,
-		_In_ SQLULEN sqlScriptLength);
+	static std::string GetUserDefinedClass(const SQLCHAR *sqlScript, SQLULEN sqlScriptLength);
 
 	// Find method id of the execute function
 	//
@@ -175,17 +174,17 @@ private:
 	//
 	void CleanupOutputDataBuffers();
 
-	SQLGUID m_sessionId;	// Session ID
-	SQLUSMALLINT m_taskId;	// Task ID for this session
-	SQLUSMALLINT m_numTasks;// Number of tasks for this session
+	SQLGUID m_sessionId;				// Session ID
+	SQLUSMALLINT m_taskId;				// Task ID for this session
+	SQLUSMALLINT m_numTasks;			// Number of tasks for this session
 
-	jclass m_userClass;			// Global reference to the user supplied executor class
-	jmethodID m_mainMethodId;	// Method ID of the execute function in executor class
-	JNIEnv *m_env;				// JNI enviroment
-	jobject m_userObject;		// Global reference of the instantiated object of the user class
+	jclass m_userClass;					// Global reference to the user supplied executor class
+	jmethodID m_mainMethodId;			// Method ID of the execute function in executor class
+	JNIEnv *m_env;						// JNI enviroment
+	jobject m_userObject;				// Global reference of the instantiated object of the user class
 
-	JavaArgContainer m_args;// User input and output arguments
-	jobject m_argMap;		// Global reference of the hash map for the execution parameters
+	JavaArgContainer m_args;			// User input and output arguments
+	jobject m_argMap;					// Global reference of the hash map for the execution parameters
 
 	std::string m_mainClassName;			// User executor class name
 	std::string m_inputDatasetClassName;	// Input dataset class name for the executor class

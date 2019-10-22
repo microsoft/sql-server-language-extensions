@@ -10,6 +10,9 @@
 //*********************************************************************
 #pragma once
 
+#include "Common.h"
+#include <cassert>
+
 //---------------------------------------------------------------------
 // Description:
 // Wrapper class around commonly used JNI functions
@@ -19,22 +22,23 @@ class JniHelper
 public:
 	// Checks if an Java exception occurred and throws an exception
 	//
-	static void ThrowOnJavaException(_In_ JNIEnv *env);
+	static void ThrowOnJavaException(JNIEnv *env);
 
 	// Checks if an Java exception occurred and throws an exception
 	//
-	static void ThrowOnJavaException(_In_ JNIEnv *env, _In_ std::string &&errorMsg);
+	static void ThrowOnJavaException(JNIEnv *env, std::string &&errorMsg);
 
 	// Logs the Java exception
 	//
-	static void LogJavaException(_In_ JNIEnv *env);
+	static void LogJavaException(JNIEnv *env);
 
 	// Finds the method ID for the class, name, and signature
 	//
-	static jmethodID FindMethod(_In_ JNIEnv			   *env,
-								_In_ jclass			   jClass,
-								_In_ const std::string &funcName,
-								_In_ const std::string &funcSignature);
+	static jmethodID FindMethod(
+		JNIEnv		 		*env,
+		jclass		 		jClass,
+		const std::string	&funcName,
+		const std::string	&funcSignature);
 };
 
 //---------------------------------------------------------------------
@@ -49,7 +53,7 @@ public:
 class AutoJniLocalFrame
 {
 public:
-	AutoJniLocalFrame(_In_ JNIEnv *env, _In_ jint capacity)
+	AutoJniLocalFrame(JNIEnv *env, jint capacity)
 	{
 		assert(env != nullptr);
 

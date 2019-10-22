@@ -9,20 +9,9 @@
 //  extension
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <exception>
-#include <jni.h>
-#include <string>
-#include <sstream>
-#ifndef _WIN64
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include "Logger.h"
-#include "JavaLibraryUtils.h"
 #include "JavaExtensionUtils.h"
+#include "JavaLibraryUtils.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -149,7 +138,7 @@ string JavaExtensionUtils::GetJvmPath()
 //  This function only checks if the base path ends in the path seperator,
 //  which means the path to add is assumed to not start with a path seperator.
 //
-string JavaExtensionUtils::CombinePath(_In_ const string &basePath, _In_ const string &pathToAdd)
+string JavaExtensionUtils::CombinePath(const string &basePath, const string &pathToAdd)
 {
 	string path = basePath;
 

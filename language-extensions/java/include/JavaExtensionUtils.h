@@ -10,6 +10,8 @@
 //*********************************************************************
 #pragma once
 
+#include "Common.h"
+
 //---------------------------------------------------------------------
 // Description:
 //	General utility functions for the Java extension
@@ -19,7 +21,7 @@ class JavaExtensionUtils
 public:
 	// Get the value of an enviroment variable
 	//
-	static std::string GetEnvVariable(_In_ const std::string &name);
+	static std::string GetEnvVariable(const std::string &name);
 
 	// Get the platform specifc classpath seperator
 	//
@@ -31,12 +33,11 @@ public:
 
 	// Combines two paths
 	//
-	static std::string CombinePath(_In_ const std::string &basePath,
-								   _In_ const std::string &pathToAdd);
+	static std::string CombinePath(const std::string &basePath, const std::string &pathToAdd);
 
 	// Determines if the file path is valid
 	//
-	static bool IsValidFile(_In_ const std::string &file);
+	static bool IsValidFile(const std::string &file);
 
 	// Creates a JVM
 	//

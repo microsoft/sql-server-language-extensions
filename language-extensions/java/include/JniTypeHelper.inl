@@ -8,6 +8,10 @@
 //	 Inline functions for JniTypeHelper.h
 //
 //*********************************************************************
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <sstream>
 
 // The format used to log the session id (guid)
 //
@@ -28,8 +32,7 @@
 //	Specialized template function for creating double array in Java
 //
 template<>
-inline jdoubleArray JniTypeHelper::CreateJniArray<jdoubleArray>(_In_ JNIEnv *env,
-																_In_ jsize	numRows)
+inline jdoubleArray JniTypeHelper::CreateJniArray<jdoubleArray>(JNIEnv *env, jsize numRows)
 {
 	return env->NewDoubleArray(numRows);
 }
@@ -41,7 +44,7 @@ inline jdoubleArray JniTypeHelper::CreateJniArray<jdoubleArray>(_In_ JNIEnv *env
 //	Specialized template function for creating int array in Java
 //
 template<>
-inline jintArray JniTypeHelper::CreateJniArray<jintArray>(_In_ JNIEnv *env, _In_ jsize numRows)
+inline jintArray JniTypeHelper::CreateJniArray<jintArray>(JNIEnv *env, jsize numRows)
 {
 	return env->NewIntArray(numRows);
 }
@@ -53,8 +56,7 @@ inline jintArray JniTypeHelper::CreateJniArray<jintArray>(_In_ JNIEnv *env, _In_
 //	Specialized template function for creating boolean array in Java
 //
 template<>
-inline jbooleanArray JniTypeHelper::CreateJniArray<jbooleanArray>(_In_ JNIEnv *env,
-																  _In_ jsize  numRows)
+inline jbooleanArray JniTypeHelper::CreateJniArray<jbooleanArray>(JNIEnv *env, jsize numRows)
 {
 	return env->NewBooleanArray(numRows);
 }
@@ -66,7 +68,7 @@ inline jbooleanArray JniTypeHelper::CreateJniArray<jbooleanArray>(_In_ JNIEnv *e
 //	Specialized template function for creating short array in Java
 //
 template<>
-inline jshortArray JniTypeHelper::CreateJniArray<jshortArray>(_In_ JNIEnv *env, _In_ jsize numRows)
+inline jshortArray JniTypeHelper::CreateJniArray<jshortArray>(JNIEnv *env, jsize numRows)
 {
 	return env->NewShortArray(numRows);
 }
@@ -78,7 +80,7 @@ inline jshortArray JniTypeHelper::CreateJniArray<jshortArray>(_In_ JNIEnv *env, 
 //	Specialized template function for creating float array in Java
 //
 template<>
-inline jfloatArray JniTypeHelper::CreateJniArray<jfloatArray>(_In_ JNIEnv *env, _In_ jsize numRows)
+inline jfloatArray JniTypeHelper::CreateJniArray<jfloatArray>(JNIEnv *env, jsize numRows)
 {
 	return env->NewFloatArray(numRows);
 }
@@ -90,7 +92,7 @@ inline jfloatArray JniTypeHelper::CreateJniArray<jfloatArray>(_In_ JNIEnv *env, 
 //	Specialized template function for creating long array in Java
 //
 template<>
-inline jlongArray JniTypeHelper::CreateJniArray<jlongArray>(_In_ JNIEnv *env, _In_ jsize numRows)
+inline jlongArray JniTypeHelper::CreateJniArray<jlongArray>(JNIEnv *env, jsize numRows)
 {
 	return env->NewLongArray(numRows);
 }
@@ -102,10 +104,7 @@ inline jlongArray JniTypeHelper::CreateJniArray<jlongArray>(_In_ JNIEnv *env, _I
 //	Specialized template function for releasing long array in Java
 //
 template<>
-inline void JniTypeHelper::ReleaseJniArrayElems<jlongArray, jlong>(
-	_In_ JNIEnv		*env,
-	_In_ jlongArray jArray,
-	_In_ jlong		*jElems)
+inline void JniTypeHelper::ReleaseJniArrayElems<jlongArray, jlong>(JNIEnv *env, jlongArray jArray, jlong *jElems)
 {
 	env->ReleaseLongArrayElements(jArray, jElems, 0);
 }
@@ -117,10 +116,7 @@ inline void JniTypeHelper::ReleaseJniArrayElems<jlongArray, jlong>(
 //	Specialized template function for releasing int array in Java
 //
 template<>
-inline void JniTypeHelper::ReleaseJniArrayElems<jintArray, jint>(
-	_In_ JNIEnv	   *env,
-	_In_ jintArray jArray,
-	_In_ jint	   *jElems)
+inline void JniTypeHelper::ReleaseJniArrayElems<jintArray, jint>(JNIEnv *env, jintArray jArray, jint *jElems)
 {
 	env->ReleaseIntArrayElements(jArray, jElems, 0);
 }
@@ -132,10 +128,7 @@ inline void JniTypeHelper::ReleaseJniArrayElems<jintArray, jint>(
 //	Specialized template function for releasing double array in Java
 //
 template<>
-inline void JniTypeHelper::ReleaseJniArrayElems<jdoubleArray, jdouble>(
-	_In_ JNIEnv		  *env,
-	_In_ jdoubleArray jArray,
-	_In_ jdouble	  *jElems)
+inline void JniTypeHelper::ReleaseJniArrayElems<jdoubleArray, jdouble>(JNIEnv *env, jdoubleArray jArray, jdouble *jElems)
 {
 	env->ReleaseDoubleArrayElements(jArray, jElems, 0);
 }
@@ -147,10 +140,7 @@ inline void JniTypeHelper::ReleaseJniArrayElems<jdoubleArray, jdouble>(
 //	Specialized template function for releasing short array in Java
 //
 template<>
-inline void JniTypeHelper::ReleaseJniArrayElems<jshortArray, jshort>(
-	_In_ JNIEnv		 *env,
-	_In_ jshortArray jArray,
-	_In_ jshort		 *jElems)
+inline void JniTypeHelper::ReleaseJniArrayElems<jshortArray, jshort>(JNIEnv *env, jshortArray jArray, jshort *jElems)
 {
 	env->ReleaseShortArrayElements(jArray, jElems, 0);
 }
@@ -162,10 +152,7 @@ inline void JniTypeHelper::ReleaseJniArrayElems<jshortArray, jshort>(
 //	Specialized template function for releasing boolean array in Java
 //
 template<>
-inline void JniTypeHelper::ReleaseJniArrayElems<jbooleanArray, jboolean>(
-	_In_ JNIEnv		   *env,
-	_In_ jbooleanArray jArray,
-	_In_ jboolean	   *jElems)
+inline void JniTypeHelper::ReleaseJniArrayElems<jbooleanArray, jboolean>(JNIEnv *env, jbooleanArray jArray, jboolean *jElems)
 {
 	env->ReleaseBooleanArrayElements(jArray, jElems, 0);
 }
@@ -177,10 +164,7 @@ inline void JniTypeHelper::ReleaseJniArrayElems<jbooleanArray, jboolean>(
 //	Specialized template function for releasing float array in Java
 //
 template<>
-inline void JniTypeHelper::ReleaseJniArrayElems<jfloatArray, jfloat>(
-	_In_ JNIEnv		 *env,
-	_In_ jfloatArray jArray,
-	_In_ jfloat		 *jElems)
+inline void JniTypeHelper::ReleaseJniArrayElems<jfloatArray, jfloat>(JNIEnv *env, jfloatArray jArray, jfloat *jElems)
 {
 	env->ReleaseFloatArrayElements(jArray, jElems, 0);
 }
@@ -192,9 +176,7 @@ inline void JniTypeHelper::ReleaseJniArrayElems<jfloatArray, jfloat>(
 //	Specialized template function for getting long array elements in Java
 //
 template<>
-inline jlong* JniTypeHelper::GetJniArrayElems<jlongArray, jlong>(
-	_In_ JNIEnv		*env,
-	_In_ jlongArray jArray)
+inline jlong* JniTypeHelper::GetJniArrayElems<jlongArray, jlong>(JNIEnv *env, jlongArray jArray)
 {
 	return env->GetLongArrayElements(jArray, nullptr);
 }
@@ -206,9 +188,7 @@ inline jlong* JniTypeHelper::GetJniArrayElems<jlongArray, jlong>(
 //	Specialized template function for getting int array elements in Java
 //
 template<>
-inline jint* JniTypeHelper::GetJniArrayElems<jintArray, jint>(
-	_In_ JNIEnv	   *env,
-	_In_ jintArray jArray)
+inline jint* JniTypeHelper::GetJniArrayElems<jintArray, jint>(JNIEnv *env, jintArray jArray)
 {
 	return env->GetIntArrayElements(jArray, nullptr);
 }
@@ -220,9 +200,7 @@ inline jint* JniTypeHelper::GetJniArrayElems<jintArray, jint>(
 //	Specialized template function for getting double array elements in Java
 //
 template<>
-inline jdouble* JniTypeHelper::GetJniArrayElems<jdoubleArray, jdouble>(
-	_In_ JNIEnv		  *env,
-	_In_ jdoubleArray jArray)
+inline jdouble* JniTypeHelper::GetJniArrayElems<jdoubleArray, jdouble>(JNIEnv *env, jdoubleArray jArray)
 {
 	return env->GetDoubleArrayElements(jArray, nullptr);
 }
@@ -234,9 +212,7 @@ inline jdouble* JniTypeHelper::GetJniArrayElems<jdoubleArray, jdouble>(
 //	Specialized template function for getting short array elements in Java
 //
 template<>
-inline jshort* JniTypeHelper::GetJniArrayElems<jshortArray, jshort>(
-	_In_ JNIEnv		 *env,
-	_In_ jshortArray jArray)
+inline jshort* JniTypeHelper::GetJniArrayElems<jshortArray, jshort>(JNIEnv *env, jshortArray jArray)
 {
 	return env->GetShortArrayElements(jArray, nullptr);
 }
@@ -248,9 +224,7 @@ inline jshort* JniTypeHelper::GetJniArrayElems<jshortArray, jshort>(
 //	Specialized template function for getting boolean array elements in Java
 //
 template<>
-inline jboolean* JniTypeHelper::GetJniArrayElems<jbooleanArray, jboolean>(
-	_In_ JNIEnv		   *env,
-	_In_ jbooleanArray jArray)
+inline jboolean* JniTypeHelper::GetJniArrayElems<jbooleanArray, jboolean>(JNIEnv *env, jbooleanArray jArray)
 {
 	return env->GetBooleanArrayElements(jArray, nullptr);
 }
@@ -262,8 +236,7 @@ inline jboolean* JniTypeHelper::GetJniArrayElems<jbooleanArray, jboolean>(
 //	Specialized template function for getting float array elements in Java
 //
 template<>
-inline jfloat* JniTypeHelper::GetJniArrayElems<jfloatArray, jfloat>(_In_ JNIEnv		 *env,
-																	_In_ jfloatArray jArray)
+inline jfloat* JniTypeHelper::GetJniArrayElems<jfloatArray, jfloat>(JNIEnv *env, jfloatArray jArray)
 {
 	return env->GetFloatArrayElements(jArray, nullptr);
 }
@@ -275,9 +248,7 @@ inline jfloat* JniTypeHelper::GetJniArrayElems<jfloatArray, jfloat>(_In_ JNIEnv	
 //	Specialized template function for getting the size in bytes of Java byte array
 //
 template<>
-inline jsize JniTypeHelper::GetSizeInBytes<jbyteArray>(
-	_In_ JNIEnv		*env,
-	_In_ jbyteArray value)
+inline jsize JniTypeHelper::GetSizeInBytes<jbyteArray>(JNIEnv *env, jbyteArray value)
 {
 	return env->GetArrayLength(value);
 }
@@ -289,9 +260,7 @@ inline jsize JniTypeHelper::GetSizeInBytes<jbyteArray>(
 //	Specialized template function for getting the size in bytes of Java Unicode string
 //
 template<>
-inline jsize JniTypeHelper::GetSizeInBytes<jstring, false>(
-	_In_ JNIEnv	 *env,
-	_In_ jstring value)
+inline jsize JniTypeHelper::GetSizeInBytes<jstring, false>(JNIEnv *env, jstring value)
 {
 	return env->GetStringLength(value) * sizeof(jchar);
 }
@@ -303,9 +272,7 @@ inline jsize JniTypeHelper::GetSizeInBytes<jstring, false>(
 //	Specialized template function for getting the size in bytes of Java UTF8 string
 //
 template<>
-inline jsize JniTypeHelper::GetSizeInBytes<jstring, true>(
-	_In_ JNIEnv	 *env,
-	_In_ jstring value)
+inline jsize JniTypeHelper::GetSizeInBytes<jstring, true>(JNIEnv *env, jstring value)
 {
 	jsize totalBytes = 0;
 
@@ -341,11 +308,11 @@ inline jsize JniTypeHelper::GetSizeInBytes<jstring, true>(
 //
 template<typename jType, typename cType>
 inline void JniTypeHelper::CopyInputData(
-	_In_ JNIEnv								 *env,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) const SQLPOINTER	 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_Out_writes_(numRows) jType				 *jData)
+	JNIEnv				*env,
+	jsize				numRows,
+	const SQLPOINTER	values,
+	const SQLINTEGER	*nullMap,
+	jType				*jData)
 {
 	char defaultNullVal = 0;
 	const cType *odbcData = static_cast<const cType*>(values);
@@ -373,11 +340,11 @@ inline void JniTypeHelper::CopyInputData(
 //
 template<bool isUTF8>
 inline void JniTypeHelper::CopyStringInputData(
-	_In_ JNIEnv								 *env,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_Inout_ jobjectArray					 jData)
+	JNIEnv				*env,
+	SQLULEN				numRows,
+	SQLPOINTER			values,
+	const SQLINTEGER	*nullMap,
+	jobjectArray		jData)
 {
 	// The address to start reading the next value from
 	//
@@ -427,9 +394,9 @@ inline void JniTypeHelper::CopyStringInputData(
 //
 template<>
 inline jstring JniTypeHelper::CreateString<false>(
-	_In_ JNIEnv			  *env,
-	_In_ const SQLPOINTER value,
-	_In_ const jsize	  len)
+	JNIEnv				*env,
+	const SQLPOINTER	value,
+	const jsize			len)
 {
 	const jchar *dataPos = reinterpret_cast<const jchar*>(value);
 
@@ -455,9 +422,9 @@ inline jstring JniTypeHelper::CreateString<false>(
 //
 template<>
 inline jstring JniTypeHelper::CreateString<true>(
-	_In_ JNIEnv			  *env,
-	_In_ const SQLPOINTER value,
-	_In_ const jsize	  len)
+	 JNIEnv				*env,
+	 const SQLPOINTER	value,
+	 const jsize		len)
 {
 	jstring jStrResult = nullptr;
 	jclass jClass = env->FindClass("java/lang/String");
@@ -505,11 +472,11 @@ inline jstring JniTypeHelper::CreateString<true>(
 //  Copy binary string values one by one into the Java array
 //
 inline void JniTypeHelper::CopyBinaryInputData(
-	_In_ JNIEnv								 *env,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_Inout_ jobjectArray					 jData)
+	JNIEnv				*env,
+	SQLULEN				numRows,
+	SQLPOINTER			values,
+	const SQLINTEGER	*nullMap,
+	jobjectArray		jData)
 {
 	// The address to start reading the next value from
 	//
@@ -576,11 +543,11 @@ inline void JniTypeHelper::CopyBinaryInputData(
 //
 template<typename jType, typename jArrayType, typename cType>
 inline void* JniTypeHelper::CopyOutputData(
-	_In_ JNIEnv		*env,
-	_In_ jType		*outputColData,
-	_In_ jArrayType jArray,
-	_Out_ SQLULEN	&numRows,
-	_Out_ SQLULEN	&dataSizeInBytes)
+	JNIEnv		*env,
+	jType		*outputColData,
+	jArrayType	jArray,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes)
 {
 	// Set the size of the column
 	//
@@ -618,12 +585,12 @@ inline void* JniTypeHelper::CopyOutputData(
 //
 template<>
 inline void JniTypeHelper::CopyStringOutputData<false>(
-	_In_ JNIEnv							*env,
-	_In_ jobjectArray					source,
-	_In_ jsize							numRows,
-	_In_ unsigned long long				totalSizeInBytes,
-	_Out_writes_(totalSizeInBytes) char *target,
-	_Out_writes_(numRows) SQLINTEGER	*nullMap)
+	JNIEnv				*env,
+	jobjectArray		source,
+	jsize				numRows,
+	unsigned long long	totalSizeInBytes,
+	char				*target,
+	SQLINTEGER			*nullMap)
 {
 	for (jsize i = 0; i < numRows; ++i)
 	{
@@ -668,12 +635,12 @@ inline void JniTypeHelper::CopyStringOutputData<false>(
 //
 template<>
 inline void JniTypeHelper::CopyStringOutputData<true>(
-	_In_ JNIEnv							*env,
-	_In_ jobjectArray					source,
-	_In_ jsize							numRows,
-	_In_ unsigned long long				totalSizeInBytes,
-	_Out_writes_(totalSizeInBytes) char *target,
-	_Out_writes_(numRows) SQLINTEGER	*nullMap)
+	JNIEnv				*env,
+	jobjectArray		source,
+	jsize				numRows,
+	unsigned long long	totalSizeInBytes,
+	char				*target,
+	SQLINTEGER			*nullMap)
 {
 	jclass jClass = env->FindClass("java/lang/String");
 	jstring jUtf8Str = env->NewStringUTF("UTF-8");
@@ -746,12 +713,12 @@ inline void JniTypeHelper::CopyStringOutputData<true>(
 //	the allocated buffer
 //
 inline void JniTypeHelper::CopyBinaryOutputData(
-	_In_ JNIEnv							 *env,
-	_In_ jobjectArray					 source,
-	_In_ jsize							 numRows,
-	_In_ unsigned long long				 totalSizeInBytes,
-	_Out_writes_(totalSizeInBytes) jbyte *target,
-	_Out_writes_(numRows) SQLINTEGER	 *nullMap)
+	JNIEnv				*env,
+	jobjectArray		source,
+	jsize				numRows,
+	unsigned long long	totalSizeInBytes,
+	jbyte				*target,
+	SQLINTEGER			*nullMap)
 {
 	for (jsize i = 0; i < numRows; ++i)
 	{
@@ -812,11 +779,11 @@ inline void JniTypeHelper::CopyBinaryOutputData(
 //	2. Parse the elements of the string (day, month, year) into the target SQL_DATE_STRUCT buffer
 //
 inline void JniTypeHelper::CopyDateOutputData(
-	_In_ JNIEnv							  *env,
-	_In_ jobjectArray					  source,
-	_In_ jsize							  numRows,
-	_Out_writes_(numRows) SQL_DATE_STRUCT *target,
-	_Out_writes_(numRows) SQLINTEGER	  *nullMap)
+	JNIEnv				*env,
+	jobjectArray		source,
+	jsize				numRows,
+	SQL_DATE_STRUCT		*target,
+	SQLINTEGER			*nullMap)
 {
 	jclass dateClass = env->FindClass("java/sql/Date");
 	jmethodID dateToStringMethod = env->GetMethodID(dateClass,
@@ -870,7 +837,7 @@ inline void JniTypeHelper::CopyDateOutputData(
 // Returns:
 //	string of the guid
 //
-inline std::string JniTypeHelper::ConvertGuidToString(_In_ const SQLGUID *guid)
+inline std::string JniTypeHelper::ConvertGuidToString(const SQLGUID *guid)
 {
 	// 32 hex chars + 4 hyphens + null terminator, so 37 characters.
 	//
@@ -902,11 +869,11 @@ inline std::string JniTypeHelper::ConvertGuidToString(_In_ const SQLGUID *guid)
 //  Copy SQLGUID values as strings one by one into the Java array
 //
 inline void JniTypeHelper::CopyGuidInputData(
-	_In_ JNIEnv								 *env,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_Inout_ jobjectArray					 jArray)
+	JNIEnv				*env,
+	SQLULEN				numRows,
+	SQLPOINTER			values,
+	const SQLINTEGER	*nullMap,
+	jobjectArray		jArray)
 {
 	const SQLGUID *odbcData = static_cast<SQLGUID*>(values);
 
@@ -941,12 +908,12 @@ inline void JniTypeHelper::CopyGuidInputData(
 //  Copy SQL_DATE_STRUCT values as java.sql.Date instances one by one into the Java array
 //
 inline void JniTypeHelper::CopyDateInputData(
-	_In_ JNIEnv								 *env,
-	_In_ jclass								 dateClass,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_Inout_ jobjectArray					 jArray)
+	JNIEnv				*env,
+	jclass				dateClass,
+	SQLULEN				numRows,
+	SQLPOINTER			values,
+	const SQLINTEGER	*nullMap,
+	jobjectArray		jArray)
 {
 	jmethodID dateValueOfMethod = env->GetStaticMethodID(dateClass,
 														 "valueOf",
@@ -990,11 +957,11 @@ inline void JniTypeHelper::CopyDateInputData(
 //	A jobject containing a java.sql.Date instance
 //
 inline void JniTypeHelper::DateStructToJavaSqlDate(
-	_In_ JNIEnv				   *env,
-	_In_ const SQL_DATE_STRUCT *odbcDate,
-	_In_ const jclass		   dateClass,
-	_In_ const jmethodID	   dateValueOfMethod,
-	_Out_ jobject			   &javaDate)
+	 JNIEnv					*env,
+	 const SQL_DATE_STRUCT	*odbcDate,
+	 const jclass			dateClass,
+	 const jmethodID		dateValueOfMethod,
+	 jobject				&javaDate)
 {
 	// 4 numbers for year + 2 numbers for month + 2 numbers for day
 	// + 2 hyphens + null terminator, overall 11 characters
@@ -1029,12 +996,12 @@ inline void JniTypeHelper::DateStructToJavaSqlDate(
 //  Converts a java.sql.Date object to an ODBC SQL_DATE_STRUCT
 //
 inline void JniTypeHelper::JavaSqlDateToDateStruct(
-	_In_ JNIEnv			  *env,
-	_In_ jobject		  jDate,
-	_In_ jclass			  dateClass,
-	_In_ jmethodID		  dateToStringMethod,
-	_In_ jmethodID		  dateValueOfMethod,
-	_Out_ SQL_DATE_STRUCT &odbcDate)
+	 JNIEnv				*env,
+	 jobject			jDate,
+	 jclass				dateClass,
+	 jmethodID			dateToStringMethod,
+	 jmethodID			dateValueOfMethod,
+	 SQL_DATE_STRUCT	&odbcDate)
 {
 	odbcDate = {0};
 
@@ -1076,13 +1043,13 @@ inline void JniTypeHelper::JavaSqlDateToDateStruct(
 //  Copy SQL_NUMERIC_STRUCT values as java.math.BigDecimal instances one by one into the Java array
 //
 inline void JniTypeHelper::CopyNumericInputData(
-	_In_ JNIEnv								 *env,
-	_In_ jclass								 bigDecimalClass,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_Inout_ jobjectArray					 jArray)
+	JNIEnv				*env,
+	jclass				bigDecimalClass,
+	SQLULEN				numRows,
+	SQLPOINTER			values,
+	const SQLINTEGER	*nullMap,
+	SQLSMALLINT			decimalDigits,
+	jobjectArray		jArray)
 {
 	// Number of required references:
 	// 1. BigInteger class
@@ -1142,14 +1109,14 @@ inline void JniTypeHelper::CopyNumericInputData(
 //	A jobject containing a java.math.BigDecimal instance
 //
 inline void JniTypeHelper::NumericStructToBigDecimal(
-	_In_ JNIEnv					  *env,
-	_In_ const SQL_NUMERIC_STRUCT *odbcNumeric,
-	_In_ SQLSMALLINT			  decimalDigits,
-	_In_ const jclass			  bigDecimalClass,
-	_In_ const jmethodID		  bigDecimalCtor,
-	_In_ const jclass			  bigIntegerClass,
-	_In_ const jmethodID		  bigIntegerCtor,
-	_Out_ jobject				  &javaBigDecimal)
+	JNIEnv						*env,
+	const SQL_NUMERIC_STRUCT	*odbcNumeric,
+	SQLSMALLINT					decimalDigits,
+	const jclass				bigDecimalClass,
+	const jmethodID				bigDecimalCtor,
+	const jclass				bigIntegerClass,
+	const jmethodID				bigIntegerCtor,
+	jobject						&javaBigDecimal)
 {
 	int byteCount = 0;
 	for (int i = 0; i < SQL_MAX_NUMERIC_LEN; ++i)
@@ -1216,14 +1183,14 @@ inline void JniTypeHelper::NumericStructToBigDecimal(
 //	2. Parse the elements of the string (day, month, year) into the target SQL_DATE_STRUCT buffer
 //
 inline void JniTypeHelper::CopyNumericOutputData(
-	_In_ JNIEnv								 *env,
-	_In_ jobjectArray						 source,
-	_In_ jsize								 numRows,
-	_In_ SQLCHAR							 colPrecision,
-	_In_ SQLSMALLINT						 colScale,
-	_In_ jint								 colId,
-	_Out_writes_(numRows) SQL_NUMERIC_STRUCT *target,
-	_Out_writes_(numRows) SQLINTEGER		 *nullMap)
+	JNIEnv				*env,
+	jobjectArray		source,
+	jsize				numRows,
+	SQLCHAR				colPrecision,
+	SQLSMALLINT			colScale,
+	jint				colId,
+	SQL_NUMERIC_STRUCT	*target,
+	SQLINTEGER			*nullMap)
 {
 	// Number of required references:
 	// 1. BigDecimal class
@@ -1288,16 +1255,16 @@ inline void JniTypeHelper::CopyNumericOutputData(
 //  Converts a java.math.BigDecimal object to an ODBC SQL_NUMERIC_STRUCT
 //
 inline void JniTypeHelper::BigDecimalToNumericStruct(
-	_In_ JNIEnv				 *env,
-	_In_ jobject			 jBigDecimal,
-	_In_ SQLCHAR			 colPrecision,
-	_In_ SQLSMALLINT		 colScale,
-	_In_ jmethodID			 bigDecUnscaledValue,
-	_In_ jmethodID			 bigIntToByteArr,
-	_In_ jmethodID			 bigIntSignum,
-	_In_ jmethodID			 bigIntAbs,
-	_In_ std::string		 &&argDescription,
-	_Out_ SQL_NUMERIC_STRUCT &odbcNumeric)
+	JNIEnv				*env,
+	jobject				jBigDecimal,
+	SQLCHAR				colPrecision,
+	SQLSMALLINT			colScale,
+	jmethodID			bigDecUnscaledValue,
+	jmethodID			bigIntToByteArr,
+	jmethodID			bigIntSignum,
+	jmethodID			bigIntAbs,
+	std::string			&&argDescription,
+	SQL_NUMERIC_STRUCT	&odbcNumeric)
 {
 	// Number of required references:
 	// 1. 1 BigInteger object allocated for each row
@@ -1346,7 +1313,7 @@ inline void JniTypeHelper::BigDecimalToNumericStruct(
 
 	if (size > SQL_MAX_NUMERIC_LEN)
 	{
-		throw std::runtime_error("The numeric value in " + argDescription + 
+		throw std::runtime_error("The numeric value in " + argDescription +
 								 " is out of range for SQL Server numeric representation");
 	}
 
@@ -1381,12 +1348,12 @@ inline void JniTypeHelper::BigDecimalToNumericStruct(
 //  Copy SQL_TIMESTAMP_STRUCT values as java.sql.Timestamp instances one by one into the Java array
 //
 inline void JniTypeHelper::CopyTimestampInputData(
-	_In_ JNIEnv								 *env,
-	_In_ jclass								 timestampClass,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER			 values,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap,
-	_Inout_ jobjectArray					 jArray)
+	JNIEnv				*env,
+	jclass				timestampClass,
+	SQLULEN				numRows,
+	SQLPOINTER			values,
+	const SQLINTEGER	*nullMap,
+	jobjectArray		jArray)
 {
 	jmethodID tsValueOfMethod = env->GetStaticMethodID(timestampClass,
 													   "valueOf",
@@ -1431,11 +1398,11 @@ inline void JniTypeHelper::CopyTimestampInputData(
 //	A jobject containing a java.sql.Timestamp instance
 //
 inline void JniTypeHelper::TimestampStructToJavaTimestamp(
-	_In_ JNIEnv						*env,
-	_In_ const SQL_TIMESTAMP_STRUCT *odbcTimestamp,
-	_In_ const jclass				timestampClass,
-	_In_ const jmethodID			tsValueOfMethod,
-	_Out_ jobject					&javaTimestamp)
+	 JNIEnv						*env,
+	 const SQL_TIMESTAMP_STRUCT *odbcTimestamp,
+	 const jclass				timestampClass,
+	 const jmethodID			tsValueOfMethod,
+	 jobject					&javaTimestamp)
 {
 	// 4 numbers for year + 2 numbers for month + 2 numbers for day
 	// + 2 hyphens + space + 2 numbers for hour + 2 numbers for minutes
@@ -1482,11 +1449,11 @@ inline void JniTypeHelper::TimestampStructToJavaTimestamp(
 //	2. Parse the elements of the string into the target SQL_TIMESTAMP_STRUCT buffer
 //
 inline void JniTypeHelper::CopyTimestampOutputData(
-	_In_ JNIEnv								   *env,
-	_In_ jobjectArray						   source,
-	_In_ jsize								   numRows,
-	_Out_writes_(numRows) SQL_TIMESTAMP_STRUCT *target,
-	_Out_writes_(numRows) SQLINTEGER		   *nullMap)
+	JNIEnv					*env,
+	jobjectArray			source,
+	jsize					numRows,
+	SQL_TIMESTAMP_STRUCT	*target,
+	SQLINTEGER				*nullMap)
 {
 	// Number of required references:
 	// 1. Timestamp class
@@ -1545,13 +1512,13 @@ inline void JniTypeHelper::CopyTimestampOutputData(
 //  Converts a java.sql.Timestamp object to an ODBC SQL_TIMESTAMP_STRUCT
 //
 inline void JniTypeHelper::JavaTimestampToTimestampStruct(
-	_In_ JNIEnv				   *env,
-	_In_ jobject			   jTimestamp,
-	_In_ jclass				   tsClass,
-	_In_ jmethodID			   tsToStringMethod,
-	_In_ jmethodID			   tsGetNanosMethod,
-	_In_ jmethodID			   tsValueOfMethod,
-	_Out_ SQL_TIMESTAMP_STRUCT &odbcTimestamp)
+	JNIEnv					*env,
+	jobject					jTimestamp,
+	jclass					tsClass,
+	jmethodID				tsToStringMethod,
+	jmethodID				tsGetNanosMethod,
+	jmethodID				tsValueOfMethod,
+	SQL_TIMESTAMP_STRUCT	&odbcTimestamp)
 {
 	// Number of required references:
 	// 1. 1 jstring containing the timestamp's toString value
@@ -1610,12 +1577,12 @@ inline void JniTypeHelper::JavaTimestampToTimestampStruct(
 //  Converts a java string object that represents a guid to an ODBC SQLGUID struct
 //
 inline SQLGUID* JniTypeHelper::JavaStringToGuidStruct(
-	_In_ JNIEnv		   *env,
-	_In_ const jstring jStr,
-	_In_ jclass		   uuidClass,
-	_In_ jmethodID	   fromStringMethod,
-	_In_ jmethodID	   lsbMethod,
-	_In_ jmethodID	   msbMethod)
+	JNIEnv			*env,
+	const jstring	jStr,
+	jclass			uuidClass,
+	jmethodID		fromStringMethod,
+	jmethodID		lsbMethod,
+	jmethodID		msbMethod)
 {
 	std::unique_ptr<SQLGUID> odbcGuid(new SQLGUID());
 

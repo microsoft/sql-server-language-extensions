@@ -8,21 +8,9 @@
 //	 Implementation of logging for the java extension.
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <iostream>
-#include <string>
-#include <ctime>
-#ifndef _WIN64
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
 #include "Logger.h"
+#include <iostream>
+#include <ctime>
 
 using namespace std;
 
@@ -32,7 +20,7 @@ using namespace std;
 // Description:
 //  Log an error to stderr with format "TIMESTAMP Error: <message>".
 //
-void Logger::LogError(_In_ const string &errorMsg)
+void Logger::LogError(const string &errorMsg)
 {
 	cerr << GetCurrentTimestamp() << "Error: " << errorMsg << endl;
 }
@@ -44,7 +32,7 @@ void Logger::LogError(_In_ const string &errorMsg)
 //  Log a c++ exception to stderr with format "TIMESTAMP Exception
 //  occurred: <message>".
 //
-void Logger::LogException(_In_ const exception &e)
+void Logger::LogException(const exception &e)
 {
 	cerr << GetCurrentTimestamp() << "Exception occurred: " << e.what() << endl;
 }
@@ -56,7 +44,7 @@ void Logger::LogException(_In_ const exception &e)
 //  Log a java exception to stderr with format "TIMESTAMP Exception
 //  thrown in Java: <message>".
 //
-void Logger::LogJavaException(_In_ const string &exceptionMsg)
+void Logger::LogJavaException(const string &exceptionMsg)
 {
 	cerr << GetCurrentTimestamp() << "Exception occurred in Java: " << exceptionMsg << endl;
 }
@@ -67,7 +55,7 @@ void Logger::LogJavaException(_In_ const string &exceptionMsg)
 // Description:
 //  Log a message to stdout with format "TIMESTAMP <message>".
 //
-void Logger::Log(_In_ const string &msg)
+void Logger::Log(const string &msg)
 {
 #ifdef DEBUG
 	cout << GetCurrentTimestamp() << msg << endl;

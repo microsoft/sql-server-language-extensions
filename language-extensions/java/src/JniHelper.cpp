@@ -8,25 +8,8 @@
 //	 Wrappers around commonly used JNI functions
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <assert.h>
-#include <iostream>
-#include <jni.h>
-#include <sqlext.h>
-#include <sqltypes.h>
-#include <string>
-#ifndef _WIN64
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include "Logger.h"
 #include "JniHelper.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -36,7 +19,7 @@ using namespace std;
 // Description:
 //  Throw exception when a Java exception has occurred.
 //
-void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env)
+void JniHelper::ThrowOnJavaException(JNIEnv *env)
 {
 	ThrowOnJavaException(env, "");
 }
@@ -47,7 +30,7 @@ void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env)
 // Description:
 //  Throw exception with the provided error message when a Java exception has occurred.
 //
-void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env, _In_ std::string &&errorMsg)
+void JniHelper::ThrowOnJavaException(JNIEnv *env, string &&errorMsg)
 {
 	jboolean isException = env->ExceptionCheck();
 
@@ -63,7 +46,7 @@ void JniHelper::ThrowOnJavaException(_In_ JNIEnv *env, _In_ std::string &&errorM
 // Description:
 //  Logs the Java exception if one has occurred
 //
-void JniHelper::LogJavaException(_In_ JNIEnv *env)
+void JniHelper::LogJavaException(JNIEnv *env)
 {
 	jboolean isException = env->ExceptionCheck();
 
@@ -81,10 +64,10 @@ void JniHelper::LogJavaException(_In_ JNIEnv *env)
 // Attempts to finds a Java method through JNI
 //
 jmethodID JniHelper::FindMethod(
-	_In_ JNIEnv		  *env,
-	_In_ jclass		  jClass,
-	_In_ const string &funcName,
-	_In_ const string &funcSignature)
+	JNIEnv			*env,
+	jclass			jClass,
+	const string	&funcName,
+	const string 	&funcSignature)
 {
 	jmethodID result = env->GetMethodID(
 		jClass,

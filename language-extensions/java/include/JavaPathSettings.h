@@ -10,6 +10,8 @@
 //*********************************************************************
 #pragma once
 
+#include "Common.h"
+
 //---------------------------------------------------------------------
 // Description:
 //	Global class storing the language runtime paths and parameters
@@ -20,26 +22,26 @@ public:
 	// Initialize this global class
 	//
 	static void Init(
-		_In_ const SQLCHAR *languageParams,
-		_In_ const SQLCHAR *languagePath,
-		_In_ const SQLCHAR *publicLibraryPath,
-		_In_ const SQLCHAR *privateLibraryPath);
+		const SQLCHAR *languageParams,
+		const SQLCHAR *languagePath,
+		const SQLCHAR *publicLibraryPath,
+		const SQLCHAR *privateLibraryPath);
 
 	// Get the private library path sent by SQL Server
 	//
-	static const std::string& GetPrivateLibraryPath() {return m_privateLibraryPath; }
+	static const std::string& GetPrivateLibraryPath() { return m_privateLibraryPath; }
 
 	// Get the public library path sent by SQL Server
 	//
-	static const std::string& GetPublicLibraryPath() {return m_publicLibraryPath; }
+	static const std::string& GetPublicLibraryPath() { return m_publicLibraryPath; }
 
 	// Get the extension root folder
 	//
-	static const std::string& GetRootPath() {return m_languagePath; }
+	static const std::string& GetRootPath() { return m_languagePath; }
 
 	// Get the language parameters sent by SQL Server
 	//
-	static const std::string& GetParams() {return m_languageParams; }
+	static const std::string& GetParams() { return m_languageParams; }
 
 private:
 	static std::string m_languagePath;

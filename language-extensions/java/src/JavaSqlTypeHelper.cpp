@@ -8,23 +8,9 @@
 //	 Handles converting ODBC C type to JDBC type
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <jni.h>
-#include <sqlext.h>
-#include <sqltypes.h>
-#include <stdlib.h>
-#include <unordered_map>
-#ifndef _WIN64
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
 #include "JavaSqlTypeHelper.h"
+
+using namespace std;
 
 // Constant values for SQL types defined in java.sql.Types
 //
@@ -95,8 +81,7 @@ const unordered_map<jint, SQLSMALLINT> x_javaSqlTypeToOdbcCMap =
 // Description:
 //	Get the Java SQL type from ODBC C type.
 //
-_Success_(return )
-bool JavaSqlTypeHelper::GetJavaSqlType(_In_ SQLSMALLINT sqlType, _Out_ jint &jdbcType)
+bool JavaSqlTypeHelper::GetJavaSqlType(SQLSMALLINT sqlType, jint &jdbcType)
 {
 	bool status = false;
 
@@ -117,8 +102,7 @@ bool JavaSqlTypeHelper::GetJavaSqlType(_In_ SQLSMALLINT sqlType, _Out_ jint &jdb
 // Description:
 //	Get the ODBC C type from Java SQL type.
 //
-_Success_(return )
-bool JavaSqlTypeHelper::GetOdbcType(_In_ jint jdbcType, _Out_ SQLSMALLINT &odbcType)
+bool JavaSqlTypeHelper::GetOdbcType(jint jdbcType, SQLSMALLINT &odbcType)
 {
 	bool status = false;
 

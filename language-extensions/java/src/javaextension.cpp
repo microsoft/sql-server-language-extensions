@@ -10,44 +10,13 @@
 //	 Java method
 //
 //*********************************************************************
-
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <assert.h>
-#include <jni.h>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <sstream>
-#include <sqltypes.h>
-#include <sqlext.h>
-#include <algorithm>
-#include <unordered_map>
-#include <cassert>
-#include <memory>
-#include <locale>
-#include <codecvt>
-#include <stdlib.h>
-#ifndef _WIN64
-#include <linux/limits.h>
-#include <string.h>
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include "Logger.h"
+#include "Common.h"
 #include "JavaExtensionUtils.h"
-#include "JavaArgContainer.h"
-#include "JavaLibraryUtils.h"
 #include "JniHelper.h"
 #include "JniTypeHelper.h"
-#include "JavaDataset.h"
 #include "JavaSession.h"
 #include "JavaPathSettings.h"
+#include "Logger.h"
 #include "sqlexternallanguage.h"
 
 using namespace std;
@@ -104,14 +73,14 @@ SQLUSMALLINT GetInterfaceVersion()
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Init(
-	_In_ SQLCHAR *languageParams,
-	_In_ SQLULEN languageParamsLen,
-	_In_ SQLCHAR *languagePath,
-	_In_ SQLULEN languagePathLen,
-	_In_ SQLCHAR *publicLibraryPath,
-	_In_ SQLULEN publicLibraryPathLen,
-	_In_ SQLCHAR *privateLibraryPath,
-	_In_ SQLULEN privateLibraryPathLen)
+	SQLCHAR *languageParams,
+	SQLULEN languageParamsLen,
+	SQLCHAR *languagePath,
+	SQLULEN languagePathLen,
+	SQLCHAR *publicLibraryPath,
+	SQLULEN publicLibraryPathLen,
+	SQLCHAR *privateLibraryPath,
+	SQLULEN privateLibraryPathLen)
 {
 	SQLRETURN result = SQL_SUCCESS;
 
@@ -153,17 +122,17 @@ SQLRETURN Init(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitSession(
-	_In_ SQLGUID	  SessionId,
-	_In_ SQLUSMALLINT TaskId,
-	_In_ SQLUSMALLINT NumTasks,
-	_In_ SQLCHAR	  *Script,
-	_In_ SQLULEN	  ScriptLength,
-	_In_ SQLUSMALLINT InputSchemaColumnsNumber,
-	_In_ SQLUSMALLINT ParametersNumber,
-	_In_ SQLCHAR	  *InputDataName,
-	_In_ SQLUSMALLINT InputDataNameLength,
-	_In_ SQLCHAR	  *OutputDataName,
-	_In_ SQLUSMALLINT OutputDataNameLength
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	NumTasks,
+	SQLCHAR			*Script,
+	SQLULEN			ScriptLength,
+	SQLUSMALLINT	InputSchemaColumnsNumber,
+	SQLUSMALLINT	ParametersNumber,
+	SQLCHAR			*InputDataName,
+	SQLUSMALLINT	InputDataNameLength,
+	SQLCHAR			*OutputDataName,
+	SQLUSMALLINT	OutputDataNameLength
 	)
 {
 	string msg = "JavaExtension::InitSession";
@@ -234,17 +203,17 @@ SQLRETURN InitSession(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitColumn(
-	_In_ SQLGUID	  SessionId,
-	_In_ SQLUSMALLINT TaskId,
-	_In_ SQLUSMALLINT ColumnNumber,
-	_In_ SQLCHAR	  *ColumnName,
-	_In_ SQLSMALLINT  ColumnNameLength,
-	_In_ SQLSMALLINT  DataType,
-	_In_ SQLULEN	  ColumnSize,
-	_In_ SQLSMALLINT  DecimalDigits,
-	_In_ SQLSMALLINT  Nullable,
-	_In_ SQLSMALLINT  PartitionByNumber,
-	_In_ SQLSMALLINT  OrderByNumber
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	ColumnNumber,
+	SQLCHAR			*ColumnName,
+	SQLSMALLINT		ColumnNameLength,
+	SQLSMALLINT		DataType,
+	SQLULEN			ColumnSize,
+	SQLSMALLINT		DecimalDigits,
+	SQLSMALLINT		Nullable,
+	SQLSMALLINT		PartitionByNumber,
+	SQLSMALLINT		OrderByNumber
 	)
 {
 	string msg = "JavaExtension::InitColumn";
@@ -370,12 +339,12 @@ SQLRETURN InitParam(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Execute(
-	_In_ SQLGUID		SessionId,
-	_In_ SQLUSMALLINT	TaskId,
-	_In_ SQLULEN		RowsNumber,
-	_In_opt_ SQLPOINTER *Data,
-	_In_opt_ SQLINTEGER **StrLen_or_Ind,
-	_Out_ SQLUSMALLINT	*OutputSchemaColumnsNumber
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLULEN			RowsNumber,
+	SQLPOINTER		*Data,
+	SQLINTEGER		**StrLen_or_Ind,
+	SQLUSMALLINT	*OutputSchemaColumnsNumber
 	)
 {
 	string msg = "JavaExtension::Execute";
@@ -428,13 +397,13 @@ SQLRETURN Execute(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResultColumn(
-	_In_ SQLGUID	  SessionId,
-	_In_ SQLUSMALLINT TaskId,
-	_In_ SQLUSMALLINT ColumnNumber,
-	_Out_ SQLSMALLINT *DataType,
-	_Out_ SQLULEN	  *ColumnSize,
-	_Out_ SQLSMALLINT *DecimalDigits,
-	_Out_ SQLSMALLINT *Nullable
+	SQLGUID 		SessionId,
+	SQLUSMALLINT 	TaskId,
+	SQLUSMALLINT	ColumnNumber,
+	SQLSMALLINT 	*DataType,
+	SQLULEN			*ColumnSize,
+	SQLSMALLINT		*DecimalDigits,
+	SQLSMALLINT		*Nullable
 	)
 {
 	LOG("JavaExtension::GetResultColumn");
@@ -478,11 +447,11 @@ SQLRETURN GetResultColumn(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResults(
-	_In_ SQLGUID		SessionId,
-	_In_ SQLUSMALLINT	TaskId,
-	_Out_ SQLULEN		*RowsNumber,
-	_Outptr_ SQLPOINTER **Data,
-	_Outptr_ SQLINTEGER ***StrLen_or_Ind
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLULEN			*RowsNumber,
+	SQLPOINTER		**Data,
+	SQLINTEGER		***StrLen_or_Ind
 	)
 {
 	LOG("JavaExtension::GetResults");
@@ -524,11 +493,11 @@ SQLRETURN GetResults(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetOutputParam(
-	_In_ SQLGUID	  SessionId,
-	_In_ SQLUSMALLINT TaskId,
-	_In_ SQLUSMALLINT ParamNumber,
-	_Out_ SQLPOINTER  *ParamValue,
-	_Out_ SQLINTEGER  *StrLen_or_Ind)
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	ParamNumber,
+	SQLPOINTER		*ParamValue,
+	SQLINTEGER		*StrLen_or_Ind)
 {
 	LOG("JavaExtension::GetOutputParam");
 
@@ -577,10 +546,7 @@ SQLRETURN GetOutputParam(
 // Returns:
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
-SQLRETURN CleanupSession(
-	_In_ SQLGUID	  SessionId,
-	_In_ SQLUSMALLINT TaskId
-	)
+SQLRETURN CleanupSession(SQLGUID SessionId, SQLUSMALLINT TaskId)
 {
 	LOG("JavaExtension::CleanupSession");
 

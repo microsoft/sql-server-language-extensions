@@ -8,14 +8,8 @@
 //	 Windows specific utility functions used by the Java extension.
 //
 //*********************************************************************
-#include <windows.h>
-#include <exception>
-#include <jni.h>
-#include <string>
-#include <shlwapi.h>
-#include "Logger.h"
-#include "JavaLibraryUtils.h"
 #include "JavaExtensionUtils.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -92,7 +86,7 @@ const string& JavaExtensionUtils::GetJvmFilename()
 // Returns:
 //  true if the file is valid, else false
 //
-bool JavaExtensionUtils::IsValidFile(_In_ const string &file)
+bool JavaExtensionUtils::IsValidFile(const string &file)
 {
 	return GetFileAttributesA(file.c_str()) != INVALID_FILE_ATTRIBUTES;
 }
@@ -106,7 +100,7 @@ bool JavaExtensionUtils::IsValidFile(_In_ const string &file)
 // Returns:
 //  String of the enviroment variable if it exists, else an empty string
 //
-string JavaExtensionUtils::GetEnvVariable(_In_ const string &name)
+string JavaExtensionUtils::GetEnvVariable(const string &name)
 {
 	string result = "";
 
@@ -115,7 +109,7 @@ string JavaExtensionUtils::GetEnvVariable(_In_ const string &name)
 	DWORD valueLen = GetEnvironmentVariableA(name.c_str(), nullptr, 0);
 	if (valueLen != 0)
 	{
-		unique_ptr<char[]> value = make_unique<char[]>(valueLen);
+		unique_ptr<char[]> value = std::make_unique<char[]>(valueLen);
 
 		DWORD valueLen2 = GetEnvironmentVariableA(name.c_str(), value.get(), valueLen);
 		if (valueLen2 + 1 == valueLen)

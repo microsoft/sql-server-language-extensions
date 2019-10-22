@@ -9,33 +9,12 @@
 // for consolidating them.
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <assert.h>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <memory>
-#include <jni.h>
-#include <sstream>
-#ifndef _WIN64
-#include <string.h>
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include <sql.h>
-#include <sqlext.h>
-#include <sqltypes.h>
-#include "Logger.h"
+#include "JavaArgContainer.h"
 #include "JniHelper.h"
 #include "JniTypeHelper.h"
-#include "JavaArgContainer.h"
+#include "Logger.h"
+#include <algorithm>
+#include <assert.h>
 
 using namespace std;
 
@@ -51,13 +30,13 @@ typedef unordered_map<string, unique_ptr<JavaArg>> JavaArgMap;
 //  Constructor may throw exceptions besides OOM.
 //
 JavaArg::JavaArg(
-	_In_ SQLUSMALLINT id,
-	_In_ SQLSMALLINT  type,
-	_In_ SQLULEN	  size,
-	_In_ SQLSMALLINT  decimalDigits,
-	_In_ SQLPOINTER	  value,
-	_In_ SQLINTEGER	  strLen_or_Ind,
-	_In_ SQLSMALLINT  inputOutputType)
+	SQLUSMALLINT id,
+	SQLSMALLINT  type,
+	SQLULEN	  size,
+	SQLSMALLINT  decimalDigits,
+	SQLPOINTER	  value,
+	SQLINTEGER	  strLen_or_Ind,
+	SQLSMALLINT  inputOutputType)
 	: m_id(id),
 	m_type(type),
 	m_size(size),
@@ -93,9 +72,9 @@ JavaArg::~JavaArg()
 //	guaranteed to live passed InitParam extension call.
 //
 void JavaArg::DeepCopyValue(
-	_In_ SQLSMALLINT	  type,
-	_In_ SQLINTEGER		  strLen_or_Ind,
-	_In_ const SQLPOINTER value
+	SQLSMALLINT	  type,
+	SQLINTEGER		  strLen_or_Ind,
+	const SQLPOINTER value
 	)
 {
 	switch (type)
@@ -332,7 +311,7 @@ JavaArgContainer::~JavaArgContainer()
 // Description:
 //	Initialize the container
 //
-void JavaArgContainer::Init(_In_ const SQLUSMALLINT numOfArgs)
+void JavaArgContainer::Init(const SQLUSMALLINT numOfArgs)
 {
 	m_argNames.resize(numOfArgs);
 }
@@ -347,57 +326,49 @@ void JavaArgContainer::Init(_In_ const SQLUSMALLINT numOfArgs)
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN JavaArgContainer::AddArg(
-	_In_ SQLUSMALLINT	  id,
-	_In_ const SQLCHAR	  *paramName,
-	_In_ SQLSMALLINT	  paramNameLength,
-	_In_ SQLSMALLINT	  type,
-	_In_ SQLULEN		  size,
-	_In_ SQLSMALLINT	  decimalDigits,
-	_In_ const SQLPOINTER value,
-	_In_ SQLINTEGER		  strLen_or_Ind,
-	_In_ SQLSMALLINT	  inputOutputType)
+	SQLUSMALLINT	  	id,
+	const SQLCHAR	  	*paramName,
+	SQLSMALLINT	  		paramNameLength,
+	SQLSMALLINT	  		type,
+	SQLULEN		  		size,
+	SQLSMALLINT	  		decimalDigits,
+	const SQLPOINTER 	value,
+	SQLINTEGER			strLen_or_Ind,
+	SQLSMALLINT	  		inputOutputType)
 {
 	SQLRETURN retVal = SQL_SUCCESS;
 
-	try
+	if (id < m_argNames.size() && id >= 0)
 	{
-		if (id < m_argNames.size() && id >= 0)
+		// Parameters are named @param, but @ is invalid in Java naming,
+		// so remove it.
+		//
+		string name(reinterpret_cast<const char*>((paramName + 1)));
+
+		m_argNames[id] = name;
+
+		JavaArgMap::iterator it = m_argMap.find(name);
+
+		// Confirm the parameter with this name does not already exist
+		//
+		if (it == m_argMap.end())
 		{
-			// Parameters are named @param, but @ is invalid in Java naming,
-			// so remove it.
-			//
-			string name(reinterpret_cast<const char*>((paramName + 1)));
+			unique_ptr<JavaArg> arg(new JavaArg(id,
+												type,
+												size,
+												decimalDigits,
+												value,
+												strLen_or_Ind,
+												inputOutputType));
 
-			m_argNames[id] = name;
-
-			JavaArgMap::iterator it = m_argMap.find(name);
-
-			// Confirm the parameter with this name does not already exist
-			//
-			if (it == m_argMap.end())
-			{
-				unique_ptr<JavaArg> arg(new JavaArg(id,
-													type,
-													size,
-													decimalDigits,
-													value,
-													strLen_or_Ind,
-													inputOutputType));
-
-				m_argMap.insert(pair<string, unique_ptr<JavaArg>>(name, move(arg)));
-			}
-			else
-			{
-				LOG_ERROR("Duplicate parameter supplied for " + m_argNames[id]);
-
-				retVal = SQL_ERROR;
-			}
+			m_argMap.insert(pair<string, unique_ptr<JavaArg>>(name, move(arg)));
 		}
-	}
-	catch (const std::exception& e)
-	{
-		LOG_EXCEPTION(e);
-		retVal = SQL_ERROR;
+		else
+		{
+			retVal = SQL_ERROR;
+
+			throw runtime_error("Duplicate parameter supplied for " + m_argNames[id]);
+		}
 	}
 
 	return retVal;
@@ -412,7 +383,7 @@ SQLRETURN JavaArgContainer::AddArg(
 // Returns:
 //	Pointer to the Java argument, or null if not found.
 //
-JavaArg* JavaArgContainer::GetArg(_In_ const std::string &name)
+JavaArg* JavaArgContainer::GetArg(const std::string &name)
 {
 	JavaArg *arg = nullptr;
 
@@ -435,7 +406,7 @@ JavaArg* JavaArgContainer::GetArg(_In_ const std::string &name)
 // Returns:
 //	Pointer to the Java argument, or null if not found.
 //
-JavaArg* JavaArgContainer::GetArg(_In_ const SQLUSMALLINT id)
+JavaArg* JavaArgContainer::GetArg(const SQLUSMALLINT id)
 {
 	JavaArg *arg = nullptr;
 
@@ -456,7 +427,7 @@ JavaArg* JavaArgContainer::GetArg(_In_ const SQLUSMALLINT id)
 // Returns:
 //	Global reference to the LinkedHashMap containing all the arguments
 //
-jobject JavaArgContainer::CreateArgMap(_In_ JNIEnv *env)
+jobject JavaArgContainer::CreateArgMap(JNIEnv *env)
 {
 	SQLUSMALLINT count = GetCount();
 
@@ -531,7 +502,7 @@ jobject JavaArgContainer::CreateArgMap(_In_ JNIEnv *env)
 // Returns:
 //	Local reference to the jobject for the argument
 //
-jobject JavaArgContainer::CreateJavaArgObject(_In_ JNIEnv *env, _In_ const JavaArg *arg)
+jobject JavaArgContainer::CreateJavaArgObject(JNIEnv *env, const JavaArg *arg)
 {
 	jobject obj = nullptr;
 
@@ -738,11 +709,11 @@ jobject JavaArgContainer::CreateJavaArgObject(_In_ JNIEnv *env, _In_ const JavaA
 //	with the updated output value from execution parameters' hash map
 //
 void JavaArgContainer::ReplaceArgValue(
-	_In_ JNIEnv		  *env,
-	_In_ SQLUSMALLINT id,
-	_In_ jobject	  javaArgMap,
-	_Out_ SQLPOINTER  *value,
-	_Out_ SQLINTEGER  *strLen_or_Ind)
+	JNIEnv		  	*env,
+	SQLUSMALLINT 	id,
+	jobject	  		javaArgMap,
+	SQLPOINTER  	*value,
+	SQLINTEGER  	*strLen_or_Ind)
 {
 	// Auto cleanup any local references
 	// 1 reference for LinkedHashMap class
@@ -818,9 +789,9 @@ void JavaArgContainer::ReplaceArgValue(
 //	Creates an ODBC object for the argument
 //
 void JavaArgContainer::CreateOdbcArgObject(
-	_In_ JNIEnv	 *env,
-	_In_ jobject jObj,
-	_In_ JavaArg *arg)
+	JNIEnv	*env,
+	jobject jObj,
+	JavaArg *arg)
 {
 	// Auto cleanup any local references
 	// 1 reference for the class
@@ -1228,11 +1199,11 @@ void JavaArgContainer::CreateOdbcArgObject(
 //	If not, a runtime_error exception is thrown.
 //
 void JavaArgContainer::ValidateOutputClass(
-	_In_ JNIEnv		  *env,
-	_In_ SQLUSMALLINT paramId,
-	_In_ jobject	  jObj,
-	_In_ jclass		  objectClass,
-	_In_ string		  &&objectClassName)
+	JNIEnv		  *env,
+	SQLUSMALLINT  paramId,
+	jobject	  	  jObj,
+	jclass		  objectClass,
+	string		  &&objectClassName)
 {
 	jboolean isRightClass = env->IsInstanceOf(jObj, objectClass);
 	if (isRightClass == JNI_FALSE)

@@ -8,36 +8,13 @@
 //	 Handles loading and retrieving data from the dataset class
 //
 //*********************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <algorithm>
-#include <assert.h>
-#include <exception>
-#include <iostream>
-#include <jni.h>
-#include <stdlib.h>
-#include <sqlext.h>
-#include <sqltypes.h>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <unordered_map>
-#include <vector>
-#ifndef _WIN64
-// These sal include headers must follow the standard c++ headers, or there
-// will be compilation issues. This is because headers like iostream/algorithm use
-// variables like __in which are the same as a SAL annotation causing redefinition issues.
-//
-#include <sal_def.h>
-#include <xplat_sal.h>
-#endif
-#include "Logger.h"
-#include "JavaExtensionUtils.h"
+#include "JavaDataset.h"
 #include "JavaSqlTypeHelper.h"
 #include "JniHelper.h"
 #include "JniTypeHelper.h"
-#include "JavaDataset.h"
+#include "Logger.h"
+#include <assert.h>
+#include <tuple>
 
 using namespace std;
 
@@ -165,9 +142,7 @@ unordered_map<SQLSMALLINT, JavaDataset::fnGetColumn> JavaDataset::m_fnGetColumnM
 // Description:
 //	Creates a boolean array in JNI representing a column null map and returns a global reference.
 //
-jbooleanArray JavaDataset::CreateJniNullMap(
-	_In_ jsize							 numRows,
-	_In_reads_(numRows) const SQLINTEGER *values)
+jbooleanArray JavaDataset::CreateJniNullMap(jsize numRows, const SQLINTEGER *values)
 {
 	LOG("JavaDataset::CreateJniNullMap");
 	jbooleanArray jNullMapArray = nullptr;
@@ -200,9 +175,7 @@ jbooleanArray JavaDataset::CreateJniNullMap(
 // Description:
 //	Creates a null map to send to SQL based on the column null map.
 //
-SQLINTEGER* JavaDataset::CreateSqlNullMap(
-	_In_ SQLULEN					  numRows,
-	_In_reads_(numRows) jbooleanArray jArray)
+SQLINTEGER* JavaDataset::CreateSqlNullMap(SQLULEN numRows, jbooleanArray jArray)
 {
 	LOG("JavaDataset::CreateSqlNullMap");
 
@@ -239,9 +212,9 @@ SQLINTEGER* JavaDataset::CreateSqlNullMap(
 //
 template<typename jType, bool isUTF8>
 void JavaDataset::CalculateMaxForVarLengthOutputData(
-	_In_ jobjectArray		 jArray,
-	_Out_ unsigned long long &totalSizeInBytes,
-	_Out_ SQLULEN			 &dataTypeSizeInBytes)
+	jobjectArray		jArray,
+	unsigned long long 	&totalSizeInBytes,
+	SQLULEN				&dataTypeSizeInBytes)
 {
 	LOG("JavaDataset::CalculateMaxForVarLengthOutputData");
 
@@ -286,7 +259,7 @@ void JavaDataset::CalculateMaxForVarLengthOutputData(
 // Description:
 //	Finds the Java Dataset Add<type>Column function corresponding to the column type.
 //
-jmethodID JavaDataset::FindAddColumnMethod(_In_ SQLSMALLINT colType)
+jmethodID JavaDataset::FindAddColumnMethod(SQLSMALLINT colType)
 {
 	LOG("JavaDataset::FindAddColumnMethod");
 
@@ -308,7 +281,7 @@ jmethodID JavaDataset::FindAddColumnMethod(_In_ SQLSMALLINT colType)
 // Description:
 //	Finds the Java Dataset Get<type>Column function corresponding to the column type.
 //
-jmethodID JavaDataset::FindGetColumnMethod(_In_ SQLSMALLINT colType)
+jmethodID JavaDataset::FindGetColumnMethod(SQLSMALLINT colType)
 {
 	LOG("JavaDataset::FindGetColumnMethod");
 
@@ -330,8 +303,7 @@ jmethodID JavaDataset::FindGetColumnMethod(_In_ SQLSMALLINT colType)
 // Description:
 //	Finds the Java Dataset method from the function name and signature.
 //
-jmethodID JavaDataset::FindDatasetMethod(_In_ const string &funcName,
-										 _In_ const string &funcSignature)
+jmethodID JavaDataset::FindDatasetMethod(const string &funcName, const string &funcSignature)
 {
 	LOG("JavaDataset::FindDatasetMethod");
 
@@ -344,7 +316,7 @@ jmethodID JavaDataset::FindDatasetMethod(_In_ const string &funcName,
 // Description:
 //	Initializes a empty dataset object from the class name provided
 //
-void JavaDataset::Init(_In_ JNIEnv *env, _In_ const string &className)
+void JavaDataset::Init(JNIEnv *env, const string &className)
 {
 	LOG("JavaDataset::Init");
 
@@ -421,7 +393,7 @@ void JavaDataset::Init(_In_ JNIEnv *env, _In_ const string &className)
 // Description:
 //	Initializes a dataset object from a current Java object
 //
-void JavaDataset::Init(_In_ JNIEnv *env, _In_ jobject obj)
+void JavaDataset::Init(JNIEnv *env, jobject obj)
 {
 	LOG("JavaDataset::Init");
 
@@ -475,11 +447,11 @@ void JavaDataset::Init(_In_ JNIEnv *env, _In_ jobject obj)
 //	Calls addColumnMetadata on the Dataset
 //
 void JavaDataset::AddColumnMetadata(
-	_In_ jint		  colId,
-	_In_ const string &colName,
-	_In_ SQLSMALLINT  colType,
-	_In_ SQLULEN	  colSize,
-	_In_ SQLSMALLINT  decimalDigits)
+	jint		  	colId,
+	const string 	&colName,
+	SQLSMALLINT  	colType,
+	SQLULEN			colSize,
+	SQLSMALLINT		decimalDigits)
 {
 	LOG("JavaDataset::AddColumnMetadata");
 
@@ -511,8 +483,7 @@ void JavaDataset::AddColumnMetadata(
 // Description:
 //	Calls getColumnType on the Dataset
 //
-void JavaDataset::GetColumnType(_In_ jint		  colId,
-								_Out_ SQLSMALLINT &colType)
+void JavaDataset::GetColumnType(jint colId, SQLSMALLINT &colType)
 {
 	LOG("JavaDataset::GetColumnType");
 
@@ -541,8 +512,7 @@ void JavaDataset::GetColumnType(_In_ jint		  colId,
 // Description:
 //	Calls getColumnPrecision on the Dataset
 //
-void JavaDataset::GetColumnPrecision(_In_ jint	   colId,
-									 _Out_ SQLULEN &colPrec)
+void JavaDataset::GetColumnPrecision(jint colId, SQLULEN &colPrec)
 {
 	LOG("JavaDataset::GetColumnPrecision");
 
@@ -564,8 +534,7 @@ void JavaDataset::GetColumnPrecision(_In_ jint	   colId,
 // Description:
 //	Calls getColumnScale on the Dataset
 //
-void JavaDataset::GetColumnScale(_In_ jint		   colId,
-								 _Out_ SQLSMALLINT &colScale)
+void JavaDataset::GetColumnScale(jint colId, SQLSMALLINT &colScale)
 {
 	LOG("JavaDataset::GetColumnScale");
 
@@ -589,13 +558,13 @@ void JavaDataset::GetColumnScale(_In_ jint		   colId,
 //
 template<typename jArrayType, typename jType, typename cType>
 void JavaDataset::GetColumnInternal(
-	_In_ jint							 colId,
-	_In_ SQLSMALLINT					 colType,
-	_Out_ SQLULEN						 &numRows,
-	_Out_ SQLULEN						 &dataSizeInBytes,
-	_Out_ SQLSMALLINT					 &decimalDigits,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	colType,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes,
+	SQLSMALLINT	&decimalDigits,
+	SQLPOINTER 	*data,
+	SQLINTEGER 	**nullMap)
 {
 	LOG("JavaDataset::GetColumnInternal");
 
@@ -667,13 +636,13 @@ void JavaDataset::GetColumnInternal(
 //
 template<bool isUTF8>
 void JavaDataset::GetStringColumnInternal(
-	_In_ jint							 colId,
-	_In_ SQLSMALLINT					 colType,
-	_Out_ SQLULEN						 &numRows,
-	_Out_ SQLULEN						 &dataSizeInBytes,
-	_Out_ SQLSMALLINT					 &decimalDigits,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	colType,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes,
+	SQLSMALLINT	&decimalDigits,
+	SQLPOINTER	*data,
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetStringColumnInternal");
 
@@ -731,13 +700,13 @@ void JavaDataset::GetStringColumnInternal(
 //	Internal function to get the binary column data.
 //
 void JavaDataset::GetBinaryColumnInternal(
-	_In_ jint							 colId,
-	_In_ SQLSMALLINT					 colType,
-	_Out_ SQLULEN						 &numRows,
-	_Out_ SQLULEN						 &dataSizeInBytes,
-	_Out_ SQLSMALLINT					 &decimalDigits,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	colType,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes,
+	SQLSMALLINT	&decimalDigits,
+	SQLPOINTER	*data,
+	SQLINTEGER 	**nullMap)
 {
 	LOG("JavaDataset::GetBinaryColumnInternal");
 
@@ -795,13 +764,13 @@ void JavaDataset::GetBinaryColumnInternal(
 //	Internal function to get the date column data.
 //
 void JavaDataset::GetDateColumnInternal(
-	_In_ jint							 colId,
-	_In_ SQLSMALLINT					 colType,
-	_Out_ SQLULEN						 &numRows,
-	_Out_ SQLULEN						 &dataSizeInBytes,
-	_Out_ SQLSMALLINT					 &decimalDigits,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	colType,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes,
+	SQLSMALLINT	&decimalDigits,
+	SQLPOINTER	*data,
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetDateColumnInternal");
 
@@ -847,13 +816,13 @@ void JavaDataset::GetDateColumnInternal(
 //	Internal function to get the numeric column data.
 //
 void JavaDataset::GetNumericColumnInternal(
-	_In_ jint							 colId,
-	_In_ SQLSMALLINT					 colType,
-	_Out_ SQLULEN						 &numRows,
-	_Out_ SQLULEN						 &dataSizeInBytes,
-	_Out_ SQLSMALLINT					 &decimalDigits,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	colType,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes,
+	SQLSMALLINT	&decimalDigits,
+	SQLPOINTER	*data,
+	SQLINTEGER 	**nullMap)
 {
 	LOG("JavaDataset::GetNumericColumnInternal");
 
@@ -905,13 +874,13 @@ void JavaDataset::GetNumericColumnInternal(
 //	Internal function to get the timestamp column data.
 //
 void JavaDataset::GetTimestampColumnInternal(
-	_In_ jint							 colId,
-	_In_ SQLSMALLINT					 colType,
-	_Out_ SQLULEN						 &numRows,
-	_Out_ SQLULEN						 &dataSizeInBytes,
-	_Out_ SQLSMALLINT					 &decimalDigits,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	colType,
+	SQLULEN		&numRows,
+	SQLULEN		&dataSizeInBytes,
+	SQLSMALLINT	&decimalDigits,
+	SQLPOINTER	*data,
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetTimestampColumnInternal");
 
@@ -959,9 +928,7 @@ void JavaDataset::GetTimestampColumnInternal(
 // Description:
 //	Calls getColumnNullMap on the Dataset and creates a SQL null map
 //
-void JavaDataset::GetColumnNullMap(_In_ jint							colId,
-								   _Out_ SQLULEN						&numRows,
-								   _Outptr_result_maybenull_ SQLINTEGER **nullMap)
+void JavaDataset::GetColumnNullMap(jint colId, SQLULEN &numRows, SQLINTEGER **nullMap)
 {
 	LOG("JavaDataset::GetColumnNullMap");
 
@@ -997,15 +964,15 @@ void JavaDataset::GetColumnNullMap(_In_ jint							colId,
 //	Adds metadata and data for each column supplied.
 //
 void JavaDataset::AddColumns(
-	_In_ SQLUSMALLINT							 numCols,
-	_In_ SQLULEN								 numRows,
-	_In_ vector<SQLSMALLINT>					 &colTypes,
-	_In_ vector<string>							 &colNames,
-	_In_ vector<SQLULEN>						 &colSizes,
-	_In_ vector<SQLSMALLINT>					 &decimalDigits,
-	_In_ vector<SQLSMALLINT>					 &nullableCols,
-	_In_reads_opt_(numRows * numCols) SQLPOINTER *data,
-	_In_reads_opt_(numRows * numCols) SQLINTEGER **nullMap)
+	SQLUSMALLINT		numCols,
+	SQLULEN				numRows,
+	vector<SQLSMALLINT>	&colTypes,
+	vector<string>		&colNames,
+	vector<SQLULEN>		&colSizes,
+	vector<SQLSMALLINT>	&decimalDigits,
+	vector<SQLSMALLINT>	&nullableCols,
+	SQLPOINTER			*data,
+	SQLINTEGER			**nullMap)
 {
 	LOG("JavaDataset::AddColumns");
 
@@ -1060,14 +1027,14 @@ void JavaDataset::AddColumns(
 //	Gets metadata and data for all columns in the Dataset.
 //
 void JavaDataset::GetColumns(
-	_Out_ SQLUSMALLINT		  &numCols,
-	_Out_ SQLULEN			  &numRows,
-	_Out_ vector<SQLSMALLINT> &colTypes,
-	_Out_ vector<SQLULEN>	  &colSizes,
-	_Out_ vector<SQLSMALLINT> &colDecimalDigits,
-	_Out_ vector<SQLSMALLINT> &nullableCols,
-	_Out_ vector<SQLPOINTER>  &data,
-	_Out_ vector<SQLINTEGER*> &nullMaps)
+	SQLUSMALLINT		&numCols,
+	SQLULEN				&numRows,
+	vector<SQLSMALLINT> &colTypes,
+	vector<SQLULEN>		&colSizes,
+	vector<SQLSMALLINT> &colDecimalDigits,
+	vector<SQLSMALLINT> &nullableCols,
+	vector<SQLPOINTER>  &data,
+	vector<SQLINTEGER*> &nullMaps)
 {
 	LOG("JavaDataset::GetColumns");
 
@@ -1130,13 +1097,13 @@ void JavaDataset::GetColumns(
 //
 template<typename jArrayType, typename jType, typename cType>
 void JavaDataset::AddColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddColumnInternal");
 
@@ -1183,13 +1150,13 @@ void JavaDataset::AddColumnInternal(
 //
 template<bool isUTF8>
 void JavaDataset::AddStringColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddStringColumnInternal");
 
@@ -1216,13 +1183,13 @@ void JavaDataset::AddStringColumnInternal(
 //	Internal function to add the guid column data.
 //
 void JavaDataset::AddGuidColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddGuidColumnInternal");
 
@@ -1249,13 +1216,13 @@ void JavaDataset::AddGuidColumnInternal(
 //	Internal function to add the binary column data.
 //
 void JavaDataset::AddBinaryColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER 	*nullMap)
 {
 	LOG("JavaDataset::AddBinaryColumnInternal");
 
@@ -1282,13 +1249,13 @@ void JavaDataset::AddBinaryColumnInternal(
 //	Internal function to add the date column data.
 //
 void JavaDataset::AddDateColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddDateColumnInternal");
 
@@ -1317,13 +1284,13 @@ void JavaDataset::AddDateColumnInternal(
 //	Internal function to add the numeric column data.
 //
 void JavaDataset::AddNumericColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddNumericColumnInternal");
 
@@ -1353,13 +1320,13 @@ void JavaDataset::AddNumericColumnInternal(
 //	Internal function to add the timestamp column data.
 //
 void JavaDataset::AddTimestampColumnInternal(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ jsize								 numRows,
-	_In_reads_(numRows) SQLPOINTER			 data,
-	_In_reads_opt_(numRows) const SQLINTEGER *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	jsize				numRows,
+	SQLPOINTER			data,
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddTimestampColumnInternal");
 
@@ -1388,13 +1355,13 @@ void JavaDataset::AddTimestampColumnInternal(
 //	Adds the column to the Dataset.
 //
 void JavaDataset::AddColumn(
-	_In_ jint								 colId,
-	_In_ SQLSMALLINT						 colType,
-	_In_ SQLULEN							 colSize,
-	_In_ SQLSMALLINT						 decimalDigits,
-	_In_ SQLULEN							 numRows,
-	_In_reads_(numRows) SQLPOINTER const	 data,
-	_In_reads_opt_(numRows) SQLINTEGER const *nullMap)
+	jint				colId,
+	SQLSMALLINT			colType,
+	SQLULEN				colSize,
+	SQLSMALLINT			decimalDigits,
+	SQLULEN				numRows,
+	SQLPOINTER const	data,
+	SQLINTEGER const	*nullMap)
 {
 	LOG("JavaDataset::AddColumn");
 
@@ -1422,13 +1389,13 @@ void JavaDataset::AddColumn(
 //	Gets a column from the Dataset.
 //
 void JavaDataset::GetColumn(
-	_In_ jint							 colId,
-	_Out_ SQLSMALLINT					 &colType,
-	_Out_ SQLULEN						 &colSize,
-	_Out_ SQLSMALLINT					 &colDecimalDigits,
-	_Out_ SQLULEN						 &numRows,
-	_Outptr_result_maybenull_ SQLPOINTER *data,
-	_Outptr_result_maybenull_ SQLINTEGER **nullMap)
+	jint		colId,
+	SQLSMALLINT	&colType,
+	SQLULEN		&colSize,
+	SQLSMALLINT	&colDecimalDigits,
+	SQLULEN		&numRows,
+	SQLPOINTER	*data,
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetColumn");
 
