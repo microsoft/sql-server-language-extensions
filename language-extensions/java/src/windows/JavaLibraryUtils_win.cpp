@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JavaLibraryUtils_win.cpp
-// @Owner: brnieb
 //
 // Purpose:
 //	 Windows specific utility functions to handle library management

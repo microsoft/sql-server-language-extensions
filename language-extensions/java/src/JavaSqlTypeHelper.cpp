@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JavaSqlTypeHelper.h
-// @Owner: brnieb
 //
 // Purpose:
 //	 Handles converting ODBC C type to JDBC type

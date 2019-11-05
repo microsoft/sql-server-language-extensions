@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JavaArgContainer.h
-// @Owner: brnieb
 //
 // Purpose:
 // Java extension input/output parameter wrappers, along with container

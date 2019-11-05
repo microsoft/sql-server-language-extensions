@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JniHelper.cpp
-// @Owner: brnieb
 //
 // Purpose:
 //	 Wrappers around commonly used JNI functions

@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JavaSession.h
-// @Owner: brnieb
 //
 // Purpose:
 //  Class encapsulating operations performed per session

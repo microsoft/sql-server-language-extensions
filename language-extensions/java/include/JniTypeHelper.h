@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JniTypeHelper.h
-// @Owner: brnieb
 //
 // Purpose:
 //	 Helper for manipulating data through JNI

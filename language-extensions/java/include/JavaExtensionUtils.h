@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JavaExtensionUtils.h
-// @Owner: brnieb
 //
 // Purpose:
 //	 Utility functions used by the Java extension.

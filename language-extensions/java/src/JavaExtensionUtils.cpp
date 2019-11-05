@@ -1,8 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // @File: JavaExtensionUtils.cpp
-// @Owner: brnieb
 //
 // Purpose:
 //  Platform independent utility functions used throughout the
