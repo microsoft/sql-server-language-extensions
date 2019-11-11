@@ -1,12 +1,11 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: JavaPathSettings.cpp
-// @Owner: ivpop
 //
 // Purpose:
-//	 Global class to keep language runtime settings.
+//  Global class to keep language runtime settings.
 //
 //*********************************************************************
 #include "JavaPathSettings.h"

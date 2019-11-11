@@ -5,8 +5,8 @@
 // @File: Logger.cpp
 //
 // Purpose:
-//	 Implementation of Linux platform dependent logging for the java
-//	 extension.
+//  Implementation of Linux platform dependent logging for the java
+//  extension.
 //
 //*********************************************************************
 #include "Logger.h"

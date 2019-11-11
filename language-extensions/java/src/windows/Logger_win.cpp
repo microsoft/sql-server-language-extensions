@@ -1,12 +1,12 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: Logger.cpp
 //
 // Purpose:
-//	 Implementation of platform dependent logging for the java
-//	 extension.
+//  Implementation of platform dependent logging for the java
+//  extension.
 //
 //*********************************************************************
 #include "Logger.h"

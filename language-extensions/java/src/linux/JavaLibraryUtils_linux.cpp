@@ -5,8 +5,8 @@
 // @File: JavaLibraryUtils_linux.cpp
 //
 // Purpose:
-//	 Linux specific utility functions to handle library management
-//	 for the Java extension.
+//  Linux specific utility functions to handle library management
+//  for the Java extension.
 //
 //*********************************************************************
 #include "JavaLibraryUtils.h"

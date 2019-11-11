@@ -1,12 +1,12 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: JavaLibraryUtils.cpp
 //
 // Purpose:
-//	 Cross-platform utility functions to handle library management for
-//	 the Java extension.
+//  Cross-platform utility functions to handle library management for
+//  the Java extension.
 //
 //*********************************************************************
 #include "JavaLibraryUtils.h"

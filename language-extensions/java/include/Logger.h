@@ -1,12 +1,12 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: Logger.h
 //
 // Purpose:
-// Wrapper class around logging to standardize logging messages
-// and errors.
+//  Wrapper class around logging to standardize logging messages
+//  and errors.
 //
 //*********************************************************************
 #pragma once

@@ -5,7 +5,7 @@
 // @File: JavaExtensionUtils_linux.cpp
 //
 // Purpose:
-//	 Linux specific utility functions used by the Java extension.
+//  Linux specific utility functions used by the Java extension.
 //
 //*********************************************************************
 #include "JavaExtensionUtils.h"

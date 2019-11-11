@@ -1,11 +1,11 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: JavaDataset.cpp
 //
 // Purpose:
-//	 Handles loading and retrieving data from the dataset class
+//  Handles loading and retrieving data from the dataset class
 //
 //*********************************************************************
 #include "JavaDataset.h"

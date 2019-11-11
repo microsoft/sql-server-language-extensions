@@ -1,12 +1,12 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: Common.h
 //
 // Purpose:
-// Common header containing only the most common includes shared
-// across majority of the files
+//  Common header containing only the most common includes shared
+//  across majority of the files
 //
 //*********************************************************************
 #pragma once

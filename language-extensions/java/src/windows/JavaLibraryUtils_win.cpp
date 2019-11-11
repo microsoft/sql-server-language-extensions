@@ -1,12 +1,12 @@
 //*********************************************************************
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // @File: JavaLibraryUtils_win.cpp
 //
 // Purpose:
-//	 Windows specific utility functions to handle library management
-//	 for the Java extension.
+//  Windows specific utility functions to handle library management
+//  for the Java extension.
 //
 //*********************************************************************
 #include "JavaLibraryUtils.h"
