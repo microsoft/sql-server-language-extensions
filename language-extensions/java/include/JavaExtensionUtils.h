@@ -39,6 +39,10 @@ public:
 	//
 	static bool IsValidFile(const std::string &file);
 
+	// Split a string based on a delimiter
+	//
+	static std::vector<std::string> SplitString(const std::string &str, const char delimiter);
+
 	// Creates a JVM
 	//
 	static JNIEnv* CreateJvm();
