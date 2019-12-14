@@ -1,0 +1,30 @@
+﻿{
+  "configurations": [
+    {
+      "name": "Rextension-test",
+      "generator": "Visual Studio 15 2017 Win64",
+      "configurationType": "Debug",
+      "inheritEnvironments": [
+        "msvc_x64_x64"
+      ],
+      "buildRoot": "${thisFileDir}..\\..\\..\\..\\..\\.build\\${name}\\windows",
+      "installRoot": "${thisFileDir}..\\..\\..\\..\\..\\.build\\${name}\\windows\\${configurationType}",
+      "cmakeCommandArgs": "-DENL_ROOT=${thisFileDir}..\\..\\..\\..\\..\\ -DCMAKE_CONFIGURATION=${configurationType}",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
+    },
+    {
+      "name": "Rextension-test",
+      "generator": "Visual Studio 15 2017 Win64",
+      "configurationType": "Release",
+      "inheritEnvironments": [
+        "msvc_x64_x64"
+      ],
+      "buildRoot": "${thisFileDir}..\\..\\..\\..\\..\\.build\\${name}\\windows",
+      "installRoot": "${thisFileDir}..\\..\\..\\..\\..\\.build\\${name}\\windows\\${configurationType}",
+      "cmakeCommandArgs": "-DENL_ROOT=${thisFileDir}..\\..\\..\\..\\..\\ -DCMAKE_CONFIGURATION=${configurationType}",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
+    }
+  ]
+}

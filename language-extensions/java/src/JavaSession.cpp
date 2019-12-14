@@ -98,7 +98,7 @@ void JavaSession::Init(
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaSession::Init
+// Name: JavaSession::InitColumn
 //
 // Description:
 //  Initializes the input column for this session
@@ -178,7 +178,7 @@ void JavaSession::InitParam(
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaSession::InitParam
+// Name: JavaSession::ExecuteWorkflow
 //
 // Description:
 //  Execute the workflow for the session

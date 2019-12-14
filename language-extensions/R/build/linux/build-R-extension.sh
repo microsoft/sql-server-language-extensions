@@ -18,7 +18,7 @@ function build {
     fi
 
     # Output directory and output dll name
-    TARGET=${EnlRoot}.build/R-extension/target/${CMAKE_CONFIGURATION}/
+    TARGET=${EnlRoot}/.build/R-extension/target/${CMAKE_CONFIGURATION}
     # Create the output directories
     mkdir -p ${TARGET}
 
@@ -27,10 +27,11 @@ function build {
     fi
     cd ${REXTENSION_WORKING_DIR}
     # Compile
-    cmake -DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
-        -DR_INCLUDE_DIR=${R_HOME}include \
+    cmake -DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
+        -DR_INCLUDE_DIR=${R_HOME}/include \
         -DR_LIB_DIR=${R_LIB_DIR} \
-        -DREXTENSION_INCLUDE_DIR=${REXTENSION_HOME}include \
+        -DEXTENSION_API_INCLUDE_DIR=${EnlRoot}/extension-host/include \
+        -DREXTENSION_INCLUDE_DIR=${REXTENSION_HOME}/include \
         -DREXTENSION_WORKING_DIR=${REXTENSION_WORKING_DIR} \
         -DREXTENSION_SRC_DIR=${REXTENSION_SRC_DIR} \
         ${REXTENSION_SRC_DIR}
@@ -46,22 +47,22 @@ function build {
     cd ${CMAKE_CONFIGURATION}/
     # This will create the R extension package with unsigned binaries, this is used for local development and non-release builds. Release
     # builds will call create-R-extension-zip.sh after the binaries have been signed and this will be included in the zip
-    zip ${TARGET}R-lang-extension libRextension.so.1.0
+    zip ${TARGET}/R-lang-extension libRextension.so.1.0
 
     check_exit_code "Success: Created R-lang-extension.zip" "Error: Failed to create zip for R extension"
 }
 
 # Enlistment root and location of Rextension
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-EnlRoot=${SCRIPTDIR}/../../../../
-REXTENSION_HOME=${EnlRoot}language-extensions/R/
+EnlRoot=${SCRIPTDIR}/../../../..
+REXTENSION_HOME=${EnlRoot}/language-extensions/R
 
 # Set environment variables required in Cmake
-PACKAGES_ROOT=${EnlRoot}packages/
-R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R/
-REXTENSION_SRC_DIR=${REXTENSION_HOME}src/
-R_LIB_DIR=${R_HOME}lib/
-REXTENSION_WORKING_DIR=${EnlRoot}.build/R-extension/linux/
+PACKAGES_ROOT=${EnlRoot}/packages
+R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+REXTENSION_SRC_DIR=${REXTENSION_HOME}/src/
+R_LIB_DIR=${R_HOME}/lib/
+REXTENSION_WORKING_DIR=${EnlRoot}/.build/R-extension/linux/
 
 while [ "$1" != "" ]; do
     # Advance arg passed to build.cmd

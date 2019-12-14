@@ -17,53 +17,69 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # C++ code; only these files are compiled-in
 file(TO_CMAKE_PATH ${REXTENSION_SRC_DIR} REXTENSION_SRC_CMAKE_DIR)
 set(REXTENSION_SOURCE_FILES
-    ${REXTENSION_SRC_CMAKE_DIR}/Rextension.cpp
-)
-
-# Create the target library
-add_library(Rextension SHARED
-    ${REXTENSION_SOURCE_FILES}
-)
-
-set_target_properties(Rextension
-    PROPERTIES
-    VERSION ${REXTENSION_VERSION}
-    SOVERSION ${REXTENSION_VERSION_MAJOR}
-)
-
-target_include_directories(Rextension
-    PRIVATE ${REXTENSION_INCLUDE_DIR} ${R_INCLUDE_DIR}
+	${REXTENSION_SRC_CMAKE_DIR}/Column.cpp
+	${REXTENSION_SRC_CMAKE_DIR}/Logger.cpp
+	${REXTENSION_SRC_CMAKE_DIR}/Rextension.cpp
+	${REXTENSION_SRC_CMAKE_DIR}/RSession.cpp
+	${REXTENSION_SRC_CMAKE_DIR}/RPathSettings.cpp
+	${REXTENSION_SRC_CMAKE_DIR}/Utilities.cpp
 )
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    # G++
-    target_compile_options(Rextension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
-    set(USR_LIB_PATH "/usr/local/lib")
-    find_library(PCRE_LIB pcre ${USR_LIB_PATH})
-    find_library(LZMA_LIB lzma ${USR_LIB_PATH})
-    find_library(BZ2_LIB bz2 ${USR_LIB_PATH})
-    find_library(Z_LIB z ${USR_LIB_PATH})
-    find_library(RT_LIB rt ${USR_LIB_PATH})
-    find_library(DL_LIB dl ${USR_LIB_PATH})
-    find_library(M_LIB m ${USR_LIB_PATH})
-    target_link_libraries(Rextension ${PCRE_LIB} ${LZMA_LIB} ${BZ2_LIB} ${Z_LIB}
-        ${RT_LIB} ${DL_LIB} ${M_LIB}
-    )
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-    # MSVC
-    add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
-    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-        add_definitions(-DDEBUG)
-    endif()
-    target_compile_options(Rextension PRIVATE /EHsc /MTd /W2 /c -O3 -Wall -pedantic _CRT_SECURE_NO_WARNINGS)
-    # Set the DLLEXPORT variable to export symbols
-    target_compile_definitions(Rextension PRIVATE WIN_EXPORT)
+	set(REXTENSION_SOURCE_FILES
+		${REXTENSION_SOURCE_FILES}
+		${REXTENSION_SRC_CMAKE_DIR}/Utilities_linux.cpp)
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+	set(REXTENSION_SOURCE_FILES
+		${REXTENSION_SOURCE_FILES}
+		${REXTENSION_SRC_CMAKE_DIR}/Utilities_win.cpp)
+endif()
+
+# Create the target library
+add_library(Rextension SHARED
+	${REXTENSION_SOURCE_FILES}
+)
+
+set_target_properties(Rextension
+	PROPERTIES
+	VERSION ${REXTENSION_VERSION}
+	SOVERSION ${REXTENSION_VERSION_MAJOR}
+)
+
+target_include_directories(Rextension
+	PRIVATE ${REXTENSION_INCLUDE_DIR} ${R_INCLUDE_DIR} ${EXTENSION_API_INCLUDE_DIR}
+)
+
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+	# G++
+	target_compile_options(Rextension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++11 -Wno-unused-parameter)
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
+	set(USR_LIB_PATH "/usr/local/lib")
+	find_library(PCRE_LIB pcre ${USR_LIB_PATH})
+	find_library(LZMA_LIB lzma ${USR_LIB_PATH})
+	find_library(BZ2_LIB bz2 ${USR_LIB_PATH})
+	find_library(Z_LIB z ${USR_LIB_PATH})
+	find_library(RT_LIB rt ${USR_LIB_PATH})
+	find_library(DL_LIB dl ${USR_LIB_PATH})
+	find_library(M_LIB m ${USR_LIB_PATH})
+	target_link_libraries(Rextension ${PCRE_LIB} ${LZMA_LIB} ${BZ2_LIB} ${Z_LIB}
+		${RT_LIB} ${DL_LIB} ${M_LIB}
+	)
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+	# MSVC
+	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
+	target_compile_options(Rextension PRIVATE /EHsc /MTd /W2 /c -O3 -Wall -pedantic)
+	# Set the DLLEXPORT variable to export symbols
+	target_compile_definitions(Rextension PRIVATE WIN_EXPORT)
+endif()
+
+if (${CMAKE_CONFIGURATION} STREQUAL "debug")
+	add_definitions(-D_DEBUG)
 endif()
 
 find_library(R_LIB R ${R_LIB_DIR} )
 target_link_libraries(Rextension
-  ${R_LIB}
+	${R_LIB}
 )
 
 install(TARGETS Rextension DESTINATION "${REXTENSION_WORKING_DIR}" LIBRARY NAMELINK_ONLY)

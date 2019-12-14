@@ -42,10 +42,10 @@
     <OutDir>$(SolutionDir)..\..\..\..\..\.build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup>
-    <GtestHome>..\..\..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.0\</GtestHome>
+    <GtestHome>..\..\..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0\</GtestHome>
     <GtestInclude>$(GtestHome)build\native\include</GtestInclude>
-    <GtestDebugLib>$(GtestHome)lib\native\v140\windesktop\msvcstl\static\rt-static\x64\Debug\</GtestDebugLib>
-    <GtestReleaseLib>$(GtestHome)lib\native\v140\windesktop\msvcstl\static\rt-static\x64\Release\</GtestReleaseLib>
+    <GtestDebugLib>$(GtestHome)lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\Debug\</GtestDebugLib>
+    <GtestReleaseLib>$(GtestHome)lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\Release\</GtestReleaseLib>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

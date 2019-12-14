@@ -2,21 +2,21 @@
 SETLOCAL
 
 REM Nuget packages directory and location of R libs
-SET EnlRoot=%~dp0..\..\..\..\
-SET REXTENSION_HOME=%EnlRoot%language-extensions\R\
+SET EnlRoot=%~dp0..\..\..\..
+SET REXTENSION_HOME=%EnlRoot%\language-extensions\R
 
 :LOOP
 
 REM Set cmake config to first arg
 SET CMAKE_CONFIGURATION=%1
 
-REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "relwithdebinfo".
+REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "release".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=debug)
-IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=relwithdebinfo)
+IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
 
 REM Output directory and output dll name
-SET TARGET="%EnlRoot%.build\R-extension\target\%MSVC_BUILD_CONFIGURATION%"
+SET TARGET="%EnlRoot%\.build\R-extension\target\%MSVC_BUILD_CONFIGURATION%"
 
 REM Create the output directories
 mkdir %TARGET%
@@ -32,7 +32,7 @@ if not defined DevEnvDir (
 )
 
 REM Build the project
-msbuild %REXTENSION_HOME%build\windows\Rextension.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
+msbuild %REXTENSION_HOME%\build\windows\Rextension.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
 
 REM Save exit code of compiler
 SET EX=%ERRORLEVEL%
@@ -43,11 +43,15 @@ IF %EX% NEQ 0 (
     GOTO CLEANUP
 )
 
-SET BUILD_OUTPUT=%EnlRoot%.build\R-extension\windows\%MSVC_BUILD_CONFIGURATION%
+SET BUILD_OUTPUT=%EnlRoot%\.build\R-extension\windows\%MSVC_BUILD_CONFIGURATION%
 
 REM This will create the R extension package with unsigned binaries, this is used for local development and non-release builds. Release
 REM builds will call create-R-extension-zip.cmd after the binaries have been signed and this will be included in the zip
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\Rextension.dll, %BUILD_OUTPUT%\Rextension.pdb -DestinationPath %TARGET%\R-lang-extension.zip"
+IF /I %CMAKE_CONFIGURATION%==debug (
+	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\Rextension.dll, %BUILD_OUTPUT%\Rextension.pdb -DestinationPath %TARGET%\R-lang-extension.zip"
+) ELSE (
+	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\Rextension.dll -DestinationPath %TARGET%\R-lang-extension.zip"
+)
 
 SET EX=%ERRORLEVEL%
 
