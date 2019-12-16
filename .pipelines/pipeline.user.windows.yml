@@ -198,11 +198,11 @@ package:
       name: 'Create Java extension zip'
       command: 'language-extensions\java\build\windows\create-java-extension-zip.cmd'
       artifacts:
-        - from: 'language-extensions\java\build\windows\x64\debug\packages'
+        - from: '.build\java-extension\windows\debug\packages'
           to: 'out\java-extension\packages\debug'
           include:
             - 'java-lang-extension.zip'
-        - from: 'language-extensions\java\build\windows\x64\release\packages'
+        - from: '.build\java-extension\windows\release\packages'
           to: 'out\java-extension\packages\release'
           include:
             - 'java-lang-extension.zip'

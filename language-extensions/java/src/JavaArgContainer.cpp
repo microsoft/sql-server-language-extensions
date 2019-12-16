@@ -15,6 +15,7 @@
 #include "Logger.h"
 #include <algorithm>
 #include <assert.h>
+#include <cstring> // Needed for memcpy in Linux
 
 using namespace std;
 

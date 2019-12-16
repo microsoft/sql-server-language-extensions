@@ -12,6 +12,7 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <cstring> // Needed for memcpy in Linux
 
 // The format used to log the session id (guid)
 //

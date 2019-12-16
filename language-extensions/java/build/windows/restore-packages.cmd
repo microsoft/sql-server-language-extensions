@@ -1,2 +1,2 @@
-SET EnlRoot=%~dp0..\..\..\..\
-nuget restore %EnlRoot%language-extensions\java\packages.config -PackagesDirectory %EnlRoot%packages
+SET ENL_ROOT=%~dp0..\..\..\..
+nuget restore %ENL_ROOT%\language-extensions\java\packages.config -PackagesDirectory %ENL_ROOT%\packages

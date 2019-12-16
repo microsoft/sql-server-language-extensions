@@ -13,6 +13,7 @@
 #include "JavaLibraryUtils.h"
 #include "Logger.h"
 #include <sstream>
+#include <cstring> // Needed for memset in Linux
 
 using namespace std;
 
