@@ -1,5 +1,8 @@
 //*********************************************************************
-//                Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 //
 // @File: Logger.cpp
 //
@@ -8,16 +11,6 @@
 //
 //*********************************************************************
 
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
-
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <iostream>
-#include <string>
-#include <ctime>
 #include "Logger.h"
 
 #define TIMESTAMP_LENGTH 35
@@ -56,7 +49,7 @@ void Logger::LogException(const exception &e)
 //
 void Logger::Log(const string &msg)
 {
-#ifdef DEBUG
+#if defined(_DEBUG)
 	cout << GetCurrentTimestamp() << msg << endl;
 #endif
 }
@@ -96,4 +89,3 @@ const std::string Logger::GetCurrentTimestamp()
 	return buf;
 #endif
 }
-

@@ -2,8 +2,8 @@
 SETLOCAL
 
 REM Nuget packages directory and location of python libs
-SET EnlRoot=%~dp0..\..\..\..\
-SET PYTHONEXTENSION_HOME=%EnlRoot%language-extensions\python\
+SET EnlRoot=%~dp0\..\..\..\..
+SET PYTHONEXTENSION_HOME=%EnlRoot%\language-extensions\python
 
 :LOOP
 
@@ -15,7 +15,7 @@ IF NOT DEFINED CONFIGURATION (SET CONFIGURATION=debug)
 IF /I %CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
 
 REM Output directory and output dll name
-SET TARGET="%EnlRoot%.build\python-extension\target\%MSVC_BUILD_CONFIGURATION%"
+SET TARGET="%EnlRoot%\.build\python-extension\target\%MSVC_BUILD_CONFIGURATION%"
 
 REM Create the output directories
 mkdir %TARGET%
@@ -31,7 +31,7 @@ if not defined DevEnvDir (
 )
 
 REM Build the project
-msbuild %PYTHONEXTENSION_HOME%build\windows\pythonextension.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
+msbuild %PYTHONEXTENSION_HOME%\build\windows\pythonextension.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
 
 REM Save exit code of compiler
 SET EX=%ERRORLEVEL%
@@ -42,7 +42,7 @@ IF %EX% NEQ 0 (
     GOTO CLEANUP
 )
 
-SET BUILD_OUTPUT=%EnlRoot%.build\python-extension\windows\%MSVC_BUILD_CONFIGURATION%
+SET BUILD_OUTPUT=%EnlRoot%\.build\python-extension\windows\%MSVC_BUILD_CONFIGURATION%
 
 REM This will create the python extension package with unsigned binaries, this is used for local development and non-release builds. Release
 REM builds will call create-python-extension-zip.cmd after the binaries have been signed and this will be included in the zip

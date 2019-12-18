@@ -28,7 +28,7 @@ if not defined DevEnvDir (
 ECHO "[INFO] Building python test project using MSVC_BUILD_CONFIGURATION=%MSVC_BUILD_CONFIGURATION%"
 
 REM Build the project
-msbuild %PYTHONTEST_BUILD%windows\python-test.vcxproj /m /fl1 /fl2 /fl3 ^
+msbuild %PYTHONTEST_BUILD%windows\pythonextension-test.vcxproj /m /fl1 /fl2 /fl3 ^
   /flp1:logfile=%PYTHONTEST_BUILD%msbuild.err;errorsonly /flp2:logfile=%PYTHONTEST_BUILD%msbuild.wrn;warningsonly ^
   /flp3:logfile=%PYTHONTEST_BUILD%msbuild.log /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
 IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
@@ -36,11 +36,11 @@ IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
 SET EX=%ERRORLEVEL%
 
 if "%EX%" neq "0" (
-    echo "Error: Failed to build python-test.vcxproj"
+    echo "Error: Failed to build pythonextension-test.vcxproj"
 	GOTO CLEANUP
 )
 
-REM Advance arg passed to build-python-test.cmd
+REM Advance arg passed to build-pythonextension-test.cmd
 SHIFT
 
 REM Continue building using more configs until argv has been exhausted

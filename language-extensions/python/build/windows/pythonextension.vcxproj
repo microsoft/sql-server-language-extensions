@@ -56,11 +56,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(EnlRoot)\.build\python-extension\Windows\$(Configuration)\</OutDir>
+    <OutDir>$(EnlRoot)\.build\python-extension\Windows\$(Configuration)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(EnlRoot)\.build\python-extension\Windows\$(Configuration)\</OutDir>
+    <OutDir>$(EnlRoot)\.build\python-extension\Windows\$(Configuration)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -84,7 +84,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;PYTHONEXTENSION_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RELEASE;PYTHONEXTENSION_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -113,19 +113,28 @@
     <Link>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>%(AdditionalDependencies);$(BoostPythonRoot)\libboost_python37-vc141-mt-gd-x64-1_69.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BoostPythonRoot);$(PythonRoot)\libs;</AdditionalLibraryDirectories>
-      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(BoostPythonRoot);$(PythonRoot)\libs;</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalDependencies);$(BoostPythonRoot)\libboost_python37-vc141-mt-gd-x64-1_69.lib</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalDependencies);$(BoostPythonRoot)\libboost_python37-vc141-mt-x64-1_69.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BoostPythonRoot);$(PythonRoot)\libs;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallanguage.h" />
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallibrary.h" />
-    <ClInclude Include="..\..\include\Logger.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonSession.h" />
+    <ClInclude Include="$(IncludeDirectory)\Common.h" />
+    <ClInclude Include="$(IncludeDirectory)\Column.h" />
+    <ClInclude Include="$(IncludeDirectory)\Logger.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonTypeUtils.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonExtensionUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SourceDirectory)\pythonextension.cpp" />
-    <ClCompile Include="..\..\src\Logger.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonSession.cpp" />
+    <ClCompile Include="$(SourceDirectory)\Logger.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonTypeUtils.cpp" />
+    <ClCompile Include="$(SourceDirectory)\Column.cpp" />
+    <ClCompile Include="$(SourceDirectory)\windows\PythonExtensionUtils_win.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

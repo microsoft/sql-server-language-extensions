@@ -1,9 +1,18 @@
+//*********************************************************************
+//                Copyright (C) Microsoft Corporation.
+//
+// @File: main.cpp
+//
+// Purpose:
+//  Initialize gtest and run all Python extension tests
+//
+//*********************************************************************
 #include <gtest/gtest.h>
 
 int main(int argc, const char **argv)
 {
   // banner
-  std::cout << "Running SampleTest C++ unit tests.\n";
+  std::cout << "Running PythonTest C++ unit tests.\n";
 
   /*
    * first, initiate Google Test framework - this will remove

@@ -1,5 +1,8 @@
 //*********************************************************************
-//                 Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 //
 // @File: Logger.h
 //
@@ -8,17 +11,11 @@
 //
 //*********************************************************************
 
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
-
 #pragma once
+#include "Common.h"
 
-#ifdef DEBUG
+// TODO: work item 13292457: add different logging levels
 #define LOG(msg) Logger::Log(msg)
-#else
-#define LOG(msg)
-#endif
 #define LOG_ERROR(msg) Logger::LogError(msg)
 #define LOG_EXCEPTION(e) Logger::LogException(e)
 

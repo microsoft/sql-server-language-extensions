@@ -1,41 +1,41 @@
 //*********************************************************************
-//                Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 //
 // @File: pythonextension.cpp
 //
 // Purpose:
-//	 Python extension DLL that can be loaded by ExtHost. This library loads the
-//	 Python dll, handles communication with ExtHost, and executes user-specified
-//	 Python script
+//  Python extension DLL that can be loaded by ExtHost. This library loads the
+//  Python dll, handles communication with ExtHost, and executes user-specified
+//  Python script
 //
 //*********************************************************************
 
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
-
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <boost/python.hpp>
-#include <iostream>
-#include <string>
-#include <ctime>
-#include <sqltypes.h>
-#include <sqlext.h>
-#include "sqlexternallanguage.h"
 #include "Logger.h"
+#include "PythonSession.h"
+#include "PythonTypeUtils.h"
+#include "sqlexternallanguage.h"
+#include "PythonExtensionUtils.h"
 
 using namespace std;
+
+// The version of python to load as DLL
+//
+static const string x_PythonVersion = "python37";
+
+static void *g_pyDLL = nullptr;
+static unordered_map<string, PythonSession *> g_pySessionMap;
 
 //--------------------------------------------------------------------------------------------------
 // Name: GetInterfaceVersion
 //
 // Description:
-//	Returns the API interface version for the extension
+// Returns the API interface version for the extension
 //
 // Returns:
-//	EXTERNAL_LANGUAGE_EXTENSION_API
+// EXTERNAL_LANGUAGE_EXTENSION_API
 //
 SQLUSMALLINT
 GetInterfaceVersion()
@@ -47,10 +47,11 @@ GetInterfaceVersion()
 // Name: Init
 //
 // Description:
-//	Initialize the python extension. Until registration, nothing is needed here.
+//  Initialize the python extension. Until registration, nothing is needed here.
+//  We call Py_Initialize to initialize python in C++ and allow boost to work
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Init(
 	SQLCHAR *ExtensionParams,
@@ -63,21 +64,53 @@ SQLRETURN Init(
 	SQLULEN PrivateLibraryPathLength
 )
 {
-	LOG("PythonExtension::Init");
+	LOG("Init");
 
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string pythonHomePath = "";
+
+	try
+	{
+		pythonHomePath = string(reinterpret_cast<char*>(ExtensionPath), ExtensionPathLength - 1);
+		pythonHomePath = PythonExtensionUtils::GetEnvVariable("PYTHONHOME");
+	}
+	catch (...)
+	{
+		LOG("Falling back to default python path: " + pythonHomePath);
+	}
+
+	try
+	{
+		// Initialize Python using the Python/C API.
+		// This allows us to start using Python API and boost functions.
+		//
+		Py_Initialize();
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function Init()");
+	}
+
+	return result;
 }
-
 
 //--------------------------------------------------------------------------------------------------
 // Name: InitSession
 //
 // Description:
-//	Initializes session-specific data. We store the schema and find the main class and
-//	method to execute here.
+//  Initializes session-specific data. We store the schema and find the main class and
+//  method to execute here.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitSession(
 	SQLGUID		 SessionId,
@@ -94,18 +127,50 @@ SQLRETURN InitSession(
 )
 {
 	LOG("InitSession");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session] = new PythonSession();
+		g_pySessionMap[session]->Init(
+			&SessionId,
+			TaskId,
+			NumTasks,
+			Script,
+			ScriptLength,
+			InputSchemaColumnsNumber,
+			ParametersNumber,
+			InputDataName,
+			InputDataNameLength,
+			OutputDataName,
+			OutputDataNameLength);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function InitSession()");
+	}
+
+	return result;
 }
 
 //--------------------------------------------------------------------------------------------------
 // Name: InitColumn
 //
 // Description:
-//	Initializes column-specific data. We store the name and the data type of the column
+//  Initializes column-specific data. We store the name and the data type of the column
 //  here.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitColumn(
 	SQLGUID		 SessionId,
@@ -122,17 +187,45 @@ SQLRETURN InitColumn(
 )
 {
 	LOG("InitColumn");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session]->InitColumn(
+			ColumnNumber,
+			ColumnName,
+			ColumnNameLength,
+			DataType,
+			ColumnSize,
+			DecimalDigits,
+			Nullable,
+			PartitionByNumber,
+			OrderByNumber);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function InitColumn()");
+	}
+
+	return result;
 }
 
 //--------------------------------------------------------------------------------------------------
 // Name: InitParam
 //
 // Description:
-//	Initializes parameter-specific data.
+//  Initializes parameter-specific data.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitParam(
 	SQLGUID		 SessionId,
@@ -148,7 +241,35 @@ SQLRETURN InitParam(
 	SQLSMALLINT	 InputOutputType)
 {
 	LOG("InitParam");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session]->InitParam(
+			ParamNumber,
+			ParamName,
+			ParamNameLength,
+			DataType,
+			ParamSize,
+			DecimalDigits,
+			ParamValue,
+			StrLen_or_Ind,
+			InputOutputType);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function InitParam()");
+	}
+
+	return result;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -156,11 +277,11 @@ SQLRETURN InitParam(
 //
 // Description:
 //  Given the data from ExtHost, convert and populate the arrays in the user python program. Then,
-//  execute the script and retrieve the output schema and convert the data back to
+//  invoke the specified function and retrieve the output schema and convert the data back to
 //  ODBC types.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Execute(
 	SQLGUID		 SessionId,
@@ -172,10 +293,31 @@ SQLRETURN Execute(
 )
 {
 	LOG("Execute");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session]->ExecuteWorkflow(RowsNumber,
+									Data,
+									StrLen_or_Ind,
+									OutputSchemaColumnsNumber);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function Execute()");
+	}
+
+	return result;
 }
 
-SQLEXTENSION_INTERFACE
 SQLRETURN GetResultColumn(
 	SQLGUID		 SessionId,
 	SQLUSMALLINT TaskId,
@@ -187,10 +329,33 @@ SQLRETURN GetResultColumn(
 )
 {
 	LOG("GetResultColumn");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session]->GetResultColumn(
+			ColumnNumber,
+			DataType,
+			ColumnSize,
+			DecimalDigits,
+			Nullable);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function Execute()");
+	}
+
+	return result;
 }
 
-SQLEXTENSION_INTERFACE
 SQLRETURN GetResults(
 	SQLGUID		 SessionId,
 	SQLUSMALLINT TaskId,
@@ -200,10 +365,31 @@ SQLRETURN GetResults(
 )
 {
 	LOG("GetResults");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session]->GetResults(
+			RowsNumber,
+			Data,
+			StrLen_or_Ind);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function GetResults()");
+	}
+
+	return result;
 }
 
-SQLEXTENSION_INTERFACE
 SQLRETURN GetOutputParam(
 	SQLGUID		 SessionId,
 	SQLUSMALLINT TaskId,
@@ -213,22 +399,84 @@ SQLRETURN GetOutputParam(
 )
 {
 	LOG("GetOutputParam");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		g_pySessionMap[session]->GetOutputParam(
+			ParamNumber,
+			ParamValue,
+			StrLen_or_Ind);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function GetOutputParam()");
+	}
+
+	return result;
 }
 
-SQLEXTENSION_INTERFACE
 SQLRETURN CleanupSession(
 	SQLGUID		 SessionId,
 	SQLUSMALLINT TaskId
 )
 {
 	LOG("CleanupSession");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	try
+	{
+		if (g_pySessionMap.count(session) > 0)
+		{
+			g_pySessionMap[session]->Cleanup();
+			delete g_pySessionMap[session];
+			g_pySessionMap.erase(session);
+		}
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function CleanupSession()");
+	}
+
+	return result;
 }
 
-SQLEXTENSION_INTERFACE
 SQLRETURN Cleanup()
 {
 	LOG("Cleanup");
-	return SQL_SUCCESS;
+	SQLRETURN result = SQL_SUCCESS;
+	try
+	{
+		PythonExtensionUtils::FreeDLL(g_pyDLL);
+	}
+	catch (const exception &ex)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR(ex.what());
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Unexpected exception occurred in function Cleanup()");
+	}
+
+	return result;
 }

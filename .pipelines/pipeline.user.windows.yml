@@ -184,9 +184,13 @@ build:
           signing_options:
             profile: 'none'
     - !!defaultcommand
-      name: 'Build Python Test'
-      command: 'language-extensions\python\test\build\windows\build-python-test.cmd'
+      name: 'Build Sample Test'
+      command: 'test\gtest\sample-test\build\windows\build-sample-test.cmd'
       arguments:  'debug release'
+    - !!defaultcommand
+      name: 'Build pythonextension Test'
+      command: 'language-extensions\python\test\build\windows\build-pythonextension-test.cmd'
+      arguments:  'debug release'  
     - !!defaultcommand
       name: 'Build Rextension Test'
       command: 'language-extensions\R\test\build\windows\build-Rextension-test.cmd'
@@ -239,6 +243,39 @@ package:
 test:
   commands: # This is a sequence of script files to be executed one after another in the order they appear here.
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
+      name: 'Test The Code'                      # If your test run does not have a name, this will be used.
+      command: 'test\run-unittests.cmd'          # Script that runs tests.
+      arguments:  'debug release'
+      fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
+      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
+      testresults:                               # Sequence of entries indicating which test results files to collect.
+        - title: 'All Tests'                     # Test run title. Used by VSTS.
+          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
+          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
+            - 'out\TestReport*.xml'
+    - !!testcommand                              # We are going to run tests and collect back the test results for publishing
+      name: 'Test Python'                        # If your test run does not have a name, this will be used.
+      command: 'language-extensions\python\test\build\windows\run-pythonextension-tests.cmd'        # Script that runs tests.
+      arguments:  'debug'
+      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; set to false because we have negative tests
+      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
+      testresults:                               # Sequence of entries indicating which test results files to collect.
+        - title: 'Python Tests'                     # Test run title. Used by VSTS.
+          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
+          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
+            - 'out\TestReport_pythonextension*.xml'    
+    - !!testcommand                              # We are going to run tests and collect back the test results for publishing
+      name: 'Test Python'                        # If your test run does not have a name, this will be used.
+      command: 'language-extensions\python\test\build\windows\run-pythonextension-tests.cmd'        # Script that runs tests.
+      arguments:  'release'
+      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; set to false because we have negative tests
+      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
+      testresults:                               # Sequence of entries indicating which test results files to collect.
+        - title: 'Python Tests'                     # Test run title. Used by VSTS.
+          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
+          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
+            - 'out\TestReport_pythonextension*.xml'
+    - !!testcommand   
       name: 'Test Rextension-test'               # If your test run does not have a name, this will be used.
       command: 'language-extensions\R\test\build\windows\run-Rextension-test.cmd'  # Script that runs tests.
       arguments:  'debug'
