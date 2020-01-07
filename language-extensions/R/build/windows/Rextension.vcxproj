@@ -34,9 +34,9 @@
     Need to set the following environment variables. Some are set in ..\scripts\build-R-extension.cmd
     -->
     <PropertyGroup>
-        <GENERATOR>Visual Studio 14 2015 Win64</GENERATOR>
+        <GENERATOR>Visual Studio 15 2017 Win64</GENERATOR>
         <PACKAGES_ROOT>$(EnlRoot)\packages</PACKAGES_ROOT>
-        <CMAKE_ROOT>$(PACKAGES_ROOT)\cmake.3.5.2</CMAKE_ROOT>
+        <CMAKE_ROOT>$(PACKAGES_ROOT)\CMake-win64.3.15.5</CMAKE_ROOT>
         <R_HOME>$(PACKAGES_ROOT)\External-R.MRO-3.5.2.R.3.5.2.229\Windows</R_HOME>
         <REXTENSION_SRC_DIR>$(REXTENSION_HOME)\src</REXTENSION_SRC_DIR>
         <R_LIB_DIR>$(EnlRoot)\packages\RLib.3.5.0</R_LIB_DIR>

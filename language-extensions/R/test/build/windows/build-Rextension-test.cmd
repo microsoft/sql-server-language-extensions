@@ -5,7 +5,7 @@ REM Set environment variables
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
 SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\Rextension-test\windows
-SET CMAKE_ROOT=%ENL_ROOT%\packages\cmake.3.5.2
+SET CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
 RMDIR /s /q %REXTENSIONTEST_WORKING_DIR%
 MKDIR %REXTENSIONTEST_WORKING_DIR%
 
@@ -33,7 +33,7 @@ ECHO "[INFO] Generating R extension test project build files using CMAKE_CONFIGU
 
 REM Call cmake
 call "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 14 2015 Win64" ^
+	-G "Visual Studio 15 2017 Win64" ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%REXTENSIONTEST_WORKING_DIR%\\%CMAKE_CONFIGURATION%" ^
 	-DENL_ROOT=%ENL_ROOT% ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^

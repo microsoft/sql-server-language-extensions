@@ -41,9 +41,6 @@ package_sources:
 restore:                                         # Stage for restoring dependencies.
   commands:                                       # Sequence of commands to execute in this stage.
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-      name: 'Restore Packages'                    # A user defined name for this step.
-      command: 'restore-packages.cmd'             # The repository relative path to the script to run to restore packages.
-    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
       name: 'Restore Java Packages'               # A user defined name for this step.
       command: 'language-extensions\java\build\windows\restore-packages.cmd' # The repository relative path to the script to run to restore packages.
     - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
