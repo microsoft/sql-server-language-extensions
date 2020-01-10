@@ -42,7 +42,7 @@ function build {
 	cd ${JAVAEXTENSION_WORKING_DIR}
 	
 	# Compile
-	cmake -DPLATFORM=LINUX \
+	cmake -DPLATFORM=Linux \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
 		-DJDK_ROOT=${JDK_ROOT} \

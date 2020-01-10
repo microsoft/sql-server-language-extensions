@@ -9,6 +9,10 @@ set(JAVAEXTENSION_VERSION ${JAVAEXTENSION_VERSION_MAJOR}.${JAVAEXTENSION_VERSION
 # this is what the final library is going to be named
 project(JavaExtension VERSION ${JAVAEXTENSION_VERSION} LANGUAGES CXX)
 
+# All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
+string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
+string(TOLOWER ${PLATFORM} PLATFORM)
+
 # To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
 # See https://cmake.org/cmake/help/v3.4/variable/CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.html
 # See https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
@@ -32,14 +36,15 @@ set(JAVAEXTENSION_SOURCE_FILES
 	${JAVAEXTENSION_SRC_DIR}/Logger.cpp
 	${JAVAEXTENSION_SRC_DIR}/JavaPathSettings.cpp
 )
-if (${PLATFORM} STREQUAL Linux)
+
+if (${PLATFORM} STREQUAL linux)
 	set(JAVAEXTENSION_SOURCE_FILES
 		${JAVAEXTENSION_SOURCE_FILES}
 		${JAVAEXTENSION_SRC_DIR}/linux/Logger_linux.cpp
 		${JAVAEXTENSION_SRC_DIR}/linux/JavaLibraryUtils_linux.cpp
 		${JAVAEXTENSION_SRC_DIR}/linux/JavaExtensionUtils_linux.cpp
 	)
-elseif(${PLATFORM} STREQUAL Windows)
+elseif(${PLATFORM} STREQUAL windows)
 	set(JAVAEXTENSION_SOURCE_FILES
 		${JAVAEXTENSION_SOURCE_FILES}
 		${JAVAEXTENSION_SRC_DIR}/windows/Logger_win.cpp
@@ -47,7 +52,6 @@ elseif(${PLATFORM} STREQUAL Windows)
 		${JAVAEXTENSION_SRC_DIR}/windows/JavaExtensionUtils_win.cpp
 	)
 endif()
-
 
 # Create the target library
 add_library(JavaExtension SHARED
@@ -60,8 +64,7 @@ set_target_properties(JavaExtension
 	SOVERSION ${JAVAEXTENSION_VERSION_MAJOR}
 )
 
-
-if (${PLATFORM} STREQUAL LINUX)
+if (${PLATFORM} STREQUAL linux)
 	file(TO_CMAKE_PATH ${JDK_ROOT}/jre/lib/amd64/server JRE_ROOT)
 	file(TO_CMAKE_PATH ${JDK_ROOT}/include JDK_INCLUDE)
 	file(TO_CMAKE_PATH ${JDK_INCLUDE}/linux JDK_INCLUDE_LINUX)
@@ -90,7 +93,7 @@ if (${PLATFORM} STREQUAL LINUX)
 	target_link_libraries(JavaExtension ${CXX_LIB} ${ABI_LIB} ${DL_LIB})	
 	set(ADDITIONAL_INCLUDES ${JDK_INCLUDE} ${JDK_INCLUDE_LINUX})
 	
-elseif(${PLATFORM} STREQUAL Windows)
+elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 	target_compile_options(JavaExtension PRIVATE /EHsc /MTd /W2 /c)
 
@@ -105,8 +108,7 @@ elseif(${PLATFORM} STREQUAL Windows)
 	set(ADDITIONAL_INCLUDES ${JAVA_INCLUDE} ${JAVA_INCLUDE_WIN32})
 endif()
 
-
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if (${CMAKE_BUILD_TYPE} STREQUAL debug)
 	add_definitions(-DDEBUG)
 else()
 	add_definitions(-DNDEBUG)
