@@ -1,22 +1,22 @@
 //******************************************************************************************************
 // RExtension : A language extension implementing the SQL Server external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
-
+//
 // This file is part of RExtension.
 //
 // RExtension is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
+//
 // RExtension is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
 // along with RExtension.  If not, see <https://www.gnu.org/licenses/>.
-
+//
 //  @File: Rextension.cpp
 //
 // Purpose:
@@ -44,12 +44,13 @@
 #include <string.h>
 #endif
 
-#include <R.h>
-#include <Rembedded.h>
-#include <Rdefines.h>
-#include <R_ext/Parse.h>
+#include <RInside.h>                // for the embedded R via RInside
 
 using namespace std;
+
+// A reference to the embedded R environment
+//
+static unique_ptr<RInside> g_embeddedRPtr = nullptr;
 
 // A global object to keep track of the input/output data information
 //
@@ -110,7 +111,7 @@ SQLRETURN Init(
 	SQLULEN privateLibraryPathLength
 )
 {
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
@@ -148,8 +149,12 @@ SQLRETURN Init(
 
 		// Initialize the R runtime using the parameters set above.
 		//
-		int initSuccess = Rf_initEmbeddedR(argsForR.size(), argsForR.data());
-		result = initSuccess != 0 ? SQL_SUCCESS : SQL_ERROR;
+		g_embeddedRPtr = make_unique<RInside>(argsForR.size(), argsForR.data());
+
+		if (R_GlobalEnv != nullptr && g_embeddedRPtr != nullptr)
+		{
+			result = SQL_SUCCESS;
+		}
 
 		LOG("RExtension::Init done with return code " + to_string(result));
 	}
@@ -598,8 +603,5 @@ SQLRETURN Cleanup()
 {
 	LOG("RExtension::Cleanup");
 
-	// End Embedded R
-	//
-	Rf_endEmbeddedR(0);
 	return SQL_SUCCESS;
 }

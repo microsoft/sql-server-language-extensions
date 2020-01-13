@@ -26,7 +26,7 @@ SET VSCMD_START_DIR=%REXTENSIONTEST_WORKING_DIR%
 REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
 REM to the PATH environment variable and it will be too long for windows to handle.
 if not defined DevEnvDir (
-    call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 ECHO "[INFO] Generating R extension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"

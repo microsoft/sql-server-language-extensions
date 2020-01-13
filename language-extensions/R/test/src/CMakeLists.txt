@@ -3,16 +3,21 @@ cmake_minimum_required (VERSION 3.5)
 # this is what the final executable is going to be named
 project(Rextension-test VERSION 1.0 LANGUAGES CXX)
 
+# All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
+#
+string(TOLOWER ${CMAKE_CXX_COMPILER_ID} CMAKE_CXX_COMPILER_ID_STRING)
+string(TOLOWER ${CMAKE_CONFIGURATION} CMAKE_CONFIGURATION)
+
 # C++ unit tests code; only these files are compiled-in
 set(REXTENSIONTEST_SOURCE_FILES
 	main.cpp
 	RextensionApiTest.cpp
 )
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+if (${CMAKE_CXX_COMPILER_ID_STRING} STREQUAL gnu)
 	set(REXTENSIONTEST_SOURCE_FILES
 		${REXTENSIONTEST_SOURCE_FILES}
 		Utilities_linux.cpp)
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+elseif(${CMAKE_CXX_COMPILER_ID_STRING} STREQUAL msvc)
 	set(REXTENSIONTEST_SOURCE_FILES
 		${REXTENSIONTEST_SOURCE_FILES}
 		Utilities_win.cpp)
@@ -22,7 +27,7 @@ add_executable(Rextension-test
   ${REXTENSIONTEST_SOURCE_FILES}
 )
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+if(${CMAKE_CXX_COMPILER_ID_STRING} STREQUAL gnu)
 	# G++
 	target_compile_options(Rextension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++11)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN' -Wl,--no-as-needed -Wl,--export-dynamic")
@@ -34,7 +39,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 	target_link_libraries(Rextension-test
 		${DL}
 	)
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+elseif(${CMAKE_CXX_COMPILER_ID_STRING} STREQUAL msvc)
 	# MSVC
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 	target_compile_options(Rextension-test PRIVATE /EHsc /W2 /c /MDd)
@@ -58,14 +63,14 @@ include_directories(
 )
 
 # The string comparison is case sensitive
-if(${CMAKE_CONFIGURATION} STREQUAL "Debug")
-    add_definitions(-D_DEBUG)
+if(${CMAKE_CONFIGURATION} STREQUAL debug)
+	add_definitions(-D_DEBUG)
 endif()
 
 find_library(GTEST gtest ${GTEST_LIB_PATH})
 
 target_link_libraries(Rextension-test
-  ${GTEST}
+	${GTEST}
 )
 
 install(TARGETS Rextension-test DESTINATION ${REXTENSIONTEST_INSTALL_DIR})

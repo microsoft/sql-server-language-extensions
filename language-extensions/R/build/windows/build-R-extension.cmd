@@ -2,74 +2,87 @@
 SETLOCAL
 
 REM Nuget packages directory and location of R libs
-SET EnlRoot=%~dp0..\..\..\..
-SET REXTENSION_HOME=%EnlRoot%\language-extensions\R
+REM
+SET ENL_ROOT=%~dp0..\..\..\..
+SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
+SET REXTENSION_WORKING_DIR=%ENL_ROOT%\.build\R-extension\windows
+SET PACKAGES_ROOT=%ENL_ROOT%\packages
+SET R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
+IF EXIST %REXTENSION_WORKING_DIR% (RMDIR /s /q %REXTENSION_WORKING_DIR%)
+MKDIR %REXTENSION_WORKING_DIR%
 
 :LOOP
 
 REM Set cmake config to first arg
+REM
 SET CMAKE_CONFIGURATION=%1
 
-REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "release".
-REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
+REM CMAKE_CONFIGURATION is debug by default.
+REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=debug)
-IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
+IF /I NOT %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=release)
 
 REM Output directory and output dll name
-SET TARGET="%EnlRoot%\.build\R-extension\target\%MSVC_BUILD_CONFIGURATION%"
+REM
+SET TARGET="%ENL_ROOT%\.build\R-extension\target\%CMAKE_CONFIGURATION%"
 
-REM Create the output directories
-mkdir %TARGET%
+REM Delete the output directory if exists
+REM
+IF EXIST %TARGET% (RMDIR /s /q %TARGET%)
 
-REM VSCMD_START_DIR set the working directory to this variable after calling VsDevCmd.bat
-REM otherwise, it will default to %USERPROFILE%\Source
-SET VSCMD_START_DIR=%EnlRoot%
+REM Create the output directory
+REM
+MKDIR %TARGET%
 
-REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
-REM to the PATH environment variable and it will be too long for windows to handle.
-if not defined DevEnvDir (
-    call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
-)
+ECHO "[INFO] Generating R extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
-REM Build the project
-msbuild %REXTENSION_HOME%\build\windows\Rextension.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
+SET BUILD_OUTPUT=%REXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%
+MKDIR %BUILD_OUTPUT%
+PUSHD %BUILD_OUTPUT%
 
-REM Save exit code of compiler
-SET EX=%ERRORLEVEL%
+REM Make sure g++ and R.dll is in the PATH.
+REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
+REM
+SET PATH=C:\Rtools\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
 
-REM Check the exit code of the compiler and exit appropriately so that build will fail.
-IF %EX% NEQ 0 (
-    echo "Error: Failed to build R extension"
-    GOTO CLEANUP
-)
+REM Call cmake
+REM
+CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
+	-G "MinGW Makefiles" ^
+	-DCMAKE_INSTALL_PREFIX:PATH="%REXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%" ^
+	-DENL_ROOT=%ENL_ROOT% ^
+	-DCMAKE_MAKE_PROGRAM=mingw32-make ^
+	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
+	-DPLATFORM=windows ^
+	%REXTENSION_HOME%\src
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-SET BUILD_OUTPUT=%EnlRoot%\.build\R-extension\windows\%MSVC_BUILD_CONFIGURATION%
+ECHO "[INFO] Building R extension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+REM Call cmake build
+REM
+CALL "mingw32-make.exe" all
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build R extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM This will create the R extension package with unsigned binaries, this is used for local development and non-release builds. Release
 REM builds will call create-R-extension-zip.cmd after the binaries have been signed and this will be included in the zip
-IF /I %CMAKE_CONFIGURATION%==debug (
-	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\Rextension.dll, %BUILD_OUTPUT%\Rextension.pdb -DestinationPath %TARGET%\R-lang-extension.zip"
-) ELSE (
-	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\Rextension.dll -DestinationPath %TARGET%\R-lang-extension.zip"
-)
-
-SET EX=%ERRORLEVEL%
-
-if "%EX%" neq "0" (
-    echo "Error: Failed to create zip for R extension"
-    GOTO CLEANUP
-)
+REM
+powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\libRextension.dll, %BUILD_OUTPUT%\libRextension.dll.a -DestinationPath %TARGET%\R-lang-extension.zip"
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for R extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Advance arg passed to build-R-extension.cmd
+REM
 SHIFT
-
 REM Continue building using more configs until argv has been exhausted
+REM
 IF NOT "%~1"=="" GOTO LOOP
 
-:CLEANUP
+EXIT /b %ERRORLEVEL%
 
-if "%EX%" neq "0" (
-    echo "Build failed"
-)
+:CHECKERROR
+	IF %1 NEQ 0 (
+		ECHO %2
+		EXIT /b %1
+	)
 
-EXIT /b %EX%
+	EXIT /b 0
