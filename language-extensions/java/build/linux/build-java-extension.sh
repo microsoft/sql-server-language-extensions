@@ -12,6 +12,7 @@ function check_exit_code {
 
 function build {
 	# Set cmake config to first arg
+	#
 	CMAKE_CONFIGURATION=$1
 	
 	if [ -z "${CMAKE_CONFIGURATION}" ]; then
@@ -19,20 +20,24 @@ function build {
 	fi
 
 	# Output directory and output dll name
+	#
 	TARGET=${ENL_ROOT}/.build/java-extension/target/${CMAKE_CONFIGURATION}
 	TARGET_CLASSES=${TARGET}/classes
 	OUTPUT_JAR=mssql-java-lang-extension.jar
 	
 	# Create the output directories
+	#
 	mkdir -p ${TARGET}
 	mkdir -p ${TARGET_CLASSES}
 
 	# Compile java files into class files
+	#
 	pushd ${ENL_ROOT}/language-extensions/java/sdk/src/java/main/java/com/microsoft/sqlserver/javalangextension/
 	ls -d "$PWD"/*.java > ${TARGET}/sources.txt
 	${JDK_ROOT}/bin/javac  -d ${TARGET_CLASSES} @${TARGET}/sources.txt
 
 	# Create the mssql-java-lang-extension.jar file
+	#
 	${JDK_ROOT}/bin/jar cvf ${TARGET}/${OUTPUT_JAR} -C ${TARGET_CLASSES} .
 
 	if ! [[ -d ${JAVAEXTENSION_WORKING_DIR} ]]; then
@@ -42,6 +47,7 @@ function build {
 	cd ${JAVAEXTENSION_WORKING_DIR}
 	
 	# Compile
+	#
 	cmake -DPLATFORM=Linux \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
@@ -51,31 +57,38 @@ function build {
 	cmake --build ${JAVAEXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
+	#
 	check_exit_code "Success: Built libJavaExtension.so.1.0" "Error: Failed to build java extension"
 
 	# Move the generated libs to configuration folder
+	#
 	mkdir -p ${CMAKE_CONFIGURATION}
 	mv libJavaExtension.so* ${CMAKE_CONFIGURATION}/
 
 	cd ${CMAKE_CONFIGURATION}/
+	
 	# This will create the java extension package with unsigned binaries, this is used for local development and non-release builds. release
 	# builds will call create-java-extension-zip.sh after the binaries have been signed and this will be included in the zip
+	#
 	zip ${TARGET}/java-lang-extension libJavaExtension.so.1.0
 
 	check_exit_code "Success: Created java-lang-extension.zip" "Error: Failed to create zip for java extension"
 }
 
 # Enlistment root and location of javaextension
+#
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ENL_ROOT=${SCRIPTDIR}/../../../..
 
 # Set environment variables required in Cmake
+#
 JAVAEXTENSION_HOME=${ENL_ROOT}/language-extensions/java
 JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/.build/java-extension/linux
 JDK_ROOT=/usr/lib/jvm/java-1.8.0-openjdk-amd64
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd
+	#
 	build $1
 	shift
 done;

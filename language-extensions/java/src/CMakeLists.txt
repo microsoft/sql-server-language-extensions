@@ -7,15 +7,18 @@ set(JAVAEXTENSION_VERSION_MINOR "0")
 set(JAVAEXTENSION_VERSION ${JAVAEXTENSION_VERSION_MAJOR}.${JAVAEXTENSION_VERSION_MINOR})
 
 # this is what the final library is going to be named
+#
 project(JavaExtension VERSION ${JAVAEXTENSION_VERSION} LANGUAGES CXX)
 
 # All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
+#
 string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 string(TOLOWER ${PLATFORM} PLATFORM)
 
 # To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
 # See https://cmake.org/cmake/help/v3.4/variable/CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.html
 # See https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
+#
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/java JAVAEXTENSION_HOME)
@@ -24,6 +27,7 @@ file(TO_CMAKE_PATH ${JAVAEXTENSION_HOME}/include JAVAEXTENSION_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/extension-host/include EXTENSION_API_INCLUDE_DIR)
 
 # C++ code; only these files are compiled-in
+#
 set(JAVAEXTENSION_SOURCE_FILES
 	${JAVAEXTENSION_SRC_DIR}/JavaArgContainer.cpp
 	${JAVAEXTENSION_SRC_DIR}/JavaDataset.cpp
@@ -54,6 +58,7 @@ elseif(${PLATFORM} STREQUAL windows)
 endif()
 
 # Create the target library
+#
 add_library(JavaExtension SHARED
 	${JAVAEXTENSION_SOURCE_FILES}
 )
@@ -98,6 +103,7 @@ elseif(${PLATFORM} STREQUAL windows)
 	target_compile_options(JavaExtension PRIVATE /EHsc /MTd /W2 /c)
 
 	# Set the DLLEXPORT variable to export symbols
+	#
 	target_compile_definitions(JavaExtension PRIVATE WIN_EXPORT)
 	
 	file(TO_CMAKE_PATH ${ENL_ROOT}\\packages PACKAGES_ROOT)
