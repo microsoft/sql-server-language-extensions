@@ -14,7 +14,7 @@ function build {
 	# Set cmake config to first arg
 	#
 	CMAKE_CONFIGURATION=$1
-	
+
 	if [ -z "${CMAKE_CONFIGURATION}" ]; then
 		CMAKE_CONFIGURATION=debug
 	fi
@@ -24,7 +24,7 @@ function build {
 	TARGET=${ENL_ROOT}/.build/java-extension/target/${CMAKE_CONFIGURATION}
 	TARGET_CLASSES=${TARGET}/classes
 	OUTPUT_JAR=mssql-java-lang-extension.jar
-	
+
 	# Create the output directories
 	#
 	mkdir -p ${TARGET}
@@ -43,9 +43,9 @@ function build {
 	if ! [[ -d ${JAVAEXTENSION_WORKING_DIR} ]]; then
 		mkdir -p ${JAVAEXTENSION_WORKING_DIR}
 	fi
-	
+
 	cd ${JAVAEXTENSION_WORKING_DIR}
-	
+
 	# Compile
 	#
 	cmake -DPLATFORM=Linux \
@@ -66,7 +66,7 @@ function build {
 	mv libJavaExtension.so* ${CMAKE_CONFIGURATION}/
 
 	cd ${CMAKE_CONFIGURATION}/
-	
+
 	# This will create the java extension package with unsigned binaries, this is used for local development and non-release builds. release
 	# builds will call create-java-extension-zip.sh after the binaries have been signed and this will be included in the zip
 	#
@@ -85,6 +85,12 @@ ENL_ROOT=${SCRIPTDIR}/../../../..
 JAVAEXTENSION_HOME=${ENL_ROOT}/language-extensions/java
 JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/.build/java-extension/linux
 JDK_ROOT=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+
+# Build in debug mode if nothing is specified
+#
+if [ "$1" == "" ]; then
+	set -- debug
+fi
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd
