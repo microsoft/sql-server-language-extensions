@@ -17,10 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension.  If not, see <https://www.gnu.org/licenses/>.
 //
-//  @File: Rextension.cpp
+//  @File: RExtension.cpp
 //
 // Purpose:
-//  R extension DLL that can be loaded by ExtHost. This library inits embedded R,
+//  RExtension DLL that can be loaded by ExtHost. This library inits embedded R,
 //  handles communication with ExtHost, and executes user-specified R script
 //
 //******************************************************************************************************
@@ -95,7 +95,7 @@ SQLUSMALLINT GetInterfaceVersion()
 // Name: Init
 //
 // Description:
-//	Initialize the R extension.
+//	Initialize the RExtension.
 //
 // Returns:
 //	SQL_SUCCESS on success, else SQL_ERROR

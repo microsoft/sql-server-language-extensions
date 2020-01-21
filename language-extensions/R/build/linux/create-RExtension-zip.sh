@@ -14,19 +14,19 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ENL_ROOT=${SCRIPTDIR}/../../../..
 
 GNU_BUILD_CONFIGURATION=debug
-BUILD_OUTPUT=${ENL_ROOT}/.build/R-extension/linux/${GNU_BUILD_CONFIGURATION}
+BUILD_OUTPUT=${ENL_ROOT}/.build/RExtension/linux/${GNU_BUILD_CONFIGURATION}
 
 mkdir -p ${BUILD_OUTPUT}/packages
 cd ${BUILD_OUTPUT}
-zip packages/R-lang-extension libRextension.so.1.0
+zip packages/R-lang-extension libRExtension.so.1.0
 check_exit_code  ${GNU_BUILD_CONFIGURATION}
 
 GNU_BUILD_CONFIGURATION=release
-BUILD_OUTPUT=${ENL_ROOT}/.build/R-extension/linux/${GNU_BUILD_CONFIGURATION}
+BUILD_OUTPUT=${ENL_ROOT}/.build/RExtension/linux/${GNU_BUILD_CONFIGURATION}
 
 mkdir -p ${BUILD_OUTPUT}/packages
 cd ${BUILD_OUTPUT}
-zip packages/R-lang-extension libRextension.so.1.0
+zip packages/R-lang-extension libRExtension.so.1.0
 check_exit_code ${GNU_BUILD_CONFIGURATION}
 
 exit $?

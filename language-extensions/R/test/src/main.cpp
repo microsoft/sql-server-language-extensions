@@ -18,10 +18,10 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension-test.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: RextensionApiTest.cpp
+// @File: RExtensionApiTest.cpp
 //
 // Purpose:
-//  Tests the Rextension's implementation of the external language APIs.
+//  Tests the RExtension's implementation of the external language APIs.
 //
 //*************************************************************************************************
 #include <gtest/gtest.h>
@@ -34,7 +34,7 @@ const char **g_argv = nullptr;
 int main(int argc, const char **argv)
 {
 	// banner
-	std::cout << "Running Rextension C++ unit tests.\n";
+	std::cout << "Running RExtension C++ unit tests.\n";
 
 	/*
 	* first, initiate Google Test framework - this will remove

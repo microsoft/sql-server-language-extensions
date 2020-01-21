@@ -5,7 +5,7 @@ REM Nuget packages directory and location of R libs
 REM
 SET ENL_ROOT=%~dp0..\..\..\..
 SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
-SET REXTENSION_WORKING_DIR=%ENL_ROOT%\.build\R-extension\windows
+SET REXTENSION_WORKING_DIR=%ENL_ROOT%\.build\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
 SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
@@ -25,7 +25,7 @@ IF /I NOT %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=release)
 
 REM Output directory and output dll name
 REM
-SET TARGET="%ENL_ROOT%\.build\R-extension\target\%CMAKE_CONFIGURATION%"
+SET TARGET="%ENL_ROOT%\.build\RExtension\target\%CMAKE_CONFIGURATION%"
 
 REM Delete the output directory if exists
 REM
@@ -35,7 +35,7 @@ REM Create the output directory
 REM
 MKDIR %TARGET%
 
-ECHO "[INFO] Generating R extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+ECHO "[INFO] Generating RExtension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
 SET BUILD_OUTPUT=%REXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%
 MKDIR %BUILD_OUTPUT%
@@ -58,19 +58,19 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 	%REXTENSION_HOME%\src
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-ECHO "[INFO] Building R extension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+ECHO "[INFO] Building RExtension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 REM Call cmake build
 REM
 CALL "mingw32-make.exe" all
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build R extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build RExtension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-REM This will create the R extension package with unsigned binaries, this is used for local development and non-release builds. Release
-REM builds will call create-R-extension-zip.cmd after the binaries have been signed and this will be included in the zip
+REM This will create the RExtension package with unsigned binaries, this is used for local development and non-release builds. Release
+REM builds will call create-RExtension-zip.cmd after the binaries have been signed and this will be included in the zip
 REM
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\libRextension.dll, %BUILD_OUTPUT%\libRextension.dll.a -DestinationPath %TARGET%\R-lang-extension.zip"
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for R extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
+powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\libRExtension.dll, %BUILD_OUTPUT%\libRExtension.dll.a -DestinationPath %TARGET%\R-lang-extension.zip"
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for RExtension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-REM Advance arg passed to build-R-extension.cmd
+REM Advance arg passed to build-RExtension.cmd
 REM
 SHIFT
 REM Continue building using more configs until argv has been exhausted

@@ -18,10 +18,10 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension-test.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: RextensionApiTest.cpp
+// @File: RExtensionApiTest.cpp
 //
 // Purpose:
-//  Tests the Rextension's implementation of the external language apis
+//  Tests the RExtension's implementation of the external language apis
 //
 //*************************************************************************************************
 #ifdef _WIN64
@@ -39,9 +39,9 @@
 using namespace std;
 
 #ifdef _WIN64
-	const string RextensionLibName = "libRextension.dll";
+	const string RExtensionLibName = "libRExtension.dll";
 #else
-	const string RextensionLibName = "libRextension.so.1.0";
+	const string RExtensionLibName = "libRExtension.so.1.0";
 #endif // _WIN64
 
 extern int g_argc;
@@ -61,7 +61,7 @@ namespace
 
 	typedef SQLRETURN FN_cleanup();
 
-	class RextensionApiTest : public ::testing::Test
+	class RExtensionApiTest : public ::testing::Test
 	{
 	protected:
 
@@ -96,11 +96,11 @@ namespace
 	// Testing if RExtension is successfully loaded dynamically and
 	// that Init and Cleanup are implemented correctly.
 	//
-	TEST_F(RextensionApiTest, InitCleanup)
+	TEST_F(RExtensionApiTest, InitCleanup)
 	{
 		FN_init* init = reinterpret_cast<FN_init*>(
 			Utilities::CrossPlatGetFunctionFromLibPath(
-				RextensionLibName,
+				RExtensionLibName,
 				"Init"));
 
 		int returnVal = SQL_ERROR;
@@ -124,7 +124,7 @@ namespace
 
 		FN_cleanup* cleanup = reinterpret_cast<FN_cleanup*>(
 			Utilities::CrossPlatGetFunctionFromLibPath(
-				RextensionLibName,
+				RExtensionLibName,
 				"Cleanup"));
 		returnVal = SQL_ERROR;
 		if (cleanup != nullptr)

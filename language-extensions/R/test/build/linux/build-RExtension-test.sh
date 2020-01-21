@@ -30,15 +30,15 @@ function build {
 	cmake --build ${REXTENSIONTEST_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
-	check_exit_code "Success: Built Rextension-test" "Error: Failed to build Rextension-test"
+	check_exit_code "Success: Built RExtension-test" "Error: Failed to build RExtension-test"
 
 	# Move the generated libs to configuration folder
-	mv Rextension-test ${CMAKE_CONFIGURATION}/
+	mv RExtension-test ${CMAKE_CONFIGURATION}/
 
 	popd
 }
 
-# Enlistment root and location of Rextension-test
+# Enlistment root and location of RExtension-test
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ENL_ROOT=${SCRIPTDIR}/../../../../..
 REXTENSIONTEST_HOME=${ENL_ROOT}/language-extensions/R/test/
@@ -46,7 +46,7 @@ REXTENSIONTEST_HOME=${ENL_ROOT}/language-extensions/R/test/
 # Set environment variables required in Cmake
 PACKAGES_ROOT=${ENL_ROOT}/packages
 REXTENSIONTEST_SRC_DIR=${REXTENSIONTEST_HOME}/src
-REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/.build/Rextension-test/linux
+REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/.build/RExtension-test/linux
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd

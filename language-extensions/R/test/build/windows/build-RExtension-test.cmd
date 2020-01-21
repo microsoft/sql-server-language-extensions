@@ -4,7 +4,7 @@ SETLOCAL
 REM Set environment variables
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
-SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\Rextension-test\windows
+SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\RExtension-test\windows
 SET CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
 RMDIR /s /q %REXTENSIONTEST_WORKING_DIR%
 MKDIR %REXTENSIONTEST_WORKING_DIR%
@@ -29,7 +29,7 @@ if not defined DevEnvDir (
 	call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
-ECHO "[INFO] Generating R extension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+ECHO "[INFO] Generating RExtension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
 REM Call cmake
 call "%CMAKE_ROOT%\bin\cmake.exe" ^
@@ -40,21 +40,21 @@ call "%CMAKE_ROOT%\bin\cmake.exe" ^
 	 %REXTENSIONTEST_HOME%\src
 IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
 
-ECHO "[INFO] Building R extension test project using MSVC_BUILD_CONFIGURATION=%MSVC_BUILD_CONFIGURATION%"
+ECHO "[INFO] Building RExtension test project using MSVC_BUILD_CONFIGURATION=%MSVC_BUILD_CONFIGURATION%"
 
 REM Build the project
-msbuild %REXTENSIONTEST_WORKING_DIR%\Rextension-test.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
+msbuild %REXTENSIONTEST_WORKING_DIR%\RExtension-test.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
 
 IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
 
 SET EX=%ERRORLEVEL%
 
 if "%EX%" neq "0" (
-	echo "Error: Failed to build Rextension-test.vcxproj"
+	echo "Error: Failed to build RExtension-test.vcxproj"
 	GOTO CLEANUP
 )
 
-REM Advance arg passed to build-Rextension-test.cmd
+REM Advance arg passed to build-RExtension-test.cmd
 SHIFT
 
 REM Continue building using more configs until argv has been exhausted

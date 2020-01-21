@@ -133,22 +133,18 @@ build:
           signing_options:
             profile: 'none'
     - !!buildcommand
-      name: 'Build R extension'
-      command: 'language-extensions\R\build\windows\build-R-extension.cmd'
+      name: 'Build RExtension'
+      command: 'language-extensions\R\build\windows\build-RExtension.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: '.build\R-extension\windows\debug'
-          to: 'out\R-extension\debug'
+        - from: '.build\RExtension\windows\debug'
+          to: 'out\RExtension\debug'
           include:
-            - 'Rextension.dll'
-        - from: '.build\R-extension\windows\debug'
-          to: 'out\R-extension\debug\symbols'
+            - 'libRExtension.dll'
+        - from: '.build\RExtension\windows\release'
+          to: 'out\RExtension\release'
           include:
-            - 'Rextension.pdb'
-        - from: '.build\R-extension\windows\release'
-          to: 'out\R-extension\release'
-          include:
-            - 'Rextension.dll'
+            - 'libRExtension.dll'
           signing_options:
             profile: 'none'
     - !!buildcommand
@@ -185,8 +181,8 @@ build:
       command: 'test\gtest\sample-test\build\windows\build-sample-test.cmd'
       arguments:  'debug release'
     - !!defaultcommand
-      name: 'Build Rextension Test'
-      command: 'language-extensions\R\test\build\windows\build-Rextension-test.cmd'
+      name: 'Build RExtension Test'
+      command: 'language-extensions\R\test\build\windows\build-RExtension-test.cmd'
       arguments:  'debug release'
     - !!defaultcommand
       name: 'Build pythonextension Test'
@@ -208,15 +204,15 @@ package:
           include:
             - 'java-lang-extension.zip'
     - !!buildcommand
-      name: 'Create R extension zip'
-      command: 'language-extensions\R\build\windows\create-R-extension-zip.cmd'
+      name: 'Create RExtension zip'
+      command: 'language-extensions\R\build\windows\create-RExtension-zip.cmd'
       artifacts:
-        - from: '.build\R-extension\windows\debug\packages'
-          to: 'out\R-extension\packages\debug'
+        - from: '.build\RExtension\windows\debug\packages'
+          to: 'out\RExtension\packages\debug'
           include:
             - 'R-lang-extension.zip'
-        - from: '.build\R-extension\windows\release\packages'
-          to: 'out\R-extension\packages\release'
+        - from: '.build\RExtension\windows\release\packages'
+          to: 'out\RExtension\packages\release'
           include:
             - 'R-lang-extension.zip'
     - !!buildcommand
@@ -251,8 +247,8 @@ test:
           include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
             - 'out\TestReport*.xml'
     - !!testcommand
-      name: 'Test Rextension'               # If your test run does not have a name, this will be used.
-      command: 'language-extensions\R\test\build\windows\run-Rextension-test.cmd'  # Script that runs tests.
+      name: 'Test RExtension'               # If your test run does not have a name, this will be used.
+      command: 'language-extensions\R\test\build\windows\run-RExtension-test.cmd'  # Script that runs tests.
       arguments:  'debug'
       fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
@@ -262,8 +258,8 @@ test:
           include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
             - 'out\TestReport*.xml'
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
-      name: 'Test Rextension'               # If your test run does not have a name, this will be used.
-      command: 'language-extensions\R\test\build\windows\run-Rextension-test.cmd'  # Script that runs tests.
+      name: 'Test RExtension'               # If your test run does not have a name, this will be used.
+      command: 'language-extensions\R\test\build\windows\run-RExtension-test.cmd'  # Script that runs tests.
       arguments:  'release'
       fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
@@ -301,8 +297,8 @@ static_analysis_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
-      - from: 'out\R-extension\debug\'
-      - from: 'out\R-extension\release\'
+      - from: 'out\RExtension\debug\'
+      - from: 'out\RExtension\release\'
       - from: 'out\python-extension\debug\'
       - from: 'out\python-extension\release\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
@@ -315,7 +311,7 @@ static_analysis_options:
     files_to_scan:
       - from: 'out\java-extension\release\'
       - from: 'out\java-extension\debug\'
-      - from: 'out\R-extension\debug\'
-      - from: 'out\R-extension\release\'
+      - from: 'out\RExtension\debug\'
+      - from: 'out\RExtension\release\'
       - from: 'out\python-extension\debug\'
       - from: 'out\python-extension\release\'

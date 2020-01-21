@@ -19,22 +19,22 @@ function build {
 
 	pushd ${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION}
 	# Move the generated libs to configuration folder
-	cp ${REXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libRextension.so.1.0 .
+	cp ${REXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libRExtension.so.1.0 .
 	cp /usr/src/gtest/*.so .
 	export R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
-	./Rextension-test --gtest_output=xml:${ENL_ROOT}/out/TestReport_Rextension-test.xml
+	./RExtension-test --gtest_output=xml:${ENL_ROOT}/out/TestReport_RExtension-test.xml
 
 	# Check the exit code of the tests.
-	check_exit_code "Success: Ran Rextension-test" "Error: Rextension-test failed"
+	check_exit_code "Success: Ran RExtension-test" "Error: RExtension-test failed"
 
 	popd
 }
 
-# Enlistment root and location of Rextension-test
+# Enlistment root and location of RExtension-test
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ENL_ROOT=${SCRIPTDIR}/../../../../..
-REXTENSION_WORKING_DIR=${ENL_ROOT}/.build/R-extension/linux
-REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/.build/Rextension-test/linux
+REXTENSION_WORKING_DIR=${ENL_ROOT}/.build/RExtension/linux
+REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/.build/RExtension-test/linux
 PACKAGES_ROOT=${ENL_ROOT}/packages
 
 while [ "$1" != "" ]; do
