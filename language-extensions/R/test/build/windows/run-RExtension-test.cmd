@@ -2,6 +2,7 @@
 SETLOCAL
 
 REM Set environment variables
+REM
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\RExtension-test\windows
 SET REXTENSION_WORKING_DIR=%ENL_ROOT%\.build\RExtension\windows
@@ -9,11 +10,15 @@ SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET GTEST_HOME=%PACKAGES_ROOT%\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0
 SET GTEST_LIB_PATH=%GTEST_HOME%\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64
 
+:LOOP
+
 REM Set cmake config to first arg
+REM
 SET CMAKE_CONFIGURATION=%1
 
 REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "release".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
+REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=debug)
 IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
 
@@ -25,6 +30,14 @@ SET PATH=%R_HOME%\bin\x64;%PATH%
 RExtension-test.exe --gtest_output=xml:%ENL_ROOT%\out\TestReport_RExtension-test.xml
 IF %ERRORLEVEL% NEQ 0 GOTO error
 popd
+
+REM Advance arg passed to build-RExtension-test.cmd
+REM
+SHIFT
+
+REM Continue running using more configs until argv has been exhausted
+REM
+IF NOT "%~1"=="" GOTO LOOP
 
 :error
 EXIT /b %ERRORLEVEL%

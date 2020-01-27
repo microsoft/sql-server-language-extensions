@@ -25,8 +25,10 @@
 //******************************************************************************************************
 #include "Common.h"
 
+#include <memory>
 #include <stdexcept>
 
+#include "Column.h"
 #include "Logger.h"
 #include "RSession.h"
 
@@ -61,7 +63,7 @@ void RSession::Init(
 	//
 	if (script == nullptr)
 	{
-		throw invalid_argument("Invalid script, the script value cannot be nullptr");
+		throw invalid_argument("Invalid Script, the Script value cannot be nullptr");
 	}
 
 	// scriptLength also includes the null terminator hence -1 for std::string
@@ -73,7 +75,7 @@ void RSession::Init(
 	//
 	if (inputDataName == nullptr)
 	{
-		throw invalid_argument("Invalid script, the inputDataName value cannot be nullptr");
+		throw invalid_argument("Invalid InputDataName, the InputDataName value cannot be nullptr");
 	}
 
 	// inputDataNameLength also includes the null terminator hence -1 for std::string
@@ -85,7 +87,7 @@ void RSession::Init(
 	//
 	if (outputDataName == nullptr)
 	{
-		throw invalid_argument("Invalid script, the outputDataName value cannot be nullptr");
+		throw invalid_argument("Invalid OutputDataName, the OutputDataName value cannot be nullptr");
 	}
 
 	// outputDataNameLength also includes the null terminator hence -1 for std::string
@@ -119,7 +121,22 @@ void RSession::InitColumn(
 	SQLSMALLINT    partitionByNumber,
 	SQLSMALLINT    orderByNumber)
 {
+	LOG("RSession::InitColumn " + to_string(columnNumber));
 
+	if (columnName == nullptr)
+	{
+		throw invalid_argument("Invalid input column name supplied");
+	}
+	else if (columnNumber >= m_inputSchemaColumnsNumber)
+	{
+		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
+	}
+
+	// Store the information for this column
+	//
+	string name(reinterpret_cast<const char*>(columnName), columnNameLength - 1); // Remove null terminator
+
+	m_inputColumns.push_back(make_unique<Column>(name, dataType, columnSize, nullable, decimalDigits));
 }
 
 //----------------------------------------------------------------------------

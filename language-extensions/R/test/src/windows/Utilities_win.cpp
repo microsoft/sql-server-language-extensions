@@ -25,9 +25,10 @@
 //
 //*************************************************************************************************
 
-#include <dlfcn.h>
-#include <iostream>
+#include "windows.h"
+
 #include <string>
+#include <iostream>
 
 #include "Utilities.h"
 
@@ -40,21 +41,19 @@ using namespace std;
 //	Gets the handle for the given library path after loading it dynamically
 //
 // Returns:
-//	On success, returns handle to the library. Otherwise, nullptr.
+//	On success, returns handle to the library. Otherwise, throws a runtime_error exception.
 //
 void* Utilities::CrossPlatLoadLibrary(const char *libPath)
 {
-	void *libHandle = nullptr;
-
-	libHandle = dlopen(libPath, RTLD_LAZY);
-	if (libHandle == nullptr)
+	HMODULE hDLL = LoadLibraryA(libPath);
+	if (hDLL == NULL)
 	{
-		char* error = dlerror();
-		cout << "Failed to load the lib path '" << libPath
-			<< "' with error : " << error << endl;
+		DWORD error = GetLastError();
+		throw runtime_error("CrossPlatLoadLibrary failed loading '" + string(libPath) +
+			"' with error: " + to_string(error));
 	}
 
-	return libHandle;
+	return hDLL;
 }
 
 //----------------------------------------------------------------------------
@@ -64,7 +63,7 @@ void* Utilities::CrossPlatLoadLibrary(const char *libPath)
 //	Get the function pointer for the given function name from the given library handle
 //
 // Returns:
-//	On success, returns handle to the function. Otherwise, nullptr.
+//	On success, returns handle to the function. Otherwise, throws a runtime_error exception.
 //
 void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::string &fnName)
 {
@@ -72,13 +71,16 @@ void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::s
 	//
 	void *pFuncPtr = nullptr;
 
-	if (libHandle != nullptr)
+	HMODULE hDLL = static_cast<HMODULE>(libHandle);
+	if (hDLL != nullptr)
 	{
-		pFuncPtr = static_cast<void*>(dlsym(libHandle, fnName.c_str()));
-		if (pFuncPtr == nullptr)
+		pFuncPtr = GetProcAddress(hDLL, fnName.c_str());
+		if (pFuncPtr == NULL)
 		{
-			char* error = dlerror();
-			cout << "Error finding function '" << fnName << "' :" << error << endl;
+			DWORD error = GetLastError();
+			CrossPlatCloseLibrary(libHandle);
+			throw runtime_error("CrossPlatGetFunctionFromLibHandle failed finding function '"
+				+ fnName + "' with error:" + to_string(error));
 		}
 	}
 	else
@@ -89,27 +91,24 @@ void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::s
 	return pFuncPtr;
 }
 
-//----------------------------------------------------------------------------
-// Name: Utilities::CrossPlatGetFunctionFromLibPath
+//------------------------------------------------------------------------------
+// Name: Utilities::CrossPlatCloseLibrary
 //
 // Description:
-//	Get the function pointer for the given function name from the given library path
+//	Given a valid library handle, close it.
 //
 // Returns:
-//	On success, returns handle to the function. Otherwise, nullptr.
+//	On success, returns nothing. Otherwise, throws a runtime_error exception.
 //
-void* Utilities::CrossPlatGetFunctionFromLibPath(const std::string &libPath, const std::string &fnName)
+void Utilities::CrossPlatCloseLibrary(void *libHandle)
 {
-	void* libHandle = CrossPlatLoadLibrary(libPath.c_str());
-	void* pFuncPtr = nullptr;
 	if (libHandle != nullptr)
 	{
-		pFuncPtr = CrossPlatGetFunctionFromLibHandle(libHandle, fnName);
-		if (pFuncPtr == nullptr)
+		BOOL returnVal = FreeLibrary(static_cast<HMODULE>(libHandle));
+		if( returnVal == 0 )
 		{
-			dlclose(libHandle);
+			DWORD error = GetLastError();
+			throw runtime_error("CrossPlatCloseLibrary failed with error: " + to_string(error));
 		}
 	}
-
-	return pFuncPtr;
 }

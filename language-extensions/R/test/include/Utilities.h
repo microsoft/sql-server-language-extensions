@@ -29,9 +29,7 @@
 class Utilities
 {
 public:
-	static void* CrossPlatGetFunctionFromLibPath(const std::string &libPath, const std::string &fnName);
-
-private:
-	static void* CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::string &fnName);
 	static void* CrossPlatLoadLibrary(const char *libPath);
+	static void* CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::string &fnName);
+	static void CrossPlatCloseLibrary(void *libHandle);
 };

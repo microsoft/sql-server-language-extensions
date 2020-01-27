@@ -249,19 +249,8 @@ test:
     - !!testcommand
       name: 'Test RExtension'               # If your test run does not have a name, this will be used.
       command: 'language-extensions\R\test\build\windows\run-RExtension-test.cmd'  # Script that runs tests.
-      arguments:  'debug'
-      fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
-      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
-      testresults:                               # Sequence of entries indicating which test results files to collect.
-        - title: 'All Tests'                     # Test run title. Used by VSTS.
-          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
-          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
-            - 'out\TestReport*.xml'
-    - !!testcommand                              # We are going to run tests and collect back the test results for publishing
-      name: 'Test RExtension'               # If your test run does not have a name, this will be used.
-      command: 'language-extensions\R\test\build\windows\run-RExtension-test.cmd'  # Script that runs tests.
-      arguments:  'release'
-      fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
+      arguments:  'debug release'
+      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
       testresults:                               # Sequence of entries indicating which test results files to collect.
         - title: 'All Tests'                     # Test run title. Used by VSTS.

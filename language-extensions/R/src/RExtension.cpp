@@ -33,6 +33,7 @@
 #include <sqlext.h>
 #include <stdexcept>
 
+#include "Column.h"
 #include "Logger.h"
 #include "RPathSettings.h"
 #include "RSession.h"

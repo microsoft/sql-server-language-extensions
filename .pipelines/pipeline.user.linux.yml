@@ -180,7 +180,7 @@ test:
       name: 'Test RExtension-test'               # If your test run does not have a name, this will be used.
       command: 'language-extensions/R/test/build/linux/run-RExtension-test.sh' # Script that runs tests.
       arguments:  'debug release'
-      fail_on_stderr: true                       # Force pipeline to fail if the task writes to standard error stream; default is true.
+      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
       testresults:                               # Sequence of entries indicating which test results files to collect.
         - title: 'All Tests'                     # Test run title. Used by VSTS.

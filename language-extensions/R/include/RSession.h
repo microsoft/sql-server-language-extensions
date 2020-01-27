@@ -123,36 +123,36 @@ public:
 
 private:
 
-	SQLGUID m_sessionId;                  // Session ID
-	SQLUSMALLINT m_taskId;                // Task ID for this session
-	SQLUSMALLINT m_numTasks;              // Number of tasks for this session
+	SQLGUID m_sessionId {0, 0, 0, {0}};       // Session ID
+	SQLUSMALLINT m_taskId = 0;                // Task ID for this session
+	SQLUSMALLINT m_numTasks = 0;              // Number of tasks for this session
 
 	std::string m_script;
-	SQLULEN m_scriptLength;               // Script Length = this counts the null terminator as well
+	SQLULEN m_scriptLength = 0;               // Script Length = this counts the null terminator as well
 
-	std::string m_inputDataSetName;       // Input DataSet class name for the executor class
-	SQLULEN m_inputDataSetNameLength;     // Input DataSet Name Length = this counts the null terminator as well
+	std::string m_inputDataSetName;           // Input DataSet class name for the executor class
+	SQLULEN m_inputDataSetNameLength = 0;     // Input DataSet Name Length = this counts the null terminator as well
 
-	std::string m_outputDataSetName;      // Output Dataset class name for the executor class
-	SQLULEN m_outputDataSetNameLength;    // Output DataSet Name Length = this counts the null terminator as well
+	std::string m_outputDataSetName;          // Output Dataset class name for the executor class
+	SQLULEN m_outputDataSetNameLength = 0;    // Output DataSet Name Length = this counts the null terminator as well
 
 	// Input data information (schema, null map, etc.)
 	//
-	SQLUSMALLINT m_inputSchemaColumnsNumber;
-	std::vector<Column*> m_inputColumns;
+	SQLUSMALLINT m_inputSchemaColumnsNumber = 0;
+	std::vector<std::unique_ptr<Column>> m_inputColumns;
 
 	std::vector<SQLSMALLINT> m_partitionByIndexes;
 	std::vector<SQLSMALLINT> m_orderByIndexes;
 
 	// Parameters
 	//
-	SQLUSMALLINT m_parametersNumber;
+	SQLUSMALLINT m_parametersNumber = 0;
 
 	// Output data information (schema, null map, etc.)
 	//
-	SQLULEN m_numberOfOutputRows;
-	SQLUSMALLINT m_outputSchemaColumnsNumber;
-	std::vector<Column*> m_outputColumns;
+	SQLULEN m_numberOfOutputRows = 0;
+	SQLUSMALLINT m_outputSchemaColumnsNumber = 0;
+	std::vector<std::unique_ptr<Column>> m_outputColumns;
 	std::vector<SQLINTEGER*> m_outputNullMap;
 	std::vector<SQLPOINTER> m_outputData;
 };
