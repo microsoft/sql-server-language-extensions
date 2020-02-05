@@ -34,8 +34,10 @@ For local validation of changes, the recommended practice is to do the following
 	-XCopy: <build drop>\amd64\, TestShell setup() will copy from here to binn. If setup() is skipped, then copy to binn\.
 3) Where possible, add unit tests using the testing framework of your choice.
 
-gtest is provided as one of the test frameworks added as a nuget package restored in packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.0
-Sample test using gtest framework is in \test\ (i.e. \test\gtest\sample-test).
+googletest is provided as one of the test frameworks. It is available in two forms
+1) As a prebuilt version added as a nuget package restored in packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0
+This form is only available on Windows. Sample test using this googletest framework is in \test\ (i.e. \test\googletest\sample-test).
+2) Latest version downloaded and built in this pipeline using the mingw_64 compiler on Windows and gnu compiler on Linux.
 
 # Release Pipeline
 The complete release pipeline does the following:
