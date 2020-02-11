@@ -27,8 +27,9 @@
 
 #include "windows.h"
 
-#include <string>
 #include <iostream>
+#include <stdexcept>
+#include <string>
 
 #include "Utilities.h"
 
@@ -74,7 +75,7 @@ void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::s
 	HMODULE hDLL = static_cast<HMODULE>(libHandle);
 	if (hDLL != nullptr)
 	{
-		pFuncPtr = GetProcAddress(hDLL, fnName.c_str());
+		pFuncPtr = reinterpret_cast<void *>(GetProcAddress(hDLL, fnName.c_str()));
 		if (pFuncPtr == NULL)
 		{
 			DWORD error = GetLastError();

@@ -90,7 +90,7 @@ namespace ExtensionApiTest
 	}
 
 	// Negative test
-	// Test InitColumn() API with bad column numbers (negative or too big)
+	// Test InitColumn() API with bad column numbers (too big)
 	//
 	TEST_F(RExtensionApiTest, InitInvalidColumnNumberTest)
 	{
@@ -99,21 +99,6 @@ namespace ExtensionApiTest
 		SQLCHAR * columnName = reinterpret_cast<SQLCHAR*>(const_cast<char *>("Hello"));
 		SQLSMALLINT columnNameLength = 6;
 		SQLRETURN result = SQL_SUCCESS;
-		result = (*m_initColumnFuncPtr)(
-				*m_sessionId,
-				m_taskId,
-				-1,             // negative column number
-				columnName,
-				columnNameLength,
-				SQL_C_SLONG,   // dataType
-				sizeof(int),   // columnSize
-				0,             // decimalDigits
-				1,             // nullable
-				-1,            // partitionByNumber
-				-1);           // orderByNumber
-		EXPECT_EQ(result, SQL_ERROR);
-
-		result = SQL_SUCCESS;
 		result = (*m_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,

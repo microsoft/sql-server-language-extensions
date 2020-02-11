@@ -2,72 +2,71 @@
 SETLOCAL
 
 REM Set environment variables
+REM
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
 SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\RExtension-test\windows
-SET CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
+SET PACKAGES_ROOT=%ENL_ROOT%\packages
+SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
+
+REM Create build working directory
+REM
 RMDIR /s /q %REXTENSIONTEST_WORKING_DIR%
 MKDIR %REXTENSIONTEST_WORKING_DIR%
 
 :LOOP
 
 REM Set cmake config to first arg
+REM
 SET CMAKE_CONFIGURATION=%1
 
-REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "release".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
+REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=debug)
-IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
+IF /I NOT %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=release)
 
-REM VSCMD_START_DIR set the working directory to this variable after calling VsDevCmd.bat
-REM otherwise, it will default to %USERPROFILE%\Source
-SET VSCMD_START_DIR=%REXTENSIONTEST_WORKING_DIR%
+SET BUILD_OUTPUT=%REXTENSIONTEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
+MKDIR %BUILD_OUTPUT%
+PUSHD %BUILD_OUTPUT%
 
-REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
-REM to the PATH environment variable and it will be too long for windows to handle.
-if not defined DevEnvDir (
-	call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
-)
+REM Make sure g++ is in the PATH.
+REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
+REM
+SET PATH=C:\Rtools\bin;C:\Rtools\mingw_64\bin;%PATH%
 
 ECHO "[INFO] Generating RExtension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
 REM Call cmake
 call "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 15 2017 Win64" ^
+	-G "MinGW Makefiles" ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%REXTENSIONTEST_WORKING_DIR%\\%CMAKE_CONFIGURATION%" ^
 	-DENL_ROOT=%ENL_ROOT% ^
+	-DCMAKE_MAKE_PROGRAM=mingw32-make ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
 	-DPLATFORM=windows ^
 	 %REXTENSIONTEST_HOME%\src
-IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-ECHO "[INFO] Building RExtension test project using MSVC_BUILD_CONFIGURATION=%MSVC_BUILD_CONFIGURATION%"
-
-REM Build the project
-msbuild %REXTENSIONTEST_WORKING_DIR%\RExtension-test.vcxproj /m /property:Configuration=%MSVC_BUILD_CONFIGURATION% /property:Platform=x64
-
-IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
-
-SET EX=%ERRORLEVEL%
-
-if "%EX%" neq "0" (
-	echo "Error: Failed to build RExtension-test.vcxproj"
-	GOTO CLEANUP
-)
+ECHO "[INFO] Building RExtension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+REM Call cmake build
+REM
+CALL "mingw32-make.exe" all
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build RExtension-test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Advance arg passed to build-RExtension-test.cmd
+REM
 SHIFT
 
 REM Continue building using more configs until argv has been exhausted
+REM
 IF NOT "%~1"=="" GOTO LOOP
 
-REM Save exit code of compiler
-SET EX=%ERRORLEVEL%
-
-:CLEANUP
-
-if "%EX%" neq "0" (
-	echo "Build failed"
-)
-
 EXIT /b %ERRORLEVEL%
+
+:CHECKERROR
+	IF %1 NEQ 0 (
+		ECHO %2
+		EXIT /b %1
+	)
+
+	EXIT /b 0
