@@ -197,6 +197,7 @@ package:
     - !!buildcommand
       name: 'Create Java extension zip'
       command: 'language-extensions\java\build\windows\create-java-extension-zip.cmd'
+      arguments:  'debug release'
       artifacts:
         - from: '.build\java-extension\windows\debug\packages'
           to: 'out\java-extension\packages\debug'

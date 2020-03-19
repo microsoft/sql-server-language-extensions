@@ -70,8 +70,8 @@ set_target_properties(JavaExtension
 )
 
 if (${PLATFORM} STREQUAL linux)
-	file(TO_CMAKE_PATH ${JDK_ROOT}/jre/lib/amd64/server JRE_ROOT)
-	file(TO_CMAKE_PATH ${JDK_ROOT}/include JDK_INCLUDE)
+	file(TO_CMAKE_PATH ${JAVA_HOME}/jre/lib/amd64/server JRE_ROOT)
+	file(TO_CMAKE_PATH ${JAVA_HOME}/include JDK_INCLUDE)
 	file(TO_CMAKE_PATH ${JDK_INCLUDE}/linux JDK_INCLUDE_LINUX)
 		
 	set(CXXFLAGS
@@ -106,8 +106,6 @@ elseif(${PLATFORM} STREQUAL windows)
 	#
 	target_compile_definitions(JavaExtension PRIVATE WIN_EXPORT)
 	
-	file(TO_CMAKE_PATH ${ENL_ROOT}\\packages PACKAGES_ROOT)
-	file(TO_CMAKE_PATH ${PACKAGES_ROOT}\\${AZUL_PACKAGE}\\tools JAVA_HOME)
 	file(TO_CMAKE_PATH ${JAVA_HOME}\\include JAVA_INCLUDE)
 	file(TO_CMAKE_PATH ${JAVA_INCLUDE}\\win32 JAVA_INCLUDE_WIN32)
 	

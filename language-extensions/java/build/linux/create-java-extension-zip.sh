@@ -10,23 +10,32 @@ function check_exit_code {
 	fi
 }
 
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-ENL_ROOT=${SCRIPTDIR}/../../../..
 
-GNU_BUILD_CONFIGURATION=debug
-BUILD_OUTPUT=${ENL_ROOT}/.build/java-extension/linux/${GNU_BUILD_CONFIGURATION}
+function build {
+	BUILD_CONFIGURATION=$1
+	
+	SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+	ENL_ROOT=${SCRIPTDIR}/../../../..
 
-mkdir -p ${BUILD_OUTPUT}/packages
-cd ${BUILD_OUTPUT}
-zip packages/java-lang-extension libJavaExtension.so.1.0
-check_exit_code  ${GNU_BUILD_CONFIGURATION}
+	BUILD_OUTPUT=${ENL_ROOT}/.build/java-extension/linux/${BUILD_CONFIGURATION}
 
-GNU_BUILD_CONFIGURATION=release
-BUILD_OUTPUT=${ENL_ROOT}/.build/java-extension/linux/${GNU_BUILD_CONFIGURATION}
+	mkdir -p ${BUILD_OUTPUT}/packages
+	cd ${BUILD_OUTPUT}
+	zip packages/java-lang-extension libJavaExtension.so.1.0
+	check_exit_code  ${BUILD_CONFIGURATION}
+}
 
-mkdir -p ${BUILD_OUTPUT}/packages
-cd ${BUILD_OUTPUT}
-zip packages/java-lang-extension libJavaExtension.so.1.0
-check_exit_code  ${GNU_BUILD_CONFIGURATION}
+# Build in debug mode if nothing is specified
+#
+if [ "$1" == "" ]; then
+	set -- debug
+fi
+
+while [ "$1" != "" ]; do
+	# Advance arg passed to this script
+	#
+	build $1
+	shift
+done;
 
 exit $?

@@ -142,6 +142,7 @@ package:
     - !!buildcommand
       name: 'Create java extension zip'
       command: 'language-extensions/java/build/linux/create-java-extension-zip.sh'
+      arguments:  'debug release'
       artifacts:
         - from: '.build/java-extension/linux/debug/packages'
           to: 'out/java-extension/packages/debug'

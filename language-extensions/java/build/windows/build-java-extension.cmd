@@ -4,14 +4,36 @@ SETLOCAL
 REM Nuget packages directory and location of the JDK
 REM
 SET ENL_ROOT=%~dp0..\..\..\..
-SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET AZUL_PACKAGE=AzulSystems.Zulu.DPG.8.33.0.1
-SET JAVA_HOME=%PACKAGES_ROOT%\%AZUL_PACKAGE%\tools
-SET JAVA_BIN=%PACKAGES_ROOT%\%AZUL_PACKAGE%\tools\bin
-
 SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\.build\java-extension\windows
 SET JAVAEXTENSION_HOME=%ENL_ROOT%\language-extensions\java
-SET CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
+
+SET DEFAULT_CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
+SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\AzulSystems.Zulu.DPG.8.33.0.1\tools
+
+REM Find JAVA_HOME and CMAKE_ROOT from user, or set to default for tests.
+REM Error code 203 is ENVVAR_NOT_FOUND.
+REM 
+SET ENVVAR_NOT_FOUND=203
+
+IF "%JAVA_HOME%" == "" (
+	IF EXIST %DEFAULT_JAVA_HOME% (
+		SET JAVA_HOME=%DEFAULT_JAVA_HOME%
+	) ELSE (
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: JAVA_HOME variable must be set to build the java extension" || EXIT /b %ENVVAR_NOT_FOUND%
+	)
+)
+
+IF "%CMAKE_ROOT%" == "" (
+	IF EXIST %DEFAULT_CMAKE_ROOT% (
+		SET CMAKE_ROOT=%DEFAULT_CMAKE_ROOT%
+	) ELSE (
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: CMAKE_ROOT variable must be set to build the java extension" || EXIT /b %ENVVAR_NOT_FOUND%
+	)
+)
+
+SET JAVA_HOME="%JAVA_HOME%"
+SET JAVA_BIN=%JAVA_HOME%\bin
+
 IF EXIST %JAVAEXTENSION_WORKING_DIR% (RMDIR /s /q %JAVAEXTENSION_WORKING_DIR%)
 MKDIR %JAVAEXTENSION_WORKING_DIR%
 	
@@ -21,7 +43,7 @@ REM Set cmake config to first arg
 REM
 SET CMAKE_CONFIGURATION=%1
 
-REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set CMAKE_CONFIGURATION to "release".
+REM Setting CMAKE_CONFIGURATION to anything but "debug" will set CMAKE_CONFIGURATION to "release".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
 REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=debug)
@@ -83,10 +105,9 @@ SET VSCMD_START_DIR=%ENL_ROOT%
 REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
-if not defined DevEnvDir (
+IF NOT DEFINED DevEnvDir (
 	call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
-
 
 ECHO "[INFO] Generating Java extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
@@ -98,7 +119,6 @@ REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 	-G "Visual Studio 15 2017 Win64" ^
-	-DAZUL_PACKAGE=%AZUL_PACKAGE% ^
 	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%JAVAEXTENSION_WORKING_DIR%" ^
 	-DENL_ROOT=%ENL_ROOT% ^

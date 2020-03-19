@@ -34,11 +34,11 @@ function build {
 	#
 	pushd ${ENL_ROOT}/language-extensions/java/sdk/src/java/main/java/com/microsoft/sqlserver/javalangextension/
 	ls -d "$PWD"/*.java > ${TARGET}/sources.txt
-	${JDK_ROOT}/bin/javac  -d ${TARGET_CLASSES} @${TARGET}/sources.txt
+	${JAVA_HOME}/bin/javac  -d ${TARGET_CLASSES} @${TARGET}/sources.txt
 
 	# Create the mssql-java-lang-extension.jar file
 	#
-	${JDK_ROOT}/bin/jar cvf ${TARGET}/${OUTPUT_JAR} -C ${TARGET_CLASSES} .
+	${JAVA_HOME}/bin/jar cvf ${TARGET}/${OUTPUT_JAR} -C ${TARGET_CLASSES} .
 
 	if ! [[ -d ${JAVAEXTENSION_WORKING_DIR} ]]; then
 		mkdir -p ${JAVAEXTENSION_WORKING_DIR}
@@ -51,7 +51,7 @@ function build {
 	cmake -DPLATFORM=Linux \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
-		-DJDK_ROOT=${JDK_ROOT} \
+		-DJAVA_HOME=${JAVA_HOME} \
 		-DJAVAEXTENSION_WORKING_DIR=${JAVAEXTENSION_WORKING_DIR} \
 		${JAVAEXTENSION_HOME}/src
 	cmake --build ${JAVAEXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
@@ -84,7 +84,19 @@ ENL_ROOT=${SCRIPTDIR}/../../../..
 #
 JAVAEXTENSION_HOME=${ENL_ROOT}/language-extensions/java
 JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/.build/java-extension/linux
-JDK_ROOT=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+DEFAULT_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+
+# Find JAVA_HOME from user, or set to default for tests.
+# Error code 1 is generic bash error.
+# 
+if [ -z "${JAVA_HOME}" ]; then
+	if [ -d "${DEFAULT_JAVA_HOME}" ]; then 
+		JAVA_HOME=${DEFAULT_JAVA_HOME}
+	else
+		echo "JAVA_HOME is empty"
+		exit 1
+	fi
+fi
 
 # Build in debug mode if nothing is specified
 #
