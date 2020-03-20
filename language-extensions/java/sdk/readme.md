@@ -28,7 +28,7 @@ For an example of how you can use the SDK, see [Tutorial: Search for a string us
 
 ### SDK CLasses
 
-The SDK consists of three Java classes. [Source code](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/sdk/src/main/java/com/microsoft/sqlserver/javalangextension)
+The SDK consists of three Java classes. [Source code](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/sdk/src/java/main/java/com/microsoft/sqlserver/javalangextension)
 
 Two abstract classes that define the interface the Java extension uses to exchange data with SQL Server:
 
