@@ -34,13 +34,13 @@ R_LIBRARY_PATH=${R_HOME}/library
 
 # Install Rcpp.
 #
-${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/Rcpp_1.0.3.tar.gz', lib = '${R_LIBRARY_PATH}')"
+${R_HOME}/bin/R -e "install.packages('Rcpp', lib = '${R_LIBRARY_PATH}', repos = 'https://ftp.osuosl.org/pub/cran/')"
 ${R_HOME}/bin/R -e "stopifnot(require(Rcpp))"
 check_exit_code "Success: Installed Rcpp package." "Error: Failed to install Rcpp package."
 
 # Install RInside.
 #
-${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/RInside_0.2.16.tar.gz', lib = '${R_LIBRARY_PATH}')"
+${R_HOME}/bin/R -e "install.packages('RInside', lib = '${R_LIBRARY_PATH}', repos = 'https://ftp.osuosl.org/pub/cran/')"
 ${R_HOME}/bin/R -e "stopifnot(require(RInside))"
 check_exit_code "Success: Installed RInside package." "Error: Failed to install RInside package."
 

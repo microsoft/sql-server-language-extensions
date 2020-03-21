@@ -21,11 +21,11 @@ SET R_BIN_PATH=%R_HOME%\bin
 SETLOCAL enabledelayedexpansion
 SET R_LIBRARY_PATH=%R_HOME%\library
 
-%R_BIN_PATH%\R -e "install.packages('https://cran.r-project.org/bin/windows/contrib/3.5/Rcpp_1.0.3.zip', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL)"
+%R_BIN_PATH%\R -e "install.packages('Rcpp', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
 %R_BIN_PATH%\R -e "stopifnot(require(Rcpp))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rcpp package" || EXIT /b %ERRORLEVEL%
 
-%R_BIN_PATH%\R -e "install.packages('https://cran.r-project.org/bin/windows/contrib/3.5/RInside_0.2.16.zip', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL)"
+%R_BIN_PATH%\R -e "install.packages('RInside', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
 %R_BIN_PATH%\R -e "stopifnot(require(RInside))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install RInside package" || EXIT /b %ERRORLEVEL%
 SETLOCAL disabledelayedexpansion
