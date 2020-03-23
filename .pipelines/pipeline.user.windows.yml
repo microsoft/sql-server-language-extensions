@@ -93,7 +93,7 @@ build:
       command: 'language-extensions\java\build\windows\build-java-extension.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: '.build\java-extension\target\debug'
+        - from: 'build-output\java-extension\target\debug'
           to: 'out\java-extension\debug'
           include:
             - 'mssql-java-lang-extension.jar'
@@ -111,7 +111,7 @@ build:
             - 'javaextension.pdb'
           signing_options:
             profile: 'none'
-        - from: '.build\java-extension\target\release'
+        - from: 'build-output\java-extension\target\release'
           to: 'out\java-extension\release'
           include:
             - 'mssql-java-lang-extension.jar'
@@ -199,11 +199,11 @@ package:
       command: 'language-extensions\java\build\windows\create-java-extension-zip.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: '.build\java-extension\windows\debug\packages'
+        - from: 'build-output\java-extension\windows\debug\packages'
           to: 'out\java-extension\packages\debug'
           include:
             - 'java-lang-extension.zip'
-        - from: '.build\java-extension\windows\release\packages'
+        - from: 'build-output\java-extension\windows\release\packages'
           to: 'out\java-extension\packages\release'
           include:
             - 'java-lang-extension.zip'

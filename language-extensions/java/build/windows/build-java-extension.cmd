@@ -4,7 +4,7 @@ SETLOCAL
 REM Nuget packages directory and location of the JDK
 REM
 SET ENL_ROOT=%~dp0..\..\..\..
-SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\.build\java-extension\windows
+SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\java-extension\windows
 SET JAVAEXTENSION_HOME=%ENL_ROOT%\language-extensions\java
 
 SET DEFAULT_CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
@@ -12,7 +12,7 @@ SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\AzulSystems.Zulu.DPG.8.33.0.1\tools
 
 REM Find JAVA_HOME and CMAKE_ROOT from user, or set to default for tests.
 REM Error code 203 is ENVVAR_NOT_FOUND.
-REM 
+REM
 SET ENVVAR_NOT_FOUND=203
 
 IF "%JAVA_HOME%" == "" (
@@ -36,7 +36,7 @@ SET JAVA_BIN=%JAVA_HOME%\bin
 
 IF EXIST %JAVAEXTENSION_WORKING_DIR% (RMDIR /s /q %JAVAEXTENSION_WORKING_DIR%)
 MKDIR %JAVAEXTENSION_WORKING_DIR%
-	
+
 :LOOP
 
 REM Set cmake config to first arg
@@ -51,7 +51,7 @@ IF /I NOT %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=release)
 
 REM Output directory and output JAR name
 REM
-SET TARGET=%ENL_ROOT%\.build\java-extension\target\%CMAKE_CONFIGURATION%
+SET TARGET=%ENL_ROOT%\build-output\java-extension\target\%CMAKE_CONFIGURATION%
 SET TARGET_CLASSES=%TARGET%\classes
 SET OUTPUT_JAR=%TARGET%\mssql-java-lang-extension.jar
 
@@ -125,7 +125,7 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 	-DJAVA_HOME=%JAVA_HOME% ^
 	-DPLATFORM=Windows ^
 	%JAVAEXTENSION_HOME%\src
-	
+
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[INFO] Building Java extension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
@@ -133,7 +133,7 @@ ECHO "[INFO] Building Java extension project using CMAKE_CONFIGURATION=%CMAKE_CO
 REM Call cmake build
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
-				
+
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Java extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM This will create the Java extension package with unsigned binaries, this is used for local development and non-release builds. release

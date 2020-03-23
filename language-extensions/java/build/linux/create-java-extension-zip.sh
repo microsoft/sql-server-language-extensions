@@ -17,7 +17,7 @@ function build {
 	SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 	ENL_ROOT=${SCRIPTDIR}/../../../..
 
-	BUILD_OUTPUT=${ENL_ROOT}/.build/java-extension/linux/${BUILD_CONFIGURATION}
+	BUILD_OUTPUT=${ENL_ROOT}/build-output/java-extension/linux/${BUILD_CONFIGURATION}
 
 	mkdir -p ${BUILD_OUTPUT}/packages
 	cd ${BUILD_OUTPUT}

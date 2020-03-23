@@ -39,7 +39,7 @@
 *.app
 
 # Build ouput
-.build/
+build-output/
 *.err
 *.wrn
 *.log

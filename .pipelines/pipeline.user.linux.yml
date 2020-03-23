@@ -99,13 +99,13 @@ build:
       command: 'language-extensions/java/build/linux/build-java-extension.sh' # A root relative path to the script to execute.
       arguments:  'debug release'
       artifacts:                                                       # A sequence of entries that describes what artifacts to collect and upload.
-        - from: '.build/java-extension/linux/debug'
+        - from: 'build-output/java-extension/linux/debug'
           to: 'out/java-extension/debug'
           include:
             - 'libjavaextension.so.1.0'
           signing_options:
             profile: '135020002'
-        - from: '.build/java-extension/linux/release'
+        - from: 'build-output/java-extension/linux/release'
           to: 'out/java-extension/release'
           include:
             - 'libjavaextension.so.1.0'
@@ -144,11 +144,11 @@ package:
       command: 'language-extensions/java/build/linux/create-java-extension-zip.sh'
       arguments:  'debug release'
       artifacts:
-        - from: '.build/java-extension/linux/debug/packages'
+        - from: 'build-output/java-extension/linux/debug/packages'
           to: 'out/java-extension/packages/debug'
           include:
             - 'java-lang-extension.zip'
-        - from: '.build/java-extension/linux/release/packages'
+        - from: 'build-output/java-extension/linux/release/packages'
           to: 'out/java-extension/packages/release'
           include:
             - 'java-lang-extension.zip'
