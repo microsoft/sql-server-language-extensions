@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
 //
 // This file is part of RExtension.
@@ -23,7 +24,7 @@
 // Wrapper class around logging to standardize logging messages
 // and errors.
 //
-//******************************************************************************************************
+//*************************************************************************************************
 #ifdef _WIN64
 #include <windows.h>
 #endif
@@ -32,6 +33,7 @@
 #include <stdio.h>
 #include <string>
 
+#include "Common.h"
 #include "Logger.h"
 
 #include <R_ext/Error.h>
@@ -93,6 +95,26 @@ void Logger::Log(const string &msg)
 #if defined(_DEBUG) || defined(_VERBOSE)
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
 	Rprintf(msgWithTimestamp.c_str());
+#endif
+}
+
+//---------------------------------------------------------------------
+// Name: LogRVariable
+//
+// Description:
+//  Print out the value of the given variable name using R's print function.
+//  Only available in debug mode, not in release.
+//  This function has a precondition that R's environment is already initialized,
+//  otherwise it is a no-op.
+//
+void Logger::LogRVariable(const string &name)
+{
+#if defined(_DEBUG) || defined(_VERBOSE)
+	if (g_embeddedRPtr != nullptr)
+	{
+		string printVariable = "print(" + name + ");";
+		(*g_embeddedRPtr).parseEval(printVariable);
+	}
 #endif
 }
 

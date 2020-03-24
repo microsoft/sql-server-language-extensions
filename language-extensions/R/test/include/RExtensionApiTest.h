@@ -62,11 +62,24 @@ typedef SQLRETURN FN_initColumn(
 	SQLSMALLINT,  // partitionByNumber
 	SQLSMALLINT); // orderByNumber
 
-typedef SQLRETURN FN_cleanup();
+typedef SQLRETURN FN_initParam(
+	SQLGUID,      // sessionId
+	SQLUSMALLINT, // taskId
+	SQLUSMALLINT, // paramNumber
+	SQLCHAR*,     // paramName,
+	SQLSMALLINT,  // paramNameLength
+	SQLSMALLINT,  // dataType
+	SQLULEN,      // argSize
+	SQLSMALLINT,  // decimalDigits
+	SQLPOINTER,   // argValue
+	SQLINTEGER,   // strLen_or_Ind
+	SQLSMALLINT); // inputOutputType
 
 typedef SQLRETURN FN_cleanupSession(
 	SQLGUID,       // sessionId
 	SQLUSMALLINT); // taskId
+
+typedef SQLRETURN FN_cleanup();
 
 namespace ExtensionApiTest
 {
@@ -79,12 +92,12 @@ namespace ExtensionApiTest
 		// Per-test-suite set-up.
 		// Called before the first test in this test suite.
 		//
-		static void SetUpTestCase();
+		static void SetUpTestSuite();
 
 		// Per-test-suite tear-down.
 		// Called after the last test in this test suite.
 		//
-		static void TearDownTestCase();
+		static void TearDownTestSuite();
 
 		// Code here will be called immediately after the constructor (right
 		// before each test).
@@ -131,12 +144,38 @@ namespace ExtensionApiTest
 		//
 		void CleanupSession();
 
+		// Templatized function to call InitParam for the given paramValue and dataType.
+		// Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
+		//
+		template<class SQLType, class RType, SQLSMALLINT dataType>
+		void TestParameter(
+			SQLType paramValue,
+			bool inRange = true);
+
+		// Testing if InitParam is implemented correctly for the char/varchar dataType.
+		//
+		void TestCharParameter(
+			const char  *paramValue,
+			SQLULEN      paramSize,
+			bool         isFixedType);
+
+		// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
+		//
+		void TestBinaryParameter(
+			const SQLCHAR *paramValue,
+			SQLINTEGER     strLenOrInd,
+			SQLULEN        paramSize,
+			bool           isFixedType);
+
 		// Objects declared here can be used by all tests in the test suite
 		//
 		SQLGUID *m_sessionId;
 		SQLUSMALLINT m_taskId;
 		SQLUSMALLINT m_numTasks;
 		SQLUSMALLINT m_parametersNumber;
+
+		const char *m_paramName = nullptr;
+		SQLSMALLINT m_paramNameLength;
 
 		SQLCHAR *m_script;
 		SQLSMALLINT m_scriptLength;
@@ -147,6 +186,10 @@ namespace ExtensionApiTest
 
 		SQLCHAR *m_outputDataName;
 		SQLSMALLINT m_outputDataNameLength;
+
+		// R global environment
+		//
+		Rcpp::Environment m_globalEnvironment;
 
 		// Pointer handle to the library libRextension
 		//
@@ -163,6 +206,10 @@ namespace ExtensionApiTest
 		// Pointer to the InitColumn function
 		//
 		static FN_initColumn *m_initColumnFuncPtr;
+
+		// Pointer to the InitParam function
+		//
+		static FN_initParam *m_initParamFuncPtr;
 
 		// Pointer to the CleanupSession function
 		//

@@ -28,6 +28,7 @@
 #ifdef _WIN64
 #include <windows.h>
 #endif
+
 #include <memory>
 #include <sql.h>
 #include <sqltypes.h>
@@ -35,6 +36,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "gtest/gtest.h"
+
+#include "Rcpp.h"
 
 #include "RExtensionApiTest.h"
 #include "Utilities.h"
@@ -52,22 +55,20 @@ extern const char **g_argv;
 
 namespace ExtensionApiTest
 {
+	// Initialize all the static members
+	//
 	void *RExtensionApiTest::m_libHandle = nullptr;
-
 	FN_init *RExtensionApiTest::m_initFuncPtr = nullptr;
-
 	FN_initSession *RExtensionApiTest::m_initSessionFuncPtr = nullptr;
-
 	FN_initColumn *RExtensionApiTest::m_initColumnFuncPtr = nullptr;
-
+	FN_initParam *RExtensionApiTest::m_initParamFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
-
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
 
 	// Per-test-suite set-up.
 	// Called before the first test in this test suite.
 	//
-	void RExtensionApiTest::SetUpTestCase()
+	void RExtensionApiTest::SetUpTestSuite()
 	{
 		CheckAndSetRHome();
 		ASSERT_NO_THROW(GetHandles());
@@ -77,7 +78,7 @@ namespace ExtensionApiTest
 	// Per-test-suite tear-down.
 	// Called after the last test in this test suite.
 	//
-	void RExtensionApiTest::TearDownTestCase()
+	void RExtensionApiTest::TearDownTestSuite()
 	{
 		DoCleanup();
 		ASSERT_NO_THROW(ReleaseHandles());
@@ -150,6 +151,12 @@ namespace ExtensionApiTest
 				"InitColumn"));
 		ASSERT_TRUE(m_initColumnFuncPtr != nullptr);
 
+		m_initParamFuncPtr = reinterpret_cast<FN_initParam*>(
+		Utilities::CrossPlatGetFunctionFromLibHandle(
+			m_libHandle,
+			"InitParam"));
+		ASSERT_TRUE(m_initParamFuncPtr != nullptr);
+
 		m_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
 				m_libHandle,
@@ -202,17 +209,24 @@ namespace ExtensionApiTest
 		m_inputSchemaColumnsNumber = 1;
 		m_parametersNumber = 1;
 
+		m_paramName = "@param1";
+		m_paramNameLength = string(m_paramName).length();
+
 		string scriptString = "print('Hello World!')";
 		m_script = reinterpret_cast<SQLCHAR *>(const_cast<char *>(scriptString.c_str()));
-		m_scriptLength = scriptString.length() + 1; // null terminator
+		m_scriptLength = scriptString.length();
 
 		string inputDataNameString = "InputDataSet";
 		m_inputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(inputDataNameString.c_str()));
-		m_inputDataNameLength = inputDataNameString.length() + 1; // null terminator
+		m_inputDataNameLength = inputDataNameString.length();
 
 		string outputDataNameString = "OutputDataSet";
 		m_outputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(outputDataNameString.c_str()));
-		m_outputDataNameLength = outputDataNameString.length() + 1; // null terminator
+		m_outputDataNameLength = outputDataNameString.length();
+
+		// Retrieve the global environment
+		//
+		m_globalEnvironment = Rcpp::Environment::global_env();
 	}
 
 	// Name: ReleaseHandles
@@ -281,4 +295,3 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 }
-

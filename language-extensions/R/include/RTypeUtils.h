@@ -18,52 +18,46 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: Logger.h
+// @File: RTypeUtils.h
 //
 // Purpose:
-// Wrapper class around logging to standardize logging messages
-// and errors.
+//  Class providing functions to manipulate between R data types and SQL types.
 //
 //*************************************************************************************************
+
 #pragma once
 
-#define LOG(msg) Logger::Log(msg)
-#define LOG_ERROR(msg) Logger::LogError(msg)
-#define LOG_EXCEPTION(e) Logger::LogException(e)
-#define LOG_R_EXCEPTION(msg) Logger::LogRException(msg)
-
-using namespace std;
-
-class Logger
+class RTypeUtils
 {
 public:
-	// Log an error to stderr
+	// Templatized function to create a vector of an equivalent R type for the given SQL type
+	// with the given data. This is only for numeric or integer R types.
 	//
-	static void LogError(const string &errorMsg);
+	template<class SQLType, class RType, class NAType>
+	static RType CreateVector(
+		SQLULEN      rowsNumber,
+		SQLPOINTER   data,
+		SQLINTEGER   *strLen_or_Ind,
+		const NAType valueForNA);
 
-	// Log an extension exception to stderr
+	// Create a logical vector in R corresponding to the given data.
 	//
-	static void LogException(const exception &e);
+	static Rcpp::LogicalVector CreateLogicalVector(
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER *strLen_or_Ind);
 
-	// Log an R exception to stderr
+	// Create a character vector in R with the given data.
 	//
-	static void LogRException(const string &errorMsg);
+	static Rcpp::CharacterVector CreateCharacterVector(
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER *strLen_or_Ind);
 
-	// Log a message to stdout
+	// Create a raw vector in R corresponding to the given binary data.
 	//
-	static void Log(const string &errorMsg);
-
-	// Log an R variable using R's print function
-	//
-	static void LogRVariable(const string &name);
-
-private:
-	// Get a string of the current timestamp in the same format
-	// of SQL format
-	//
-	static const char* GetCurrentTimestamp();
-
-	// Buffer to hold the timestamp string.
-	//
-	static char timestampBuffer[];
+	static Rcpp::RawVector CreateRawVector(
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER *strLen_or_Ind);
 };

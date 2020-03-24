@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
 //
 // This file is part of RExtension.
@@ -22,7 +23,7 @@
 // Purpose:
 //  Class encapsulating operations performed per R script
 //
-//******************************************************************************************************
+//*************************************************************************************************
 #include "Common.h"
 
 #include <memory>
@@ -30,11 +31,14 @@
 
 #include "Column.h"
 #include "Logger.h"
+#include "RParam.h"
+#include "RParamContainer.h"
 #include "RSession.h"
+#include "RTypeUtils.h"
 
 using namespace std;
 
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::Init
 //
 // Description:
@@ -66,10 +70,9 @@ void RSession::Init(
 		throw invalid_argument("Invalid Script, the Script value cannot be nullptr");
 	}
 
-	// scriptLength also includes the null terminator hence -1 for std::string
+	// scriptLength does not include the null terminator.
 	//
-	m_script = string(reinterpret_cast<const char*>(script), scriptLength - 1);
-	m_scriptLength = scriptLength;
+	m_script = string(reinterpret_cast<const char*>(script), scriptLength);
 
 	// Initialize the InputDataSet
 	//
@@ -78,10 +81,10 @@ void RSession::Init(
 		throw invalid_argument("Invalid InputDataName, the InputDataName value cannot be nullptr");
 	}
 
-	// inputDataNameLength also includes the null terminator hence -1 for std::string
+	// inputDataNameLength does not include the null terminator.
 	//
-	m_inputDataSetName = string(reinterpret_cast<const char*>(inputDataName), inputDataNameLength - 1);
-	m_inputDataSetNameLength = inputDataNameLength;
+	m_inputDataSetName = string(reinterpret_cast<const char*>(inputDataName),
+							inputDataNameLength);
 
 	// Initialize the OutputDataSet
 	//
@@ -90,21 +93,21 @@ void RSession::Init(
 		throw invalid_argument("Invalid OutputDataName, the OutputDataName value cannot be nullptr");
 	}
 
-	// outputDataNameLength also includes the null terminator hence -1 for std::string
+	// outputDataNameLength does not include the null terminator.
 	//
-	m_outputDataSetName = string(reinterpret_cast<const char*>(outputDataName), outputDataNameLength - 1);
-	m_outputDataSetNameLength = outputDataNameLength;
+	m_outputDataSetName = string(reinterpret_cast<const char*>(outputDataName),
+							outputDataNameLength);
 
 	// Initialize the rest of the parameters like storing the schema
 	//
 	m_inputSchemaColumnsNumber = inputSchemaColumnsNumber;
 
-	// Save parameter number
+	// Initialize the parameters container.
 	//
-	m_parametersNumber = parametersNumber;
+	m_paramContainer.Init(parametersNumber);
 }
 
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::Init
 //
 // Description:
@@ -134,12 +137,12 @@ void RSession::InitColumn(
 
 	// Store the information for this column
 	//
-	string name(reinterpret_cast<const char*>(columnName), columnNameLength - 1); // Remove null terminator
+	string name(reinterpret_cast<const char*>(columnName), columnNameLength);
 
 	m_inputColumns.push_back(make_unique<Column>(name, dataType, columnSize, nullable, decimalDigits));
 }
 
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::InitParam
 //
 // Description:
@@ -150,16 +153,44 @@ void RSession::InitParam(
 	const SQLCHAR *paramName,
 	SQLSMALLINT    paramNameLength,
 	SQLSMALLINT    dataType,
-	SQLULEN        argSize,
+	SQLULEN        paramSize,
 	SQLSMALLINT    decimalDigits,
-	SQLPOINTER     argValue,
+	SQLPOINTER     paramValue,
 	SQLINTEGER     strLen_or_Ind,
 	SQLSMALLINT    inputOutputType)
 {
+	LOG("RSession::InitParam");
 
+	if (paramName == nullptr)
+	{
+		throw invalid_argument("Invalid input parameter name supplied");
+	}
+	else if (paramNumber >= m_paramContainer.GetSize())
+	{
+		throw invalid_argument("Invalid input param id supplied: " + to_string(paramNumber));
+	}
+
+	// +1 points to the next character after @ in front of the parameter name.
+	// paramNameLength includes @ so do a -1 to exclude it.
+	//
+	string name(reinterpret_cast<const char*>((paramName + 1)), paramNameLength - 1);
+
+	LOG("RSession::InitParam: Initializing parameter " + name);
+
+	// Add parameter to the container and embedded R environment.
+	//
+	m_paramContainer.AddParamToEmbeddedR(
+		paramNumber,
+		name,
+		dataType,
+		paramSize,
+		decimalDigits,
+		paramValue,
+		strLen_or_Ind,
+		inputOutputType);
 }
 
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::ExecuteWorkflow
 //
 // Description:
@@ -174,7 +205,7 @@ void RSession::ExecuteWorkflow(
 
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::GetResultColumn
 //
 // Description:
@@ -190,7 +221,7 @@ void RSession::GetResultColumn(
 
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::GetResults
 //
 // Description:
@@ -204,7 +235,7 @@ void RSession::GetResults(
 
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::GetOutputParam
 //
 // Description:
@@ -218,7 +249,7 @@ void RSession::GetOutputParam(
 
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: RSession::Cleanup()
 //
 // Description:

@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
 //
 // This file is part of RExtension.
@@ -22,7 +23,7 @@
 // Purpose:
 //  Common headers for extension
 //
-//******************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 
@@ -30,6 +31,11 @@
 #include <windows.h>
 #endif
 
+#include <memory>
 #include <sqltypes.h>
 #include <string>
 #include <vector>
+
+#include <RInside.h> // for the embedded R via RInside
+
+extern std::unique_ptr<RInside> g_embeddedRPtr;

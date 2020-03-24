@@ -1,6 +1,9 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
+//
+// This file is part of RExtension.
 //
 // RExtension is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +23,7 @@
 // Purpose:
 //  Class encapsulating a dataset's column attributes
 //
-//******************************************************************************************************
+//*************************************************************************************************
 #pragma once
 
 // Encapsulate column information

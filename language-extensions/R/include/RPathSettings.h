@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
 //
 // This file is part of RExtension.
@@ -22,13 +23,11 @@
 // Purpose:
 //  Global class to keep language runtime settings.
 //
-//******************************************************************************************************
+//*************************************************************************************************
 #pragma once
 
 using namespace std;
 
-//---------------------------------------------------------------------
-// Description:
 //	Global class storing the language runtime paths and parameters
 //
 class RPathSettings

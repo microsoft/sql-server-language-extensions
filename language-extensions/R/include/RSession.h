@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
 //
 // This file is part of RExtension.
@@ -22,7 +23,7 @@
 // Purpose:
 //  Class encapsulating operations performed per R script session
 //
-//******************************************************************************************************
+//*************************************************************************************************
 #pragma once
 
 // Forward Declarations
@@ -80,9 +81,9 @@ public:
 		const SQLCHAR *paramName,
 		SQLSMALLINT    paramNameLength,
 		SQLSMALLINT    dataType,
-		SQLULEN        argSize,
+		SQLULEN        paramSize,
 		SQLSMALLINT    decimalDigits,
-		SQLPOINTER     argValue,
+		SQLPOINTER     paramValue,
 		SQLINTEGER     strLen_or_Ind,
 		SQLSMALLINT    inputOutputType);
 
@@ -128,25 +129,19 @@ private:
 	SQLUSMALLINT m_numTasks = 0;              // Number of tasks for this session
 
 	std::string m_script;
-	SQLULEN m_scriptLength = 0;               // Script Length = this counts the null terminator as well
 
-	std::string m_inputDataSetName;           // Input DataSet class name for the executor class
-	SQLULEN m_inputDataSetNameLength = 0;     // Input DataSet Name Length = this counts the null terminator as well
-
-	std::string m_outputDataSetName;          // Output Dataset class name for the executor class
-	SQLULEN m_outputDataSetNameLength = 0;    // Output DataSet Name Length = this counts the null terminator as well
+	// Parameter container.
+	//
+	RParamContainer m_paramContainer;
 
 	// Input data information (schema, null map, etc.)
 	//
 	SQLUSMALLINT m_inputSchemaColumnsNumber = 0;
 	std::vector<std::unique_ptr<Column>> m_inputColumns;
+	std::string m_inputDataSetName;           // InputDataSet name in R
 
 	std::vector<SQLSMALLINT> m_partitionByIndexes;
 	std::vector<SQLSMALLINT> m_orderByIndexes;
-
-	// Parameters
-	//
-	SQLUSMALLINT m_parametersNumber = 0;
 
 	// Output data information (schema, null map, etc.)
 	//
@@ -154,5 +149,6 @@ private:
 	SQLUSMALLINT m_outputSchemaColumnsNumber = 0;
 	std::vector<std::unique_ptr<Column>> m_outputColumns;
 	std::vector<SQLINTEGER*> m_outputNullMap;
+	std::string m_outputDataSetName;          // OutputDataset name in R
 	std::vector<SQLPOINTER> m_outputData;
 };

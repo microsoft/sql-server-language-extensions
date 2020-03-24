@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension : A language extension implementing the SQL Server external language communication protocol.
+//*************************************************************************************************
+// RExtension : A language extension implementing the SQL Server
+// external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
 //
 // This file is part of RExtension.
@@ -23,18 +24,19 @@
 //  RExtension DLL that can be loaded by ExtHost. This library inits embedded R,
 //  handles communication with ExtHost, and executes user-specified R script
 //
-//******************************************************************************************************
+//*************************************************************************************************
 #include "Common.h"
 
 #include <cstring>
 #include <exception>
 #include <iostream>
-#include <memory>
 #include <sqlext.h>
 #include <stdexcept>
 
 #include "Column.h"
 #include "Logger.h"
+#include "RParam.h"
+#include "RParamContainer.h"
 #include "RPathSettings.h"
 #include "RSession.h"
 #include "sqlexternallanguage.h"
@@ -45,17 +47,15 @@
 #include <string.h>
 #endif
 
-#include <RInside.h>                // for the embedded R via RInside
-
 using namespace std;
-
-// A reference to the embedded R environment
-//
-static unique_ptr<RInside> g_embeddedRPtr = nullptr;
 
 // A global object to keep track of the input/output data information
 //
 static RSession *g_sessionData = nullptr;
+
+// A reference to the embedded R environment
+//
+unique_ptr<RInside> g_embeddedRPtr = nullptr;
 
 //--------------------------------------------------------------------------------------------------
 // Name: CheckSessionEnvInitialized
@@ -325,9 +325,9 @@ SQLRETURN InitParam(
 	SQLCHAR      *paramName,
 	SQLSMALLINT   paramNameLength,
 	SQLSMALLINT   dataType,
-	SQLULEN       argSize,
+	SQLULEN       paramSize,
 	SQLSMALLINT   decimalDigits,
-	SQLPOINTER    argValue,
+	SQLPOINTER    paramValue,
 	SQLINTEGER    strLen_or_Ind,
 	SQLSMALLINT   inputOutputType
 )
@@ -346,9 +346,9 @@ SQLRETURN InitParam(
 			paramName,
 			paramNameLength,
 			dataType,
-			argSize,
+			paramSize,
 			decimalDigits,
-			argValue,
+			paramValue,
 			strLen_or_Ind,
 			inputOutputType);
 	}
@@ -603,6 +603,11 @@ SQLRETURN CleanupSession(
 SQLRETURN Cleanup()
 {
 	LOG("RExtension::Cleanup");
+
+	// End Embedded R - usually done by calling Rf_endEmbdeddR(0)
+	// However, with RInside, that is not needed here.
+	// When g_embeddedRPtr goes out of scope, its destructor will end embeddedR
+	//
 
 	return SQL_SUCCESS;
 }

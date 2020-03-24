@@ -30,6 +30,7 @@
 #include <sqlext.h>
 #include <sqltypes.h>
 #include "gtest/gtest.h"
+#include "Rcpp.h"
 
 #include "RExtensionApiTest.h"
 

@@ -31,8 +31,10 @@ PUSHD %BUILD_OUTPUT%
 
 REM Make sure g++ is in the PATH.
 REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
+REM Also need to have R_HOME\bin\x64 in the PATH so that linker finds definitions for R functions.
 REM
-SET PATH=C:\Rtools\bin;C:\Rtools\mingw_64\bin;%PATH%
+SET R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET PATH=C:\Rtools\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
 
 ECHO "[INFO] Generating RExtension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
