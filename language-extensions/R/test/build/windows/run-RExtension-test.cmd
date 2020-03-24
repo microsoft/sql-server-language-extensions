@@ -4,8 +4,8 @@ SETLOCAL
 REM Set environment variables
 REM
 SET ENL_ROOT=%~dp0..\..\..\..\..
-SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\RExtension-test\windows
-SET REXTENSION_WORKING_DIR=%ENL_ROOT%\.build\RExtension\windows
+SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\build-output\RExtension-test\windows
+SET REXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET GTEST_HOME=%PACKAGES_ROOT%\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0
 SET GTEST_LIB_PATH=%GTEST_HOME%\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64

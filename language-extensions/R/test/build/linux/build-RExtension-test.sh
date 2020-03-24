@@ -47,7 +47,7 @@ REXTENSIONTEST_HOME=${ENL_ROOT}/language-extensions/R/test/
 # Set environment variables required in Cmake
 PACKAGES_ROOT=${ENL_ROOT}/packages
 REXTENSIONTEST_SRC_DIR=${REXTENSIONTEST_HOME}/src
-REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/.build/RExtension-test/linux
+REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/RExtension-test/linux
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd

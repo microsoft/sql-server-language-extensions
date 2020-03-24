@@ -20,7 +20,7 @@ function build {
 
 	# Output directory and output dll name
 	#
-	TARGET=${ENL_ROOT}/.build/RExtension/target/${CMAKE_CONFIGURATION}
+	TARGET=${ENL_ROOT}/build-output/RExtension/target/${CMAKE_CONFIGURATION}
 	# Create the output directories
 	mkdir -p ${TARGET}
 
@@ -73,7 +73,7 @@ PACKAGES_ROOT=${ENL_ROOT}/packages
 R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
 REXTENSION_SRC_DIR=${REXTENSION_HOME}/src/
 R_LIB_DIR=${R_HOME}/lib/
-REXTENSION_WORKING_DIR=${ENL_ROOT}/.build/RExtension/linux/
+REXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/RExtension/linux/
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd

@@ -140,11 +140,11 @@ build:
       command: 'language-extensions\R\build\windows\build-RExtension.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: '.build\RExtension\windows\debug'
+        - from: 'build-output\RExtension\windows\debug'
           to: 'out\RExtension\debug'
           include:
             - 'libRExtension.dll'
-        - from: '.build\RExtension\windows\release'
+        - from: 'build-output\RExtension\windows\release'
           to: 'out\RExtension\release'
           include:
             - 'libRExtension.dll'
@@ -211,11 +211,11 @@ package:
       name: 'Create RExtension zip'
       command: 'language-extensions\R\build\windows\create-RExtension-zip.cmd'
       artifacts:
-        - from: '.build\RExtension\windows\debug\packages'
+        - from: 'build-output\RExtension\windows\debug\packages'
           to: 'out\RExtension\packages\debug'
           include:
             - 'R-lang-extension.zip'
-        - from: '.build\RExtension\windows\release\packages'
+        - from: 'build-output\RExtension\windows\release\packages'
           to: 'out\RExtension\packages\release'
           include:
             - 'R-lang-extension.zip'

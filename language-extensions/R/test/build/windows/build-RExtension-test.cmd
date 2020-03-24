@@ -5,7 +5,7 @@ REM Set environment variables
 REM
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
-SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\.build\RExtension-test\windows
+SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\build-output\RExtension-test\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 

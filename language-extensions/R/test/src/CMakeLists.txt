@@ -58,10 +58,10 @@ elseif(${PLATFORM} STREQUAL windows)
 endif()
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R/test/include/ REXTENSIONTEST_INCLUDE_DIR)
-file(TO_CMAKE_PATH ${ENL_ROOT}/.build/RExtension-test/${PLATFORM}/ REXTENSIONTEST_WORKING_DIR)
+file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension-test/${PLATFORM}/ REXTENSIONTEST_WORKING_DIR)
 file(TO_CMAKE_PATH ${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION} REXTENSIONTEST_INSTALL_DIR)
 
-file(TO_CMAKE_PATH ${ENL_ROOT}/.build/googletest/${PLATFORM} GTEST_HOME)
+file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)
 file(TO_CMAKE_PATH ${GTEST_HOME}/googletest-src/googletest/include GTEST_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${GTEST_HOME}/lib/libgtest.a GTEST_LIB)
 

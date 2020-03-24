@@ -118,11 +118,11 @@ build:
       command: 'language-extensions/R/build/linux/build-RExtension.sh' # A root relative path to the script to execute.
       arguments:  'debug release'
       artifacts:                                                       # A sequence of entries that describes what artifacts to collect and upload.
-        - from: '.build/RExtension/linux/debug'
+        - from: 'build-output/RExtension/linux/debug'
           to: 'out/RExtension/debug'
           include:
             - 'libRExtension.so.1.0'
-        - from: '.build/RExtension/linux/release'
+        - from: 'build-output/RExtension/linux/release'
           to: 'out/RExtension/release'
           include:
             - 'libRExtension.so.1.0'
@@ -156,11 +156,11 @@ package:
       name: 'Create RExtension zip'
       command: 'language-extensions/R/build/linux/create-RExtension-zip.sh'
       artifacts:
-        - from: '.build\RExtension/windows/debug/packages'
+        - from: 'build-output\RExtension/windows/debug/packages'
           to: 'out/RExtension/packages/debug'
           include:
             - 'R-lang-extension.zip'
-        - from: '.build/RExtension/windows/release/packages'
+        - from: 'build-output/RExtension/windows/release/packages'
           to: 'out/RExtension/packages/release'
           include:
             - 'R-lang-extension.zip'

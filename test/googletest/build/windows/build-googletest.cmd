@@ -5,7 +5,7 @@ SET ENL_ROOT=%~dp0..\..\..\..
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 SET GTEST_HOME=%ENL_ROOT%\test\googletest
-SET BUILD_OUTPUT=%ENL_ROOT%\.build\googletest\windows
+SET BUILD_OUTPUT=%ENL_ROOT%\build-output\googletest\windows
 
 REM Call the root level restore-packages
 REM

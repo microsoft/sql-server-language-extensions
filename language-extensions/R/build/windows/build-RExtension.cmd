@@ -5,7 +5,7 @@ REM Nuget packages directory and location of R libs
 REM
 SET ENL_ROOT=%~dp0..\..\..\..
 SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
-SET REXTENSION_WORKING_DIR=%ENL_ROOT%\.build\RExtension\windows
+SET REXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
 SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
@@ -25,7 +25,7 @@ IF /I NOT %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=release)
 
 REM Output directory and output dll name
 REM
-SET TARGET="%ENL_ROOT%\.build\RExtension\target\%CMAKE_CONFIGURATION%"
+SET TARGET="%ENL_ROOT%\build-output\RExtension\target\%CMAKE_CONFIGURATION%"
 
 REM Delete the output directory if exists
 REM

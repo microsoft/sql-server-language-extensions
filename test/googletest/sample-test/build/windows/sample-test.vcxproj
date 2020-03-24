@@ -39,7 +39,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..\..\..\..\.build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\..\..\build-output\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup>
     <GtestHome>..\..\..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0\</GtestHome>

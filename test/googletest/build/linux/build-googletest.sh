@@ -19,7 +19,7 @@ GTEST_HOME=${ENL_ROOT}/test/googletest
 
 # Set environment variables required in cmake
 #
-BUILD_OUTPUT=${ENL_ROOT}/.build/googletest/linux
+BUILD_OUTPUT=${ENL_ROOT}/build-output/googletest/linux
 
 # Generate the build output directory
 #
