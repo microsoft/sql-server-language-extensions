@@ -7,7 +7,29 @@ SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
 SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\build-output\RExtension-test\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
+
+REM Find R_HOME and CMAKE_ROOT from user, or set to default.
+REM Error code 203 is ENVVAR_NOT_FOUND.
+REM
+SET ENVVAR_NOT_FOUND=203
+
+IF "%R_HOME%" == "" (
+	IF EXIST %DEFAULT_R_HOME% (
+		SET R_HOME=%DEFAULT_R_HOME%
+	) ELSE (
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: R_HOME variable must be set to build RExtension-test" || EXIT /b %ENVVAR_NOT_FOUND%
+	)
+)
+
+IF "%CMAKE_ROOT%" == "" (
+	IF EXIST %DEFAULT_CMAKE_ROOT% (
+		SET CMAKE_ROOT=%DEFAULT_CMAKE_ROOT%
+	) ELSE (
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: CMAKE_ROOT variable must be set to build RExtension-test" || EXIT /b %ENVVAR_NOT_FOUND%
+	)
+)
 
 REM Create build working directory
 REM
@@ -33,7 +55,6 @@ REM Make sure g++ is in the PATH.
 REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
 REM Also need to have R_HOME\bin\x64 in the PATH so that linker finds definitions for R functions.
 REM
-SET R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
 SET PATH=C:\Rtools\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
 
 ECHO "[INFO] Generating RExtension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"

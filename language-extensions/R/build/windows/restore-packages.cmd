@@ -10,17 +10,29 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore common nuget packages." 
 
 REM Get the MRO nuget package
 REM
-nuget restore %ENL_ROOT%\language-extensions\R\packages.config -PackagesDirectory %ENL_ROOT%\packages
+SET PACKAGES_ROOT=%ENL_ROOT%\packages
+nuget restore %ENL_ROOT%\language-extensions\R\packages.config -PackagesDirectory %PACKAGES_ROOT%
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore nuget packages required for RExtension." || EXIT /b %ERRORLEVEL%
 
-REM Install Rcpp and RInside
+REM Set R_HOME
 REM
-SET R_HOME=%ENL_ROOT%\packages\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+
+IF "%R_HOME%" == "" (
+	IF EXIST %DEFAULT_R_HOME% (
+		SET R_HOME=%DEFAULT_R_HOME%
+	) ELSE (
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: R_HOME variable must be set to restore RInside and Rcpp" || EXIT /b %ENVVAR_NOT_FOUND%
+	)
+)
+
 SET R_BIN_PATH=%R_HOME%\bin
 
 SETLOCAL enabledelayedexpansion
 SET R_LIBRARY_PATH=%R_HOME%\library
 
+REM Install Rcpp and RInside
+REM
 %R_BIN_PATH%\R -e "install.packages('Rcpp', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
 %R_BIN_PATH%\R -e "stopifnot(require(Rcpp))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rcpp package" || EXIT /b %ERRORLEVEL%

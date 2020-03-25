@@ -49,6 +49,12 @@ PACKAGES_ROOT=${ENL_ROOT}/packages
 REXTENSIONTEST_SRC_DIR=${REXTENSIONTEST_HOME}/src
 REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/RExtension-test/linux
 
+# Build in debug mode if nothing is specified
+#
+if [ "$1" == "" ]; then
+	set -- debug
+fi
+
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd
 	build $1

@@ -29,7 +29,19 @@ MS_ROPEN_MRO="${MS_ROPEN}-mro-${MS_ROPEN_VERSION}"
 apt-get -q -y install "${MS_ROPEN_MRO}"
 check_exit_code "Success: Installed R runtime." "Error: Failed to install R runtime."
 
-R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+DEFAULT_R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+
+# Find R_HOME from user, or set to default for installing Rcpp and RInside.
+# Error code 1 is generic bash error.
+#
+if [ -z "${R_HOME}" ]; then
+	if [ -d "${DEFAULT_R_HOME}" ]; then
+		R_HOME=${DEFAULT_R_HOME}
+	else
+		echo "R_HOME is empty"
+		exit 1
+	fi
+fi
 R_LIBRARY_PATH=${R_HOME}/library
 
 # Install Rcpp.
