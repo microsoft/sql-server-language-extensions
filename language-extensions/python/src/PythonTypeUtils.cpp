@@ -86,18 +86,12 @@ void PythonTypeUtils::AddParamToNamespace(
 			nameSpace[name] = value;
 			break;
 		}
-		case SQL_C_WCHAR:
-		{
-			int strlen = StrLen_or_Ind / sizeof(WCHAR);
-			wstring value(reinterpret_cast<WCHAR*>(ArgValue), strlen);
-			nameSpace[name] = value;
-			break;
-		}
 		case SQL_C_BINARY:
 		{
 			nameSpace[name] = *reinterpret_cast<SQLCHAR*>(ArgValue);
 			break;
 		}
+		case SQL_C_WCHAR:
 		case SQL_C_GUID:
 		case SQL_C_TYPE_DATE:
 		case SQL_C_NUMERIC:

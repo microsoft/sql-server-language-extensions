@@ -31,19 +31,22 @@ workspace_options:                  # Metadata section
 
 # The following is an optional user defined stage. This is the only stage that will have network connectivity
 # starting July 1, 2018. This stage should be utilized for restoring package dependencies.
-restore:                                         # Stage for restoring dependencies.
-  commands:                                       # Sequence of commands to execute in this stage.
-    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-      name: 'Restore Packages'                    # A user defined name for this step.
-      command: 'restore-packages.sh'              # The repository relative path to the script to run to restore packages.
-    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-      name: 'Restore Java Packages'               # A user defined name for this step.
+restore:                                           # Stage for restoring dependencies.
+  commands:                                        # Sequence of commands to execute in this stage.
+    - !!defaultcommand                             # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore Packages'                     # A user defined name for this step.
+      command: 'restore-packages.sh'               # The repository relative path to the script to run to restore packages.
+    - !!defaultcommand                             # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore Java Packages'                # A user defined name for this step.
       command: 'language-extensions/java/build/linux/restore-packages.sh' # The repository relative path to the script to run to restore packages.
-    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-      name: 'Restore R Packages'                  # A user defined name for this step.
+    - !!defaultcommand                             # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore R Packages'                   # A user defined name for this step.
       command: 'language-extensions/R/build/linux/restore-packages.sh' # The repository relative path to the script to run to restore packages.
-    - !!defaultcommand                            # Any of the documented commands may be used, but !!defaultcommand is the most useful.
-      name: 'Restore and Build GoogleTest'        # This script needs internet access hence in the restore stage
+    - !!defaultcommand                             # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore Python Packages'              # A user defined name for this step.
+      command: 'language-extensions/python/build/linux/restore-packages.sh' # The repository relative path to the script to run to restore packages.
+    - !!defaultcommand                             # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore and Build GoogleTest'         # This script needs internet access hence in the restore stage
       command: 'test/googletest/build/linux/build-googletest.sh' # The repository relative path to the script to run to restore packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
@@ -126,10 +129,30 @@ build:
           to: 'out/RExtension/release'
           include:
             - 'libRExtension.so.1.0'
+    - !!buildcommand                                                    # buildcommand --- run a build script, collect artifacts, specify
+                                                                        #                  files to sign and logs.
+      name: 'Build Python Extension'                                         # This is name for this step. The step name will be in logs and in the
+                                                                        # future, will be associated with metrics, timelines, journal etc.
+      command: 'language-extensions/python/build/linux/build-python-extension.sh' # A root relative path to the script to execute. Any console output
+      arguments:  'debug release'
+      artifacts:                                                       # A sequence of entries that describes what artifacts to collect and upload.
+        - from: 'build-output/python-extension/linux/debug'
+          to: 'out/python-extension/debug'
+          include:
+            - 'libPythonExtension.so.1.0'
+        - from: 'build-output/python-extension/linux/release'
+          to: 'out/python-extension/release'
+          include:
+            - 'libPythonExtension.so.1.0'
     - !!defaultcommand
-      name: 'Build RExtension test'                              # This is name for this step. The step name will be in logs and in the
-                                                                 # future, will be associated with metrics, timelines, journal etc.
+      name: 'Build RExtension test'                             # This is name for this step. The step name will be in logs and in the
+                                                                # future, will be associated with metrics, timelines, journal etc.
       command: 'language-extensions/R/test/build/linux/build-RExtension-test.sh' # A root relative path to the script to execute.
+      arguments:  'debug release'
+    - !!defaultcommand
+      name: 'Build Python Extension test'                       # This is name for this step. The step name will be in logs and in the
+                                                                # future, will be associated with metrics, timelines, journal etc.
+      command: 'language-extensions/python/test/build/linux/build-pythonextension-test.sh' # A root relative path to the script to execute. Any console output
       arguments:  'debug release'
 
 # An optional user defined stage for performing packaging. This exists as a separate stage because some build processes do a
@@ -164,6 +187,19 @@ package:
           to: 'out/RExtension/packages/release'
           include:
             - 'R-lang-extension.zip'
+    - !!buildcommand
+      name: 'Create Python Extension zip'
+      command: 'language-extensions/python/build/linux/create-python-extension-zip.sh'
+      arguments:  'debug release'
+      artifacts:
+        - from: 'build-output/python-extension/linux/debug/packages'
+          to: 'out/python-extension/packages/debug'
+          include:
+            - 'python-lang-extension.zip'
+        - from: 'build-output/python-extension/linux/release/packages'
+          to: 'out/python-extension/packages/release'
+          include:
+            - 'python-lang-extension.zip'
 
 # An optional user defined stage for running tests that need network access. Note that unit tests and others that do not need network access
 # can be run in build or package stages itself. Any artifacts built in this stage will be separated out and will not be signed.
@@ -175,6 +211,17 @@ test:
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
       name: 'Test RExtension-test'               # If your test run does not have a name, this will be used.
       command: 'language-extensions/R/test/build/linux/run-RExtension-test.sh' # Script that runs tests.
+      arguments:  'debug release'
+      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; default is true.
+      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
+      testresults:                               # Sequence of entries indicating which test results files to collect.
+        - title: 'All Tests'                     # Test run title. Used by VSTS.
+          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
+          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
+            - 'out\TestReport*.xml'
+    - !!testcommand                              # We are going to run tests and collect back the test results for publishing
+      name: 'Test PythonExtension-test'               # If your test run does not have a name, this will be used.
+      command: 'language-extensions/python/test/build/linux/run-pythonextension-test.sh' # Script that runs tests.
       arguments:  'debug release'
       fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; default is true.
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.

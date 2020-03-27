@@ -18,7 +18,6 @@
 #endif
 
 #include <boost/python.hpp>
-#include <Python.h>
 
 #include <string>
 #include <iostream>

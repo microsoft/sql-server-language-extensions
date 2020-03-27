@@ -5,7 +5,7 @@ pushd %ENL_ROOT%\packages
 mkdir python
 
 for /D %%d in (*cab_spo*) do (
-    expand %%d\*.cab -F:* python >> extract.txt
+	expand %%d\*.cab -F:* python >> extract.txt
 )
 del extract.txt
 popd

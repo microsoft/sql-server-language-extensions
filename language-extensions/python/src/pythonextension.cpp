@@ -1,4 +1,4 @@
-//*********************************************************************
+//**************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -11,7 +11,9 @@
 //  Python dll, handles communication with ExtHost, and executes user-specified
 //  Python script
 //
-//*********************************************************************
+//**************************************************************************************************
+
+#include <unordered_map>
 
 #include "Logger.h"
 #include "PythonSession.h"
@@ -67,17 +69,6 @@ SQLRETURN Init(
 	LOG("Init");
 
 	SQLRETURN result = SQL_SUCCESS;
-	string pythonHomePath = "";
-
-	try
-	{
-		pythonHomePath = string(reinterpret_cast<char*>(ExtensionPath), ExtensionPathLength - 1);
-		pythonHomePath = PythonExtensionUtils::GetEnvVariable("PYTHONHOME");
-	}
-	catch (...)
-	{
-		LOG("Falling back to default python path: " + pythonHomePath);
-	}
 
 	try
 	{

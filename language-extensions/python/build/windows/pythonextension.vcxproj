@@ -56,11 +56,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(EnlRoot)\.build\python-extension\Windows\$(Configuration)</OutDir>
+    <OutDir>$(EnlRoot)\build-output\pythonextension\Windows\$(Configuration)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(EnlRoot)\.build\python-extension\Windows\$(Configuration)</OutDir>
+    <OutDir>$(EnlRoot)\build-output\pythonextension\Windows\$(Configuration)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -84,7 +84,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>RELEASE;PYTHONEXTENSION_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RELEASE;_DNDEBUG;PYTHONEXTENSION_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>

@@ -41,7 +41,7 @@
     <ExtensionIncludeDirectory>$(EnlRoot)\language-extensions\python\include</ExtensionIncludeDirectory>
     <TestIncludeDirectory>$(EnlRoot)\language-extensions\python\test\include</TestIncludeDirectory>
     <TestSrcDirectory>$(EnlRoot)\language-extensions\python\test\src</TestSrcDirectory>
-    <ExtensionBuildDirectory>$(EnlRoot)\.build\python-extension</ExtensionBuildDirectory>
+    <ExtensionBuildDirectory>$(EnlRoot)\build-output\python-extension</ExtensionBuildDirectory>
     <BoostRoot>$(PackageDirectory)\boost.1.69.0.0\lib\native</BoostRoot>
     <BoostPythonRoot>$(PackageDirectory)\boost_python37-vc141.1.69.0.0\lib\native</BoostPythonRoot>
     <PythonRoot>$(PackageDirectory)\python</PythonRoot>
@@ -52,7 +52,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(EnlRoot)\.build\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(EnlRoot)\build-output\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

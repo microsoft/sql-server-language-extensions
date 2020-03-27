@@ -42,9 +42,9 @@ namespace ExtensionApiTest
 		SQLCHAR *extensionParams = nullptr;
 		SQLULEN extensionParamsLength = 0;
 		string extensionPath = "C:/Path/To/ExternalLanguages/1/65554";
-		SQLULEN extensionPathLength = extensionPath.length() + 1; // null terminator
+		SQLULEN extensionPathLength = extensionPath.length();
 		string publicLibraryPath = "C:/Path/To/ExternalLanguages/1/65554/1";
-		SQLULEN publicLibraryPathLength = publicLibraryPath.length() + 1; // null terminator
+		SQLULEN publicLibraryPathLength = publicLibraryPath.length();
 		SQLCHAR *privateLibraryPath = nullptr;
 		SQLULEN privateLibraryPathLength = 0;
 

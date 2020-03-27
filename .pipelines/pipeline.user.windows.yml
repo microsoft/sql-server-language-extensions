@@ -155,25 +155,25 @@ build:
       command: 'language-extensions\python\build\windows\build-python-extension.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: '.build\python-extension\windows\debug'
+        - from: 'build-output\python-extension\windows\debug'
           to: 'out\python-extension\debug'
           include:
             - 'pythonextension.dll'
           signing_options:
             profile: '135020002'
-        - from: '.build\python-extension\windows\debug'
+        - from: 'build-output\python-extension\windows\debug'
           to: 'out\python-extension\debug\symbols'
           include:
             - 'pythonextension.pdb'
           signing_options:
             profile: 'none'
-        - from: '.build\python-extension\windows\release'
+        - from: 'build-output\python-extension\windows\release'
           to: 'out\python-extension\release'
           include:
             - 'pythonextension.dll'
           signing_options:
             profile: '135020002'
-        - from: '.build\python-extension\windows\release'
+        - from: 'build-output\python-extension\windows\release'
           to: 'out\python-extension\release\symbols'
           include:
             - 'pythonextension.pdb'
@@ -222,12 +222,13 @@ package:
     - !!buildcommand
       name: 'Create python extension zip'
       command: 'language-extensions\python\build\windows\create-python-extension-zip.cmd'
+      arguments:  'debug release'
       artifacts:
-        - from: '.build\python-extension\windows\debug\packages'
+        - from: 'build-output\python-extension\windows\debug\packages'
           to: 'out\python-extension\packages\debug'
           include:
             - 'python-lang-extension.zip'
-        - from: '.build\python-extension\windows\release\packages'
+        - from: 'build-output\python-extension\windows\release\packages'
           to: 'out\python-extension\packages\release'
           include:
             - 'python-lang-extension.zip'
@@ -263,19 +264,8 @@ test:
             - 'out\TestReport*.xml'
     - !!testcommand                              # We are going to run tests and collect back the test results for publishing
       name: 'Test Python'                        # If your test run does not have a name, this will be used.
-      command: 'language-extensions\python\test\build\windows\run-pythonextension-tests.cmd'        # Script that runs tests.
-      arguments:  'debug'
-      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; set to false because we have negative tests
-      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
-      testresults:                               # Sequence of entries indicating which test results files to collect.
-        - title: 'Python Tests'                     # Test run title. Used by VSTS.
-          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
-          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
-            - 'out\TestReport_pythonextension*.xml'
-    - !!testcommand                              # We are going to run tests and collect back the test results for publishing
-      name: 'Test Python'                        # If your test run does not have a name, this will be used.
-      command: 'language-extensions\python\test\build\windows\run-pythonextension-tests.cmd'        # Script that runs tests.
-      arguments:  'release'
+      command: 'language-extensions\python\test\build\windows\run-pythonextension-test.cmd'        # Script that runs tests.
+      arguments:  'debug release'
       fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; set to false because we have negative tests
       skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
       testresults:                               # Sequence of entries indicating which test results files to collect.

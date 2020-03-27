@@ -41,15 +41,15 @@ namespace ExtensionApiTest
 
 		string scriptString = "print('Hello')";
 		m_script = reinterpret_cast<SQLCHAR *>(const_cast<char *>(scriptString.c_str()));
-		m_scriptLength = scriptString.length() + 1; // null terminator
+		m_scriptLength = scriptString.length();
 
 		string inputDataNameString = "InputDataSet";
 		m_inputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(inputDataNameString.c_str()));
-		m_inputDataNameLength = inputDataNameString.length() + 1; // null terminator
+		m_inputDataNameLength = inputDataNameString.length();
 
 		string outputDataNameString = "OutputDataSet";
 		m_outputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(outputDataNameString.c_str()));
-		m_outputDataNameLength = outputDataNameString.length() + 1; // null terminator
+		m_outputDataNameLength = outputDataNameString.length();
 	}
 
 	// Initialize a valid, default session for non-Init tests

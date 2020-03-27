@@ -41,8 +41,8 @@ namespace ExtensionApiTest
 	{
 		InitializeSession();
 
-		SQLCHAR * columnName = reinterpret_cast<SQLCHAR *>("Hello");
-		SQLSMALLINT columnNameLength = 6;
+		SQLCHAR * columnName = reinterpret_cast<SQLCHAR *>(const_cast<char *>("Column1"));
+		SQLSMALLINT columnNameLength = 7;
 
 		SQLRETURN result = InitColumn(
 			*m_sessionId,
@@ -66,8 +66,8 @@ namespace ExtensionApiTest
 	{
 		InitializeSession();
 
-		SQLCHAR * columnName = reinterpret_cast<SQLCHAR *>("Hello");
-		SQLSMALLINT columnNameLength = 6;
+		SQLCHAR * columnName = reinterpret_cast<SQLCHAR *>(const_cast<char *>("Column1"));
+		SQLSMALLINT columnNameLength = 7;
 		SQLRETURN result = InitColumn(
 			*m_sessionId,
 			m_taskId,
