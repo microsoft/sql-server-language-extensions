@@ -17,7 +17,7 @@ function build {
 	SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 	ENL_ROOT=${SCRIPTDIR}/../../../..
 
-	BUILD_OUTPUT=${ENL_ROOT}/.build/java-extension/linux/${BUILD_CONFIGURATION}
+	BUILD_OUTPUT=${ENL_ROOT}/build-output/java-extension/linux/${BUILD_CONFIGURATION}
 
 	mkdir -p ${BUILD_OUTPUT}/packages
 	cd ${BUILD_OUTPUT}
@@ -25,10 +25,10 @@ function build {
 	check_exit_code  ${BUILD_CONFIGURATION}
 }
 
-# Build in debug mode if nothing is specified
+# Build in release mode if nothing is specified
 #
 if [ "$1" == "" ]; then
-	set -- debug
+	set -- release
 fi
 
 while [ "$1" != "" ]; do

@@ -15,13 +15,9 @@ function build {
 	#
 	CMAKE_CONFIGURATION=$1
 
-	if [ -z "${CMAKE_CONFIGURATION}" ]; then
-		CMAKE_CONFIGURATION=debug
-	fi
-
 	# Output directory and output dll name
 	#
-	TARGET=${ENL_ROOT}/.build/java-extension/target/${CMAKE_CONFIGURATION}
+	TARGET=${ENL_ROOT}/build-output/java-extension/target/${CMAKE_CONFIGURATION}
 	TARGET_CLASSES=${TARGET}/classes
 	OUTPUT_JAR=mssql-java-lang-extension.jar
 
@@ -83,7 +79,7 @@ ENL_ROOT=${SCRIPTDIR}/../../../..
 # Set environment variables required in Cmake
 #
 JAVAEXTENSION_HOME=${ENL_ROOT}/language-extensions/java
-JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/.build/java-extension/linux
+JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/java-extension/linux
 DEFAULT_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
 
 # Find JAVA_HOME from user, or set to default for tests.
@@ -98,10 +94,10 @@ if [ -z "${JAVA_HOME}" ]; then
 	fi
 fi
 
-# Build in debug mode if nothing is specified
+# Build in release mode if nothing is specified
 #
 if [ "$1" == "" ]; then
-	set -- debug
+	set -- release
 fi
 
 while [ "$1" != "" ]; do
