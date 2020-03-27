@@ -15,10 +15,6 @@ function build {
 	#
 	CMAKE_CONFIGURATION=$1
 
-	if [ -z "${CMAKE_CONFIGURATION}" ]; then
-		CMAKE_CONFIGURATION=debug
-	fi
-
 	# Output directory and output dll name
 	#
 	TARGET=${ENL_ROOT}/build-output/java-extension/target/${CMAKE_CONFIGURATION}
