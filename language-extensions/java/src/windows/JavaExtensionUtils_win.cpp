@@ -163,4 +163,3 @@ void JavaExtensionUtils::UnloadJvm()
 		g_jvmDll = nullptr;
 	}
 }
-

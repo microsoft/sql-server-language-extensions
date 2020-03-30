@@ -53,4 +53,3 @@ const char* Logger::GetCurrentTimestamp()
 
 	return timestampBuffer;
 }
-

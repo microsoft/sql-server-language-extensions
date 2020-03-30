@@ -55,7 +55,7 @@ public:
 	// Adds the column metadata
 	//
 	void AddColumnMetadata(
-		jint 				colId,
+		jint				colId,
 		const std::string	&colName,
 		SQLSMALLINT			colType,
 		SQLULEN				colSize,
@@ -67,7 +67,7 @@ public:
 		jint				colId,
 		SQLSMALLINT			colType,
 		SQLULEN				colSize,
-		SQLSMALLINT 		decimalDigits,
+		SQLSMALLINT			decimalDigits,
 		SQLULEN				numRows,
 		const SQLPOINTER	data,
 		const SQLINTEGER	*nullMap);

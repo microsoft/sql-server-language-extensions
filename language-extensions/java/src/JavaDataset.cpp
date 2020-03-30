@@ -213,7 +213,7 @@ SQLINTEGER* JavaDataset::CreateSqlNullMap(SQLULEN numRows, jbooleanArray jArray)
 template<typename jType, bool isUTF8>
 void JavaDataset::CalculateMaxForVarLengthOutputData(
 	jobjectArray		jArray,
-	unsigned long long 	&totalSizeInBytes,
+	unsigned long long	&totalSizeInBytes,
 	SQLULEN				&dataTypeSizeInBytes)
 {
 	LOG("JavaDataset::CalculateMaxForVarLengthOutputData");
@@ -355,7 +355,7 @@ void JavaDataset::Init(JNIEnv *env, const string &className)
 						if (m_object == nullptr)
 						{
 							throw runtime_error(
-									  "Could not create global reference for dataset object");
+									"Could not create global reference for dataset object");
 						}
 					}
 					else
@@ -447,9 +447,9 @@ void JavaDataset::Init(JNIEnv *env, jobject obj)
 //	Calls addColumnMetadata on the Dataset
 //
 void JavaDataset::AddColumnMetadata(
-	jint		  	colId,
-	const string 	&colName,
-	SQLSMALLINT  	colType,
+	jint			colId,
+	const string	&colName,
+	SQLSMALLINT		colType,
 	SQLULEN			colSize,
 	SQLSMALLINT		decimalDigits)
 {
@@ -563,8 +563,8 @@ void JavaDataset::GetColumnInternal(
 	SQLULEN		&numRows,
 	SQLULEN		&dataSizeInBytes,
 	SQLSMALLINT	&decimalDigits,
-	SQLPOINTER 	*data,
-	SQLINTEGER 	**nullMap)
+	SQLPOINTER	*data,
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetColumnInternal");
 
@@ -623,7 +623,7 @@ void JavaDataset::GetColumnInternal(
 		if (numNullMapRows != 0 && numNullMapRows != numRows)
 		{
 			throw runtime_error(
-					  "Number of rows in null map does not equal number of rows in column data");
+					"Number of rows in null map does not equal number of rows in column data");
 		}
 	}
 }
@@ -706,7 +706,7 @@ void JavaDataset::GetBinaryColumnInternal(
 	SQLULEN		&dataSizeInBytes,
 	SQLSMALLINT	&decimalDigits,
 	SQLPOINTER	*data,
-	SQLINTEGER 	**nullMap)
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetBinaryColumnInternal");
 
@@ -822,7 +822,7 @@ void JavaDataset::GetNumericColumnInternal(
 	SQLULEN		&dataSizeInBytes,
 	SQLSMALLINT	&decimalDigits,
 	SQLPOINTER	*data,
-	SQLINTEGER 	**nullMap)
+	SQLINTEGER	**nullMap)
 {
 	LOG("JavaDataset::GetNumericColumnInternal");
 
@@ -1222,7 +1222,7 @@ void JavaDataset::AddBinaryColumnInternal(
 	SQLSMALLINT			decimalDigits,
 	jsize				numRows,
 	SQLPOINTER			data,
-	const SQLINTEGER 	*nullMap)
+	const SQLINTEGER	*nullMap)
 {
 	LOG("JavaDataset::AddBinaryColumnInternal");
 
@@ -1424,4 +1424,3 @@ void JavaDataset::GetColumn(
 		data,
 		nullMap);
 }
-

@@ -174,17 +174,17 @@ private:
 	//
 	void CleanupOutputDataBuffers();
 
-	SQLGUID m_sessionId;				// Session ID
-	SQLUSMALLINT m_taskId;				// Task ID for this session
-	SQLUSMALLINT m_numTasks;			// Number of tasks for this session
+	SQLGUID m_sessionId;					// Session ID
+	SQLUSMALLINT m_taskId;					// Task ID for this session
+	SQLUSMALLINT m_numTasks;				// Number of tasks for this session
 
-	jclass m_userClass;					// Global reference to the user supplied executor class
-	jmethodID m_mainMethodId;			// Method ID of the execute function in executor class
-	JNIEnv *m_env;						// JNI enviroment
-	jobject m_userObject;				// Global reference of the instantiated object of the user class
+	jclass m_userClass;						// Global reference to the user supplied executor class
+	jmethodID m_mainMethodId;				// Method ID of the execute function in executor class
+	JNIEnv *m_env;							// JNI enviroment
+	jobject m_userObject;					// Global reference of the instantiated object of the user class
 
-	JavaArgContainer m_args;			// User input and output arguments
-	jobject m_argMap;					// Global reference of the hash map for the execution parameters
+	JavaArgContainer m_args;				// User input and output arguments
+	jobject m_argMap;						// Global reference of the hash map for the execution parameters
 
 	std::string m_mainClassName;			// User executor class name
 	std::string m_inputDatasetClassName;	// Input dataset class name for the executor class

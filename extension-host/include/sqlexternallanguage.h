@@ -47,91 +47,91 @@ SQLRETURN Init(
 
 SQLEXTENSION_INTERFACE
 SQLRETURN InitSession(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT NumTasks,
-	SQLCHAR		 *Script,
-	SQLULEN		 ScriptLength,
-	SQLUSMALLINT InputSchemaColumnsNumber,
-	SQLUSMALLINT ParametersNumber,
-	SQLCHAR		 *InputDataName,
-	SQLUSMALLINT InputDataNameLength,
-	SQLCHAR		 *OutputDataName,
-	SQLUSMALLINT OutputDataNameLength
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	NumTasks,
+	SQLCHAR			*Script,
+	SQLULEN			ScriptLength,
+	SQLUSMALLINT	InputSchemaColumnsNumber,
+	SQLUSMALLINT	ParametersNumber,
+	SQLCHAR			*InputDataName,
+	SQLUSMALLINT	InputDataNameLength,
+	SQLCHAR			*OutputDataName,
+	SQLUSMALLINT	OutputDataNameLength
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN InitColumn(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ColumnNumber,
-	SQLCHAR		 *ColumnName,
-	SQLSMALLINT	 ColumnNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ColumnSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLSMALLINT	 Nullable,
-	SQLSMALLINT	 PartitionByNumber,
-	SQLSMALLINT	 OrderByNumber
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	ColumnNumber,
+	SQLCHAR			*ColumnName,
+	SQLSMALLINT		ColumnNameLength,
+	SQLSMALLINT		DataType,
+	SQLULEN			ColumnSize,
+	SQLSMALLINT		DecimalDigits,
+	SQLSMALLINT		Nullable,
+	SQLSMALLINT		PartitionByNumber,
+	SQLSMALLINT		OrderByNumber
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN InitParam(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ParamNumber,
-	SQLCHAR		 *ParamName,
-	SQLSMALLINT	 ParamNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ParamSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLPOINTER	 ParamValue,
-	SQLINTEGER	 StrLen_or_Ind,
-	SQLSMALLINT	 InputOutputType);
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	ParamNumber,
+	SQLCHAR			*ParamName,
+	SQLSMALLINT		ParamNameLength,
+	SQLSMALLINT		DataType,
+	SQLULEN			ParamSize,
+	SQLSMALLINT		DecimalDigits,
+	SQLPOINTER		ParamValue,
+	SQLINTEGER		StrLen_or_Ind,
+	SQLSMALLINT		InputOutputType);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN Execute(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLULEN		 RowsNumber,
-	SQLPOINTER	 *Data,
-	SQLINTEGER	 **StrLen_or_Ind,
-	SQLUSMALLINT *OutputSchemaColumnsNumber
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLULEN			RowsNumber,
+	SQLPOINTER		*Data,
+	SQLINTEGER		**StrLen_or_Ind,
+	SQLUSMALLINT	*OutputSchemaColumnsNumber
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN GetResultColumn(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ColumnNumber,
-	SQLSMALLINT	 *DataType,
-	SQLULEN		 *ColumnSize,
-	SQLSMALLINT	 *DecimalDigits,
-	SQLSMALLINT	 *Nullable
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	ColumnNumber,
+	SQLSMALLINT		*DataType,
+	SQLULEN			*ColumnSize,
+	SQLSMALLINT		*DecimalDigits,
+	SQLSMALLINT		*Nullable
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN GetResults(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLULEN		 *RowsNumber,
-	SQLPOINTER	 **Data,
-	SQLINTEGER	 ***StrLen_or_Ind
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLULEN			*RowsNumber,
+	SQLPOINTER		**Data,
+	SQLINTEGER		***StrLen_or_Ind
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN GetOutputParam(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ParamNumber,
-	SQLPOINTER	 *ParamValue,
-	SQLINTEGER	 *StrLen_or_Ind
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLUSMALLINT	ParamNumber,
+	SQLPOINTER		*ParamValue,
+	SQLINTEGER		*StrLen_or_Ind
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN CleanupSession(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId
 	);
 
 SQLEXTENSION_INTERFACE

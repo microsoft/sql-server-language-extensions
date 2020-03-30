@@ -67,7 +67,7 @@ jmethodID JniHelper::FindMethod(
 	JNIEnv			*env,
 	jclass			jClass,
 	const string	&funcName,
-	const string 	&funcSignature)
+	const string	&funcSignature)
 {
 	jmethodID result = env->GetMethodID(
 		jClass,

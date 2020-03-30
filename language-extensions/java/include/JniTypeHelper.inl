@@ -423,9 +423,9 @@ inline jstring JniTypeHelper::CreateString<false>(
 //
 template<>
 inline jstring JniTypeHelper::CreateString<true>(
-	 JNIEnv				*env,
-	 const SQLPOINTER	value,
-	 const jsize		len)
+	JNIEnv				*env,
+	const SQLPOINTER	value,
+	const jsize			len)
 {
 	jstring jStrResult = nullptr;
 	jclass jClass = env->FindClass("java/lang/String");
@@ -958,11 +958,11 @@ inline void JniTypeHelper::CopyDateInputData(
 //	A jobject containing a java.sql.Date instance
 //
 inline void JniTypeHelper::DateStructToJavaSqlDate(
-	 JNIEnv					*env,
-	 const SQL_DATE_STRUCT	*odbcDate,
-	 const jclass			dateClass,
-	 const jmethodID		dateValueOfMethod,
-	 jobject				&javaDate)
+	JNIEnv					*env,
+	const SQL_DATE_STRUCT	*odbcDate,
+	const jclass			dateClass,
+	const jmethodID			dateValueOfMethod,
+	jobject					&javaDate)
 {
 	// 4 numbers for year + 2 numbers for month + 2 numbers for day
 	// + 2 hyphens + null terminator, overall 11 characters
@@ -997,12 +997,12 @@ inline void JniTypeHelper::DateStructToJavaSqlDate(
 //  Converts a java.sql.Date object to an ODBC SQL_DATE_STRUCT
 //
 inline void JniTypeHelper::JavaSqlDateToDateStruct(
-	 JNIEnv				*env,
-	 jobject			jDate,
-	 jclass				dateClass,
-	 jmethodID			dateToStringMethod,
-	 jmethodID			dateValueOfMethod,
-	 SQL_DATE_STRUCT	&odbcDate)
+	JNIEnv				*env,
+	jobject				jDate,
+	jclass				dateClass,
+	jmethodID			dateToStringMethod,
+	jmethodID			dateValueOfMethod,
+	SQL_DATE_STRUCT		&odbcDate)
 {
 	odbcDate = {0};
 
@@ -1399,11 +1399,11 @@ inline void JniTypeHelper::CopyTimestampInputData(
 //	A jobject containing a java.sql.Timestamp instance
 //
 inline void JniTypeHelper::TimestampStructToJavaTimestamp(
-	 JNIEnv						*env,
-	 const SQL_TIMESTAMP_STRUCT *odbcTimestamp,
-	 const jclass				timestampClass,
-	 const jmethodID			tsValueOfMethod,
-	 jobject					&javaTimestamp)
+	JNIEnv						*env,
+	const SQL_TIMESTAMP_STRUCT	*odbcTimestamp,
+	const jclass				timestampClass,
+	const jmethodID				tsValueOfMethod,
+	jobject						&javaTimestamp)
 {
 	// 4 numbers for year + 2 numbers for month + 2 numbers for day
 	// + 2 hyphens + space + 2 numbers for hour + 2 numbers for minutes
@@ -1619,4 +1619,3 @@ inline SQLGUID* JniTypeHelper::JavaStringToGuidStruct(
 
 	return odbcGuid.release();
 }
-

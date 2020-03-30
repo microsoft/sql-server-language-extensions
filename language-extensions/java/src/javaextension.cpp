@@ -397,10 +397,10 @@ SQLRETURN Execute(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResultColumn(
-	SQLGUID 		SessionId,
-	SQLUSMALLINT 	TaskId,
+	SQLGUID			SessionId,
+	SQLUSMALLINT	TaskId,
 	SQLUSMALLINT	ColumnNumber,
-	SQLSMALLINT 	*DataType,
+	SQLSMALLINT		*DataType,
 	SQLULEN			*ColumnSize,
 	SQLSMALLINT		*DecimalDigits,
 	SQLSMALLINT		*Nullable
@@ -583,4 +583,3 @@ SQLRETURN Cleanup()
 
 	return SQL_SUCCESS;
 }
-

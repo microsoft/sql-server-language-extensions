@@ -20,30 +20,30 @@ extern "C" {
 //
 SQLEXTENSION_INTERFACE
 SQLRETURN InstallExternalLibrary(
-	SQLGUID	   SetupSessionId,
-	SQLCHAR	   *LibraryName,
-	SQLINTEGER LibraryNameLength,
-	SQLCHAR	   *LibraryFile,
-	SQLINTEGER LibraryFileLength,
-	SQLCHAR	   *LibraryInstallDirectory,
-	SQLINTEGER LibraryInstallDirectoryLength,
-	SQLCHAR	   **LibraryError,
-	SQLINTEGER *LibraryErrorLength);
+	SQLGUID		SetupSessionId,
+	SQLCHAR		*LibraryName,
+	SQLINTEGER	LibraryNameLength,
+	SQLCHAR		*LibraryFile,
+	SQLINTEGER	LibraryFileLength,
+	SQLCHAR		*LibraryInstallDirectory,
+	SQLINTEGER	LibraryInstallDirectoryLength,
+	SQLCHAR		**LibraryError,
+	SQLINTEGER	*LibraryErrorLength);
 
 // Optional API
 //
 SQLEXTENSION_INTERFACE
 SQLRETURN UninstallExternalLibrary(
-	SQLGUID	   SetupSessionId,
-	SQLCHAR	   *LibraryName,
-	SQLINTEGER LibraryNameLength,
-	SQLCHAR	   *LibraryInstallDirectory,
-	SQLINTEGER LibraryInstallDirectoryLength,
-	SQLCHAR	   **LibraryError,
-	SQLINTEGER *LibraryErrorLength);
+	SQLGUID		SetupSessionId,
+	SQLCHAR		*LibraryName,
+	SQLINTEGER	LibraryNameLength,
+	SQLCHAR		*LibraryInstallDirectory,
+	SQLINTEGER	LibraryInstallDirectoryLength,
+	SQLCHAR		**LibraryError,
+	SQLINTEGER	*LibraryErrorLength);
 
 #ifdef __cplusplus
-}	/* End of extern "C" { */
-#endif	/* __cplusplus */
+}       /* End of extern "C" { */
+#endif  /* __cplusplus */
 
-#endif	/* __SQLEXTERNALLIBRARY */
+#endif  /* __SQLEXTERNALLIBRARY */

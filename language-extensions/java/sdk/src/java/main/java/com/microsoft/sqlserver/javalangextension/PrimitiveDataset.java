@@ -14,12 +14,12 @@ import java.util.Map.Entry;
  * simple types as primitives arrays
  */
 public class PrimitiveDataset extends AbstractSqlServerExtensionDataset {
-	Map<Integer, String>  columnNames;
-	Map<Integer, Integer> columnTypes;
-	Map<Integer, Integer> columnPrecisions;
-	Map<Integer, Integer> columnScales;
-	Map<Integer, Object>  columns;
-	Map<Integer, boolean[]> columnNullMaps;
+	Map<Integer, String>	columnNames;
+	Map<Integer, Integer>	columnTypes;
+	Map<Integer, Integer>	columnPrecisions;
+	Map<Integer, Integer>	columnScales;
+	Map<Integer, Object>	columns;
+	Map<Integer, boolean[]>	columnNullMaps;
 
 	public PrimitiveDataset() {
 		columnTypes = new HashMap<>();

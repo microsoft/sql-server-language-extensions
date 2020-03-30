@@ -92,7 +92,7 @@ private:
 	void DeepCopyValue(
 		SQLSMALLINT			type,
 		SQLINTEGER			size,
-		const SQLPOINTER 	value
+		const SQLPOINTER	value
 		);
 
 	// Cleans up memory used to store argument
@@ -190,9 +190,9 @@ private:
 	// Verify that the given output parameter jObj is of the expected java class
 	//
 	void ValidateOutputClass(
-		JNIEnv 			*env,
+		JNIEnv			*env,
 		SQLUSMALLINT	paramId,
-		jobject 		jObj,
+		jobject			jObj,
 		jclass			objectClass,
 		std::string		&&objectClassName);
 

@@ -98,7 +98,7 @@ void JavaSession::Init(
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaSession::Init
+// Name: JavaSession::InitColumn
 //
 // Description:
 //  Initializes the input column for this session
@@ -143,15 +143,15 @@ void JavaSession::InitColumn(
 //  Initializes the parameter for this session
 //
 void JavaSession::InitParam(
-	SQLUSMALLINT  paramNumber,
-	const SQLCHAR *paramName,
-	SQLSMALLINT	  paramNameLength,
-	SQLSMALLINT	  dataType,
-	SQLULEN		  argSize,
-	SQLSMALLINT	  decimalDigits,
-	SQLPOINTER	  argValue,
-	SQLINTEGER	  strLen_or_Ind,
-	SQLSMALLINT	  inputOutputType
+	SQLUSMALLINT	paramNumber,
+	const SQLCHAR	*paramName,
+	SQLSMALLINT		paramNameLength,
+	SQLSMALLINT		dataType,
+	SQLULEN			argSize,
+	SQLSMALLINT		decimalDigits,
+	SQLPOINTER		argValue,
+	SQLINTEGER		strLen_or_Ind,
+	SQLSMALLINT		inputOutputType
 	)
 {
 	LOG("Initializing input parameter #" + to_string(paramNumber));
@@ -178,7 +178,7 @@ void JavaSession::InitParam(
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaSession::InitParam
+// Name: JavaSession::ExecuteWorkflow
 //
 // Description:
 //  Execute the workflow for the session
@@ -747,9 +747,9 @@ void JavaSession::GetResults(
 //  Returns the data and size of the output parameter
 //
 void JavaSession::GetOutputParam(
-	SQLUSMALLINT ParamNumber,
-	SQLPOINTER  *ParamValue,
-	SQLINTEGER  *StrLen_or_Ind)
+	SQLUSMALLINT	ParamNumber,
+	SQLPOINTER		*ParamValue,
+	SQLINTEGER		*StrLen_or_Ind)
 {
 	LOG("Initializing output parameter #" + to_string(ParamNumber));
 
@@ -766,4 +766,3 @@ void JavaSession::GetOutputParam(
 							   to_string(ParamNumber));
 	}
 }
-
