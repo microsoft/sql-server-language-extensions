@@ -38,4 +38,4 @@ EXIT /b %ERRORLEVEL%
 	) ELSE (
 		ECHO Error: Failed to create zip for %2 config
 		EXIT /b %1
-    )
+	)

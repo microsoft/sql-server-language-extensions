@@ -309,11 +309,11 @@ inline jsize JniTypeHelper::GetSizeInBytes<jstring, true>(JNIEnv *env, jstring v
 //
 template<typename jType, typename cType>
 inline void JniTypeHelper::CopyInputData(
-	JNIEnv				*env,
-	jsize				numRows,
-	const SQLPOINTER	values,
-	const SQLINTEGER	*nullMap,
-	jType				*jData)
+	JNIEnv           *env,
+	jsize            numRows,
+	const SQLPOINTER values,
+	const SQLINTEGER *nullMap,
+	jType            *jData)
 {
 	char defaultNullVal = 0;
 	const cType *odbcData = static_cast<const cType*>(values);
@@ -341,11 +341,11 @@ inline void JniTypeHelper::CopyInputData(
 //
 template<bool isUTF8>
 inline void JniTypeHelper::CopyStringInputData(
-	JNIEnv				*env,
-	SQLULEN				numRows,
-	SQLPOINTER			values,
-	const SQLINTEGER	*nullMap,
-	jobjectArray		jData)
+	JNIEnv           *env,
+	SQLULEN          numRows,
+	SQLPOINTER       values,
+	const SQLINTEGER *nullMap,
+	jobjectArray     jData)
 {
 	// The address to start reading the next value from
 	//
@@ -395,9 +395,9 @@ inline void JniTypeHelper::CopyStringInputData(
 //
 template<>
 inline jstring JniTypeHelper::CreateString<false>(
-	JNIEnv				*env,
-	const SQLPOINTER	value,
-	const jsize			len)
+	JNIEnv           *env,
+	const SQLPOINTER value,
+	const jsize      len)
 {
 	const jchar *dataPos = reinterpret_cast<const jchar*>(value);
 
@@ -423,9 +423,9 @@ inline jstring JniTypeHelper::CreateString<false>(
 //
 template<>
 inline jstring JniTypeHelper::CreateString<true>(
-	 JNIEnv				*env,
-	 const SQLPOINTER	value,
-	 const jsize		len)
+	JNIEnv           *env,
+	const SQLPOINTER value,
+	const jsize      len)
 {
 	jstring jStrResult = nullptr;
 	jclass jClass = env->FindClass("java/lang/String");
@@ -473,11 +473,11 @@ inline jstring JniTypeHelper::CreateString<true>(
 //  Copy binary string values one by one into the Java array
 //
 inline void JniTypeHelper::CopyBinaryInputData(
-	JNIEnv				*env,
-	SQLULEN				numRows,
-	SQLPOINTER			values,
-	const SQLINTEGER	*nullMap,
-	jobjectArray		jData)
+	JNIEnv           *env,
+	SQLULEN          numRows,
+	SQLPOINTER       values,
+	const SQLINTEGER *nullMap,
+	jobjectArray     jData)
 {
 	// The address to start reading the next value from
 	//
@@ -544,11 +544,11 @@ inline void JniTypeHelper::CopyBinaryInputData(
 //
 template<typename jType, typename jArrayType, typename cType>
 inline void* JniTypeHelper::CopyOutputData(
-	JNIEnv		*env,
-	jType		*outputColData,
-	jArrayType	jArray,
-	SQLULEN		&numRows,
-	SQLULEN		&dataSizeInBytes)
+	JNIEnv     *env,
+	jType      *outputColData,
+	jArrayType jArray,
+	SQLULEN    &numRows,
+	SQLULEN    &dataSizeInBytes)
 {
 	// Set the size of the column
 	//
@@ -586,12 +586,12 @@ inline void* JniTypeHelper::CopyOutputData(
 //
 template<>
 inline void JniTypeHelper::CopyStringOutputData<false>(
-	JNIEnv				*env,
-	jobjectArray		source,
-	jsize				numRows,
-	unsigned long long	totalSizeInBytes,
-	char				*target,
-	SQLINTEGER			*nullMap)
+	JNIEnv             *env,
+	jobjectArray       source,
+	jsize              numRows,
+	unsigned long long totalSizeInBytes,
+	char               *target,
+	SQLINTEGER         *nullMap)
 {
 	for (jsize i = 0; i < numRows; ++i)
 	{
@@ -636,12 +636,12 @@ inline void JniTypeHelper::CopyStringOutputData<false>(
 //
 template<>
 inline void JniTypeHelper::CopyStringOutputData<true>(
-	JNIEnv				*env,
-	jobjectArray		source,
-	jsize				numRows,
-	unsigned long long	totalSizeInBytes,
-	char				*target,
-	SQLINTEGER			*nullMap)
+	JNIEnv             *env,
+	jobjectArray       source,
+	jsize              numRows,
+	unsigned long long totalSizeInBytes,
+	char               *target,
+	SQLINTEGER         *nullMap)
 {
 	jclass jClass = env->FindClass("java/lang/String");
 	jstring jUtf8Str = env->NewStringUTF("UTF-8");
@@ -714,12 +714,12 @@ inline void JniTypeHelper::CopyStringOutputData<true>(
 //	the allocated buffer
 //
 inline void JniTypeHelper::CopyBinaryOutputData(
-	JNIEnv				*env,
-	jobjectArray		source,
-	jsize				numRows,
-	unsigned long long	totalSizeInBytes,
-	jbyte				*target,
-	SQLINTEGER			*nullMap)
+	JNIEnv             *env,
+	jobjectArray       source,
+	jsize              numRows,
+	unsigned long long totalSizeInBytes,
+	jbyte              *target,
+	SQLINTEGER         *nullMap)
 {
 	for (jsize i = 0; i < numRows; ++i)
 	{
@@ -780,11 +780,11 @@ inline void JniTypeHelper::CopyBinaryOutputData(
 //	2. Parse the elements of the string (day, month, year) into the target SQL_DATE_STRUCT buffer
 //
 inline void JniTypeHelper::CopyDateOutputData(
-	JNIEnv				*env,
-	jobjectArray		source,
-	jsize				numRows,
-	SQL_DATE_STRUCT		*target,
-	SQLINTEGER			*nullMap)
+	JNIEnv          *env,
+	jobjectArray    source,
+	jsize           numRows,
+	SQL_DATE_STRUCT *target,
+	SQLINTEGER      *nullMap)
 {
 	jclass dateClass = env->FindClass("java/sql/Date");
 	jmethodID dateToStringMethod = env->GetMethodID(dateClass,
@@ -870,11 +870,11 @@ inline std::string JniTypeHelper::ConvertGuidToString(const SQLGUID *guid)
 //  Copy SQLGUID values as strings one by one into the Java array
 //
 inline void JniTypeHelper::CopyGuidInputData(
-	JNIEnv				*env,
-	SQLULEN				numRows,
-	SQLPOINTER			values,
-	const SQLINTEGER	*nullMap,
-	jobjectArray		jArray)
+	JNIEnv           *env,
+	SQLULEN          numRows,
+	SQLPOINTER       values,
+	const SQLINTEGER *nullMap,
+	jobjectArray     jArray)
 {
 	const SQLGUID *odbcData = static_cast<SQLGUID*>(values);
 
@@ -909,12 +909,12 @@ inline void JniTypeHelper::CopyGuidInputData(
 //  Copy SQL_DATE_STRUCT values as java.sql.Date instances one by one into the Java array
 //
 inline void JniTypeHelper::CopyDateInputData(
-	JNIEnv				*env,
-	jclass				dateClass,
-	SQLULEN				numRows,
-	SQLPOINTER			values,
-	const SQLINTEGER	*nullMap,
-	jobjectArray		jArray)
+	JNIEnv           *env,
+	jclass           dateClass,
+	SQLULEN          numRows,
+	SQLPOINTER       values,
+	const SQLINTEGER *nullMap,
+	jobjectArray     jArray)
 {
 	jmethodID dateValueOfMethod = env->GetStaticMethodID(dateClass,
 														 "valueOf",
@@ -958,11 +958,11 @@ inline void JniTypeHelper::CopyDateInputData(
 //	A jobject containing a java.sql.Date instance
 //
 inline void JniTypeHelper::DateStructToJavaSqlDate(
-	 JNIEnv					*env,
-	 const SQL_DATE_STRUCT	*odbcDate,
-	 const jclass			dateClass,
-	 const jmethodID		dateValueOfMethod,
-	 jobject				&javaDate)
+	JNIEnv                *env,
+	const SQL_DATE_STRUCT *odbcDate,
+	const jclass          dateClass,
+	const jmethodID       dateValueOfMethod,
+	jobject               &javaDate)
 {
 	// 4 numbers for year + 2 numbers for month + 2 numbers for day
 	// + 2 hyphens + null terminator, overall 11 characters
@@ -997,12 +997,12 @@ inline void JniTypeHelper::DateStructToJavaSqlDate(
 //  Converts a java.sql.Date object to an ODBC SQL_DATE_STRUCT
 //
 inline void JniTypeHelper::JavaSqlDateToDateStruct(
-	 JNIEnv				*env,
-	 jobject			jDate,
-	 jclass				dateClass,
-	 jmethodID			dateToStringMethod,
-	 jmethodID			dateValueOfMethod,
-	 SQL_DATE_STRUCT	&odbcDate)
+	JNIEnv          *env,
+	jobject         jDate,
+	jclass          dateClass,
+	jmethodID       dateToStringMethod,
+	jmethodID       dateValueOfMethod,
+	SQL_DATE_STRUCT &odbcDate)
 {
 	odbcDate = {0};
 
@@ -1027,9 +1027,9 @@ inline void JniTypeHelper::JavaSqlDateToDateStruct(
 	std::istringstream iss(dateStr);
 
 	iss >> odbcDate.year;
-	iss.ignore(1);	// ignore '-'
+	iss.ignore(1); // ignore '-'
 	iss >> odbcDate.month;
-	iss.ignore(1);	// ignore '-'
+	iss.ignore(1); // ignore '-'
 	iss >> odbcDate.day;
 
 	env->ReleaseStringUTFChars(dateJString, dateCStr);
@@ -1044,13 +1044,13 @@ inline void JniTypeHelper::JavaSqlDateToDateStruct(
 //  Copy SQL_NUMERIC_STRUCT values as java.math.BigDecimal instances one by one into the Java array
 //
 inline void JniTypeHelper::CopyNumericInputData(
-	JNIEnv				*env,
-	jclass				bigDecimalClass,
-	SQLULEN				numRows,
-	SQLPOINTER			values,
-	const SQLINTEGER	*nullMap,
-	SQLSMALLINT			decimalDigits,
-	jobjectArray		jArray)
+	JNIEnv           *env,
+	jclass           bigDecimalClass,
+	SQLULEN          numRows,
+	SQLPOINTER       values,
+	const SQLINTEGER *nullMap,
+	SQLSMALLINT      decimalDigits,
+	jobjectArray     jArray)
 {
 	// Number of required references:
 	// 1. BigInteger class
@@ -1110,14 +1110,14 @@ inline void JniTypeHelper::CopyNumericInputData(
 //	A jobject containing a java.math.BigDecimal instance
 //
 inline void JniTypeHelper::NumericStructToBigDecimal(
-	JNIEnv						*env,
-	const SQL_NUMERIC_STRUCT	*odbcNumeric,
-	SQLSMALLINT					decimalDigits,
-	const jclass				bigDecimalClass,
-	const jmethodID				bigDecimalCtor,
-	const jclass				bigIntegerClass,
-	const jmethodID				bigIntegerCtor,
-	jobject						&javaBigDecimal)
+	JNIEnv                   *env,
+	const SQL_NUMERIC_STRUCT *odbcNumeric,
+	SQLSMALLINT              decimalDigits,
+	const jclass             bigDecimalClass,
+	const jmethodID          bigDecimalCtor,
+	const jclass             bigIntegerClass,
+	const jmethodID          bigIntegerCtor,
+	jobject                  &javaBigDecimal)
 {
 	int byteCount = 0;
 	for (int i = 0; i < SQL_MAX_NUMERIC_LEN; ++i)
@@ -1184,14 +1184,14 @@ inline void JniTypeHelper::NumericStructToBigDecimal(
 //	2. Parse the elements of the string (day, month, year) into the target SQL_DATE_STRUCT buffer
 //
 inline void JniTypeHelper::CopyNumericOutputData(
-	JNIEnv				*env,
-	jobjectArray		source,
-	jsize				numRows,
-	SQLCHAR				colPrecision,
-	SQLSMALLINT			colScale,
-	jint				colId,
-	SQL_NUMERIC_STRUCT	*target,
-	SQLINTEGER			*nullMap)
+	JNIEnv             *env,
+	jobjectArray       source,
+	jsize              numRows,
+	SQLCHAR            colPrecision,
+	SQLSMALLINT        colScale,
+	jint               colId,
+	SQL_NUMERIC_STRUCT *target,
+	SQLINTEGER         *nullMap)
 {
 	// Number of required references:
 	// 1. BigDecimal class
@@ -1256,16 +1256,16 @@ inline void JniTypeHelper::CopyNumericOutputData(
 //  Converts a java.math.BigDecimal object to an ODBC SQL_NUMERIC_STRUCT
 //
 inline void JniTypeHelper::BigDecimalToNumericStruct(
-	JNIEnv				*env,
-	jobject				jBigDecimal,
-	SQLCHAR				colPrecision,
-	SQLSMALLINT			colScale,
-	jmethodID			bigDecUnscaledValue,
-	jmethodID			bigIntToByteArr,
-	jmethodID			bigIntSignum,
-	jmethodID			bigIntAbs,
-	std::string			&&argDescription,
-	SQL_NUMERIC_STRUCT	&odbcNumeric)
+	JNIEnv             *env,
+	jobject            jBigDecimal,
+	SQLCHAR            colPrecision,
+	SQLSMALLINT        colScale,
+	jmethodID          bigDecUnscaledValue,
+	jmethodID          bigIntToByteArr,
+	jmethodID          bigIntSignum,
+	jmethodID          bigIntAbs,
+	std::string        &&argDescription,
+	SQL_NUMERIC_STRUCT &odbcNumeric)
 {
 	// Number of required references:
 	// 1. 1 BigInteger object allocated for each row
@@ -1349,12 +1349,12 @@ inline void JniTypeHelper::BigDecimalToNumericStruct(
 //  Copy SQL_TIMESTAMP_STRUCT values as java.sql.Timestamp instances one by one into the Java array
 //
 inline void JniTypeHelper::CopyTimestampInputData(
-	JNIEnv				*env,
-	jclass				timestampClass,
-	SQLULEN				numRows,
-	SQLPOINTER			values,
-	const SQLINTEGER	*nullMap,
-	jobjectArray		jArray)
+	JNIEnv           *env,
+	jclass           timestampClass,
+	SQLULEN          numRows,
+	SQLPOINTER       values,
+	const SQLINTEGER *nullMap,
+	jobjectArray     jArray)
 {
 	jmethodID tsValueOfMethod = env->GetStaticMethodID(timestampClass,
 													   "valueOf",
@@ -1399,11 +1399,11 @@ inline void JniTypeHelper::CopyTimestampInputData(
 //	A jobject containing a java.sql.Timestamp instance
 //
 inline void JniTypeHelper::TimestampStructToJavaTimestamp(
-	 JNIEnv						*env,
-	 const SQL_TIMESTAMP_STRUCT *odbcTimestamp,
-	 const jclass				timestampClass,
-	 const jmethodID			tsValueOfMethod,
-	 jobject					&javaTimestamp)
+	JNIEnv                     *env,
+	const SQL_TIMESTAMP_STRUCT *odbcTimestamp,
+	const jclass               timestampClass,
+	const jmethodID            tsValueOfMethod,
+	jobject                    &javaTimestamp)
 {
 	// 4 numbers for year + 2 numbers for month + 2 numbers for day
 	// + 2 hyphens + space + 2 numbers for hour + 2 numbers for minutes
@@ -1450,11 +1450,11 @@ inline void JniTypeHelper::TimestampStructToJavaTimestamp(
 //	2. Parse the elements of the string into the target SQL_TIMESTAMP_STRUCT buffer
 //
 inline void JniTypeHelper::CopyTimestampOutputData(
-	JNIEnv					*env,
-	jobjectArray			source,
-	jsize					numRows,
-	SQL_TIMESTAMP_STRUCT	*target,
-	SQLINTEGER				*nullMap)
+	JNIEnv               *env,
+	jobjectArray         source,
+	jsize                numRows,
+	SQL_TIMESTAMP_STRUCT *target,
+	SQLINTEGER           *nullMap)
 {
 	// Number of required references:
 	// 1. Timestamp class
@@ -1513,13 +1513,13 @@ inline void JniTypeHelper::CopyTimestampOutputData(
 //  Converts a java.sql.Timestamp object to an ODBC SQL_TIMESTAMP_STRUCT
 //
 inline void JniTypeHelper::JavaTimestampToTimestampStruct(
-	JNIEnv					*env,
-	jobject					jTimestamp,
-	jclass					tsClass,
-	jmethodID				tsToStringMethod,
-	jmethodID				tsGetNanosMethod,
-	jmethodID				tsValueOfMethod,
-	SQL_TIMESTAMP_STRUCT	&odbcTimestamp)
+	JNIEnv               *env,
+	jobject              jTimestamp,
+	jclass               tsClass,
+	jmethodID            tsToStringMethod,
+	jmethodID            tsGetNanosMethod,
+	jmethodID            tsValueOfMethod,
+	SQL_TIMESTAMP_STRUCT &odbcTimestamp)
 {
 	// Number of required references:
 	// 1. 1 jstring containing the timestamp's toString value
@@ -1555,15 +1555,15 @@ inline void JniTypeHelper::JavaTimestampToTimestampStruct(
 	std::istringstream iss(timestampStr);
 
 	iss >> odbcTimestamp.year;
-	iss.ignore(1);	// ignore '-'
+	iss.ignore(1); // ignore '-'
 	iss >> odbcTimestamp.month;
-	iss.ignore(1);	// ignore '-'
+	iss.ignore(1); // ignore '-'
 	iss >> odbcTimestamp.day;
-	iss.ignore(1);	// ignore space
+	iss.ignore(1); // ignore space
 	iss >> odbcTimestamp.hour;
-	iss.ignore(1);	// ignore ':'
+	iss.ignore(1); // ignore ':'
 	iss >> odbcTimestamp.minute;
-	iss.ignore(1);	// ignore ':'
+	iss.ignore(1); // ignore ':'
 	iss >> odbcTimestamp.second;
 
 	odbcTimestamp.fraction = nanos;
@@ -1578,12 +1578,12 @@ inline void JniTypeHelper::JavaTimestampToTimestampStruct(
 //  Converts a java string object that represents a guid to an ODBC SQLGUID struct
 //
 inline SQLGUID* JniTypeHelper::JavaStringToGuidStruct(
-	JNIEnv			*env,
-	const jstring	jStr,
-	jclass			uuidClass,
-	jmethodID		fromStringMethod,
-	jmethodID		lsbMethod,
-	jmethodID		msbMethod)
+	JNIEnv        *env,
+	const jstring jStr,
+	jclass        uuidClass,
+	jmethodID     fromStringMethod,
+	jmethodID     lsbMethod,
+	jmethodID     msbMethod)
 {
 	std::unique_ptr<SQLGUID> odbcGuid(new SQLGUID());
 
@@ -1619,4 +1619,3 @@ inline SQLGUID* JniTypeHelper::JavaStringToGuidStruct(
 
 	return odbcGuid.release();
 }
-

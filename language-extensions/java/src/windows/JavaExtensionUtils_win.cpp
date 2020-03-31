@@ -13,9 +13,9 @@
 
 using namespace std;
 
-const char x_WindowsClassPathSeparator = ';';	// CLASSPATH seperator on Windows
-const char x_WindowsFilePathSeparator = '\\';	// Path seperator on Windows
-const string x_WindowsJvmFilename = "jvm.dll";	// Filename of the JVM library on Windows
+const char x_WindowsClassPathSeparator = ';';  // CLASSPATH seperator on Windows
+const char x_WindowsFilePathSeparator = '\\';  // Path seperator on Windows
+const string x_WindowsJvmFilename = "jvm.dll"; // Filename of the JVM library on Windows
 
 // Platform specific relative path to the JVM library on Windows
 //
@@ -163,4 +163,3 @@ void JavaExtensionUtils::UnloadJvm()
 		g_jvmDll = nullptr;
 	}
 }
-

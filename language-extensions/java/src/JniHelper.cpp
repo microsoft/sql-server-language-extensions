@@ -64,10 +64,10 @@ void JniHelper::LogJavaException(JNIEnv *env)
 // Attempts to finds a Java method through JNI
 //
 jmethodID JniHelper::FindMethod(
-	JNIEnv			*env,
-	jclass			jClass,
-	const string	&funcName,
-	const string 	&funcSignature)
+	JNIEnv       *env,
+	jclass       jClass,
+	const string &funcName,
+	const string &funcSignature)
 {
 	jmethodID result = env->GetMethodID(
 		jClass,

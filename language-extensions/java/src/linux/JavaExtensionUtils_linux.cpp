@@ -18,9 +18,9 @@
 
 using namespace std;
 
-const char x_LinuxClassPathSeparator = ':';		// CLASSPATH separator on Linux
-const char x_LinuxFilePathSeparator = '/';		// File path separator on Linux
-const string x_LinuxJvmFilename = "libjvm.so";	// Filename of the JVM library on Linux
+const char x_LinuxClassPathSeparator = ':';    // CLASSPATH separator on Linux
+const char x_LinuxFilePathSeparator = '/';     // File path separator on Linux
+const string x_LinuxJvmFilename = "libjvm.so"; // Filename of the JVM library on Linux
 
 // Linux specific relative path to the JVM library, based on the standard for the JRE_HOME
 // enviroment variable.
@@ -123,7 +123,7 @@ bool JavaExtensionUtils::IsValidFile(const string &file)
 	{
 		if (S_ISREG(st.st_mode))
 		{
-			result = true; 
+			result = true;
 		}
 	}
 
@@ -141,7 +141,7 @@ bool JavaExtensionUtils::IsValidFile(const string &file)
 //
 JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPath)
 {
-	// Load the JVM 
+	// Load the JVM
 	//
 	// Flags:
 	//  RTLD_NOW forces all symbols in the library to be resolved before dlopen() returns

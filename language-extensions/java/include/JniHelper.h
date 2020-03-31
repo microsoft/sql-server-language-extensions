@@ -35,10 +35,10 @@ public:
 	// Finds the method ID for the class, name, and signature
 	//
 	static jmethodID FindMethod(
-		JNIEnv		 		*env,
-		jclass		 		jClass,
-		const std::string	&funcName,
-		const std::string	&funcSignature);
+		JNIEnv            *env,
+		jclass            jClass,
+		const std::string &funcName,
+		const std::string &funcSignature);
 };
 
 //---------------------------------------------------------------------

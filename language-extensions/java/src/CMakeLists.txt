@@ -95,7 +95,7 @@ if (${PLATFORM} STREQUAL linux)
 	find_library(ABI_LIB c++abi ${USR_LIB_PATH})
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	
-	target_link_libraries(JavaExtension ${CXX_LIB} ${ABI_LIB} ${DL_LIB})	
+	target_link_libraries(JavaExtension ${CXX_LIB} ${ABI_LIB} ${DL_LIB})
 	set(ADDITIONAL_INCLUDES ${JDK_INCLUDE} ${JDK_INCLUDE_LINUX})
 	
 elseif(${PLATFORM} STREQUAL windows)

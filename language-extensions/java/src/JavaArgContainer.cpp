@@ -33,10 +33,10 @@ typedef unordered_map<string, unique_ptr<JavaArg>> JavaArgMap;
 JavaArg::JavaArg(
 	SQLUSMALLINT id,
 	SQLSMALLINT  type,
-	SQLULEN	  size,
+	SQLULEN      size,
 	SQLSMALLINT  decimalDigits,
-	SQLPOINTER	  value,
-	SQLINTEGER	  strLen_or_Ind,
+	SQLPOINTER   value,
+	SQLINTEGER   strLen_or_Ind,
 	SQLSMALLINT  inputOutputType)
 	: m_id(id),
 	m_type(type),
@@ -73,8 +73,8 @@ JavaArg::~JavaArg()
 //	guaranteed to live passed InitParam extension call.
 //
 void JavaArg::DeepCopyValue(
-	SQLSMALLINT	  type,
-	SQLINTEGER		  strLen_or_Ind,
+	SQLSMALLINT      type,
+	SQLINTEGER       strLen_or_Ind,
 	const SQLPOINTER value
 	)
 {
@@ -327,15 +327,15 @@ void JavaArgContainer::Init(const SQLUSMALLINT numOfArgs)
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN JavaArgContainer::AddArg(
-	SQLUSMALLINT	  	id,
-	const SQLCHAR	  	*paramName,
-	SQLSMALLINT	  		paramNameLength,
-	SQLSMALLINT	  		type,
-	SQLULEN		  		size,
-	SQLSMALLINT	  		decimalDigits,
-	const SQLPOINTER 	value,
-	SQLINTEGER			strLen_or_Ind,
-	SQLSMALLINT	  		inputOutputType)
+	SQLUSMALLINT     id,
+	const SQLCHAR    *paramName,
+	SQLSMALLINT      paramNameLength,
+	SQLSMALLINT      type,
+	SQLULEN          size,
+	SQLSMALLINT      decimalDigits,
+	const SQLPOINTER value,
+	SQLINTEGER       strLen_or_Ind,
+	SQLSMALLINT      inputOutputType)
 {
 	SQLRETURN retVal = SQL_SUCCESS;
 
@@ -710,11 +710,11 @@ jobject JavaArgContainer::CreateJavaArgObject(JNIEnv *env, const JavaArg *arg)
 //	with the updated output value from execution parameters' hash map
 //
 void JavaArgContainer::ReplaceArgValue(
-	JNIEnv		  	*env,
-	SQLUSMALLINT 	id,
-	jobject	  		javaArgMap,
-	SQLPOINTER  	*value,
-	SQLINTEGER  	*strLen_or_Ind)
+	JNIEnv       *env,
+	SQLUSMALLINT id,
+	jobject      javaArgMap,
+	SQLPOINTER   *value,
+	SQLINTEGER   *strLen_or_Ind)
 {
 	// Auto cleanup any local references
 	// 1 reference for LinkedHashMap class
@@ -779,7 +779,7 @@ void JavaArgContainer::ReplaceArgValue(
 	else
 	{
 		throw runtime_error(
-				  "Failed to find output parameter '" + paramName + "' in the parameters hash map");
+				"Failed to find output parameter '" + paramName + "' in the parameters hash map");
 	}
 }
 
@@ -790,7 +790,7 @@ void JavaArgContainer::ReplaceArgValue(
 //	Creates an ODBC object for the argument
 //
 void JavaArgContainer::CreateOdbcArgObject(
-	JNIEnv	*env,
+	JNIEnv  *env,
 	jobject jObj,
 	JavaArg *arg)
 {
@@ -918,9 +918,9 @@ void JavaArgContainer::CreateOdbcArgObject(
 		else
 		{
 			throw runtime_error(
-					  "The value of output parameter #" +
-					  to_string(arg->GetId()) +
-					  " is out of range for tinyint data type");
+					"The value of output parameter #" +
+					to_string(arg->GetId()) +
+					" is out of range for tinyint data type");
 		}
 
 		break;
@@ -1125,9 +1125,9 @@ void JavaArgContainer::CreateOdbcArgObject(
 		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/sql/Timestamp");
 
 		jmethodID tsToStringMethod = JniHelper::FindMethod(env,
-													   objectClass,
-													   "toString",
-													   "()Ljava/lang/String;");
+														   objectClass,
+														   "toString",
+														   "()Ljava/lang/String;");
 		jmethodID tsGetNanosMethod = JniHelper::FindMethod(env, objectClass, "getNanos", "()I");
 
 		jmethodID tsValueOfMethod = env->GetStaticMethodID(objectClass,
@@ -1157,9 +1157,9 @@ void JavaArgContainer::CreateOdbcArgObject(
 		ValidateOutputClass(env, arg->GetId(), jObj, objectClass, "java/math/BigDecimal");
 
 		jmethodID bigDecUnscaledValue = JniHelper::FindMethod(env,
-														  objectClass,
-														  "unscaledValue",
-														  "()Ljava/math/BigInteger;");
+															  objectClass,
+															  "unscaledValue",
+															  "()Ljava/math/BigInteger;");
 		jclass bigIntegerClass = env->FindClass("java/math/BigInteger");
 		jmethodID bigIntToByteArr = JniHelper::FindMethod(env, bigIntegerClass, "toByteArray", "()[B");
 		jmethodID bigIntSignum = JniHelper::FindMethod(env, bigIntegerClass, "signum", "()I");
@@ -1200,11 +1200,11 @@ void JavaArgContainer::CreateOdbcArgObject(
 //	If not, a runtime_error exception is thrown.
 //
 void JavaArgContainer::ValidateOutputClass(
-	JNIEnv		  *env,
-	SQLUSMALLINT  paramId,
-	jobject	  	  jObj,
-	jclass		  objectClass,
-	string		  &&objectClassName)
+	JNIEnv       *env,
+	SQLUSMALLINT paramId,
+	jobject      jObj,
+	jclass       objectClass,
+	string       &&objectClassName)
 {
 	jboolean isRightClass = env->IsInstanceOf(jObj, objectClass);
 	if (isRightClass == JNI_FALSE)
@@ -1212,11 +1212,10 @@ void JavaArgContainer::ValidateOutputClass(
 		const string &paramName = GetParamName(paramId);
 
 		throw runtime_error(
-				  "Output parameter #" +
-				  to_string(paramId) +
-				  " is of a different data type than the expected [" +
-				  objectClassName +
-				  "]");
+				"Output parameter #" +
+				to_string(paramId) +
+				" is of a different data type than the expected [" +
+				objectClassName +
+				"]");
 	}
 }
-
