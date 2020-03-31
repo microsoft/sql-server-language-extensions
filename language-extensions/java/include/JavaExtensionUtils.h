@@ -50,7 +50,7 @@ public:
 private:
 	// Function pointer definition for JNI_CreateJVM
 	//
-	using fn_createJvm = jint (*)(JavaVM **pvm, void **penv, void *args);
+	using fn_createJvm = jint(*)(JavaVM **pvm, void **penv, void *args);
 
 	// Constructs the classpath from the enviroment variable,
 	// and external library paths

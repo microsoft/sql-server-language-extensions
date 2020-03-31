@@ -55,35 +55,35 @@ public:
 	// Adds the column metadata
 	//
 	void AddColumnMetadata(
-		jint 				colId,
-		const std::string	&colName,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits);
+		jint              colId,
+		const std::string &colName,
+		SQLSMALLINT       colType,
+		SQLULEN           colSize,
+		SQLSMALLINT       decimalDigits);
 
 	// Adds the column
 	//
 	void AddColumn(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT 		decimalDigits,
-		SQLULEN				numRows,
-		const SQLPOINTER	data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		SQLULEN          numRows,
+		const SQLPOINTER data,
+		const SQLINTEGER *nullMap);
 
 	// Adds each column
 	//
 	void AddColumns(
-		SQLUSMALLINT				numCols,
-		SQLULEN						numRows,
-		std::vector<SQLSMALLINT>	&colTypes,
-		std::vector<std::string>	&colNames,
-		std::vector<SQLULEN>		&colSizes,
-		std::vector<SQLSMALLINT>	&decimalDigits,
-		std::vector<SQLSMALLINT>	&nullableCols,
-		SQLPOINTER					*data,
-		SQLINTEGER					**nullMap);
+		SQLUSMALLINT             numCols,
+		SQLULEN                  numRows,
+		std::vector<SQLSMALLINT> &colTypes,
+		std::vector<std::string> &colNames,
+		std::vector<SQLULEN>     &colSizes,
+		std::vector<SQLSMALLINT> &decimalDigits,
+		std::vector<SQLSMALLINT> &nullableCols,
+		SQLPOINTER               *data,
+		SQLINTEGER               **nullMap);
 
 	// Gets the column type
 	//
@@ -100,25 +100,25 @@ public:
 	// Gets the column
 	//
 	void GetColumn(
-		jint		colId,
-		SQLSMALLINT	&colType,
-		SQLULEN		&colSize,
-		SQLSMALLINT	&colDecimalDigits,
-		SQLULEN		&numRows,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT &colType,
+		SQLULEN     &colSize,
+		SQLSMALLINT &colDecimalDigits,
+		SQLULEN     &numRows,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Gets all columns
 	//
 	void GetColumns(
-		SQLUSMALLINT				&numCols,
-		SQLULEN						&numRows,
-		std::vector<SQLSMALLINT>	&colTypes,
-		std::vector<SQLULEN>		&colSizes,
-		std::vector<SQLSMALLINT>	&colDecimalDigits,
-		std::vector<SQLSMALLINT>	&nullableCols,
-		std::vector<SQLPOINTER>		&data,
-		std::vector<SQLINTEGER*>	&nullMaps);
+		SQLUSMALLINT             &numCols,
+		SQLULEN                  &numRows,
+		std::vector<SQLSMALLINT> &colTypes,
+		std::vector<SQLULEN>     &colSizes,
+		std::vector<SQLSMALLINT> &colDecimalDigits,
+		std::vector<SQLSMALLINT> &nullableCols,
+		std::vector<SQLPOINTER>  &data,
+		std::vector<SQLINTEGER*> &nullMaps);
 
 	// Get the jobject of the Java dataset
 	//
@@ -131,171 +131,171 @@ private:
 	// Add column function pointer definition
 	//
 	using fnAddColumn = void (JavaDataset::*)(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Get column function pointer definition
 	//
 	using fnGetColumn = void (JavaDataset::*)(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal add column
 	//
 	template<typename jArrayType, typename jType, typename cType>
 	void AddColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal add string column
 	//
 	template<bool isUTF8>
 	void AddStringColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal add binary column
 	//
 	void AddBinaryColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal add GUID column
 	//
 	void AddGuidColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal add date column
 	//
 	void AddDateColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal add numeric column
 	//
 	void AddNumericColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal add timestamp column
 	//
 	void AddTimestampColumnInternal(
-		jint				colId,
-		SQLSMALLINT			colType,
-		SQLULEN				colSize,
-		SQLSMALLINT			decimalDigits,
-		jsize				numRows,
-		SQLPOINTER			data,
-		const SQLINTEGER	*nullMap);
+		jint             colId,
+		SQLSMALLINT      colType,
+		SQLULEN          colSize,
+		SQLSMALLINT      decimalDigits,
+		jsize            numRows,
+		SQLPOINTER       data,
+		const SQLINTEGER *nullMap);
 
 	// Internal get column
 	//
 	template<typename jArrayType, typename jType, typename cType>
 	void GetColumnInternal(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal get string column
 	//
 	template<bool isUTF8>
 	void GetStringColumnInternal(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal get binary column
 	//
 	void GetBinaryColumnInternal(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal get date column
 	//
 	void GetDateColumnInternal(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal get numeric column
 	//
 	void GetNumericColumnInternal(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal get timestamp column
 	//
 	void GetTimestampColumnInternal(
-		jint		colId,
-		SQLSMALLINT	colType,
-		SQLULEN		&numRows,
-		SQLULEN		&dataSizeInBytes,
-		SQLSMALLINT	&decimalDigits,
-		SQLPOINTER	*data,
-		SQLINTEGER	**nullMap);
+		jint        colId,
+		SQLSMALLINT colType,
+		SQLULEN     &numRows,
+		SQLULEN     &dataSizeInBytes,
+		SQLSMALLINT &decimalDigits,
+		SQLPOINTER  *data,
+		SQLINTEGER  **nullMap);
 
 	// Internal get column null map
 	//
@@ -305,9 +305,9 @@ private:
 	//
 	template<typename jType, bool isUTF8 = false>
 	void CalculateMaxForVarLengthOutputData(
-		jobjectArray		jArray,
-		unsigned long long	&totalSizeInBytes,
-		SQLULEN				&dataTypeSizeInBytes);
+		jobjectArray       jArray,
+		unsigned long long &totalSizeInBytes,
+		SQLULEN            &dataTypeSizeInBytes);
 
 	// Finds Add<type>Column method in Dataset class
 	//
@@ -329,11 +329,11 @@ private:
 	//
 	SQLINTEGER* CreateSqlNullMap(SQLULEN numRows, jbooleanArray jArray);
 
-	jobject m_object;														// Dataset object global reference
-	JNIEnv *m_env;															// JNI enviroment
-	jclass m_class;															// Dataset class reference
-	static std::unordered_map<SQLSMALLINT, fnAddColumn> m_fnAddColumnMap;	// Function map for adding column to Dataset
-	static std::unordered_map<SQLSMALLINT, fnGetColumn> m_fnGetColumnMap;	// Function map for getting column from Dataset
+	jobject m_object;                                                     // Dataset object global reference
+	JNIEnv *m_env;                                                        // JNI enviroment
+	jclass m_class;                                                       // Dataset class reference
+	static std::unordered_map<SQLSMALLINT, fnAddColumn> m_fnAddColumnMap; // Function map for adding column to Dataset
+	static std::unordered_map<SQLSMALLINT, fnGetColumn> m_fnGetColumnMap; // Function map for getting column from Dataset
 
 	// Function map typedefs
 	//

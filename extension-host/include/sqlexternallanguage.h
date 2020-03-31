@@ -26,7 +26,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 #define EXTERNAL_LANGUAGE_EXTENSION_API 2
 
@@ -47,90 +47,90 @@ SQLRETURN Init(
 
 SQLEXTENSION_INTERFACE
 SQLRETURN InitSession(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
 	SQLUSMALLINT NumTasks,
-	SQLCHAR		 *Script,
-	SQLULEN		 ScriptLength,
+	SQLCHAR      *Script,
+	SQLULEN      ScriptLength,
 	SQLUSMALLINT InputSchemaColumnsNumber,
 	SQLUSMALLINT ParametersNumber,
-	SQLCHAR		 *InputDataName,
+	SQLCHAR      *InputDataName,
 	SQLUSMALLINT InputDataNameLength,
-	SQLCHAR		 *OutputDataName,
+	SQLCHAR      *OutputDataName,
 	SQLUSMALLINT OutputDataNameLength
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN InitColumn(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
 	SQLUSMALLINT ColumnNumber,
-	SQLCHAR		 *ColumnName,
-	SQLSMALLINT	 ColumnNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ColumnSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLSMALLINT	 Nullable,
-	SQLSMALLINT	 PartitionByNumber,
-	SQLSMALLINT	 OrderByNumber
+	SQLCHAR      *ColumnName,
+	SQLSMALLINT  ColumnNameLength,
+	SQLSMALLINT  DataType,
+	SQLULEN      ColumnSize,
+	SQLSMALLINT  DecimalDigits,
+	SQLSMALLINT  Nullable,
+	SQLSMALLINT  PartitionByNumber,
+	SQLSMALLINT  OrderByNumber
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN InitParam(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
 	SQLUSMALLINT ParamNumber,
-	SQLCHAR		 *ParamName,
-	SQLSMALLINT	 ParamNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ParamSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLPOINTER	 ParamValue,
-	SQLINTEGER	 StrLen_or_Ind,
-	SQLSMALLINT	 InputOutputType);
+	SQLCHAR      *ParamName,
+	SQLSMALLINT  ParamNameLength,
+	SQLSMALLINT  DataType,
+	SQLULEN      ParamSize,
+	SQLSMALLINT  DecimalDigits,
+	SQLPOINTER   ParamValue,
+	SQLINTEGER   StrLen_or_Ind,
+	SQLSMALLINT  InputOutputType);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN Execute(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
-	SQLULEN		 RowsNumber,
-	SQLPOINTER	 *Data,
-	SQLINTEGER	 **StrLen_or_Ind,
+	SQLULEN      RowsNumber,
+	SQLPOINTER   *Data,
+	SQLINTEGER   **StrLen_or_Ind,
 	SQLUSMALLINT *OutputSchemaColumnsNumber
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN GetResultColumn(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
 	SQLUSMALLINT ColumnNumber,
-	SQLSMALLINT	 *DataType,
-	SQLULEN		 *ColumnSize,
-	SQLSMALLINT	 *DecimalDigits,
-	SQLSMALLINT	 *Nullable
+	SQLSMALLINT  *DataType,
+	SQLULEN      *ColumnSize,
+	SQLSMALLINT  *DecimalDigits,
+	SQLSMALLINT  *Nullable
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN GetResults(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
-	SQLULEN		 *RowsNumber,
-	SQLPOINTER	 **Data,
-	SQLINTEGER	 ***StrLen_or_Ind
+	SQLULEN      *RowsNumber,
+	SQLPOINTER   **Data,
+	SQLINTEGER   ***StrLen_or_Ind
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN GetOutputParam(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
 	SQLUSMALLINT ParamNumber,
-	SQLPOINTER	 *ParamValue,
-	SQLINTEGER	 *StrLen_or_Ind
+	SQLPOINTER   *ParamValue,
+	SQLINTEGER   *StrLen_or_Ind
 	);
 
 SQLEXTENSION_INTERFACE
 SQLRETURN CleanupSession(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId
 	);
 
@@ -138,7 +138,7 @@ SQLEXTENSION_INTERFACE
 SQLRETURN Cleanup();
 
 #ifdef __cplusplus
-}	/* End of extern "C" { */
-#endif	/* __cplusplus */
+} /* End of extern "C" { */
+#endif/* __cplusplus */
 
-#endif	/* __SQLEXTERNALLANGUAGE */
+#endif/* __SQLEXTERNALLANGUAGE */

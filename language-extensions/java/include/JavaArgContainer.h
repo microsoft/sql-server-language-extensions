@@ -25,13 +25,13 @@ public:
 	// Constructor to initialize the members
 	//
 	JavaArg(
-		SQLUSMALLINT	id,
-		SQLSMALLINT		type,
-		SQLULEN			size,
-		SQLSMALLINT		decimalDigits,
-		SQLPOINTER		value,
-		SQLINTEGER		strLen_or_Ind,
-		SQLSMALLINT		inputOutputType);
+		SQLUSMALLINT id,
+		SQLSMALLINT  type,
+		SQLULEN      size,
+		SQLSMALLINT  decimalDigits,
+		SQLPOINTER   value,
+		SQLINTEGER   strLen_or_Ind,
+		SQLSMALLINT  inputOutputType);
 
 	// Destructor
 	//
@@ -90,22 +90,22 @@ private:
 	// Deep copy argument
 	//
 	void DeepCopyValue(
-		SQLSMALLINT			type,
-		SQLINTEGER			size,
-		const SQLPOINTER 	value
+		SQLSMALLINT      type,
+		SQLINTEGER       size,
+		const SQLPOINTER value
 		);
 
 	// Cleans up memory used to store argument
 	//
 	void Cleanup();
 
-	SQLUSMALLINT m_id;				// Id of the argument
-	SQLSMALLINT m_type;				// Data type of the argument
-	SQLULEN m_size;					// Size of the argument
-	SQLSMALLINT m_decimalDigits;	// Decimal digits of the argument
-	SQLPOINTER m_value;				// Value of the argument
-	SQLINTEGER m_strLenOrInd;		// Indicates string length or null
-	SQLSMALLINT m_inputOutputType;	// Argument type (Input/Output)
+	SQLUSMALLINT m_id;             // Id of the argument
+	SQLSMALLINT m_type;            // Data type of the argument
+	SQLULEN m_size;                // Size of the argument
+	SQLSMALLINT m_decimalDigits;   // Decimal digits of the argument
+	SQLPOINTER m_value;            // Value of the argument
+	SQLINTEGER m_strLenOrInd;      // Indicates string length or null
+	SQLSMALLINT m_inputOutputType; // Argument type (Input/Output)
 };
 
 //---------------------------------------------------------------------
@@ -131,15 +131,15 @@ public:
 	// Construct and store argument
 	//
 	SQLRETURN AddArg(
-		SQLUSMALLINT		id,
-		const SQLCHAR		*paramName,
-		SQLSMALLINT			paramNameLength,
-		SQLSMALLINT			type,
-		SQLULEN				size,
-		SQLSMALLINT			decimalDigits,
-		const SQLPOINTER	value,
-		SQLINTEGER			strLen_or_Ind,
-		SQLSMALLINT			inputOutputType);
+		SQLUSMALLINT     id,
+		const SQLCHAR    *paramName,
+		SQLSMALLINT      paramNameLength,
+		SQLSMALLINT      type,
+		SQLULEN          size,
+		SQLSMALLINT      decimalDigits,
+		const SQLPOINTER value,
+		SQLINTEGER       strLen_or_Ind,
+		SQLSMALLINT      inputOutputType);
 
 	// Get the arg from the name
 	//
@@ -172,11 +172,11 @@ public:
 	// with the updated output value from execution parameters' hash map
 	//
 	void ReplaceArgValue(
-		JNIEnv			*env,
-		SQLUSMALLINT	id,
-		jobject			javaArgMap,
-		SQLPOINTER		*value,
-		SQLINTEGER		*strLen_or_Ind);
+		JNIEnv       *env,
+		SQLUSMALLINT id,
+		jobject      javaArgMap,
+		SQLPOINTER   *value,
+		SQLINTEGER   *strLen_or_Ind);
 
 private:
 	// Creates a Java object for the argument
@@ -185,16 +185,16 @@ private:
 
 	// Creates an ODBC object for the argument
 	//
-	void CreateOdbcArgObject(JNIEnv	*env, jobject jObj, JavaArg *arg);
+	void CreateOdbcArgObject(JNIEnv *env, jobject jObj, JavaArg *arg);
 
 	// Verify that the given output parameter jObj is of the expected java class
 	//
 	void ValidateOutputClass(
-		JNIEnv 			*env,
-		SQLUSMALLINT	paramId,
-		jobject 		jObj,
-		jclass			objectClass,
-		std::string		&&objectClassName);
+		JNIEnv       *env,
+		SQLUSMALLINT paramId,
+		jobject      jObj,
+		jclass       objectClass,
+		std::string  &&objectClassName);
 
 	// Names of parameters, stored in order of parameter id. This
 	// is used for accessing parameters by id, in order to get the

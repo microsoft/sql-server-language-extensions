@@ -74,4 +74,3 @@ void JavaLibraryUtils::FindAppendFileNames(const string &basePath, string &outpu
 		FindClose(hFind);
 	}
 }
-

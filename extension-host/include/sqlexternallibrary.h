@@ -14,36 +14,36 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 // Optional API
 //
 SQLEXTENSION_INTERFACE
 SQLRETURN InstallExternalLibrary(
-	SQLGUID	   SetupSessionId,
-	SQLCHAR	   *LibraryName,
+	SQLGUID    SetupSessionId,
+	SQLCHAR    *LibraryName,
 	SQLINTEGER LibraryNameLength,
-	SQLCHAR	   *LibraryFile,
+	SQLCHAR    *LibraryFile,
 	SQLINTEGER LibraryFileLength,
-	SQLCHAR	   *LibraryInstallDirectory,
+	SQLCHAR    *LibraryInstallDirectory,
 	SQLINTEGER LibraryInstallDirectoryLength,
-	SQLCHAR	   **LibraryError,
+	SQLCHAR    **LibraryError,
 	SQLINTEGER *LibraryErrorLength);
 
 // Optional API
 //
 SQLEXTENSION_INTERFACE
 SQLRETURN UninstallExternalLibrary(
-	SQLGUID	   SetupSessionId,
-	SQLCHAR	   *LibraryName,
+	SQLGUID    SetupSessionId,
+	SQLCHAR    *LibraryName,
 	SQLINTEGER LibraryNameLength,
-	SQLCHAR	   *LibraryInstallDirectory,
+	SQLCHAR    *LibraryInstallDirectory,
 	SQLINTEGER LibraryInstallDirectoryLength,
-	SQLCHAR	   **LibraryError,
+	SQLCHAR    **LibraryError,
 	SQLINTEGER *LibraryErrorLength);
 
 #ifdef __cplusplus
-}	/* End of extern "C" { */
-#endif	/* __cplusplus */
+} /* End of extern "C" { */
+#endif  /* __cplusplus */
 
-#endif	/* __SQLEXTERNALLIBRARY */
+#endif  /* __SQLEXTERNALLIBRARY */
