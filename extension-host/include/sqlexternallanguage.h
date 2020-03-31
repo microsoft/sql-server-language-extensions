@@ -26,7 +26,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif/* __cplusplus */
+#endif /* __cplusplus */
 
 #define EXTERNAL_LANGUAGE_EXTENSION_API 2
 
