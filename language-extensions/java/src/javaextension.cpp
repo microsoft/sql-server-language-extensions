@@ -122,17 +122,17 @@ SQLRETURN Init(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitSession(
-	SQLGUID			SessionId,
-	SQLUSMALLINT	TaskId,
-	SQLUSMALLINT	NumTasks,
-	SQLCHAR			*Script,
-	SQLULEN			ScriptLength,
-	SQLUSMALLINT	InputSchemaColumnsNumber,
-	SQLUSMALLINT	ParametersNumber,
-	SQLCHAR			*InputDataName,
-	SQLUSMALLINT	InputDataNameLength,
-	SQLCHAR			*OutputDataName,
-	SQLUSMALLINT	OutputDataNameLength
+	SQLGUID      SessionId,
+	SQLUSMALLINT TaskId,
+	SQLUSMALLINT NumTasks,
+	SQLCHAR      *Script,
+	SQLULEN      ScriptLength,
+	SQLUSMALLINT InputSchemaColumnsNumber,
+	SQLUSMALLINT ParametersNumber,
+	SQLCHAR      *InputDataName,
+	SQLUSMALLINT InputDataNameLength,
+	SQLCHAR      *OutputDataName,
+	SQLUSMALLINT OutputDataNameLength
 	)
 {
 	string msg = "JavaExtension::InitSession";
@@ -203,17 +203,17 @@ SQLRETURN InitSession(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitColumn(
-	SQLGUID			SessionId,
-	SQLUSMALLINT	TaskId,
-	SQLUSMALLINT	ColumnNumber,
-	SQLCHAR			*ColumnName,
-	SQLSMALLINT		ColumnNameLength,
-	SQLSMALLINT		DataType,
-	SQLULEN			ColumnSize,
-	SQLSMALLINT		DecimalDigits,
-	SQLSMALLINT		Nullable,
-	SQLSMALLINT		PartitionByNumber,
-	SQLSMALLINT		OrderByNumber
+	SQLGUID      SessionId,
+	SQLUSMALLINT TaskId,
+	SQLUSMALLINT ColumnNumber,
+	SQLCHAR      *ColumnName,
+	SQLSMALLINT  ColumnNameLength,
+	SQLSMALLINT  DataType,
+	SQLULEN      ColumnSize,
+	SQLSMALLINT  DecimalDigits,
+	SQLSMALLINT  Nullable,
+	SQLSMALLINT  PartitionByNumber,
+	SQLSMALLINT  OrderByNumber
 	)
 {
 	string msg = "JavaExtension::InitColumn";
@@ -270,17 +270,17 @@ SQLRETURN InitColumn(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitParam(
-	SQLGUID		 SessionId,
+	SQLGUID      SessionId,
 	SQLUSMALLINT TaskId,
 	SQLUSMALLINT ParamNumber,
-	SQLCHAR		 *ParamName,
-	SQLSMALLINT	 ParamNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ArgSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLPOINTER	 ArgValue,
-	SQLINTEGER	 StrLen_or_Ind,
-	SQLSMALLINT	 InputOutputType
+	SQLCHAR      *ParamName,
+	SQLSMALLINT  ParamNameLength,
+	SQLSMALLINT  DataType,
+	SQLULEN      ArgSize,
+	SQLSMALLINT  DecimalDigits,
+	SQLPOINTER   ArgValue,
+	SQLINTEGER   StrLen_or_Ind,
+	SQLSMALLINT  InputOutputType
 	)
 {
 	string msg = "JavaExtension::InitParam";
@@ -339,12 +339,12 @@ SQLRETURN InitParam(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Execute(
-	SQLGUID			SessionId,
-	SQLUSMALLINT	TaskId,
-	SQLULEN			RowsNumber,
-	SQLPOINTER		*Data,
-	SQLINTEGER		**StrLen_or_Ind,
-	SQLUSMALLINT	*OutputSchemaColumnsNumber
+	SQLGUID      SessionId,
+	SQLUSMALLINT TaskId,
+	SQLULEN      RowsNumber,
+	SQLPOINTER   *Data,
+	SQLINTEGER   **StrLen_or_Ind,
+	SQLUSMALLINT *OutputSchemaColumnsNumber
 	)
 {
 	string msg = "JavaExtension::Execute";
@@ -397,13 +397,13 @@ SQLRETURN Execute(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResultColumn(
-	SQLGUID			SessionId,
-	SQLUSMALLINT	TaskId,
-	SQLUSMALLINT	ColumnNumber,
-	SQLSMALLINT		*DataType,
-	SQLULEN			*ColumnSize,
-	SQLSMALLINT		*DecimalDigits,
-	SQLSMALLINT		*Nullable
+	SQLGUID      SessionId,
+	SQLUSMALLINT TaskId,
+	SQLUSMALLINT ColumnNumber,
+	SQLSMALLINT  *DataType,
+	SQLULEN      *ColumnSize,
+	SQLSMALLINT  *DecimalDigits,
+	SQLSMALLINT  *Nullable
 	)
 {
 	LOG("JavaExtension::GetResultColumn");
@@ -447,11 +447,11 @@ SQLRETURN GetResultColumn(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResults(
-	SQLGUID			SessionId,
-	SQLUSMALLINT	TaskId,
-	SQLULEN			*RowsNumber,
-	SQLPOINTER		**Data,
-	SQLINTEGER		***StrLen_or_Ind
+	SQLGUID      SessionId,
+	SQLUSMALLINT TaskId,
+	SQLULEN      *RowsNumber,
+	SQLPOINTER   **Data,
+	SQLINTEGER   ***StrLen_or_Ind
 	)
 {
 	LOG("JavaExtension::GetResults");
@@ -493,11 +493,11 @@ SQLRETURN GetResults(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetOutputParam(
-	SQLGUID			SessionId,
-	SQLUSMALLINT	TaskId,
-	SQLUSMALLINT	ParamNumber,
-	SQLPOINTER		*ParamValue,
-	SQLINTEGER		*StrLen_or_Ind)
+	SQLGUID      SessionId,
+	SQLUSMALLINT TaskId,
+	SQLUSMALLINT ParamNumber,
+	SQLPOINTER   *ParamValue,
+	SQLINTEGER   *StrLen_or_Ind)
 {
 	LOG("JavaExtension::GetOutputParam");
 

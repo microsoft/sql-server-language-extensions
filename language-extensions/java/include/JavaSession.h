@@ -63,75 +63,75 @@ public:
 	// Init the session
 	//
 	void Init(
-		JNIEnv			*env,
-		const SQLGUID	&sessionId,
-		SQLUSMALLINT	taskId,
-		SQLUSMALLINT	numTasks,
-		const SQLCHAR	*script,
-		SQLULEN			scriptLength,
-		SQLUSMALLINT	inputSchemaColumnsNumber,
-		SQLUSMALLINT	parametersNumber,
-		const SQLCHAR	*inputDataName,
-		SQLUSMALLINT	inputDataNameLength,
-		const SQLCHAR	*outputDataName,
-		SQLUSMALLINT	outputDataNameLength);
+		JNIEnv        *env,
+		const SQLGUID &sessionId,
+		SQLUSMALLINT  taskId,
+		SQLUSMALLINT  numTasks,
+		const SQLCHAR *script,
+		SQLULEN       scriptLength,
+		SQLUSMALLINT  inputSchemaColumnsNumber,
+		SQLUSMALLINT  parametersNumber,
+		const SQLCHAR *inputDataName,
+		SQLUSMALLINT  inputDataNameLength,
+		const SQLCHAR *outputDataName,
+		SQLUSMALLINT  outputDataNameLength);
 
 	// Init the input column
 	//
 	void InitColumn(
-		SQLUSMALLINT	columnNumber,
-		const SQLCHAR	*columnName,
-		SQLSMALLINT		columnNameLength,
-		SQLSMALLINT		dataType,
-		SQLULEN			columnSize,
-		SQLSMALLINT		decimalDigits,
-		SQLSMALLINT		nullable,
-		SQLSMALLINT		partitionByNumber,
-		SQLSMALLINT		orderByNumber);
+		SQLUSMALLINT  columnNumber,
+		const SQLCHAR *columnName,
+		SQLSMALLINT   columnNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       columnSize,
+		SQLSMALLINT   decimalDigits,
+		SQLSMALLINT   nullable,
+		SQLSMALLINT   partitionByNumber,
+		SQLSMALLINT   orderByNumber);
 
 	// Init the input parameter
 	//
 	void InitParam(
-		SQLUSMALLINT	paramNumber,
-		const SQLCHAR	*paramName,
-		SQLSMALLINT		paramNameLength,
-		SQLSMALLINT		dataType,
-		SQLULEN			argSize,
-		SQLSMALLINT		decimalDigits,
-		SQLPOINTER		argValue,
-		SQLINTEGER		strLen_or_Ind,
-		SQLSMALLINT		inputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       argSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    argValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
 
 	// Execute the workflow for the session
 	//
 	void ExecuteWorkflow(
-		SQLULEN			rowsNumber,
-		SQLPOINTER		*data,
-		SQLINTEGER		**strLen_or_Ind,
-		SQLUSMALLINT	*outputSchemaColumnsNumber);
+		SQLULEN      rowsNumber,
+		SQLPOINTER   *data,
+		SQLINTEGER   **strLen_or_Ind,
+		SQLUSMALLINT *outputSchemaColumnsNumber);
 
 	// Get the metadata for the output column
 	//
 	void GetResultColumn(
-		SQLUSMALLINT	columnNumber,
-		SQLSMALLINT		*dataType,
-		SQLULEN			*columnSize,
-		SQLSMALLINT		*decimalDigits,
-		SQLSMALLINT		*nullable);
+		SQLUSMALLINT columnNumber,
+		SQLSMALLINT  *dataType,
+		SQLULEN      *columnSize,
+		SQLSMALLINT  *decimalDigits,
+		SQLSMALLINT  *nullable);
 
 	// Get the results
 	//
 	void GetResults(
-		SQLULEN		*rowsNumber,
-		SQLPOINTER	**data,
-		SQLINTEGER	***strLen_or_Ind);
+		SQLULEN    *rowsNumber,
+		SQLPOINTER **data,
+		SQLINTEGER ***strLen_or_Ind);
 
 	// Get the the output parameter
 	//
 	void GetOutputParam(
-		SQLUSMALLINT	paramNumber,
-		SQLPOINTER		*paramValue,
-		SQLINTEGER		*strLen_or_Ind);
+		SQLUSMALLINT paramNumber,
+		SQLPOINTER   *paramValue,
+		SQLINTEGER   *strLen_or_Ind);
 
 	// Cleanup session
 	//
@@ -145,10 +145,10 @@ private:
 	// Call execute() on the user object
 	//
 	void CallUserExecute(
-		SQLULEN			rowsNumber,
-		SQLPOINTER		*data,
-		SQLINTEGER		**strLen_or_Ind,
-		SQLUSMALLINT	*outputSchemaColumnsNumber);
+		SQLULEN      rowsNumber,
+		SQLPOINTER   *data,
+		SQLINTEGER   **strLen_or_Ind,
+		SQLUSMALLINT *outputSchemaColumnsNumber);
 
 	// Call cleanup() on the user object
 	//
@@ -174,21 +174,21 @@ private:
 	//
 	void CleanupOutputDataBuffers();
 
-	SQLGUID m_sessionId;					// Session ID
-	SQLUSMALLINT m_taskId;					// Task ID for this session
-	SQLUSMALLINT m_numTasks;				// Number of tasks for this session
+	SQLGUID m_sessionId;                  // Session ID
+	SQLUSMALLINT m_taskId;                // Task ID for this session
+	SQLUSMALLINT m_numTasks;              // Number of tasks for this session
 
-	jclass m_userClass;						// Global reference to the user supplied executor class
-	jmethodID m_mainMethodId;				// Method ID of the execute function in executor class
-	JNIEnv *m_env;							// JNI enviroment
-	jobject m_userObject;					// Global reference of the instantiated object of the user class
+	jclass m_userClass;                   // Global reference to the user supplied executor class
+	jmethodID m_mainMethodId;             // Method ID of the execute function in executor class
+	JNIEnv *m_env;                        // JNI enviroment
+	jobject m_userObject;                 // Global reference of the instantiated object of the user class
 
-	JavaArgContainer m_args;				// User input and output arguments
-	jobject m_argMap;						// Global reference of the hash map for the execution parameters
+	JavaArgContainer m_args;              // User input and output arguments
+	jobject m_argMap;                     // Global reference of the hash map for the execution parameters
 
-	std::string m_mainClassName;			// User executor class name
-	std::string m_inputDatasetClassName;	// Input dataset class name for the executor class
-	std::string m_outputDatasetClassName;	// Output dataset class name for the executor class
+	std::string m_mainClassName;          // User executor class name
+	std::string m_inputDatasetClassName;  // Input dataset class name for the executor class
+	std::string m_outputDatasetClassName; // Output dataset class name for the executor class
 
 	// Input data information (schema, null map, etc.)
 	//

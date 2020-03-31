@@ -31,13 +31,13 @@ typedef unordered_map<string, unique_ptr<JavaArg>> JavaArgMap;
 //  Constructor may throw exceptions besides OOM.
 //
 JavaArg::JavaArg(
-	SQLUSMALLINT	id,
-	SQLSMALLINT		type,
-	SQLULEN			size,
-	SQLSMALLINT		decimalDigits,
-	SQLPOINTER		value,
-	SQLINTEGER		strLen_or_Ind,
-	SQLSMALLINT		inputOutputType)
+	SQLUSMALLINT id,
+	SQLSMALLINT  type,
+	SQLULEN      size,
+	SQLSMALLINT  decimalDigits,
+	SQLPOINTER   value,
+	SQLINTEGER   strLen_or_Ind,
+	SQLSMALLINT  inputOutputType)
 	: m_id(id),
 	m_type(type),
 	m_size(size),
@@ -73,9 +73,9 @@ JavaArg::~JavaArg()
 //	guaranteed to live passed InitParam extension call.
 //
 void JavaArg::DeepCopyValue(
-	SQLSMALLINT			type,
-	SQLINTEGER			strLen_or_Ind,
-	const SQLPOINTER	value
+	SQLSMALLINT      type,
+	SQLINTEGER       strLen_or_Ind,
+	const SQLPOINTER value
 	)
 {
 	switch (type)
@@ -327,15 +327,15 @@ void JavaArgContainer::Init(const SQLUSMALLINT numOfArgs)
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN JavaArgContainer::AddArg(
-	SQLUSMALLINT		id,
-	const SQLCHAR		*paramName,
-	SQLSMALLINT			paramNameLength,
-	SQLSMALLINT			type,
-	SQLULEN				size,
-	SQLSMALLINT			decimalDigits,
-	const SQLPOINTER	value,
-	SQLINTEGER			strLen_or_Ind,
-	SQLSMALLINT			inputOutputType)
+	SQLUSMALLINT     id,
+	const SQLCHAR    *paramName,
+	SQLSMALLINT      paramNameLength,
+	SQLSMALLINT      type,
+	SQLULEN          size,
+	SQLSMALLINT      decimalDigits,
+	const SQLPOINTER value,
+	SQLINTEGER       strLen_or_Ind,
+	SQLSMALLINT      inputOutputType)
 {
 	SQLRETURN retVal = SQL_SUCCESS;
 
@@ -710,11 +710,11 @@ jobject JavaArgContainer::CreateJavaArgObject(JNIEnv *env, const JavaArg *arg)
 //	with the updated output value from execution parameters' hash map
 //
 void JavaArgContainer::ReplaceArgValue(
-	JNIEnv			*env,
-	SQLUSMALLINT	id,
-	jobject			javaArgMap,
-	SQLPOINTER		*value,
-	SQLINTEGER		*strLen_or_Ind)
+	JNIEnv       *env,
+	SQLUSMALLINT id,
+	jobject      javaArgMap,
+	SQLPOINTER   *value,
+	SQLINTEGER   *strLen_or_Ind)
 {
 	// Auto cleanup any local references
 	// 1 reference for LinkedHashMap class
@@ -790,7 +790,7 @@ void JavaArgContainer::ReplaceArgValue(
 //	Creates an ODBC object for the argument
 //
 void JavaArgContainer::CreateOdbcArgObject(
-	JNIEnv	*env,
+	JNIEnv  *env,
 	jobject jObj,
 	JavaArg *arg)
 {
@@ -1200,11 +1200,11 @@ void JavaArgContainer::CreateOdbcArgObject(
 //	If not, a runtime_error exception is thrown.
 //
 void JavaArgContainer::ValidateOutputClass(
-	JNIEnv			*env,
-	SQLUSMALLINT	paramId,
-	jobject			jObj,
-	jclass			objectClass,
-	string			&&objectClassName)
+	JNIEnv       *env,
+	SQLUSMALLINT paramId,
+	jobject      jObj,
+	jclass       objectClass,
+	string       &&objectClassName)
 {
 	jboolean isRightClass = env->IsInstanceOf(jObj, objectClass);
 	if (isRightClass == JNI_FALSE)

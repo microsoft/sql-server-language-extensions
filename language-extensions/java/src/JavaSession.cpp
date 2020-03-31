@@ -49,18 +49,18 @@ const string x_javaSdkBaseDatasetClass =
 //  validity of the user class
 //
 void JavaSession::Init(
-	JNIEnv			*env,
-	const SQLGUID	&sessionId,
-	SQLUSMALLINT	taskId,
-	SQLUSMALLINT	numTasks,
-	const SQLCHAR	*script,
-	SQLULEN			scriptLength,
-	SQLUSMALLINT	inputSchemaColumnsNumber,
-	SQLUSMALLINT	parametersNumber,
-	const SQLCHAR	*inputDataName,
-	SQLUSMALLINT	inputDataNameLength,
-	const SQLCHAR	*outputDataName,
-	SQLUSMALLINT	outputDataNameLength)
+	JNIEnv        *env,
+	const SQLGUID &sessionId,
+	SQLUSMALLINT  taskId,
+	SQLUSMALLINT  numTasks,
+	const SQLCHAR *script,
+	SQLULEN       scriptLength,
+	SQLUSMALLINT  inputSchemaColumnsNumber,
+	SQLUSMALLINT  parametersNumber,
+	const SQLCHAR *inputDataName,
+	SQLUSMALLINT  inputDataNameLength,
+	const SQLCHAR *outputDataName,
+	SQLUSMALLINT  outputDataNameLength)
 {
 	if (env == nullptr)
 	{
@@ -98,21 +98,21 @@ void JavaSession::Init(
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaSession::InitColumn
+// Name: JavaSession::Init
 //
 // Description:
 //  Initializes the input column for this session
 //
 void JavaSession::InitColumn(
-	SQLUSMALLINT	columnNumber,
-	const SQLCHAR	*columnName,
-	SQLSMALLINT		columnNameLength,
-	SQLSMALLINT		dataType,
-	SQLULEN			columnSize,
-	SQLSMALLINT		decimalDigits,
-	SQLSMALLINT		nullable,
-	SQLSMALLINT		partitionByNumber,
-	SQLSMALLINT		orderByNumber
+	SQLUSMALLINT  columnNumber,
+	const SQLCHAR *columnName,
+	SQLSMALLINT   columnNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       columnSize,
+	SQLSMALLINT   decimalDigits,
+	SQLSMALLINT   nullable,
+	SQLSMALLINT   partitionByNumber,
+	SQLSMALLINT   orderByNumber
 	)
 {
 	LOG("Initializing column #" + to_string(columnNumber));
@@ -143,15 +143,15 @@ void JavaSession::InitColumn(
 //  Initializes the parameter for this session
 //
 void JavaSession::InitParam(
-	SQLUSMALLINT	paramNumber,
-	const SQLCHAR	*paramName,
-	SQLSMALLINT		paramNameLength,
-	SQLSMALLINT		dataType,
-	SQLULEN			argSize,
-	SQLSMALLINT		decimalDigits,
-	SQLPOINTER		argValue,
-	SQLINTEGER		strLen_or_Ind,
-	SQLSMALLINT		inputOutputType
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       argSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    argValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType
 	)
 {
 	LOG("Initializing input parameter #" + to_string(paramNumber));
@@ -178,16 +178,16 @@ void JavaSession::InitParam(
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaSession::ExecuteWorkflow
+// Name: JavaSession::InitParam
 //
 // Description:
 //  Execute the workflow for the session
 //
 void JavaSession::ExecuteWorkflow(
-	SQLULEN			rowsNumber,
-	SQLPOINTER		*data,
-	SQLINTEGER		**strLen_or_Ind,
-	SQLUSMALLINT	*outputSchemaColumnsNumber)
+	SQLULEN      rowsNumber,
+	SQLPOINTER   *data,
+	SQLINTEGER   **strLen_or_Ind,
+	SQLUSMALLINT *outputSchemaColumnsNumber)
 {
 	LOG("JavaSession::ExecuteWorkflow");
 
@@ -264,10 +264,10 @@ void JavaSession::CallUserInit()
 //	Populates the input dataset, calls user execute, and extracts the output dataset
 //
 void JavaSession::CallUserExecute(
-	SQLULEN			rowsNumber,
-	SQLPOINTER		*data,
-	SQLINTEGER		**strLen_or_Ind,
-	SQLUSMALLINT	*outputSchemaColumnsNumber)
+	SQLULEN      rowsNumber,
+	SQLPOINTER   *data,
+	SQLINTEGER   **strLen_or_Ind,
+	SQLUSMALLINT *outputSchemaColumnsNumber)
 {
 	LOG("JavaSession::CallUserExecute");
 
@@ -683,11 +683,11 @@ void JavaSession::CleanupOutputDataBuffers()
 //  Returns information about the output column
 //
 void JavaSession::GetResultColumn(
-	SQLUSMALLINT	columnNumber,
-	SQLSMALLINT		*dataType,
-	SQLULEN			*columnSize,
-	SQLSMALLINT		*decimalDigits,
-	SQLSMALLINT		*nullable
+	SQLUSMALLINT columnNumber,
+	SQLSMALLINT  *dataType,
+	SQLULEN      *columnSize,
+	SQLSMALLINT  *decimalDigits,
+	SQLSMALLINT  *nullable
 	)
 {
 	LOG("Retrieving metadata for result column #" + to_string(columnNumber));
@@ -718,9 +718,9 @@ void JavaSession::GetResultColumn(
 //	Returns the output data and the null map retrieved from the user program
 //
 void JavaSession::GetResults(
-	SQLULEN		*rowsNumber,
-	SQLPOINTER	**data,
-	SQLINTEGER	***strLen_or_Ind)
+	SQLULEN    *rowsNumber,
+	SQLPOINTER **data,
+	SQLINTEGER ***strLen_or_Ind)
 {
 	LOG("JavaSession::GetResults");
 
@@ -747,9 +747,9 @@ void JavaSession::GetResults(
 //  Returns the data and size of the output parameter
 //
 void JavaSession::GetOutputParam(
-	SQLUSMALLINT	ParamNumber,
-	SQLPOINTER		*ParamValue,
-	SQLINTEGER		*StrLen_or_Ind)
+	SQLUSMALLINT ParamNumber,
+	SQLPOINTER   *ParamValue,
+	SQLINTEGER   *StrLen_or_Ind)
 {
 	LOG("Initializing output parameter #" + to_string(ParamNumber));
 

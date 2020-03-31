@@ -33,7 +33,7 @@ const char* Logger::GetCurrentTimestamp()
 	char buffer[TIMESTAMP_LENGTH] = {0};
 
 	clock_gettime(CLOCK_REALTIME, &ts);
-	
+
 	// Convert the time to Year-Month-Day Hour:Minute:Second
 	//
 	strftime(buffer, sizeof(buffer), "%F %T", gmtime(&ts.tv_sec));
