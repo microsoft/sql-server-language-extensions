@@ -44,21 +44,37 @@ using namespace std;
 // Constructor.
 //
 RParam::RParam(
-	SQLUSMALLINT id,
-	string       name,
-	SQLSMALLINT  type,
-	SQLULEN      size,
-	SQLSMALLINT  decimalDigits,
-	SQLINTEGER   strLen_or_Ind,
-	SQLSMALLINT  inputOutputType) :
-	m_id(id),
-	m_name(name),
-	m_type(type),
-	m_size(size),
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType) :
+	m_id(paramNumber),
+	m_dataType(dataType),
+	m_size(paramSize),
 	m_decimalDigits(decimalDigits),
 	m_strLenOrInd(strLen_or_Ind),
 	m_inputOutputType(inputOutputType)
 {
+	const char* name = static_cast<const char*>(
+			static_cast<const void*>(paramName));
+
+	LOG("RParam::RParam Initializing parameter " + string(name));
+
+#if defined(_DEBUG)
+	if (static_cast<size_t>(paramNameLength) != strlen(name))
+	{
+		throw invalid_argument("Invalid parameter name length, it doesn't match string length.");
+	}
+#endif
+
+	// +1 points to the next character after @ in front of the parameter name.
+	// paramNameLength includes @ so do a -1 to exclude it.
+	//
+	m_name = string(name + 1, paramNameLength - 1);
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -77,7 +93,7 @@ void RParam::CheckParamSize()
 	if (dataTypeSize != m_size)
 	{
 		string error("The parameter size(" + to_string(m_size) +
-			") doesnt match the size of the supported datatype(" +
+			") doesn't match the size of the supported data type(" +
 			to_string(dataTypeSize) + ").");
 		LOG_ERROR(error);
 		throw invalid_argument(error);
@@ -92,16 +108,24 @@ void RParam::CheckParamSize()
 //
 template<class SQLType, class RType, class NAType>
 RParamTemplate<SQLType, RType, NAType>::RParamTemplate(
-	SQLUSMALLINT id,
-	string       name,
-	SQLSMALLINT  type,
-	SQLULEN      size,
-	SQLSMALLINT  decimalDigits,
-	SQLPOINTER   paramValue,
-	SQLINTEGER   strLen_or_Ind,
-	SQLSMALLINT  inputOutputType,
-	const NAType valueForNA)
-	: RParam(id, name, type, size, decimalDigits, strLen_or_Ind, inputOutputType)
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType,
+	const NAType  valueForNA)
+	: RParam(paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	SetRcppVector(paramValue, valueForNA);
 }
@@ -118,12 +142,14 @@ RParamTemplate<SQLType, RType, NAType>::RParamTemplate(
 // For each R type, there is a special NA value with a corresponding NA type in C++.
 //
 template<class SQLType, class RType, class NAType>
-void RParamTemplate<SQLType, RType, NAType>::SetRcppVector(SQLPOINTER paramValue, const NAType valueForNA)
+void RParamTemplate<SQLType, RType, NAType>::SetRcppVector(
+	SQLPOINTER   paramValue,
+	const NAType valueForNA)
 {
 	LOG("RParamTemplate::SetRcppVector");
 
 	CheckParamSize<SQLType>();
-	SQLINTEGER strLenOrInd = GetStrLenOrInd();
+	SQLINTEGER strLenOrInd = StrLenOrInd();
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		SQLINTEGER strLen_or_Ind[1] = {SQL_NULL_DATA};
@@ -150,15 +176,23 @@ void RParamTemplate<SQLType, RType, NAType>::SetRcppVector(SQLPOINTER paramValue
 // Constructor.
 //
 RLogicalParam::RLogicalParam(
-	SQLUSMALLINT id,
-	string       name,
-	SQLSMALLINT  type,
-	SQLULEN      size,
-	SQLSMALLINT  decimalDigits,
-	SQLPOINTER   paramValue,
-	SQLINTEGER   strLen_or_Ind,
-	SQLSMALLINT  inputOutputType)
-	: RParam(id, name, type, size, decimalDigits, strLen_or_Ind, inputOutputType)
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
+	: RParam(paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	SetRcppVector(paramValue);
 }
@@ -177,7 +211,7 @@ void RLogicalParam::SetRcppVector(SQLPOINTER paramValue)
 	LOG("RLogicalParam::SetRcppVector");
 
 	CheckParamSize<SQLCHAR>();
-	SQLINTEGER strLenOrInd = GetStrLenOrInd();
+	SQLINTEGER strLenOrInd = StrLenOrInd();
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		SQLINTEGER strLen_or_Ind[1] = {SQL_NULL_DATA};
@@ -202,15 +236,23 @@ void RLogicalParam::SetRcppVector(SQLPOINTER paramValue)
 // Constructor.
 //
 RCharacterParam::RCharacterParam(
-	SQLUSMALLINT id,
-	string       name,
-	SQLSMALLINT  type,
-	SQLULEN      size,
-	SQLSMALLINT  decimalDigits,
-	SQLPOINTER   paramValue,
-	SQLINTEGER   strLen_or_Ind,
-	SQLSMALLINT  inputOutputType)
-	: RParam(id, name, type, size, decimalDigits, strLen_or_Ind, inputOutputType)
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
+	: RParam(paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	SetRcppVector(paramValue);
 }
@@ -227,7 +269,7 @@ void RCharacterParam::SetRcppVector(SQLPOINTER paramValue)
 {
 	LOG("RCharacterParam::SetRcppVector");
 
-	SQLINTEGER strLenOrInd = GetStrLenOrInd();
+	SQLINTEGER strLenOrInd = StrLenOrInd();
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		m_RcppVector = RTypeUtils::CreateCharacterVector(
@@ -252,15 +294,23 @@ void RCharacterParam::SetRcppVector(SQLPOINTER paramValue)
 // Constructor.
 //
 RRawParam::RRawParam(
-	SQLUSMALLINT id,
-	string       name,
-	SQLSMALLINT  type,
-	SQLULEN      size,
-	SQLSMALLINT  decimalDigits,
-	SQLPOINTER   paramValue,
-	SQLINTEGER   strLen_or_Ind,
-	SQLSMALLINT  inputOutputType)
-	: RParam(id, name, type, size, decimalDigits, strLen_or_Ind, inputOutputType)
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
+	: RParam(paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	SetRcppVector(paramValue);
 }
@@ -278,7 +328,7 @@ void RRawParam::SetRcppVector(SQLPOINTER paramValue)
 	LOG("RRawParam::SetRcppVector");
 
 	SQLINTEGER strLen_or_IndArray[1] = {0};
-	SQLINTEGER strLenOrInd = GetStrLenOrInd();
+	SQLINTEGER strLenOrInd = StrLenOrInd();
 	strLen_or_IndArray[0] = { strLenOrInd };
 	m_RcppVector = RTypeUtils::CreateRawVector(
 		1,        // rowsNumber
@@ -293,7 +343,8 @@ void RRawParam::SetRcppVector(SQLPOINTER paramValue)
 //
 template RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>::RParamTemplate(
 	SQLUSMALLINT,
-	string,
+	const SQLCHAR*,
+	SQLSMALLINT,
 	SQLSMALLINT,
 	SQLULEN,
 	SQLSMALLINT,
@@ -304,7 +355,8 @@ template RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>::RParamTemplate(
 
 template RParamTemplate<SQLREAL, Rcpp::NumericVector, double>::RParamTemplate(
 	SQLUSMALLINT,
-	string,
+	const SQLCHAR*,
+	SQLSMALLINT,
 	SQLSMALLINT,
 	SQLULEN,
 	SQLSMALLINT,
@@ -315,7 +367,8 @@ template RParamTemplate<SQLREAL, Rcpp::NumericVector, double>::RParamTemplate(
 
 template RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>::RParamTemplate(
 	SQLUSMALLINT,
-	string,
+	const SQLCHAR*,
+	SQLSMALLINT,
 	SQLSMALLINT,
 	SQLULEN,
 	SQLSMALLINT,
@@ -326,7 +379,8 @@ template RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>::RParamTemplate(
 
 template RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>::RParamTemplate(
 	SQLUSMALLINT,
-	string,
+	const SQLCHAR*,
+	SQLSMALLINT,
 	SQLSMALLINT,
 	SQLULEN,
 	SQLSMALLINT,
@@ -337,7 +391,8 @@ template RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>::RParamTemplate(
 
 template RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>::RParamTemplate(
 	SQLUSMALLINT,
-	string,
+	const SQLCHAR*,
+	SQLSMALLINT,
 	SQLSMALLINT,
 	SQLULEN,
 	SQLSMALLINT,
@@ -348,7 +403,8 @@ template RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>::RParamTemplate(
 
 template RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int>::RParamTemplate(
 	SQLUSMALLINT,
-	string,
+	const SQLCHAR*,
+	SQLSMALLINT,
 	SQLSMALLINT,
 	SQLULEN,
 	SQLSMALLINT,

@@ -18,25 +18,42 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: Column.cpp
+// @File: RColumn.cpp
 //
 // Purpose:
-//  Class encapsulating a dataset's column attributes
+//  Class encapsulating a DataSet's column attributes
 //
 //*************************************************************************************************
 #include "Common.h"
-#include "Column.h"
+#include "RColumn.h"
 
-Column::Column(
-	std::string name,
-	SQLSMALLINT dataType,
-	SQLULEN size,
-	SQLSMALLINT nullable,
-	SQLSMALLINT decimalDigits)
+using namespace std;
+
+RColumn::RColumn(
+	const SQLCHAR *columnName,
+	SQLSMALLINT   columnNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       columnSize,
+	SQLSMALLINT   decimalDigits,
+	SQLSMALLINT   nullable)
 {
-	m_name = name;
+	const char *name = static_cast<const char*>(
+			static_cast<const void*>(columnName));
+
+	// columnNameLength does not include the null terminator.
+	//
+#if defined(_DEBUG)
+	if (static_cast<size_t>(columnNameLength) != strlen(name))
+	{
+		throw invalid_argument("Invalid parameter name length, it doesn't match string length.");
+	}
+#endif
+
+	// Store the information for this column
+	//
+	m_name = string(name, columnNameLength);
 	m_dataType = dataType;
-	m_size = size;
-	m_nullable = nullable;
+	m_size = columnSize;
 	m_decimalDigits = decimalDigits;
+	m_nullable = nullable;
 }

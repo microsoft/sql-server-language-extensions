@@ -50,16 +50,20 @@ RPathSettings::Init(
 	// the paths are used and avoids an additional flag.
 	//
 	m_languageParams =
-		(languageParams == nullptr) ? "" : reinterpret_cast<const char*>(languageParams);
+		(languageParams == nullptr) ? "" : static_cast<const char*>(
+			static_cast<const void*>(languageParams));
 
 	m_languagePath =
-		(languagePath == nullptr) ? "" : reinterpret_cast<const char*>(languagePath);
+		(languagePath == nullptr) ? "" : static_cast<const char*>(
+			static_cast<const void*>(languagePath));
 
 	m_publicLibraryPath =
-		(publicLibraryPath == nullptr) ? "" : reinterpret_cast<const char*>(publicLibraryPath);
+		(publicLibraryPath == nullptr) ? "" : static_cast<const char*>(
+			static_cast<const void*>(publicLibraryPath));
 
 	m_privateLibraryPath =
-		(privateLibraryPath == nullptr) ? "" : reinterpret_cast<const char*>(privateLibraryPath);
+		(privateLibraryPath == nullptr) ? "" : static_cast<const char*>(
+			static_cast<const void*>(privateLibraryPath));
 }
 
 string RPathSettings::m_languagePath;

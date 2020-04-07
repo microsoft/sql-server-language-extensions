@@ -75,6 +75,14 @@ typedef SQLRETURN FN_initParam(
 	SQLINTEGER,   // strLen_or_Ind
 	SQLSMALLINT); // inputOutputType
 
+typedef SQLRETURN FN_execute(
+	SQLGUID,        // sessionId
+	SQLUSMALLINT,   // taskId
+	SQLULEN,        // rowsNumber
+	SQLPOINTER *,   // data
+	SQLINTEGER **,  // strLenOrInd
+	SQLUSMALLINT *);// outputSchemaColumnsNumber
+
 typedef SQLRETURN FN_cleanupSession(
 	SQLGUID,       // sessionId
 	SQLUSMALLINT); // taskId
@@ -123,9 +131,13 @@ namespace ExtensionApiTest
 		//
 		static void DoInit();
 
-		// Set up default, valid variables for use in tests
+		// Set up default, valid variables for use in tests.
 		//
 		void SetupVariables();
+
+		// Delete the memory allocated to default variables.
+		//
+		void CleanupVariables();
 
 		// Close the handle to the library.
 		//
@@ -138,7 +150,15 @@ namespace ExtensionApiTest
 
 		// Initialize a valid, default session for later tests
 		//
-		void InitializeSession();
+		void InitializeSession(SQLUSMALLINT inputSchemaColumnsNumber = 0);
+
+		// Initialize a column
+		//
+		void InitializeColumn(
+			SQLSMALLINT columnNumber,
+			std::string columnNameString,
+			SQLSMALLINT dataType,
+			SQLULEN     columnSize);
 
 		// Cleanup a valid, default session for later tests
 		//
@@ -167,25 +187,86 @@ namespace ExtensionApiTest
 			SQLULEN        paramSize,
 			bool           isFixedType);
 
-		// Objects declared here can be used by all tests in the test suite
+		template<class SQLType>
+		void GenerateContiguousData(
+			SQLType                     *charCol1Data,
+			std::vector<const SQLType*> charVector,
+			SQLINTEGER                  *strLenOrInd);
+
+		SQLINTEGER GetSumOfLengths(
+			SQLINTEGER *strLenOrInd,
+			SQLULEN    rowsNumber);
+
+		// Templatized function to compare the given vector and data for equality.
+		//
+		template<class SQLType, class RType, SQLSMALLINT dataType>
+		void CheckVectorEquality(
+			SQLULEN     rowsNumber,
+			RType       vectorToTest,
+			void        *expectedVector,
+			SQLINTEGER  *strLen_or_Ind);
+
+		void CheckCharacterVectorEquality(
+			SQLULEN               expectedRowsNumber,
+			Rcpp::CharacterVector vectorToTest,
+			void                  *expectedData,
+			SQLINTEGER            *strLen_or_Ind);
+
+		// Templatized function to compare the given vectors for equality.
+		//
+		template<class RType>
+		void CheckVectorEquality(
+			RType vectorToTest,
+			RType expectedVector);
+
+		// Templatized function to compare the given dataframes for equality.
+		//
+		template<class RType>
+		void CheckDataFrameEquality(
+			Rcpp::DataFrame dataFrameToTest,
+			Rcpp::DataFrame expectedDataFrame);
+
+		// Templatized function to Test Execute with default script
+		//
+		template<class SQLType, class RType, SQLSMALLINT dataType>
+		void TestExecute(
+			SQLULEN                  rowsNumber,
+			void**                   dataSet,
+			SQLINTEGER               **strLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Test Execute with default script for Character columns.
+		//
+		void TestExecuteChar(
+			SQLULEN                  rowsNumber,
+			void                     **dataSet,
+			SQLINTEGER               **strLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Objects declared here can be used by all tests in the test suite.
 		//
 		SQLGUID *m_sessionId;
 		SQLUSMALLINT m_taskId;
 		SQLUSMALLINT m_numTasks;
 		SQLUSMALLINT m_parametersNumber;
 
-		const char *m_paramName = nullptr;
-		SQLSMALLINT m_paramNameLength;
+		SQLCHAR *m_paramName = nullptr;
+		std::string m_paramNameString;
 
-		SQLCHAR *m_script;
-		SQLSMALLINT m_scriptLength;
+		SQLCHAR *m_columnName = nullptr;
+		std::string m_columnNameString;
+
+		SQLCHAR *m_script = nullptr;
+		std::string m_scriptString;
 
 		SQLUSMALLINT m_inputSchemaColumnsNumber;
 		SQLCHAR *m_inputDataName;
-		SQLSMALLINT m_inputDataNameLength;
+		std::string m_inputDataNameString;
 
-		SQLCHAR *m_outputDataName;
-		SQLSMALLINT m_outputDataNameLength;
+		SQLCHAR *m_outputDataName = nullptr;
+		std::string m_outputDataNameString;
+
+		const std::string m_printMessage = "Hello RExtension World!";
 
 		// R global environment
 		//
@@ -210,6 +291,10 @@ namespace ExtensionApiTest
 		// Pointer to the InitParam function
 		//
 		static FN_initParam *m_initParamFuncPtr;
+
+		// Pointer to the Execute function
+		//
+		static FN_execute *m_executeFuncPtr;
 
 		// Pointer to the CleanupSession function
 		//

@@ -29,7 +29,8 @@
 #include <memory>
 #include <stdexcept>
 
-#include "Column.h"
+#include "RColumn.h"
+#include "RDataSet.h"
 #include "Logger.h"
 #include "RParam.h"
 #include "RParamContainer.h"
@@ -72,35 +73,20 @@ void RSession::Init(
 
 	// scriptLength does not include the null terminator.
 	//
-	m_script = string(reinterpret_cast<const char*>(script), scriptLength);
+	m_script = string(static_cast<const char*>(
+		static_cast<const void *>(script)), scriptLength);
 
 	// Initialize the InputDataSet
 	//
-	if (inputDataName == nullptr)
-	{
-		throw invalid_argument("Invalid InputDataName, the InputDataName value cannot be nullptr");
-	}
+	m_inputDataSet.Init(inputDataName, inputDataNameLength, inputSchemaColumnsNumber);
 
-	// inputDataNameLength does not include the null terminator.
+	// Initialize the OutputDataSet. It is initialized with 0 columns.
+	// Columns will be added after the script is evaluated and as per what the
+	// the script execution defines the OutputDataSet to be.
 	//
-	m_inputDataSetName = string(reinterpret_cast<const char*>(inputDataName),
-							inputDataNameLength);
-
-	// Initialize the OutputDataSet
-	//
-	if (outputDataName == nullptr)
-	{
-		throw invalid_argument("Invalid OutputDataName, the OutputDataName value cannot be nullptr");
-	}
-
-	// outputDataNameLength does not include the null terminator.
-	//
-	m_outputDataSetName = string(reinterpret_cast<const char*>(outputDataName),
-							outputDataNameLength);
-
-	// Initialize the rest of the parameters like storing the schema
-	//
-	m_inputSchemaColumnsNumber = inputSchemaColumnsNumber;
+	m_outputDataSet.Init(outputDataName,
+		outputDataNameLength,
+		0);    // schemaColumnsNumber
 
 	// Initialize the parameters container.
 	//
@@ -126,20 +112,14 @@ void RSession::InitColumn(
 {
 	LOG("RSession::InitColumn " + to_string(columnNumber));
 
-	if (columnName == nullptr)
-	{
-		throw invalid_argument("Invalid input column name supplied");
-	}
-	else if (columnNumber >= m_inputSchemaColumnsNumber)
-	{
-		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
-	}
-
-	// Store the information for this column
-	//
-	string name(reinterpret_cast<const char*>(columnName), columnNameLength);
-
-	m_inputColumns.push_back(make_unique<Column>(name, dataType, columnSize, nullable, decimalDigits));
+	m_inputDataSet.InitColumn(
+		columnNumber,
+		columnName,
+		columnNameLength,
+		dataType,
+		columnSize,
+		decimalDigits,
+		nullable);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -149,15 +129,15 @@ void RSession::InitColumn(
 //  Initializes the parameter for this session
 //
 void RSession::InitParam(
-	SQLUSMALLINT   paramNumber,
+	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
-	SQLSMALLINT    paramNameLength,
-	SQLSMALLINT    dataType,
-	SQLULEN        paramSize,
-	SQLSMALLINT    decimalDigits,
-	SQLPOINTER     paramValue,
-	SQLINTEGER     strLen_or_Ind,
-	SQLSMALLINT    inputOutputType)
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
 {
 	LOG("RSession::InitParam");
 
@@ -170,18 +150,12 @@ void RSession::InitParam(
 		throw invalid_argument("Invalid input param id supplied: " + to_string(paramNumber));
 	}
 
-	// +1 points to the next character after @ in front of the parameter name.
-	// paramNameLength includes @ so do a -1 to exclude it.
-	//
-	string name(reinterpret_cast<const char*>((paramName + 1)), paramNameLength - 1);
-
-	LOG("RSession::InitParam: Initializing parameter " + name);
-
 	// Add parameter to the container and embedded R environment.
 	//
 	m_paramContainer.AddParamToEmbeddedR(
 		paramNumber,
-		name,
+		paramName,
+		paramNameLength,
 		dataType,
 		paramSize,
 		decimalDigits,
@@ -197,12 +171,33 @@ void RSession::InitParam(
 //  Execute the workflow for the session
 //
 void RSession::ExecuteWorkflow(
-	SQLULEN       rowsNumber,
+	SQLULEN      rowsNumber,
 	SQLPOINTER   *data,
-	SQLINTEGER  **strLen_or_Ind,
+	SQLINTEGER   **strLen_or_Ind,
 	SQLUSMALLINT *outputSchemaColumnsNumber)
 {
+	LOG("RSession::ExecuteWorkflow");
 
+	// Add columns to the input DataFrame.
+	//
+	m_inputDataSet.AddColumnsToDataFrame(rowsNumber, data, strLen_or_Ind);
+
+	// Add the DataFrame for InputDataSet to the R environment.
+	//
+	m_inputDataSet.AddDataFrameToEmbeddedR();
+
+	// Execute the script, any standard output or error is flushed to the console.
+	//
+	(*g_embeddedRPtr).parseEvalQ(m_script.c_str());
+
+	// After script evaluation, retrieve the DataFrame for OutputDataSet.
+	//
+	m_outputDataSet.RetrieveDataFrameFromEmbeddedR();
+
+	// Get the column number from the underlying DataFrame
+	// and set it to be the outputSchemaColumnsNumber.
+	//
+	*outputSchemaColumnsNumber = m_outputDataSet.GetDataFrameColumnsNumber();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -212,7 +207,7 @@ void RSession::ExecuteWorkflow(
 //  Returns information about the output column
 //
 void RSession::GetResultColumn(
-	SQLUSMALLINT  columnNumber,
+	SQLUSMALLINT columnNumber,
 	SQLSMALLINT  *dataType,
 	SQLULEN      *columnSize,
 	SQLSMALLINT  *decimalDigits,
@@ -228,8 +223,8 @@ void RSession::GetResultColumn(
 //	Returns the output data and the null map retrieved from the user program
 //
 void RSession::GetResults(
-	SQLULEN      *rowsNumber,
-	SQLPOINTER  **data,
+	SQLULEN    *rowsNumber,
+	SQLPOINTER **data,
 	SQLINTEGER ***strLen_or_Ind)
 {
 
@@ -243,8 +238,8 @@ void RSession::GetResults(
 //
 void RSession::GetOutputParam(
 	SQLUSMALLINT paramNumber,
-	SQLPOINTER  *paramValue,
-	SQLINTEGER  *strLen_or_Ind)
+	SQLPOINTER   *paramValue,
+	SQLINTEGER   *strLen_or_Ind)
 {
 
 }

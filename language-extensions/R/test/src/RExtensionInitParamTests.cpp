@@ -425,7 +425,6 @@ namespace ExtensionApiTest
 		SQLType paramValue,
 		bool inRange)
 	{
-		SQLCHAR *unsignedParamName = reinterpret_cast<SQLCHAR*>(const_cast<char *>(m_paramName));
 		unique_ptr<SQLType> pParamValue = nullptr;
 
 		// Generate pParamValue if the value is in range OR if its a non-zero out of range value.
@@ -441,8 +440,8 @@ namespace ExtensionApiTest
 				*m_sessionId,
 				m_taskId,
 				0,                // paramNumber
-				unsignedParamName,
-				m_paramNameLength,
+				m_paramName,
+				m_paramNameString.length(),
 				dataType,
 				sizeof(SQLType),  // paramSize
 				0,                // decimalDigits
@@ -453,7 +452,7 @@ namespace ExtensionApiTest
 
 		// Do + 1 to skip the @ from the paramName
 		//
-		RType param = m_globalEnvironment[m_paramName + 1];
+		RType param = m_globalEnvironment[m_paramNameString.c_str() + 1];
 		if (inRange)
 		{
 			if (dataType == SQL_C_BIT)
@@ -481,7 +480,6 @@ namespace ExtensionApiTest
 		SQLULEN     paramSize,
 		bool        isFixedType)
 	{
-		SQLCHAR *unsignedParamName = reinterpret_cast<SQLCHAR*>(const_cast<char *>(m_paramName));
 		char fixedParamValue[paramSize+1] = {0};
 		SQLINTEGER strLenOrInd = 0;
 		char *expectedParamValue = nullptr;
@@ -523,8 +521,8 @@ namespace ExtensionApiTest
 				*m_sessionId,
 				m_taskId,
 				0,                // paramNumber
-				unsignedParamName,
-				m_paramNameLength,
+				m_paramName,
+				m_paramNameString.length(),
 				SQL_C_CHAR,
 				paramSize,
 				0,               // decimalDigits
@@ -536,7 +534,7 @@ namespace ExtensionApiTest
 
 		// Do + 1 to skip the @ from the paramName
 		//
-		Rcpp::CharacterVector param = m_globalEnvironment[m_paramName + 1];
+		Rcpp::CharacterVector param = m_globalEnvironment[m_paramNameString.c_str() + 1];
 		if (paramValue != nullptr)
 		{
 			EXPECT_EQ(param[0], const_cast<const char*>(expectedParamValue));
@@ -558,7 +556,6 @@ namespace ExtensionApiTest
 		SQLULEN        paramSize,
 		bool           isFixedType)
 	{
-		SQLCHAR *unsignedParamName = reinterpret_cast<SQLCHAR*>(const_cast<char *>(m_paramName));
 		SQLCHAR fixedParamValue[paramSize] = {0};
 		SQLCHAR *expectedParamValue = nullptr;
 
@@ -580,8 +577,8 @@ namespace ExtensionApiTest
 				*m_sessionId,
 				m_taskId,
 				0,                // paramNumber
-				unsignedParamName,
-				m_paramNameLength,
+				m_paramName,
+				m_paramNameString.length(),
 				SQL_C_BINARY,
 				paramSize,
 				0,                  // decimalDigits
@@ -592,7 +589,7 @@ namespace ExtensionApiTest
 
 		// Do + 1 to skip the @ from the paramName
 		//
-		Rcpp::RawVector param = m_globalEnvironment[m_paramName + 1];
+		Rcpp::RawVector param = m_globalEnvironment[m_paramNameString.c_str() + 1];
 
 		if (paramValue != nullptr)
 		{

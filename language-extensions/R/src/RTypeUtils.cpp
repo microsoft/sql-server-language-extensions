@@ -65,7 +65,7 @@ RType RTypeUtils::CreateVector(
 		}
 		else
 		{
-			SQLType value = reinterpret_cast<SQLType *>(data)[j];
+			SQLType value = static_cast<SQLType *>(data)[j];
 			vectorInR.push_back(value);
 		}
 	}
@@ -83,8 +83,8 @@ RType RTypeUtils::CreateVector(
 // If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_LOGICAL value.
 //
 Rcpp::LogicalVector RTypeUtils::CreateLogicalVector(
-	SQLULEN     rowsNumber,
-	SQLPOINTER  data,
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
 	SQLINTEGER *strLen_or_Ind)
 {
 	LOG("RTypeUtils::CreateLogicalVector");
@@ -98,7 +98,7 @@ Rcpp::LogicalVector RTypeUtils::CreateLogicalVector(
 		}
 		else
 		{
-			SQLCHAR value = reinterpret_cast<SQLCHAR *>(data)[j];
+			SQLCHAR value = static_cast<SQLCHAR *>(data)[j];
 			if (value != '0')
 			{
 				logicalVector.push_back(true);
@@ -123,13 +123,13 @@ Rcpp::LogicalVector RTypeUtils::CreateLogicalVector(
 // If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_STRING value.
 //
 Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
-	SQLULEN     rowsNumber,
-	SQLPOINTER  data,
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
 	SQLINTEGER *strLen_or_Ind)
 {
 	LOG("RTypeUtils::CreateCharacterVector");
 
-	char *baseCharData = reinterpret_cast<char *>(data);
+	char *baseCharData = static_cast<char *>(data);
 	SQLULEN cumulativeLength = 0;
 	Rcpp::CharacterVector charVector = Rcpp::CharacterVector::create();
 
@@ -164,15 +164,15 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 // If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the empty raw(0) element.
 //
 Rcpp::RawVector RTypeUtils::CreateRawVector(
-	SQLULEN     rowsNumber,
-	SQLPOINTER  data,
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
 	SQLINTEGER *strLen_or_Ind)
 {
 	LOG("RTypeUtils::CreateRawVector");
 
 	Rcpp::RawVector rawVector = Rcpp::RawVector::create();
 	Rcpp::RawVector valueForNA = Rcpp::RawVector::create();
-	SQLCHAR* baseRawData = reinterpret_cast<SQLCHAR *>(data);
+	SQLCHAR* baseRawData = static_cast<SQLCHAR *>(data);
 	int cumulativeRawDataLength = 0;
 
 	for (SQLULEN j = 0; j < rowsNumber; j++)
@@ -187,7 +187,7 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 		}
 		else
 		{
-			SQLCHAR* rawData = reinterpret_cast<SQLCHAR *>(baseRawData) + cumulativeRawDataLength;
+			SQLCHAR* rawData = static_cast<SQLCHAR *>(baseRawData) + cumulativeRawDataLength;
 			for(int index = 0; index < strLen_or_Ind[j]; ++index)
 			{
 				SQLCHAR value = *(rawData + index);

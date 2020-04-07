@@ -36,27 +36,20 @@
 
 namespace ExtensionApiTest
 {
-	// Positive test
-	// Test InitColumn() API with valid values
+	// Positive and negative test
+	// Test InitColumn() API with valid values, can initialize only once.
 	//
 	TEST_F(RExtensionApiTest, InitColumnTest)
 	{
-		InitializeSession();
-
-		SQLCHAR * columnName = reinterpret_cast<SQLCHAR*>(const_cast<char *>("Column1"));
-
-		// columnNameLength is length of columnName + the null terminator
-		//
-		SQLSMALLINT columnNameLength = 8;
+		InitializeSession(m_inputSchemaColumnsNumber);
 
 		SQLRETURN result = SQL_ERROR;
-
 		result = (*m_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				0,
-				columnName,
-				columnNameLength,
+				m_columnName,
+				m_columnNameString.length(),
 				SQL_C_SLONG,   // dataType
 				sizeof(int),   // columnSize
 				0,             // decimalDigits
@@ -64,6 +57,20 @@ namespace ExtensionApiTest
 				-1,            // partitionByNumber
 				-1);           // orderByNumber
 		EXPECT_EQ(result, SQL_SUCCESS);
+
+		result = (*m_initColumnFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,
+			m_columnName,
+			m_columnNameString.length(),
+			SQL_C_SLONG,   // dataType
+			sizeof(int),   // columnSize
+			0,             // decimalDigits
+			1,             // nullable
+			-1,            // partitionByNumber
+			-1);           // orderByNumber
+		EXPECT_EQ(result, SQL_ERROR);
 	}
 
 	// Negative test
@@ -71,7 +78,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitInvalidColumnTest)
 	{
-		InitializeSession();
+		InitializeSession(m_inputSchemaColumnsNumber);
 
 		SQLRETURN result = SQL_SUCCESS;
 		result = (*m_initColumnFuncPtr)(
@@ -95,23 +102,44 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitInvalidColumnNumberTest)
 	{
-		InitializeSession();
+		InitializeSession(m_inputSchemaColumnsNumber);
 
-		SQLCHAR * columnName = reinterpret_cast<SQLCHAR*>(const_cast<char *>("Hello"));
-		SQLSMALLINT columnNameLength = 6;
 		SQLRETURN result = SQL_SUCCESS;
 		result = (*m_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				m_inputSchemaColumnsNumber + 1, // column number greater than inputSchemaColumnsNumber
-				columnName,
-				columnNameLength,
+				m_columnName,
+				m_columnNameString.length(),
 				SQL_C_SLONG,   // dataType
 				sizeof(int),   // columnSize
 				0,             // decimalDigits
 				1,             // nullable
 				-1,            // partitionByNumber
 				-1);           // orderByNumber
+		EXPECT_EQ(result, SQL_ERROR);
+	}
+
+	// Negative test
+	// Test InitColumn() API with unsupported column datatype
+	//
+	TEST_F(RExtensionApiTest, InitInvalidColumnDataTypeTest)
+	{
+		InitializeSession(m_inputSchemaColumnsNumber);
+
+		SQLRETURN result = SQL_SUCCESS;
+		result = (*m_initColumnFuncPtr)(
+				*m_sessionId,
+				m_taskId,
+				0,
+				m_columnName,
+				m_columnNameString.length(),
+				SQL_C_BINARY,   // Unsupported dataType
+				sizeof(SQLCHAR),// columnSize
+				0,              // decimalDigits
+				1,              // nullable
+				-1,             // partitionByNumber
+				-1);            // orderByNumber
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 }

@@ -72,8 +72,8 @@ std::string Utilities::ConvertGuidToString(const SQLGUID *guid)
 //	nothing.
 //
 void Utilities::Tokenize(
-	char *input,
-	const char *delimiter,
+	char           *input,
+	const char     *delimiter,
 	vector<char *> *tokens)
 {
 	char *internalState = nullptr;

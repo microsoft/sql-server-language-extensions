@@ -26,8 +26,6 @@
 //*************************************************************************************************
 #pragma once
 
-using namespace std;
-
 //	Global class storing the language runtime paths and parameters
 //
 class RPathSettings
@@ -43,23 +41,23 @@ public:
 
 	// Get the private library path sent by SQL Server
 	//
-	static const string& GetPrivateLibraryPath() {return m_privateLibraryPath; }
+	static const std::string& GetPrivateLibraryPath() {return m_privateLibraryPath; }
 
 	// Get the public library path sent by SQL Server
 	//
-	static const string& GetPublicLibraryPath() {return m_publicLibraryPath; }
+	static const std::string& GetPublicLibraryPath() {return m_publicLibraryPath; }
 
 	// Get the extension root folder
 	//
-	static const string& GetRootPath() {return m_languagePath; }
+	static const std::string& GetRootPath() {return m_languagePath; }
 
 	// Get the language parameters sent by SQL Server
 	//
-	static const string& GetParams() {return m_languageParams; }
+	static const std::string& GetParams() {return m_languageParams; }
 
 private:
-	static string m_languagePath;
-	static string m_languageParams;
-	static string m_privateLibraryPath;
-	static string m_publicLibraryPath;
+	static std::string m_languagePath;
+	static std::string m_languageParams;
+	static std::string m_privateLibraryPath;
+	static std::string m_publicLibraryPath;
 };

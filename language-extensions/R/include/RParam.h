@@ -26,8 +26,6 @@
 //*************************************************************************************************
 #pragma once
 
-using namespace std;
-
 //-------------------------------------------------------------------------------------------------
 // Name: RParam
 //
@@ -43,13 +41,14 @@ public:
 	// Constructor to initialize the members
 	//
 	RParam(
-		SQLUSMALLINT id,
-		string       name,
-		SQLSMALLINT  type,
-		SQLULEN      size,
-		SQLSMALLINT  decimalDigits,
-		SQLINTEGER   strLen_or_Ind,
-		SQLSMALLINT  inputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
 
 	// Verifies if the input paramSize is equal to the size of the template type T.
 	//
@@ -58,14 +57,14 @@ public:
 
 	// Get m_name
 	//
-	string GetName() const
+	const std::string& Name() const
 	{
 		return m_name;
 	}
 
 	// Get m_strLenOrInd
 	//
-	SQLINTEGER GetStrLenOrInd()
+	SQLINTEGER StrLenOrInd() const
 	{
 		return m_strLenOrInd;
 	}
@@ -78,11 +77,11 @@ private:
 
 	// Name of the parameter.
 	//
-	string m_name;
+	std::string m_name;
 
 	// Data type of the parameter.
 	//
-	SQLSMALLINT m_type;
+	SQLSMALLINT m_dataType;
 
 	// Size of the parameter.
 	//
@@ -129,15 +128,16 @@ public:
 	// Constructor to initialize the members
 	//
 	RParamTemplate(
-		SQLUSMALLINT id,
-		string       name,
-		SQLSMALLINT  type,
-		SQLULEN      size,
-		SQLSMALLINT  decimalDigits,
-		SQLPOINTER   paramValue,
-		SQLINTEGER   strLen_or_Ind,
-		SQLSMALLINT  inputOutputType,
-		const NAType valueForNA);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType,
+		const NAType  valueForNA);
 
 	// Get m_RcppVector
 	//
@@ -173,14 +173,15 @@ public :
 	// Constructor to initialize the members
 	//
 	RLogicalParam(
-		SQLUSMALLINT id,
-		string       name,
-		SQLSMALLINT  type,
-		SQLULEN      size,
-		SQLSMALLINT  decimalDigits,
-		SQLPOINTER   paramValue,
-		SQLINTEGER   strLen_or_Ind,
-		SQLSMALLINT  inputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
 
 	// Get m_RcppVector
 	//
@@ -214,14 +215,15 @@ public :
 	// Constructor to initialize the members
 	//
 	RCharacterParam(
-		SQLUSMALLINT id,
-		string       name,
-		SQLSMALLINT  type,
-		SQLULEN      size,
-		SQLSMALLINT  decimalDigits,
-		SQLPOINTER   paramValue,
-		SQLINTEGER   strLen_or_Ind,
-		SQLSMALLINT  inputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
 
 	// Get m_RcppVector
 	//
@@ -255,14 +257,15 @@ public:
 	// Constructor to initialize the members
 	//
 	RRawParam(
-		SQLUSMALLINT id,
-		string       name,
-		SQLSMALLINT  type,
-		SQLULEN      size,
-		SQLSMALLINT  decimalDigits,
-		SQLPOINTER   paramValue,
-		SQLINTEGER   strLen_or_Ind,
-		SQLSMALLINT  inputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
 
 	// Get m_RcppVector
 	//

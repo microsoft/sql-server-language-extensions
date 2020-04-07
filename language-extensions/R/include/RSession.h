@@ -39,33 +39,31 @@ public:
 	// Constructor to initialize the members
 	//
 	RSession()
-		:	m_sessionId({ 0, 0, 0, {0} }),
+		: m_sessionId({ 0, 0, 0, {0} }),
 		m_taskId(0),
-		m_numTasks(0),
-		m_inputSchemaColumnsNumber(0),
-		m_numberOfOutputRows(0)
+		m_numTasks(0)
 	{}
 
 	// Init the session
 	//
 	void Init(
-		const SQLGUID &sessionId,
+		const SQLGUID  &sessionId,
 		SQLUSMALLINT   taskId,
 		SQLUSMALLINT   numTasks,
-		const SQLCHAR *script,
+		const SQLCHAR  *script,
 		SQLULEN        scriptLength,
 		SQLUSMALLINT   inputSchemaColumnsNumber,
 		SQLUSMALLINT   parametersNumber,
-		const SQLCHAR *inputDataName,
+		const SQLCHAR  *inputDataName,
 		SQLUSMALLINT   inputDataNameLength,
-		const SQLCHAR *outputDataName,
+		const SQLCHAR  *outputDataName,
 		SQLUSMALLINT   outputDataNameLength);
 
 	// Init the input column
 	//
 	void InitColumn(
 		SQLUSMALLINT   columnNumber,
-		const SQLCHAR *columnName,
+		const SQLCHAR  *columnName,
 		SQLSMALLINT    columnNameLength,
 		SQLSMALLINT    dataType,
 		SQLULEN        columnSize,
@@ -78,7 +76,7 @@ public:
 	//
 	void InitParam(
 		SQLUSMALLINT   paramNumber,
-		const SQLCHAR *paramName,
+		const SQLCHAR  *paramName,
 		SQLSMALLINT    paramNameLength,
 		SQLSMALLINT    dataType,
 		SQLULEN        paramSize,
@@ -91,32 +89,32 @@ public:
 	//
 	void ExecuteWorkflow(
 		SQLULEN       rowsNumber,
-		SQLPOINTER   *data,
-		SQLINTEGER  **strLen_or_Ind,
-		SQLUSMALLINT *outputSchemaColumnsNumber);
+		SQLPOINTER    *data,
+		SQLINTEGER    **strLen_or_Ind,
+		SQLUSMALLINT  *outputSchemaColumnsNumber);
 
 	// Get the metadata for the output column
 	//
 	void GetResultColumn(
 		SQLUSMALLINT columnNumber,
-		SQLSMALLINT *dataType,
-		SQLULEN     *columnSize,
-		SQLSMALLINT *decimalDigits,
-		SQLSMALLINT *nullable);
+		SQLSMALLINT  *dataType,
+		SQLULEN      *columnSize,
+		SQLSMALLINT  *decimalDigits,
+		SQLSMALLINT  *nullable);
 
 	// Get the results
 	//
 	void GetResults(
 		SQLULEN      *rowsNumber,
-		SQLPOINTER  **data,
-		SQLINTEGER ***strLen_or_Ind);
+		SQLPOINTER   **data,
+		SQLINTEGER   ***strLen_or_Ind);
 
 	// Get the the output parameter
 	//
 	void GetOutputParam(
 		SQLUSMALLINT paramNumber,
-		SQLPOINTER  *paramValue,
-		SQLINTEGER  *strLen_or_Ind);
+		SQLPOINTER   *paramValue,
+		SQLINTEGER   *strLen_or_Ind);
 
 	// Cleanup session
 	//
@@ -128,27 +126,22 @@ private:
 	SQLUSMALLINT m_taskId = 0;                // Task ID for this session
 	SQLUSMALLINT m_numTasks = 0;              // Number of tasks for this session
 
+	// The R script.
+	//
 	std::string m_script;
 
 	// Parameter container.
 	//
 	RParamContainer m_paramContainer;
 
-	// Input data information (schema, null map, etc.)
-	//
-	SQLUSMALLINT m_inputSchemaColumnsNumber = 0;
-	std::vector<std::unique_ptr<Column>> m_inputColumns;
-	std::string m_inputDataSetName;           // InputDataSet name in R
-
 	std::vector<SQLSMALLINT> m_partitionByIndexes;
 	std::vector<SQLSMALLINT> m_orderByIndexes;
 
-	// Output data information (schema, null map, etc.)
+	// InputDataSet
 	//
-	SQLULEN m_numberOfOutputRows = 0;
-	SQLUSMALLINT m_outputSchemaColumnsNumber = 0;
-	std::vector<std::unique_ptr<Column>> m_outputColumns;
-	std::vector<SQLINTEGER*> m_outputNullMap;
-	std::string m_outputDataSetName;          // OutputDataset name in R
-	std::vector<SQLPOINTER> m_outputData;
+	RInputDataSet m_inputDataSet;
+
+	// OutputDataSet
+	//
+	ROutputDataSet m_outputDataSet;
 };

@@ -62,6 +62,7 @@ namespace ExtensionApiTest
 	FN_initSession *RExtensionApiTest::m_initSessionFuncPtr = nullptr;
 	FN_initColumn *RExtensionApiTest::m_initColumnFuncPtr = nullptr;
 	FN_initParam *RExtensionApiTest::m_initParamFuncPtr = nullptr;
+	FN_execute *RExtensionApiTest::m_executeFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
 
@@ -97,6 +98,7 @@ namespace ExtensionApiTest
 	//
 	void RExtensionApiTest::TearDown()
 	{
+		CleanupVariables();
 		CleanupSession();
 	}
 
@@ -157,6 +159,12 @@ namespace ExtensionApiTest
 			"InitParam"));
 		ASSERT_TRUE(m_initParamFuncPtr != nullptr);
 
+		m_executeFuncPtr = reinterpret_cast<FN_execute*>(
+			Utilities::CrossPlatGetFunctionFromLibHandle(
+				m_libHandle,
+				"Execute"));
+		ASSERT_TRUE(m_executeFuncPtr != nullptr);
+
 		m_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
 				m_libHandle,
@@ -209,24 +217,50 @@ namespace ExtensionApiTest
 		m_inputSchemaColumnsNumber = 1;
 		m_parametersNumber = 1;
 
-		m_paramName = "@param1";
-		m_paramNameLength = string(m_paramName).length();
+		m_paramNameString = "@param1";
+		m_paramName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_paramNameString.c_str()))
+			);
 
-		string scriptString = "print('Hello World!')";
-		m_script = reinterpret_cast<SQLCHAR *>(const_cast<char *>(scriptString.c_str()));
-		m_scriptLength = scriptString.length();
+		m_columnNameString = "Column1";
+		m_columnName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_columnNameString.c_str()))
+			);
 
-		string inputDataNameString = "InputDataSet";
-		m_inputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(inputDataNameString.c_str()));
-		m_inputDataNameLength = inputDataNameString.length();
+		m_scriptString = "print('" + m_printMessage + "');"
+			"OutputDataSet <- InputDataSet;"
+			"print('InputDataSet:'); print(InputDataSet);"
+			"print('OutputDataSet:'); print(OutputDataSet);";
+		m_script = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_scriptString.c_str()))
+			);
 
-		string outputDataNameString = "OutputDataSet";
-		m_outputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(outputDataNameString.c_str()));
-		m_outputDataNameLength = outputDataNameString.length();
+		m_inputDataNameString = "InputDataSet";
+		m_inputDataName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_inputDataNameString.c_str()))
+			);
+
+		m_outputDataNameString = "OutputDataSet";
+		m_outputDataName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str()))
+			);
 
 		// Retrieve the global environment
 		//
 		m_globalEnvironment = Rcpp::Environment::global_env();
+	}
+
+	// Name: CleanupVariables
+	//
+	// Description:
+	// Delete the memory allocated to default variables.
+	//
+	void RExtensionApiTest::CleanupVariables()
+	{
+		if (m_sessionId != nullptr)
+		{
+			delete m_sessionId;
+		}
 	}
 
 	// Name: ReleaseHandles
@@ -259,7 +293,7 @@ namespace ExtensionApiTest
 	// Description:
 	// Initialize a valid, default session for later tests
 	//
-	void RExtensionApiTest::InitializeSession()
+	void RExtensionApiTest::InitializeSession(SQLUSMALLINT inputSchemaColumnsNumber)
 	{
 		SQLRETURN result = SQL_SUCCESS;
 
@@ -268,13 +302,13 @@ namespace ExtensionApiTest
 			m_taskId,
 			m_numTasks,
 			m_script,
-			m_scriptLength,
-			m_inputSchemaColumnsNumber,
+			m_scriptString.length(),
+			inputSchemaColumnsNumber,
 			m_parametersNumber,
 			m_inputDataName,
-			m_inputDataNameLength,
+			m_inputDataNameString.length(),
 			m_outputDataName,
-			m_outputDataNameLength);
+			m_outputDataNameString.length());
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}

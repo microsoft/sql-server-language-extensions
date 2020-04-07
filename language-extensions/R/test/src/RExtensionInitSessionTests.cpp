@@ -47,13 +47,13 @@ namespace ExtensionApiTest
 			m_taskId,
 			m_numTasks,
 			m_script,
-			m_scriptLength,
+			m_scriptString.length(),
 			m_inputSchemaColumnsNumber,
 			m_parametersNumber,
 			m_inputDataName,
-			m_inputDataNameLength,
+			m_inputDataNameString.length(),
 			m_outputDataName,
-			m_outputDataNameLength);
+			m_outputDataNameString.length());
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
@@ -73,9 +73,9 @@ namespace ExtensionApiTest
 			m_inputSchemaColumnsNumber,
 			m_parametersNumber,
 			m_inputDataName,
-			m_inputDataNameLength,
+			m_inputDataNameString.length(),
 			m_outputDataName,
-			m_outputDataNameLength);
+			m_outputDataNameString.length());
 		EXPECT_EQ(result, SQL_ERROR);
 		CleanupSession();
 
@@ -85,13 +85,13 @@ namespace ExtensionApiTest
 			m_taskId,
 			m_numTasks,
 			m_script,
-			m_scriptLength,
+			m_scriptString.length(),
 			m_inputSchemaColumnsNumber,
 			m_parametersNumber,
 			nullptr,                    // inputDataName
 			0,                          // inputDataNameLength
 			m_outputDataName,
-			m_outputDataNameLength);
+			m_outputDataNameString.length());
 		EXPECT_EQ(result, SQL_ERROR);
 		CleanupSession();
 
@@ -101,11 +101,11 @@ namespace ExtensionApiTest
 			m_taskId,
 			m_numTasks,
 			m_script,
-			m_scriptLength,
+			m_scriptString.length(),
 			m_inputSchemaColumnsNumber,
 			m_parametersNumber,
 			m_inputDataName,
-			m_inputDataNameLength,
+			m_inputDataNameString.length(),
 			nullptr,                    // outputDataName
 			0);                         // outputDataNameLength
 		EXPECT_EQ(result, SQL_ERROR);

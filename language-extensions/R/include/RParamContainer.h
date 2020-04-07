@@ -26,8 +26,6 @@
 //*************************************************************************************************
 #pragma once
 
-using namespace std;
-
 //-------------------------------------------------------------------------------------------------
 // Name: RParamContainer
 //
@@ -45,14 +43,15 @@ public:
 	// to the embedded R environment and stores it in m_params for future use.
 	//
 	void AddParamToEmbeddedR(
-		SQLUSMALLINT paramNumber,
-		std::string name,
-		SQLSMALLINT dataType,
-		SQLULEN     paramSize,
-		SQLSMALLINT decimalDigits,
-		SQLPOINTER  paramValue,
-		SQLINTEGER  strLen_or_Ind,
-		SQLSMALLINT inputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
 
 	// In debug or verbose mode, prints the parameter value as retrieved from the embedded R environment.
 	//
@@ -70,5 +69,5 @@ public:
 
 private:
 
-	vector<unique_ptr<RParam>> m_params;
+	std::vector<std::unique_ptr<RParam>> m_params;
 };

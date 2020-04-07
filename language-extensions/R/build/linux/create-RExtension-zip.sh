@@ -1,13 +1,13 @@
 #!/bin/bash
 
 function check_exit_code {
-    EXIT_CODE=$?
-    if [ ${EXIT_CODE} -eq 0 ]; then
-        echo "Success: Created zip for $1 config"
-    else
-        echo "Error: Failed to create zip for $1 config"
-        exit ${EXIT_CODE}
-    fi
+	EXIT_CODE=$?
+	if [ ${EXIT_CODE} -eq 0 ]; then
+		echo "Success: Created zip for $1 config"
+	else
+		echo "Error: Failed to create zip for $1 config"
+		exit ${EXIT_CODE}
+	fi
 }
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"

@@ -27,12 +27,10 @@
 
 #pragma once
 
-using namespace std;
-
 class Utilities
 {
 public:
 	static std::string ConvertGuidToString(const SQLGUID * guid);
-	static void Tokenize(char *input, const char* delimiter, vector<char*> *tokens);
-	static unique_ptr<char> GenerateUniquePtr(const string &input);
+	static void Tokenize(char *input, const char* delimiter, std::vector<char*> *tokens);
+	static std::unique_ptr<char> GenerateUniquePtr(const std::string &input);
 };

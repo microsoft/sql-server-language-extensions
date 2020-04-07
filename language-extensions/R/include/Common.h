@@ -36,6 +36,6 @@
 #include <string>
 #include <vector>
 
-#include <RInside.h> // for the embedded R via RInside
+#include "RInside.h" // for the embedded R via RInside
 
 extern std::unique_ptr<RInside> g_embeddedRPtr;

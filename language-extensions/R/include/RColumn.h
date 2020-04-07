@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: Column.h
+// @File: RColumn.h
 //
 // Purpose:
 //  Class encapsulating a dataset's column attributes
@@ -28,45 +28,61 @@
 
 // Encapsulate column information
 //
-class Column
+class RColumn
 {
 public:
-	Column(
-		std::string name,
-		SQLSMALLINT dataType,
-		SQLULEN size,
-		SQLSMALLINT nullable,
-		SQLSMALLINT decimalDigits);
+	RColumn(
+		const SQLCHAR *columnName,
+		SQLSMALLINT   columnNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       columnSize,
+		SQLSMALLINT   decimalDigits,
+		SQLSMALLINT   nullable);
 
 	const std::string& Name() const
 	{
 		return m_name;
 	}
 
-	const SQLSMALLINT& DataType() const
+	SQLSMALLINT DataType() const
 	{
 		return m_dataType;
 	}
 
-	const SQLULEN& Size() const
+	SQLULEN Size() const
 	{
 		return m_size;
 	}
 
-	const SQLSMALLINT& Nullable() const
+	SQLSMALLINT Nullable() const
 	{
 		return m_nullable;
 	}
 
-	const SQLSMALLINT& DecimalDigits() const
+	SQLSMALLINT DecimalDigits() const
 	{
 		return m_decimalDigits;
 	}
 
 private:
+
+	// Name of the column.
+	//
 	std::string m_name;
+
+	// Data Type of the column.
+	//
 	SQLSMALLINT m_dataType;
+
+	// Size of the column.
+	//
 	SQLULEN m_size;
+
+	// The column is nullable or not.
+	//
 	SQLSMALLINT m_nullable;
+
+	// Decimal digits of the column.
+	//
 	SQLSMALLINT m_decimalDigits;
 };

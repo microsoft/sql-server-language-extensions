@@ -60,19 +60,19 @@ void RParamContainer::Init(SQLSMALLINT paramsNumber)
 // Creation is done by calling the respective constructor based on the datatype.
 //
 void RParamContainer::AddParamToEmbeddedR(
-	SQLUSMALLINT paramNumber,
-	std::string  name,
-	SQLSMALLINT  dataType,
-	SQLULEN      paramSize,
-	SQLSMALLINT  decimalDigits,
-	SQLPOINTER   paramValue,
-	SQLINTEGER   strLen_or_Ind,
-	SQLSMALLINT  inputOutputType)
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
 {
 	LOG("RParamContainer::AddParamToEmbeddedR");
 
 	unique_ptr<RParam> paramToBeAdded = nullptr;
-	const char* paramName = name.c_str();
 
 	switch (dataType)
 	{
@@ -81,7 +81,8 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
@@ -89,8 +90,8 @@ void RParamContainer::AddParamToEmbeddedR(
 					strLen_or_Ind,
 					inputOutputType,
 					NA_INTEGER);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>*>(
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>*>(
 					paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
@@ -99,15 +100,16 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RLogicalParam>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
 					paramValue,
 					strLen_or_Ind,
 					inputOutputType);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RLogicalParam*>(paramToBeAdded.get())->GetRcppVector();
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RLogicalParam*>(paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
 		case SQL_C_FLOAT:
@@ -115,7 +117,8 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RParamTemplate<SQLREAL, Rcpp::NumericVector, double>>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
@@ -123,8 +126,8 @@ void RParamContainer::AddParamToEmbeddedR(
 					strLen_or_Ind,
 					inputOutputType,
 					NA_REAL);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RParamTemplate<SQLREAL, Rcpp::NumericVector, double>*>(
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RParamTemplate<SQLREAL, Rcpp::NumericVector, double>*>(
 					paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
@@ -133,7 +136,8 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
@@ -141,8 +145,8 @@ void RParamContainer::AddParamToEmbeddedR(
 					strLen_or_Ind,
 					inputOutputType,
 					NA_REAL);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>*>(
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>*>(
 					paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
@@ -151,7 +155,8 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
@@ -159,8 +164,8 @@ void RParamContainer::AddParamToEmbeddedR(
 					strLen_or_Ind,
 					inputOutputType,
 					NA_REAL);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>*>(
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>*>(
 					paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
@@ -169,7 +174,8 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int>>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
@@ -177,8 +183,8 @@ void RParamContainer::AddParamToEmbeddedR(
 					strLen_or_Ind,
 					inputOutputType,
 					NA_INTEGER);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int>*>(
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int>*>(
 					paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
@@ -187,7 +193,8 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
@@ -195,8 +202,8 @@ void RParamContainer::AddParamToEmbeddedR(
 					strLen_or_Ind,
 					inputOutputType,
 					NA_INTEGER);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>*>(
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>*>(
 					paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
@@ -205,15 +212,16 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RCharacterParam>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
 					paramValue,
 					strLen_or_Ind,
 					inputOutputType);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RCharacterParam*>(paramToBeAdded.get())->GetRcppVector();
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RCharacterParam*>(paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
 		case SQL_C_BINARY:
@@ -221,15 +229,16 @@ void RParamContainer::AddParamToEmbeddedR(
 			paramToBeAdded =
 				make_unique<RRawParam>(
 					paramNumber,
-					name,
+					paramName,
+					paramNameLength,
 					dataType,
 					paramSize,
 					decimalDigits,
 					paramValue,
 					strLen_or_Ind,
 					inputOutputType);
-			(*g_embeddedRPtr)[paramName] =
-				reinterpret_cast<RRawParam*>(paramToBeAdded.get())->GetRcppVector();
+			(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+				static_cast<RRawParam*>(paramToBeAdded.get())->GetRcppVector();
 			break;
 		}
 		case SQL_C_WCHAR:
@@ -241,6 +250,6 @@ void RParamContainer::AddParamToEmbeddedR(
 			throw invalid_argument("Unsupported input parameter type");
 	}
 
-	Logger::LogRVariable(name);
+	Logger::LogRVariable(paramToBeAdded.get()->Name());
 	m_params[paramNumber] = std::move(paramToBeAdded);
 }

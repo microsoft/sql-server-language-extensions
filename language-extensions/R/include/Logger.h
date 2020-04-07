@@ -32,30 +32,28 @@
 #define LOG_EXCEPTION(e) Logger::LogException(e)
 #define LOG_R_EXCEPTION(msg) Logger::LogRException(msg)
 
-using namespace std;
-
 class Logger
 {
 public:
 	// Log an error to stderr
 	//
-	static void LogError(const string &errorMsg);
+	static void LogError(const std::string &errorMsg);
 
 	// Log an extension exception to stderr
 	//
-	static void LogException(const exception &e);
+	static void LogException(const std::exception &e);
 
 	// Log an R exception to stderr
 	//
-	static void LogRException(const string &errorMsg);
+	static void LogRException(const std::string &errorMsg);
 
 	// Log a message to stdout
 	//
-	static void Log(const string &errorMsg);
+	static void Log(const std::string &errorMsg);
 
 	// Log an R variable using R's print function
 	//
-	static void LogRVariable(const string &name);
+	static void LogRVariable(const std::string &name);
 
 private:
 	// Get a string of the current timestamp in the same format

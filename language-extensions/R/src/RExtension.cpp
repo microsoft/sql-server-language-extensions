@@ -33,8 +33,9 @@
 #include <sqlext.h>
 #include <stdexcept>
 
-#include "Column.h"
 #include "Logger.h"
+#include "RColumn.h"
+#include "RDataSet.h"
 #include "RParam.h"
 #include "RParamContainer.h"
 #include "RPathSettings.h"
@@ -53,7 +54,7 @@ using namespace std;
 //
 static RSession *g_sessionData = nullptr;
 
-// A reference to the embedded R environment
+// A reference to the embedded R environment via RInside.
 //
 unique_ptr<RInside> g_embeddedRPtr = nullptr;
 
@@ -103,11 +104,11 @@ SQLUSMALLINT GetInterfaceVersion()
 //
 SQLRETURN Init(
 	SQLCHAR *extensionParams,
-	SQLULEN  extensionParamsLength,
+	SQLULEN extensionParamsLength,
 	SQLCHAR *extensionPath,
-	SQLULEN  extensionPathLength,
+	SQLULEN extensionPathLength,
 	SQLCHAR *publicLibraryPath,
-	SQLULEN  publicLibraryPathLength,
+	SQLULEN publicLibraryPathLength,
 	SQLCHAR *privateLibraryPath,
 	SQLULEN privateLibraryPathLength
 )
@@ -185,17 +186,17 @@ SQLRETURN Init(
 // SQL_SUCCESS on success, else SQL_ERROR
 
 SQLRETURN InitSession(
-	SQLGUID       sessionId,
-	SQLUSMALLINT  taskId,
-	SQLUSMALLINT  numTasks,
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT numTasks,
 	SQLCHAR      *script,
-	SQLULEN       scriptLength,
-	SQLUSMALLINT  inputSchemaColumnsNumber,
-	SQLUSMALLINT  parametersNumber,
+	SQLULEN      scriptLength,
+	SQLUSMALLINT inputSchemaColumnsNumber,
+	SQLUSMALLINT parametersNumber,
 	SQLCHAR      *inputDataName,
-	SQLUSMALLINT  inputDataNameLength,
+	SQLUSMALLINT inputDataNameLength,
 	SQLCHAR      *outputDataName,
-	SQLUSMALLINT  outputDataNameLength
+	SQLUSMALLINT outputDataNameLength
 )
 {
 	string msg = "RExtension::InitSession";
@@ -260,17 +261,17 @@ SQLRETURN InitSession(
 //  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitColumn(
-	SQLGUID       sessionId,
-	SQLUSMALLINT  taskId,
-	SQLUSMALLINT  columnNumber,
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT columnNumber,
 	SQLCHAR      *columnName,
-	SQLSMALLINT   columnNameLength,
-	SQLSMALLINT   dataType,
-	SQLULEN       columnSize,
-	SQLSMALLINT   decimalDigits,
-	SQLSMALLINT   nullable,
-	SQLSMALLINT   partitionByNumber,
-	SQLSMALLINT   orderByNumber
+	SQLSMALLINT  columnNameLength,
+	SQLSMALLINT  dataType,
+	SQLULEN      columnSize,
+	SQLSMALLINT  decimalDigits,
+	SQLSMALLINT  nullable,
+	SQLSMALLINT  partitionByNumber,
+	SQLSMALLINT  orderByNumber
 )
 {
 	string msg = "RExtension::InitColumn";
@@ -319,17 +320,17 @@ SQLRETURN InitColumn(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitParam(
-	SQLGUID       sessionId,
-	SQLUSMALLINT  taskId,
-	SQLUSMALLINT  paramNumber,
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT paramNumber,
 	SQLCHAR      *paramName,
-	SQLSMALLINT   paramNameLength,
-	SQLSMALLINT   dataType,
-	SQLULEN       paramSize,
-	SQLSMALLINT   decimalDigits,
-	SQLPOINTER    paramValue,
-	SQLINTEGER    strLen_or_Ind,
-	SQLSMALLINT   inputOutputType
+	SQLSMALLINT  paramNameLength,
+	SQLSMALLINT  dataType,
+	SQLULEN      paramSize,
+	SQLSMALLINT  decimalDigits,
+	SQLPOINTER   paramValue,
+	SQLINTEGER   strLen_or_Ind,
+	SQLSMALLINT  inputOutputType
 )
 {
 	string msg = "RExtension::InitParam";
@@ -380,11 +381,11 @@ SQLRETURN InitParam(
 //	SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Execute(
-	SQLGUID       sessionId,
-	SQLUSMALLINT  taskId,
-	SQLULEN       rowsNumber,
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLULEN      rowsNumber,
 	SQLPOINTER   *data,
-	SQLINTEGER  **strLen_or_Ind,
+	SQLINTEGER   **strLen_or_Ind,
 	SQLUSMALLINT *outputSchemaColumnsNumber
 )
 {
@@ -433,10 +434,10 @@ SQLRETURN GetResultColumn(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
 	SQLUSMALLINT columnNumber,
-	SQLSMALLINT *dataType,
-	SQLULEN     *columnSize,
-	SQLSMALLINT *decimalDigits,
-	SQLSMALLINT *nullable
+	SQLSMALLINT  *dataType,
+	SQLULEN      *columnSize,
+	SQLSMALLINT  *decimalDigits,
+	SQLSMALLINT  *nullable
 )
 {
 	LOG("RExtension::GetResultColumn");
@@ -482,9 +483,9 @@ SQLRETURN GetResultColumn(
 SQLRETURN GetResults(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
-	SQLULEN     *rowsNumber,
-	SQLPOINTER  **data,
-	SQLINTEGER ***strLen_or_Ind
+	SQLULEN      *rowsNumber,
+	SQLPOINTER   **data,
+	SQLINTEGER   ***strLen_or_Ind
 )
 {
 	LOG("RExtension::GetResults");
@@ -529,8 +530,8 @@ SQLRETURN GetOutputParam(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
 	SQLUSMALLINT paramNumber,
-	SQLPOINTER  *paramValue,
-	SQLINTEGER  *strLen_or_Ind)
+	SQLPOINTER   *paramValue,
+	SQLINTEGER   *strLen_or_Ind)
 {
 	LOG("RExtension::GetOutputParam");
 

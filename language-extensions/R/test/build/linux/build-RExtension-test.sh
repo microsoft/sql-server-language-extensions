@@ -12,6 +12,7 @@ function check_exit_code {
 
 function build {
 	# Set cmake config to first arg
+	#
 	CMAKE_CONFIGURATION=$1
 	if [ -z "${CMAKE_CONFIGURATION}" ]; then
 		CMAKE_CONFIGURATION=debug
@@ -23,14 +24,17 @@ function build {
 	pushd ${REXTENSIONTEST_WORKING_DIR}
 
 	# Compile
+	#
 	cmake -DCMAKE_INSTALL_PREFIX:PATH=${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION} \
 		-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DPLATFORM=linux \
+		-DR_HOME=${R_HOME} \
 		${REXTENSIONTEST_SRC_DIR}
 	cmake --build ${REXTENSIONTEST_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
+	#
 	check_exit_code "Success: Built RExtension-test" "Error: Failed to build RExtension-test"
 
 	# Move the generated libs to configuration folder
@@ -40,14 +44,30 @@ function build {
 }
 
 # Enlistment root and location of RExtension-test
+#
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ENL_ROOT=${SCRIPTDIR}/../../../../..
 REXTENSIONTEST_HOME=${ENL_ROOT}/language-extensions/R/test/
 
 # Set environment variables required in Cmake
+#
 PACKAGES_ROOT=${ENL_ROOT}/packages
 REXTENSIONTEST_SRC_DIR=${REXTENSIONTEST_HOME}/src
 REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/RExtension-test/linux
+
+DEFAULT_R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+
+# Find R_HOME from user, or set to default for testing.
+# Error code 1 is generic bash error.
+#
+if [ -z "${R_HOME}" ]; then
+	if [ -d "${DEFAULT_R_HOME}" ]; then
+		export R_HOME=${DEFAULT_R_HOME}
+	else
+		echo "R_HOME is empty"
+		exit 1
+	fi
+fi
 
 # Build in debug mode if nothing is specified
 #
@@ -57,6 +77,7 @@ fi
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd
+	#
 	build $1
 	shift
 done;

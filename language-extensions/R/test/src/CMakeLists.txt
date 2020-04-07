@@ -36,7 +36,6 @@ if(${PLATFORM} STREQUAL linux)
 
 	# Define base paths
 	#
-	file(TO_CMAKE_PATH /opt/microsoft/ropen/3.5.2/lib64/R R_HOME)
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
 	file(TO_CMAKE_PATH ${R_HOME}/lib R_LIB_DIR)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/libRInside.a RINSIDE_LIB)
@@ -51,7 +50,6 @@ elseif(${PLATFORM} STREQUAL windows)
 
 	# Define base paths
 	#
-	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/External-R.MRO-3.5.2.R.3.5.2.229/Windows R_HOME)
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
 	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/RLib.3.5.0 R_LIB_DIR)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/x64/libRInside.a RINSIDE_LIB)
