@@ -141,7 +141,8 @@
   <ItemGroup>
     <ClCompile Include="$(TestSrcDirectory)\main.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonInitTest.cpp" />
-    <ClCompile Include="$(TestSrcDirectory)\PythonColumnTest.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonInitColumnTest.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonInitParamsTest.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonExtensionApiTest.cpp" />
     <ClInclude Include="$(TestIncludeDirectory)\PythonExtensionApiTest.h" />
     <ClInclude Include="$(TestIncludeDirectory)\Common.h" />

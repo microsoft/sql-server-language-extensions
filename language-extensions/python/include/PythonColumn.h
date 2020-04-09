@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: Column.h
+// @File: PythonColumn.h
 //
 // Purpose:
 //	 Encapsulate dataset column attributes
@@ -16,13 +16,13 @@
 
 // Encapsulate column information
 //
-class Column
+class PythonColumn
 {
 public:
-	Column(
+	PythonColumn(
 		std::string name,
 		SQLSMALLINT dataType,
-		SQLULEN size,
+		SQLULEN     size,
 		SQLSMALLINT nullable,
 		SQLSMALLINT decimalDigits);
 
@@ -31,22 +31,22 @@ public:
 		return m_name;
 	}
 
-	const SQLSMALLINT& DataType() const
+	SQLSMALLINT DataType()
 	{
 		return m_dataType;
 	}
 
-	const SQLULEN& Size() const
+	SQLULEN Size()
 	{
 		return m_size;
 	}
 
-	const SQLSMALLINT& Nullable() const
+	SQLSMALLINT Nullable()
 	{
 		return m_nullable;
 	}
 
-	const SQLSMALLINT& DecimalDigits() const
+	SQLSMALLINT DecimalDigits()
 	{
 		return m_decimalDigits;
 	}

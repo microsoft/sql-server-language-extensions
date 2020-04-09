@@ -5,6 +5,7 @@ REM Set environment variables
 REM
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
+
 SET PYTHONEXTENSION_TEST_HOME=%ENL_ROOT%\language-extensions\python\test
 SET PYTHONEXTENSION_TEST_WORKING_DIR=%ENL_ROOT%\build-output\pythonextension-test\windows
 
@@ -12,6 +13,7 @@ RMDIR /s /q %PYTHONEXTENSION_TEST_WORKING_DIR%
 MKDIR %PYTHONEXTENSION_TEST_WORKING_DIR%
 
 SET DEFAULT_BOOST_ROOT=%PACKAGES_ROOT%\boost.1.69.0.0\lib\native
+SET DEFAULT_BOOST_PYTHON_ROOT=%PACKAGES_ROOT%\boost_python37-vc141.1.69.0.0\lib\native
 SET DEFAULT_PYTHONHOME=%PACKAGES_ROOT%\python
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
@@ -24,6 +26,14 @@ IF "%BOOST_ROOT%" == "" (
 		SET BOOST_ROOT=%DEFAULT_BOOST_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: BOOST_ROOT variable must be set to build the python extension test" || EXIT /b %ENVVAR_NOT_FOUND%
+	)
+)
+
+IF "%BOOST_PYTHON_ROOT%" == "" (
+	IF EXIST %DEFAULT_BOOST_PYTHON_ROOT% (
+		SET BOOST_PYTHON_ROOT=%DEFAULT_BOOST_PYTHON_ROOT%
+	) ELSE (
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: BOOST_PYTHON_ROOT variable must be set to build the python extension test" || EXIT /b %ENVVAR_NOT_FOUND%
 	)
 )
 
@@ -69,34 +79,32 @@ if not defined DevEnvDir (
 
 ECHO "[INFO] Generating pythonextension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
+SET BUILD_OUTPUT=%PYTHONEXTENSION_TEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
+MKDIR %BUILD_OUTPUT%
+PUSHD %BUILD_OUTPUT%
+
 REM Call cmake
 REM
 call "%CMAKE_ROOT%\bin\cmake.exe" ^
 	-G "Visual Studio 15 2017 Win64" ^
-	-DCMAKE_INSTALL_PREFIX:PATH="%PYTHONEXTENSION_TEST_WORKING_DIR%/%CMAKE_CONFIGURATION%" ^
+	-DPLATFORM=windows ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
-	-DPLATFORM=windows ^
 	-DPYTHONHOME="%PYTHONHOME%" ^
 	-DBOOST_ROOT="%BOOST_ROOT%" ^
+	-DBOOST_PYTHON_ROOT="%BOOST_PYTHON_ROOT%" ^
 	 %PYTHONEXTENSION_TEST_HOME%\src
 
-IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[INFO] Building pythonextension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
-REM Build the project
+
+REM Call cmake build
 REM
-msbuild %PYTHONEXTENSION_TEST_WORKING_DIR%\pythonextension-test.vcxproj /m /property:Configuration=%CMAKE_CONFIGURATION% /property:Platform=x64
+CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
 
-IF %ERRORLEVEL% NEQ 0 GOTO CLEANUP
-
-SET EX=%ERRORLEVEL%
-
-if "%EX%" neq "0" (
-	echo "Error: Failed to build pythonextension-test.vcxproj"
-	GOTO CLEANUP
-)
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Python extension test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Advance arg passed to build-pythonextension-test.cmd
 REM

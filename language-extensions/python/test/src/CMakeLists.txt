@@ -26,51 +26,60 @@ add_executable(pythonextension-test
   ${PYTHONEXTENSION_TEST_SOURCE_FILES}
 )
 
-if (${PLATFORM} STREQUAL linux)
-	target_compile_options(pythonextension-test PRIVATE -Wall -Wextra -g -O2 -Werror -fPIC -std=c++11)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN' -Wl,--no-as-needed -Wl,--export-dynamic")
+if (${PLATFORM} STREQUAL linux)	
+	target_compile_options(pythonextension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++14 -Wno-unused-parameter)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
 	
-	set(USR_LIB_PATH "/usr/local/lib")
-
-	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)
-	file(TO_CMAKE_PATH ${GTEST_HOME}/googletest-src/googletest/include GTEST_INCLUDE_DIR)
-	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/libgtest.a GTEST_LIB)
-
-	find_library(DL dl ${USR_LIB_PATH})
-	set(THREADS_PREFER_PTHREAD_FLAG ON)
-	find_package(Threads REQUIRED)
-	target_link_libraries(pythonextension-test
-		${DL}
-		Threads::Threads
-	)
-
+	set(USR_LIB_PATH /usr/local/lib)
+	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python3.7/config-3.7m-x86_64-linux-gnu)
+	
+	find_library(PYTHON_LIB python3.7 ${PYTHON_LIB_PATH})
+	find_library(BOOST_PYTHON_LIB boost_python37 ${BOOST_PYTHON_ROOT})
+	
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python3.7 PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
 	
 	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${PYTHON_INCLUDE})
 	
-elseif(${PLATFORM} STREQUAL windows)
-
-	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+	find_library(DL dl ${USR_LIB_PATH})
 	
+	set(THREADS_PREFER_PTHREAD_FLAG ON)
+	find_package(Threads REQUIRED)
+	
+	target_link_libraries(pythonextension-test
+		${DL}
+		Threads::Threads
+	)
+
+	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)
+	file(TO_CMAKE_PATH ${GTEST_HOME}/googletest-src/googletest/include GTEST_INCLUDE_DIR)
+	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/libgtest.a GTEST_LIB)
+	
+elseif(${PLATFORM} STREQUAL windows)
+	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+
 	# Compile options /W2 for severe warnings
 	#
-	set(COMPILE_OPTIONS /W2)
+	set(COMPILE_OPTIONS /W2 /std:c++14)
 	
 	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)
-	
+
 	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0 GTEST_HOME)
 	file(TO_CMAKE_PATH ${GTEST_HOME}/build/native/include GTEST_INCLUDE_DIR)
 	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/${CMAKE_CONFIGURATION} GTEST_LIB_PATH)
 	find_library(GTEST_LIB gtest ${GTEST_LIB_PATH})
-
+	
 	# Build static lib to test with 
 	#
 	if (${CMAKE_CONFIGURATION} STREQUAL debug)
-		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MTd)
+		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MDd)
+		find_library(BOOST_PYTHON_LIB libboost_python37-vc141-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
 	else()
-		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MT)
+		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MD)
+		find_library(BOOST_PYTHON_LIB libboost_python37-vc141-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
 	endif()
+	
+	target_compile_options(pythonextension-test PRIVATE ${COMPILE_OPTIONS})
 
 	# Set the DLLEXPORT variable to export symbols
 	#
@@ -81,6 +90,8 @@ elseif(${PLATFORM} STREQUAL windows)
 
 	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${PYTHON_INCLUDE})
 endif()
+
+add_definitions(-DBOOST_USE_STATIC_LIBS -DBOOST_PYTHON_STATIC_LIB -DBOOST_ALL_NO_LIB)
 
 # this is not a standard include path so test projects need
 # to add it explicitly
@@ -103,6 +114,8 @@ endif()
 target_link_libraries(pythonextension-test
 	${GTEST_LIB}
 	${PYTHONEXTENSION_LIB}
+	${PYTHON_LIB} 
+	${BOOST_PYTHON_LIB}
 )
 
 target_include_directories(pythonextension-test

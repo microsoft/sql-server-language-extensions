@@ -20,10 +20,10 @@ public:
 
 	static void AddParamToNamespace(
 		boost::python::object nameSpace,
-		std::string name,
-		SQLSMALLINT DataType,
-		SQLULEN ArgSize,
-		SQLSMALLINT DecimalDigits,
-		SQLPOINTER ArgValue,
-		SQLINTEGER StrLen_or_Ind);
+		std::string           name,
+		SQLSMALLINT           dataType,
+		SQLULEN               paramSize,
+		SQLSMALLINT           decimalDigits,
+		SQLPOINTER            paramValue,
+		SQLINTEGER            strLen_or_Ind);
 };

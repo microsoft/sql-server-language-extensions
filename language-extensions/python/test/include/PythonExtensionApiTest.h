@@ -1,5 +1,8 @@
 //*********************************************************************
-//                Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 //
 // @File: PythonExtensionApiTest.h
 //
@@ -41,6 +44,24 @@ namespace ExtensionApiTest
 		//
 		void DoCleanup();
 
+		// Template to test all input parameter data types
+		//
+		template<class SQLType, SQLSMALLINT dataType>
+		void TestParameter(
+			SQLType paramValue,
+			bool isNull = false);
+
+		void TestCharParameter(
+			const char * paramValue,
+			SQLULEN paramSize,
+			bool isFixedType);
+
+		void TestBinaryParameter(
+			const SQLCHAR paramValue[],
+			SQLINTEGER strLenOrInd,
+			SQLULEN paramSize,
+			bool isFixedType);
+
 		// Objects declared here can be used by all tests in the test suite
 		//
 		SQLGUID *m_sessionId;
@@ -48,14 +69,28 @@ namespace ExtensionApiTest
 		SQLUSMALLINT m_numTasks;
 		SQLUSMALLINT m_parametersNumber;
 
+		std::string m_paramName;
+		SQLSMALLINT m_paramNameLength;
+
 		SQLCHAR *m_script;
+		std::string m_scriptString;
 		SQLSMALLINT m_scriptLength;
 
 		SQLUSMALLINT m_inputSchemaColumnsNumber;
 		SQLCHAR *m_inputDataName;
+		std::string m_inputDataNameString;
 		SQLSMALLINT m_inputDataNameLength;
 
 		SQLCHAR *m_outputDataName;
+		std::string m_outputDataNameString;
 		SQLSMALLINT m_outputDataNameLength;
+
+		// The boost python module; python will run in this object
+		//
+		boost::python::object m_mainModule;
+
+		// The boost python namespace; dictionary containing all python variables
+		//
+		boost::python::object m_mainNamespace;
 	};
 }

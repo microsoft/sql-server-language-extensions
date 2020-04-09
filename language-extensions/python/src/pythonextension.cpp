@@ -13,6 +13,7 @@
 //
 //**************************************************************************************************
 
+#include <boost/python.hpp>
 #include <unordered_map>
 
 #include "Logger.h"
@@ -22,10 +23,6 @@
 #include "PythonExtensionUtils.h"
 
 using namespace std;
-
-// The version of python to load as DLL
-//
-static const string x_PythonVersion = "python37";
 
 static void *g_pyDLL = nullptr;
 static unordered_map<string, PythonSession *> g_pySessionMap;
@@ -56,14 +53,14 @@ GetInterfaceVersion()
 //  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Init(
-	SQLCHAR *ExtensionParams,
-	SQLULEN ExtensionParamsLength,
-	SQLCHAR *ExtensionPath,
-	SQLULEN ExtensionPathLength,
-	SQLCHAR *PublicLibraryPath,
-	SQLULEN PublicLibraryPathLength,
-	SQLCHAR *PrivateLibraryPath,
-	SQLULEN PrivateLibraryPathLength
+	SQLCHAR *extensionParams,
+	SQLULEN extensionParamsLength,
+	SQLCHAR *extensionPath,
+	SQLULEN extensionPathLength,
+	SQLCHAR *publicLibraryPath,
+	SQLULEN publicLibraryPathLength,
+	SQLCHAR *privateLibraryPath,
+	SQLULEN privateLibraryPathLength
 )
 {
 	LOG("Init");
@@ -104,38 +101,38 @@ SQLRETURN Init(
 //  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitSession(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT NumTasks,
-	SQLCHAR		 *Script,
-	SQLULEN		 ScriptLength,
-	SQLUSMALLINT InputSchemaColumnsNumber,
-	SQLUSMALLINT ParametersNumber,
-	SQLCHAR		 *InputDataName,
-	SQLUSMALLINT InputDataNameLength,
-	SQLCHAR		 *OutputDataName,
-	SQLUSMALLINT OutputDataNameLength
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT numTasks,
+	SQLCHAR      *script,
+	SQLULEN      scriptLength,
+	SQLUSMALLINT inputSchemaColumnsNumber,
+	SQLUSMALLINT parametersNumber,
+	SQLCHAR      *inputDataName,
+	SQLUSMALLINT inputDataNameLength,
+	SQLCHAR      *outputDataName,
+	SQLUSMALLINT outputDataNameLength
 )
 {
 	LOG("InitSession");
 	SQLRETURN result = SQL_SUCCESS;
 
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		g_pySessionMap[session] = new PythonSession();
 		g_pySessionMap[session]->Init(
-			&SessionId,
-			TaskId,
-			NumTasks,
-			Script,
-			ScriptLength,
-			InputSchemaColumnsNumber,
-			ParametersNumber,
-			InputDataName,
-			InputDataNameLength,
-			OutputDataName,
-			OutputDataNameLength);
+			&sessionId,
+			taskId,
+			numTasks,
+			script,
+			scriptLength,
+			inputSchemaColumnsNumber,
+			parametersNumber,
+			inputDataName,
+			inputDataNameLength,
+			outputDataName,
+			outputDataNameLength);
 	}
 	catch (const exception &ex)
 	{
@@ -164,34 +161,34 @@ SQLRETURN InitSession(
 //  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitColumn(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ColumnNumber,
-	SQLCHAR		 *ColumnName,
-	SQLSMALLINT	 ColumnNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ColumnSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLSMALLINT	 Nullable,
-	SQLSMALLINT	 PartitionByNumber,
-	SQLSMALLINT	 OrderByNumber
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT columnNumber,
+	SQLCHAR      *columnName,
+	SQLSMALLINT  columnNameLength,
+	SQLSMALLINT  dataType,
+	SQLULEN      columnSize,
+	SQLSMALLINT  decimalDigits,
+	SQLSMALLINT  nullable,
+	SQLSMALLINT  partitionByNumber,
+	SQLSMALLINT  orderByNumber
 )
 {
 	LOG("InitColumn");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		g_pySessionMap[session]->InitColumn(
-			ColumnNumber,
-			ColumnName,
-			ColumnNameLength,
-			DataType,
-			ColumnSize,
-			DecimalDigits,
-			Nullable,
-			PartitionByNumber,
-			OrderByNumber);
+			columnNumber,
+			columnName,
+			columnNameLength,
+			dataType,
+			columnSize,
+			decimalDigits,
+			nullable,
+			partitionByNumber,
+			orderByNumber);
 	}
 	catch (const exception &ex)
 	{
@@ -219,33 +216,33 @@ SQLRETURN InitColumn(
 //  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitParam(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ParamNumber,
-	SQLCHAR		 *ParamName,
-	SQLSMALLINT	 ParamNameLength,
-	SQLSMALLINT	 DataType,
-	SQLULEN		 ParamSize,
-	SQLSMALLINT	 DecimalDigits,
-	SQLPOINTER	 ParamValue,
-	SQLINTEGER	 StrLen_or_Ind,
-	SQLSMALLINT	 InputOutputType)
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT paramNumber,
+	SQLCHAR      *paramName,
+	SQLSMALLINT  paramNameLength,
+	SQLSMALLINT  dataType,
+	SQLULEN      paramSize,
+	SQLSMALLINT  decimalDigits,
+	SQLPOINTER   paramValue,
+	SQLINTEGER   strLen_or_Ind,
+	SQLSMALLINT  inputOutputType)
 {
 	LOG("InitParam");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		g_pySessionMap[session]->InitParam(
-			ParamNumber,
-			ParamName,
-			ParamNameLength,
-			DataType,
-			ParamSize,
-			DecimalDigits,
-			ParamValue,
-			StrLen_or_Ind,
-			InputOutputType);
+			paramNumber,
+			paramName,
+			paramNameLength,
+			dataType,
+			paramSize,
+			decimalDigits,
+			paramValue,
+			strLen_or_Ind,
+			inputOutputType);
 	}
 	catch (const exception &ex)
 	{
@@ -275,23 +272,23 @@ SQLRETURN InitParam(
 //  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Execute(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLULEN		 RowsNumber,
-	SQLPOINTER	 *Data,
-	SQLINTEGER	 **StrLen_or_Ind,
-	SQLUSMALLINT *OutputSchemaColumnsNumber
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLULEN      rowsNumber,
+	SQLPOINTER   *data,
+	SQLINTEGER   **strLen_or_Ind,
+	SQLUSMALLINT *outputSchemaColumnsNumber
 )
 {
 	LOG("Execute");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
-		g_pySessionMap[session]->ExecuteWorkflow(RowsNumber,
-									Data,
-									StrLen_or_Ind,
-									OutputSchemaColumnsNumber);
+		g_pySessionMap[session]->ExecuteWorkflow(rowsNumber,
+									data,
+									strLen_or_Ind,
+									outputSchemaColumnsNumber);
 	}
 	catch (const exception &ex)
 	{
@@ -310,26 +307,26 @@ SQLRETURN Execute(
 }
 
 SQLRETURN GetResultColumn(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ColumnNumber,
-	SQLSMALLINT	 *DataType,
-	SQLULEN		 *ColumnSize,
-	SQLSMALLINT	 *DecimalDigits,
-	SQLSMALLINT	 *Nullable
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT columnNumber,
+	SQLSMALLINT  *dataType,
+	SQLULEN      *columnSize,
+	SQLSMALLINT  *decimalDigits,
+	SQLSMALLINT  *nullable
 )
 {
 	LOG("GetResultColumn");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		g_pySessionMap[session]->GetResultColumn(
-			ColumnNumber,
-			DataType,
-			ColumnSize,
-			DecimalDigits,
-			Nullable);
+			columnNumber,
+			dataType,
+			columnSize,
+			decimalDigits,
+			nullable);
 	}
 	catch (const exception &ex)
 	{
@@ -348,22 +345,22 @@ SQLRETURN GetResultColumn(
 }
 
 SQLRETURN GetResults(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLULEN		 *RowsNumber,
-	SQLPOINTER	 **Data,
-	SQLINTEGER	 ***StrLen_or_Ind
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLULEN      *rowsNumber,
+	SQLPOINTER   **data,
+	SQLINTEGER   ***strLen_or_Ind
 )
 {
 	LOG("GetResults");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		g_pySessionMap[session]->GetResults(
-			RowsNumber,
-			Data,
-			StrLen_or_Ind);
+			rowsNumber,
+			data,
+			strLen_or_Ind);
 	}
 	catch (const exception &ex)
 	{
@@ -382,22 +379,22 @@ SQLRETURN GetResults(
 }
 
 SQLRETURN GetOutputParam(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId,
-	SQLUSMALLINT ParamNumber,
-	SQLPOINTER	 *ParamValue,
-	SQLINTEGER	 *StrLen_or_Ind
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId,
+	SQLUSMALLINT paramNumber,
+	SQLPOINTER   *paramValue,
+	SQLINTEGER   *strLen_or_Ind
 )
 {
 	LOG("GetOutputParam");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		g_pySessionMap[session]->GetOutputParam(
-			ParamNumber,
-			ParamValue,
-			StrLen_or_Ind);
+			paramNumber,
+			paramValue,
+			strLen_or_Ind);
 	}
 	catch (const exception &ex)
 	{
@@ -416,13 +413,13 @@ SQLRETURN GetOutputParam(
 }
 
 SQLRETURN CleanupSession(
-	SQLGUID		 SessionId,
-	SQLUSMALLINT TaskId
+	SQLGUID      sessionId,
+	SQLUSMALLINT taskId
 )
 {
 	LOG("CleanupSession");
 	SQLRETURN result = SQL_SUCCESS;
-	string session = PythonExtensionUtils::ConvertGuidToString(&SessionId);
+	string session = PythonExtensionUtils::ConvertGuidToString(&sessionId);
 	try
 	{
 		if (g_pySessionMap.count(session) > 0)

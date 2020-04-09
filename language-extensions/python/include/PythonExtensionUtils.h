@@ -18,7 +18,7 @@ class PythonExtensionUtils
 {
 public:
 	static std::string GetEnvVariable(const std::string & envVarName);
-	
+
 	static std::string ConvertGuidToString(const SQLGUID *guid);
 
 	static void FreeDLL(void *pDll);

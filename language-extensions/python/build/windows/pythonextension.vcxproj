@@ -123,7 +123,7 @@
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallibrary.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonSession.h" />
     <ClInclude Include="$(IncludeDirectory)\Common.h" />
-    <ClInclude Include="$(IncludeDirectory)\Column.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonColumn.h" />
     <ClInclude Include="$(IncludeDirectory)\Logger.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonTypeUtils.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonExtensionUtils.h" />
@@ -133,7 +133,7 @@
     <ClCompile Include="$(SourceDirectory)\PythonSession.cpp" />
     <ClCompile Include="$(SourceDirectory)\Logger.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonTypeUtils.cpp" />
-    <ClCompile Include="$(SourceDirectory)\Column.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonColumn.cpp" />
     <ClCompile Include="$(SourceDirectory)\windows\PythonExtensionUtils_win.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

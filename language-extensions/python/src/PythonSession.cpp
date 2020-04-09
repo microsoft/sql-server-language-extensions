@@ -24,13 +24,13 @@ void PythonSession::Init(
 	const SQLGUID *sessionId,
 	SQLUSMALLINT  taskId,
 	SQLUSMALLINT  numTasks,
-	SQLCHAR		  *script,
-	SQLULEN		  scriptLength,
+	SQLCHAR       *script,
+	SQLULEN       scriptLength,
 	SQLUSMALLINT  inputSchemaColumnsNumber,
 	SQLUSMALLINT  parametersNumber,
-	SQLCHAR		  *inputDataName,
+	SQLCHAR       *inputDataName,
 	SQLUSMALLINT  inputDataNameLength,
-	SQLCHAR		  *outputDataName,
+	SQLCHAR       *outputDataName,
 	SQLUSMALLINT  outputDataNameLength)
 {
 	LOG("PythonSession::Init");
@@ -62,62 +62,62 @@ void PythonSession::Init(
 // Init the input column
 //
 void PythonSession::InitColumn(
-	SQLUSMALLINT  ColumnNumber,
-	const SQLCHAR *ColumnName,
-	SQLSMALLINT	  ColumnNameLength,
-	SQLSMALLINT	  DataType,
-	SQLULEN		  ColumnSize,
-	SQLSMALLINT	  DecimalDigits,
-	SQLSMALLINT	  Nullable,
-	SQLSMALLINT	  PartitionByNumber,
-	SQLSMALLINT	  OrderByNumber)
+	SQLUSMALLINT  columnNumber,
+	const SQLCHAR *columnName,
+	SQLSMALLINT   columnNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       columnSize,
+	SQLSMALLINT   decimalDigits,
+	SQLSMALLINT   nullable,
+	SQLSMALLINT   partitionByNumber,
+	SQLSMALLINT   orderByNumber)
 {
-	LOG("PythonSession::InitColumn #" + to_string(ColumnNumber));
+	LOG("PythonSession::InitColumn #" + to_string(columnNumber));
 
-	if (ColumnName == nullptr)
+	if (columnName == nullptr)
 	{
 		throw invalid_argument("Invalid input column name supplied");
 	}
-	else if (ColumnNumber != m_inputColumns.size() ||  // Confirm that ColumnNumber is the next column index
-			ColumnNumber >= m_inputSchemaColumnsNumber)
+	else if (columnNumber != m_inputColumns.size() ||  // Confirm that columnNumber is the next column index
+			columnNumber >= m_inputSchemaColumnsNumber)
 	{
-		throw invalid_argument("Invalid input column id supplied: " + to_string(ColumnNumber));
+		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
 	}
 
 	// Store the information for this column
 	//
-	string name(reinterpret_cast<const char*>(ColumnName), ColumnNameLength - 1); // Remove null terminator
+	string name(reinterpret_cast<const char*>(columnName), columnNameLength - 1); // Remove null terminator
 
-	m_inputColumns.emplace_back(Column(name, DataType, ColumnSize, Nullable, DecimalDigits));
+	m_inputColumns.emplace_back(PythonColumn(name, dataType, columnSize, nullable, decimalDigits));
  }
 
 // Init the input parameter
 //
 void PythonSession::InitParam(
-	SQLUSMALLINT  ParamNumber,
-	const SQLCHAR *ParamName,
-	SQLSMALLINT	  ParamNameLength,
-	SQLSMALLINT	  DataType,
-	SQLULEN		  ArgSize,
-	SQLSMALLINT	  DecimalDigits,
-	SQLPOINTER	  ArgValue,
-	SQLINTEGER	  StrLen_or_Ind,
-	SQLSMALLINT	  InputOutputType)
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   InputOutputType)
 {
 	LOG("PythonSession::InitParam");
 
-	if (ParamName == nullptr)
+	if (paramName == nullptr)
 	{
 		throw invalid_argument("Invalid input parameter name supplied");
 	}
-	else if (ParamNumber >= m_parametersNumber)
+	else if (paramNumber >= m_parametersNumber)
 	{
-		throw invalid_argument("Invalid input param id supplied: " + to_string(ParamNumber));
+		throw invalid_argument("Invalid input param id supplied: " + to_string(paramNumber));
 	}
 
-	// +1 removes the @ in front of the parameter name, -1 removes the null terminator from length
+	// +1 removes the @ in front of the parameter name, -1 to remove it from the length
 	//
-	string name(reinterpret_cast<const char*>((ParamName + 1)), ParamNameLength-1);
+	string name(reinterpret_cast<const char*>((paramName + 1)), paramNameLength - 1);
 
 	LOG("PythonSession::InitParam: Initializing parameter " + name);
 
@@ -126,20 +126,20 @@ void PythonSession::InitParam(
 	PythonTypeUtils::AddParamToNamespace(
 		m_mainNamespace,
 		name,
-		DataType,
-		ArgSize,
-		DecimalDigits,
-		ArgValue,
-		StrLen_or_Ind);
+		dataType,
+		paramSize,
+		decimalDigits,
+		paramValue,
+		strLen_or_Ind);
 }
 
 // Execute the workflow for the session
 //
 void PythonSession::ExecuteWorkflow(
-	SQLULEN		 RowsNumber,
-	SQLPOINTER	 *Data,
-	SQLINTEGER	 **StrLen_or_Ind,
-	SQLUSMALLINT *OutputSchemaColumnsNumber)
+	SQLULEN      rowsNumber,
+	SQLPOINTER   *data,
+	SQLINTEGER   **strLen_or_Ind,
+	SQLUSMALLINT *outputSchemaColumnsNumber)
 {
 	LOG("PythonSession::ExecuteWorkflow");
 }
@@ -147,11 +147,11 @@ void PythonSession::ExecuteWorkflow(
 // Get the metadata for the output column
 //
 void PythonSession::GetResultColumn(
-	SQLUSMALLINT ColumnNumber,
-	SQLSMALLINT	 *DataType,
-	SQLULEN		 *ColumnSize,
-	SQLSMALLINT	 *DecimalDigits,
-	SQLSMALLINT	 *Nullable)
+	SQLUSMALLINT columnNumber,
+	SQLSMALLINT  *dataType,
+	SQLULEN      *columnSize,
+	SQLSMALLINT  *decimalDigits,
+	SQLSMALLINT  *nullable)
 {
 	LOG("PythonSession::GetResultColumn");
 }
@@ -159,9 +159,9 @@ void PythonSession::GetResultColumn(
 // Get the results
 //
 void PythonSession::GetResults(
-	SQLULEN	   *RowsNumber,
-	SQLPOINTER **Data,
-	SQLINTEGER ***StrLen_or_Ind)
+	SQLULEN    *rowsNumber,
+	SQLPOINTER **data,
+	SQLINTEGER ***strLen_or_Ind)
 {
 	LOG("PythonSession::GetResults");
 }
@@ -169,9 +169,9 @@ void PythonSession::GetResults(
 // Get the the output parameter
 //
 void PythonSession::GetOutputParam(
-	SQLUSMALLINT ParamNumber,
-	SQLPOINTER  *ParamValue,
-	SQLINTEGER  *StrLen_or_Ind)
+	SQLUSMALLINT paramNumber,
+	SQLPOINTER  *paramValue,
+	SQLINTEGER  *strLen_or_Ind)
 {
 	LOG(("PythonSession::GetOutputParam"));
 }

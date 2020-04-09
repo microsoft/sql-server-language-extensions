@@ -4,19 +4,19 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: Column.cpp
+// @File: PythonColumn.cpp
 //
 // Purpose:
 //	 Encapsulate data column attributes
 //
 //*********************************************************************
 
-#include "Column.h"
+#include "PythonColumn.h"
 
-Column::Column(
+PythonColumn::PythonColumn(
 	std::string name,
 	SQLSMALLINT dataType,
-	SQLULEN size,
+	SQLULEN     size,
 	SQLSMALLINT nullable,
 	SQLSMALLINT decimalDigits)
 {

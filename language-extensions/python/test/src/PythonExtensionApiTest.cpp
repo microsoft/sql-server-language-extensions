@@ -1,5 +1,8 @@
 //*********************************************************************
-//                Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 //
 // @File: PythonExtensionApiTest.cpp
 //
@@ -10,6 +13,7 @@
 #include "PythonExtensionApiTest.h"
 
 using namespace std;
+namespace py = boost::python;
 
 namespace ExtensionApiTest
 {
@@ -18,6 +22,8 @@ namespace ExtensionApiTest
 	//
 	void PythonExtensionApiTest::SetUp()
 	{
+		Py_Initialize();
+
 		SetupVariables();
 	}
 
@@ -39,17 +45,41 @@ namespace ExtensionApiTest
 		m_inputSchemaColumnsNumber = 1;
 		m_parametersNumber = 1;
 
-		string scriptString = "print('Hello')";
-		m_script = reinterpret_cast<SQLCHAR *>(const_cast<char *>(scriptString.c_str()));
-		m_scriptLength = scriptString.length();
+		m_paramName = "param1";
+		m_paramNameLength = m_paramName.length();
 
-		string inputDataNameString = "InputDataSet";
-		m_inputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(inputDataNameString.c_str()));
-		m_inputDataNameLength = inputDataNameString.length();
+		m_scriptString = "print('Hello')";
+		m_script = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_scriptString.c_str())));
+		m_scriptLength = m_scriptString.length();
 
-		string outputDataNameString = "OutputDataSet";
-		m_outputDataName = reinterpret_cast<SQLCHAR *>(const_cast<char *>(outputDataNameString.c_str()));
-		m_outputDataNameLength = outputDataNameString.length();
+		m_inputDataNameString = "InputDataSet";
+		m_inputDataName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_inputDataNameString.c_str())));
+		m_inputDataNameLength = m_inputDataNameString.length();
+
+		m_outputDataNameString = "OutputDataSet";
+		m_outputDataName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str())));
+		m_outputDataNameLength = m_outputDataNameString.length();
+
+		try
+		{
+			m_mainModule = py::import("__main__");
+			m_mainNamespace = m_mainModule.attr("__dict__");
+		}
+		catch (py::error_already_set&)
+		{
+			throw runtime_error("Error loading main module and namespace");
+		}
+
+		// Check that the module and namespace are populated, not None objects
+		//
+		if (m_mainModule == boost::python::object() ||
+			m_mainNamespace == boost::python::object())
+		{
+			throw runtime_error("Main module or namespace was None");
+		}
 	}
 
 	// Initialize a valid, default session for non-Init tests
@@ -60,13 +90,13 @@ namespace ExtensionApiTest
 
 		result = Init(
 			nullptr, // Extension Params
-			0,		 // Extension Params Length
+			0,       // Extension Params Length
 			nullptr, // Extension Path
-			0,		 // Extension Path Length
+			0,       // Extension Path Length
 			nullptr, // Public Library Path
-			0,		 // Public Library Path Length
+			0,       // Public Library Path Length
 			nullptr, // Private Library Path
-			0		 // Private Library Path Length
+			0        // Private Library Path Length
 		);
 		EXPECT_EQ(result, SQL_SUCCESS);
 

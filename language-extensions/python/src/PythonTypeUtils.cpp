@@ -15,6 +15,7 @@
 #include "PythonTypeUtils.h"
 
 using namespace std;
+namespace py = boost::python;
 
 //--------------------------------------------------------------------------------------------------
 // Name: AddParamToNamespace
@@ -24,71 +25,80 @@ using namespace std;
 // so that the variables are accessible in python
 //
 void PythonTypeUtils::AddParamToNamespace(
-	boost::python::object nameSpace,
+	py::object  nameSpace,
 	std::string name,
-	SQLSMALLINT	  DataType,
-	SQLULEN		  ArgSize,
-	SQLSMALLINT	  DecimalDigits,
-	SQLPOINTER	  ArgValue,
-	SQLINTEGER	  StrLen_or_Ind)
+	SQLSMALLINT dataType,
+	SQLULEN     paramSize,
+	SQLSMALLINT decimalDigits,
+	SQLPOINTER  paramValue,
+	SQLINTEGER  strLen_or_Ind)
 {
-	if (ArgValue == nullptr)
+	LOG("PythonTypeUtils::AddParamToNamespace");
+	if (paramValue == nullptr)
 	{
 		// Initialize with None if the parameter is null
 		//
-		nameSpace[name] = boost::python::object();
+		nameSpace[name] = py::object();
 	}
 	else
 	{
-		switch (DataType)
+		switch (dataType)
 		{
 		case SQL_C_SLONG:
 		{
-			nameSpace[name] = *reinterpret_cast<SLONG*>(ArgValue);
+			nameSpace[name] = *static_cast<SQLINTEGER*>(paramValue);
 			break;
 		}
 		case SQL_C_BIT:
 		{
-			nameSpace[name] = *reinterpret_cast<SQLCHAR*>(ArgValue);
+			nameSpace[name] = *static_cast<SQLCHAR*>(paramValue) != '0' ? true : false;
 			break;
 		}
 		case SQL_C_FLOAT:
 		{
-			float num = *reinterpret_cast<SQLREAL*>(ArgValue);
-			nameSpace[name] = num;
+			nameSpace[name] = *static_cast<SQLREAL*>(paramValue);
 			break;
 		}
 		case SQL_C_DOUBLE:
 		{
-			double num = *reinterpret_cast<SQLDOUBLE*>(ArgValue);
-			nameSpace[name] = num;
+			nameSpace[name] = *static_cast<SQLDOUBLE*>(paramValue);
 			break;
 		}
 		case SQL_C_SBIGINT:
 		{
-			nameSpace[name] = *reinterpret_cast<SQLBIGINT*>(ArgValue);
+			nameSpace[name] = *static_cast<SQLBIGINT*>(paramValue);
 			break;
 		}
 		case SQL_C_UTINYINT:
 		{
-			nameSpace[name] = *reinterpret_cast<SQLCHAR*>(ArgValue);
+			nameSpace[name] = *static_cast<SQLCHAR*>(paramValue);
 			break;
 		}
 		case SQL_C_SSHORT:
 		{
-			nameSpace[name] = *reinterpret_cast<SQLSMALLINT*>(ArgValue);
+			nameSpace[name] = *static_cast<SQLSMALLINT*>(paramValue);
 			break;
 		}
 		case SQL_C_CHAR:
 		{
-			int strlen = StrLen_or_Ind / sizeof(CHAR);
-			string value(reinterpret_cast<CHAR*>(ArgValue), strlen);
+			SQLINTEGER strlen = strLen_or_Ind / sizeof(CHAR);
+			string value(static_cast<CHAR*>(paramValue), strlen);
 			nameSpace[name] = value;
 			break;
 		}
 		case SQL_C_BINARY:
 		{
-			nameSpace[name] = *reinterpret_cast<SQLCHAR*>(ArgValue);
+			SQLINTEGER strlen = strLen_or_Ind / sizeof(SQLCHAR);
+
+			// Create a Python memoryview object from binary
+			//
+			py::object memViewObj(py::handle<>(
+				PyBytes_FromObject(PyMemoryView_FromMemory(
+					static_cast<CHAR*>(paramValue), strlen, PyBUF_READ
+				))
+			));
+
+			nameSpace[name] = memViewObj;
 			break;
 		}
 		case SQL_C_WCHAR:

@@ -1,5 +1,8 @@
 //*********************************************************************
-//                Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
 //
 // @File: PythonInitTest.cpp
 //
@@ -24,13 +27,13 @@ namespace ExtensionApiTest
 	{
 		SQLRETURN result = Init(
 			nullptr, // Extension Params
-			0,		 // Extension Params Length
+			0,       // Extension Params Length
 			nullptr, // Extension Path
-			0,		 // Extension Path Length
+			0,       // Extension Path Length
 			nullptr, // Public Library Path
-			0,		 // Public Library Path Length
+			0,       // Public Library Path Length
 			nullptr, // Private Library Path
-			0		 // Private Library Path Length
+			0        // Private Library Path Length
 		);
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
@@ -48,11 +51,16 @@ namespace ExtensionApiTest
 		SQLCHAR *privateLibraryPath = nullptr;
 		SQLULEN privateLibraryPathLength = 0;
 
+		SQLCHAR *unsignedExtensionPath = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(extensionPath.c_str())));
+		SQLCHAR *unsignedPublicLibraryPath = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(publicLibraryPath.c_str())));
+
 		SQLRETURN result = Init(extensionParams,
 			extensionParamsLength,
-			reinterpret_cast<SQLCHAR *>(const_cast<char *>(extensionPath.c_str())),
+			unsignedExtensionPath,
 			extensionPathLength,
-			reinterpret_cast<SQLCHAR *>(const_cast<char *>(publicLibraryPath.c_str())),
+			unsignedPublicLibraryPath,
 			publicLibraryPathLength,
 			privateLibraryPath,
 			privateLibraryPathLength

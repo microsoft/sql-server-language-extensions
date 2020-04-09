@@ -27,6 +27,8 @@ function build {
 		-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DINCLUDE_ROOT=${INCLUDE_ROOT} \
+		-DPYTHONHOME=${PYTHONHOME} \
+		-DBOOST_PYTHON_ROOT=${BOOST_PYTHON_ROOT} \
 		${PYTHONEXTENSIONTEST_SRC_DIR}
 	cmake --build ${PYTHONEXTENSIONTEST_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
 
@@ -52,6 +54,33 @@ INCLUDE_ROOT=/usr/include
 #
 PYTHONEXTENSIONTEST_SRC_DIR=${PYTHONEXTENSIONTEST_HOME}/src
 PYTHONEXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/pythonextension-test/linux
+
+DEFAULT_PYTHONHOME=/usr
+DEFAULT_BOOST_PYTHON_ROOT=/usr/lib/boost_1_69_0/stage/lib
+
+# Find PYTHONHOME from user, or set to default for tests.
+# Error code 1 is generic bash error.
+# 
+if [ -z "${PYTHONHOME}" ]; then
+	if [ -x "${DEFAULT_PYTHONHOME}" ]; then 
+		PYTHONHOME=${DEFAULT_PYTHONHOME}
+	else
+		echo "PYTHONHOME is empty but needs to be set to build the python extension test"
+		exit 1
+	fi
+fi
+
+# Find BOOST_PYTHON_ROOT from user, or set to default for tests.
+# Error code 1 is generic bash error.
+# 
+if [ -z "${BOOST_PYTHON_ROOT}" ]; then
+	if [ -x "${DEFAULT_BOOST_PYTHON_ROOT}" ]; then 
+		BOOST_PYTHON_ROOT=${DEFAULT_BOOST_PYTHON_ROOT}
+	else
+		echo "BOOST_PYTHON_ROOT is empty but needs to be set to build the python extension test"
+		exit 1
+	fi
+fi
 
 # Build in debug mode if nothing is specified
 #

@@ -44,16 +44,11 @@ set_target_properties(PythonExtension
 )
 
 if (${PLATFORM} STREQUAL linux)
-	set(BOOST_ALL_NO_LIB ON)
-	set(BOOST_USE_STATIC_LIBS ON) 
-	set(BOOST_USE_MULTITHREADED ON)  
-	set(BOOST_USE_STATIC_RUNTIME ON) 
-
-	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++11 -Wno-unused-parameter)
+	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++14 -Wno-unused-parameter)
 	
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 	
-	set(USR_LIB_PATH /usr/lib)
+	set(USR_LIB_PATH /usr/local/lib)
 	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python3.7/config-3.7m-x86_64-linux-gnu)
 	
 	find_library(PYTHON_LIB python3.7 ${PYTHON_LIB_PATH})
@@ -67,11 +62,11 @@ if (${PLATFORM} STREQUAL linux)
 	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${PYTHON_INCLUDE})
 
 elseif(${PLATFORM} STREQUAL windows)
-	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS -DBOOST_USE_STATIC_LIBS -DBOOST_PYTHON_STATIC_LIB -DBOOST_ALL_NO_LIB -DBOOST_NUMPY_STATIC_LIB)
+	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 	
 	# Compile options /W2 for severe warnings and /c to compile only
 	#
-	set(COMPILE_OPTIONS /W2 /c)
+	set(COMPILE_OPTIONS /W2 /c /std:c++14)
 	
 	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)
 	
@@ -97,6 +92,8 @@ elseif(${PLATFORM} STREQUAL windows)
 	
 	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${PYTHON_INCLUDE})
 endif()
+
+add_definitions(-DBOOST_USE_STATIC_LIBS -DBOOST_PYTHON_STATIC_LIB -DBOOST_ALL_NO_LIB)
 
 if (${CMAKE_BUILD_TYPE} STREQUAL debug)
 	add_definitions(-DDEBUG)

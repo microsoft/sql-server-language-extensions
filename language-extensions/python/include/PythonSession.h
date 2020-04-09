@@ -12,10 +12,10 @@
 //*********************************************************************
 
 #pragma once
-#include "Column.h"
+#include "PythonColumn.h"
 #include "Common.h"
 
-// Data pertaining to a session
+// data pertaining to a session
 //
 class PythonSession
 {
@@ -27,84 +27,84 @@ public:
 		const SQLGUID *sessionId,
 		SQLUSMALLINT  taskId,
 		SQLUSMALLINT  numTasks,
-		SQLCHAR		  *script,
-		SQLULEN		  scriptLength,
+		SQLCHAR       *script,
+		SQLULEN       scriptLength,
 		SQLUSMALLINT  inputSchemaColumnsNumber,
 		SQLUSMALLINT  parametersNumber,
-		SQLCHAR		  *inputDataName,
+		SQLCHAR       *inputDataName,
 		SQLUSMALLINT  inputDataNameLength,
-		SQLCHAR		  *outputDataName,
+		SQLCHAR       *outputDataName,
 		SQLUSMALLINT  outputDataNameLength);
 
 	// Init the input column
 	//
 	void InitColumn(
-		SQLUSMALLINT  ColumnNumber,
-		const SQLCHAR *ColumnName,
-		SQLSMALLINT	  ColumnNameLength,
-		SQLSMALLINT	  DataType,
-		SQLULEN		  ColumnSize,
-		SQLSMALLINT	  DecimalDigits,
-		SQLSMALLINT	  Nullable,
-		SQLSMALLINT	  PartitionByNumber,
-		SQLSMALLINT	  OrderByNumber);
+		SQLUSMALLINT  columnNumber,
+		const SQLCHAR *columnName,
+		SQLSMALLINT   columnNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       columnSize,
+		SQLSMALLINT   decimalDigits,
+		SQLSMALLINT   nullable,
+		SQLSMALLINT   partitionByNumber,
+		SQLSMALLINT   orderByNumber);
 
 	// Init the input parameter
 	//
 	void InitParam(
-		SQLUSMALLINT  ParamNumber,
-		const SQLCHAR *ParamName,
-		SQLSMALLINT	  ParamNameLength,
-		SQLSMALLINT	  DataType,
-		SQLULEN		  ArgSize,
-		SQLSMALLINT	  DecimalDigits,
-		SQLPOINTER	  ArgValue,
-		SQLINTEGER	  StrLen_or_Ind,
-		SQLSMALLINT	  InputOutputType);
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   InputOutputType);
 
 	// Execute the workflow for the session
 	//
 	void ExecuteWorkflow(
-		SQLULEN		 RowsNumber,
-		SQLPOINTER	 *Data,
-		SQLINTEGER	 **StrLen_or_Ind,
-		SQLUSMALLINT *OutputSchemaColumnsNumber);
+		SQLULEN      rowsNumber,
+		SQLPOINTER   *data,
+		SQLINTEGER   **strLen_or_Ind,
+		SQLUSMALLINT *outputSchemaColumnsNumber);
 
 	// Get the metadata for the output column
 	//
 	void GetResultColumn(
-		SQLUSMALLINT ColumnNumber,
-		SQLSMALLINT  *DataType,
-		SQLULEN		 *ColumnSize,
-		SQLSMALLINT  *DecimalDigits,
-		SQLSMALLINT  *Nullable);
+		SQLUSMALLINT columnNumber,
+		SQLSMALLINT  *dataType,
+		SQLULEN      *columnSize,
+		SQLSMALLINT  *decimalDigits,
+		SQLSMALLINT  *nullable);
 
 	// Get the results
 	//
 	void GetResults(
-		SQLULEN	   *RowsNumber,
-		SQLPOINTER **Data,
-		SQLINTEGER ***StrLen_or_Ind);
+		SQLULEN    *rowsNumber,
+		SQLPOINTER **data,
+		SQLINTEGER ***strLen_or_Ind);
 
 	// Get the the output parameter
 	//
 	void GetOutputParam(
-		SQLUSMALLINT ParamNumber,
-		SQLPOINTER	 *ParamValue,
-		SQLINTEGER	 *StrLen_or_Ind);
+		SQLUSMALLINT paramNumber,
+		SQLPOINTER   *paramValue,
+		SQLINTEGER   *strLen_or_Ind);
 
 	// Cleanup session
 	//
 	void Cleanup();
 
 private:
-	boost::python::object m_mainModule;		// The boost python module; python will run in this object
-	boost::python::object m_mainNamespace;	// The boost python namespace; dictionary containing all python variables
+	boost::python::object m_mainModule;    // The boost python module; python will run in this object
+	boost::python::object m_mainNamespace; // The boost python namespace; dictionary containing all python variables
 
 	SQLUSMALLINT m_inputSchemaColumnsNumber;
-	std::vector<Column> m_inputColumns;
+	std::vector<PythonColumn> m_inputColumns;
 
-	SQLGUID m_sessionId;					// Session ID
+	SQLGUID m_sessionId;
 
 	// Parameters
 	//
