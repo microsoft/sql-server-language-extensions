@@ -47,16 +47,16 @@ using namespace std;
 //
 void RSession::Init(
 	const SQLGUID &sessionId,
-	SQLUSMALLINT   taskId,
-	SQLUSMALLINT   numTasks,
+	SQLUSMALLINT  taskId,
+	SQLUSMALLINT  numTasks,
 	const SQLCHAR *script,
-	SQLULEN        scriptLength,
-	SQLUSMALLINT   inputSchemaColumnsNumber,
-	SQLUSMALLINT   parametersNumber,
+	SQLULEN       scriptLength,
+	SQLUSMALLINT  inputSchemaColumnsNumber,
+	SQLUSMALLINT  parametersNumber,
 	const SQLCHAR *inputDataName,
-	SQLUSMALLINT   inputDataNameLength,
+	SQLUSMALLINT  inputDataNameLength,
 	const SQLCHAR *outputDataName,
-	SQLUSMALLINT   outputDataNameLength)
+	SQLUSMALLINT  outputDataNameLength)
 {
 	LOG("RSession::Init");
 
@@ -100,15 +100,15 @@ void RSession::Init(
 //  Initializes the input column for this session
 //
 void RSession::InitColumn(
-	SQLUSMALLINT   columnNumber,
+	SQLUSMALLINT  columnNumber,
 	const SQLCHAR *columnName,
-	SQLSMALLINT    columnNameLength,
-	SQLSMALLINT    dataType,
-	SQLULEN        columnSize,
-	SQLSMALLINT    decimalDigits,
-	SQLSMALLINT    nullable,
-	SQLSMALLINT    partitionByNumber,
-	SQLSMALLINT    orderByNumber)
+	SQLSMALLINT   columnNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       columnSize,
+	SQLSMALLINT   decimalDigits,
+	SQLSMALLINT   nullable,
+	SQLSMALLINT   partitionByNumber,
+	SQLSMALLINT   orderByNumber)
 {
 	LOG("RSession::InitColumn " + to_string(columnNumber));
 

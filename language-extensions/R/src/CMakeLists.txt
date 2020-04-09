@@ -26,7 +26,7 @@ file(TO_CMAKE_PATH ${REXTENSION_HOME}/src REXTENSION_SRC_DIR)
 
 # C++ code; only these files are compiled-in
 #
-file(GLOB REXTENSION_SOURCE_FILES ${REXTENSION_SRC_DIR}/*.cpp ${REXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
+file(GLOB REXTENSION_SOURCE_FILES ${REXTENSION_SRC_DIR}/*.cpp)
 
 # Create the target library
 #

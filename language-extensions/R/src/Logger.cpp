@@ -25,9 +25,6 @@
 // and errors.
 //
 //*************************************************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
 #include <ctime>
 #include <iostream>
 #include <stdio.h>
@@ -127,23 +124,6 @@ void Logger::LogRVariable(const string &name)
 //
 const char* Logger::GetCurrentTimestamp()
 {
-#ifdef _WIN64
-	SYSTEMTIME sysTime;
-
-	GetLocalTime(&sysTime);
-
-	sprintf_s(timestampBuffer, TIMESTAMP_LENGTH,
-		"%04d-%02d-%02d %02d:%02d:%02d.%02d\t",
-		sysTime.wYear,
-		sysTime.wMonth,
-		sysTime.wDay,
-		sysTime.wHour,
-		sysTime.wMinute,
-		sysTime.wSecond,
-		sysTime.wMilliseconds / 10);
-
-	return timestampBuffer;
-#else
 	timespec ts;
 	char buffer[TIMESTAMP_LENGTH] = { 0 };
 
@@ -151,7 +131,7 @@ const char* Logger::GetCurrentTimestamp()
 
 	// Convert the time to Year-Month-Day Hour:Minute:Second
 	//
-	strftime(buffer, sizeof(buffer), "%F %T", gmtime(&ts.tv_sec));
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", gmtime(&ts.tv_sec));
 
 	// Append the milliseconds and the tab to the timestamp
 	//
@@ -167,5 +147,4 @@ const char* Logger::GetCurrentTimestamp()
 	sprintf(timestampBuffer, "%s.%02li\t", buffer, ms);
 
 	return timestampBuffer;
-#endif
 }

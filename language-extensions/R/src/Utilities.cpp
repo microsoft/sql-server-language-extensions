@@ -34,6 +34,8 @@
 
 using namespace std;
 
+const char* GuidFormat="%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
+
 // Given a constant string input, generate a unique pointer
 // pointing to a char array containing the same contents as that of the input
 //
@@ -47,4 +49,57 @@ unique_ptr<char> Utilities::GenerateUniquePtr(const string &inputStr)
 	memcpy(outPtr.get(), inputStr.c_str(), inputStrLen);
 	*(outPtr.get() + inputStrLen) = '\0';
 	return outPtr;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::ConvertGuidToString
+//
+// Description:
+//  Converts a SQLGUID to a string
+//
+// Returns:
+//	string of the guid
+//
+std::string Utilities::ConvertGuidToString(const SQLGUID *guid)
+{
+	// 32 hex chars + 4 hyphens + null terminator, so 37 characters.
+	//
+	char guidString[37];
+	snprintf(guidString, sizeof(guidString) / sizeof(guidString[0]),
+		GuidFormat,
+		static_cast<unsigned long>(guid->Data1), guid->Data2, guid->Data3,
+		guid->Data4[0], guid->Data4[1], guid->Data4[2], guid->Data4[3],
+		guid->Data4[4], guid->Data4[5], guid->Data4[6], guid->Data4[7]);
+	std::string s(guidString);
+	return s;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::Tokenize
+//
+// Description:
+//  Splits the given character string using the delimiter and
+//  adds the tokens to the input vector.
+// Remarks:
+//  If the input is invalid and unable to be parsed,
+//  token will be nullptr and we add nothing to the vector.
+//
+// Returns:
+//	nothing.
+//
+void Utilities::Tokenize(
+	char           *input,
+	const char     *delimiter,
+	vector<char *> *tokens)
+{
+	char *internalState = nullptr;
+	char *token = strtok_r(input, delimiter, &internalState);
+
+	// Use strtok_r iteratively to do the tokenization.
+	//
+	while (token != nullptr)
+	{
+		(*tokens).push_back(token);
+		token = strtok_r(nullptr, delimiter, &internalState);
+	}
 }
