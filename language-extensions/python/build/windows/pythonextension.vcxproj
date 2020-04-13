@@ -125,15 +125,17 @@
     <ClInclude Include="$(IncludeDirectory)\Common.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonColumn.h" />
     <ClInclude Include="$(IncludeDirectory)\Logger.h" />
-    <ClInclude Include="$(IncludeDirectory)\PythonTypeUtils.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonExtensionUtils.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonParam.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonParamContainer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SourceDirectory)\pythonextension.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonExtension.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonSession.cpp" />
     <ClCompile Include="$(SourceDirectory)\Logger.cpp" />
-    <ClCompile Include="$(SourceDirectory)\PythonTypeUtils.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonColumn.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonParam.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonParamContainer.cpp" />
     <ClCompile Include="$(SourceDirectory)\windows\PythonExtensionUtils_win.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: pythonextension.cpp
+// @File: PythonExtension.cpp
 //
 // Purpose:
 //  Python extension DLL that can be loaded by ExtHost. This library loads the
@@ -17,10 +17,9 @@
 #include <unordered_map>
 
 #include "Logger.h"
-#include "PythonSession.h"
-#include "PythonTypeUtils.h"
-#include "sqlexternallanguage.h"
 #include "PythonExtensionUtils.h"
+#include "PythonSession.h"
+#include "sqlexternallanguage.h"
 
 using namespace std;
 

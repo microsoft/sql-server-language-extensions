@@ -1,4 +1,4 @@
-//*********************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
 // Purpose:
 //  Test the Python extension parameters using the Extension API
 //
-//*********************************************************************
+//*************************************************************************************************
 
 #include "PythonExtensionApiTest.h"
 
@@ -21,35 +21,6 @@ namespace py = boost::python;
 
 namespace ExtensionApiTest
 {
-	// Positive test
-	//
-	TEST_F(PythonExtensionApiTest, InitValidParamNumberTest)
-	{
-		InitializeSession();
-
-		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + m_paramName).c_str())));
-
-		SQLSMALLINT paramNameLength = m_paramNameLength + 1;
-
-		SLONG paramValue = 123;
-
-		SQLRETURN result = InitParam(
-			*m_sessionId,
-			m_taskId,
-			0,                 // paramNumber outside of range
-			unsignedParamName, // paramName
-			paramNameLength,
-			SQL_C_SLONG,
-			sizeof(SLONG),     // argSize
-			0,                 // decimalDigits
-			&paramValue,       // argValue
-			-1,                // strLenOrInd
-			1);                // inputOutputType
-
-		EXPECT_EQ(result, SQL_SUCCESS);
-	}
-
 	// Negative test
 	// Test InitParam() API with null parameter name
 	//
@@ -59,7 +30,7 @@ namespace ExtensionApiTest
 
 		SQLCHAR *paramName = nullptr;
 		SQLSMALLINT paramNameLength = 0;
-		SLONG paramValue = 123;
+		SQLINTEGER paramValue = 123;
 
 		SQLRETURN result = InitParam(
 			*m_sessionId,
@@ -71,7 +42,7 @@ namespace ExtensionApiTest
 			sizeof(SLONG),   // argSize
 			0,               // decimalDigits
 			&paramValue,     // argValue
-			-1,              // strLenOrInd
+			SQL_NULL_DATA,   // strLenOrInd
 			1);              // inputOutputType
 
 		EXPECT_EQ(result, SQL_ERROR);
@@ -89,7 +60,7 @@ namespace ExtensionApiTest
 
 		SQLSMALLINT paramNameLength = m_paramNameLength + 1;
 
-		SLONG paramValue = 123;
+		SQLINTEGER paramValue = 123;
 
 		SQLRETURN result = InitParam(
 			*m_sessionId,
@@ -98,10 +69,10 @@ namespace ExtensionApiTest
 			unsignedParamName,      // paramName
 			paramNameLength,
 			SQL_C_SLONG,
-			sizeof(SLONG),          // argSize
+			sizeof(SQLINTEGER),     // argSize
 			0,                      // decimalDigits
 			&paramValue,            // argValue
-			-1,                     // strLenOrInd
+			SQL_NULL_DATA,          // strLenOrInd
 			1);                     // inputOutputType
 
 		EXPECT_EQ(result, SQL_ERROR);
@@ -376,10 +347,10 @@ namespace ExtensionApiTest
 		// Test null binary(4) value
 		//
 		TestBinaryParameter(
-			nullptr, // paramValue
-			-1,      // strLenOrInd
-			4,       // paramSize
-			true);   // isFixedType
+			nullptr,       // paramValue
+			SQL_NULL_DATA, // strLenOrInd
+			4,             // paramSize
+			true);         // isFixedType
 
 		// Test binary(5) value with length less than size - should be padded.
 		//
@@ -400,10 +371,10 @@ namespace ExtensionApiTest
 		// Test null varbinary(5) value
 		//
 		TestBinaryParameter(
-			nullptr, // paramValue
-			-1,      // strLenOrInd
-			4,       // paramSize
-			false);  // isFixedType
+			nullptr,       // paramValue
+			SQL_NULL_DATA, // strLenOrInd
+			4,             // paramSize
+			false);        // isFixedType
 
 		// Test varbinary(5) value with length less than size.
 		//
@@ -441,15 +412,15 @@ namespace ExtensionApiTest
 		result = InitParam(
 			*m_sessionId,
 			m_taskId,
-			0,                               // paramNumber
+			0,                                          // paramNumber
 			unsignedParamName,
 			paramNameLength,
 			dataType,
-			sizeof(SQLType),                 // paramSize
-			0,                               // decimalDigits
-			pParamValue,                     // paramValue
-			pParamValue != nullptr ? 0 : -1, // strLenOrInd
-			1);                              // inputOutputType
+			sizeof(SQLType),                            // paramSize
+			0,                                          // decimalDigits
+			pParamValue,                                // paramValue
+			pParamValue != nullptr ? 0 : SQL_NULL_DATA, // strLenOrInd
+			1);                                         // inputOutputType
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 
@@ -520,7 +491,7 @@ namespace ExtensionApiTest
 		}
 		else
 		{
-			strLenOrInd = -1;
+			strLenOrInd = SQL_NULL_DATA;
 		}
 
 		SQLRETURN result = SQL_ERROR;

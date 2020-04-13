@@ -1,4 +1,4 @@
-//*********************************************************************
+//**************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,11 +9,10 @@
 // Purpose:
 //  Class encapsulating operations performed per session
 //
-//*********************************************************************
+//**************************************************************************************************
 
 #include "Logger.h"
 #include "PythonSession.h"
-#include "PythonTypeUtils.h"
 
 using namespace std;
 namespace py = boost::python;
@@ -53,10 +52,13 @@ void PythonSession::Init(
 		throw runtime_error("Main module or namespace was None");
 	}
 
-	// Store the number of input columns and parameters
+	// Store the number of input columns
 	//
 	m_inputSchemaColumnsNumber = inputSchemaColumnsNumber;
-	m_parametersNumber = parametersNumber;
+
+	// Initialize the parameters container.
+	//
+	m_paramContainer.Init(parametersNumber);
 }
 
 // Init the input column
@@ -102,35 +104,32 @@ void PythonSession::InitParam(
 	SQLSMALLINT   decimalDigits,
 	SQLPOINTER    paramValue,
 	SQLINTEGER    strLen_or_Ind,
-	SQLSMALLINT   InputOutputType)
+	SQLSMALLINT   inputOutputType)
 {
-	LOG("PythonSession::InitParam");
+	LOG("PythonSession::InitParam #" + to_string(paramNumber));
 
 	if (paramName == nullptr)
 	{
 		throw invalid_argument("Invalid input parameter name supplied");
 	}
-	else if (paramNumber >= m_parametersNumber)
+	else if (paramNumber >= m_paramContainer.GetSize())
 	{
 		throw invalid_argument("Invalid input param id supplied: " + to_string(paramNumber));
 	}
 
-	// +1 removes the @ in front of the parameter name, -1 to remove it from the length
+	// Add parameter to the container and boost::python nameSpace.
 	//
-	string name(reinterpret_cast<const char*>((paramName + 1)), paramNameLength - 1);
-
-	LOG("PythonSession::InitParam: Initializing parameter " + name);
-
-	// Add input parameters to the namespace
-	//
-	PythonTypeUtils::AddParamToNamespace(
+	m_paramContainer.AddParamToNamespace(
 		m_mainNamespace,
-		name,
+		paramNumber,
+		paramName,
+		paramNameLength,
 		dataType,
 		paramSize,
 		decimalDigits,
 		paramValue,
-		strLen_or_Ind);
+		strLen_or_Ind,
+		inputOutputType);
 }
 
 // Execute the workflow for the session

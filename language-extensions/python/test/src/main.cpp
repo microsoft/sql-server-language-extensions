@@ -1,4 +1,4 @@
-//*********************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
 // Purpose:
 //  Initialize gtest and run all Python extension tests
 //
-//*********************************************************************
+//*************************************************************************************************
 #include <gtest/gtest.h>
 
 int main(int argc, const char **argv)

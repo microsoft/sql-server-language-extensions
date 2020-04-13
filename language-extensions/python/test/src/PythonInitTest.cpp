@@ -1,4 +1,4 @@
-//*********************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -10,7 +10,7 @@
 //  Test the Python extension initialization and
 //  session initialization using the Extension API
 //
-//*********************************************************************
+//*************************************************************************************************
 #include "PythonExtensionApiTest.h"
 
 using namespace std;

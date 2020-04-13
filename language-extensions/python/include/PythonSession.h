@@ -1,4 +1,4 @@
-//*********************************************************************
+//**************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,11 +9,13 @@
 // Purpose:
 //  Class encapsulating operations performed per session
 //
-//*********************************************************************
+//**************************************************************************************************
 
 #pragma once
-#include "PythonColumn.h"
 #include "Common.h"
+#include "PythonColumn.h"
+#include "PythonParam.h"
+#include "PythonParamContainer.h"
 
 // data pertaining to a session
 //
@@ -108,7 +110,7 @@ private:
 
 	// Parameters
 	//
-	SQLUSMALLINT m_parametersNumber;
+	PythonParamContainer m_paramContainer;
 
 	// TODO: Work item 13292456: Create a DataSet class to wrap input/output dataset
 };
