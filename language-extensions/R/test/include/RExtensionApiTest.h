@@ -83,6 +83,15 @@ typedef SQLRETURN FN_execute(
 	SQLINTEGER **,  // strLenOrInd
 	SQLUSMALLINT *);// outputSchemaColumnsNumber
 
+typedef SQLRETURN FN_getResultColumn(
+	SQLGUID,        // sessionId
+	SQLUSMALLINT,   // taskId
+	SQLUSMALLINT,   // columnNumber
+	SQLSMALLINT *,  // dataType,
+	SQLULEN *,      // columnSize,
+	SQLSMALLINT *,  // decimalDigits,
+	SQLSMALLINT *); // nullable
+
 typedef SQLRETURN FN_cleanupSession(
 	SQLGUID,       // sessionId
 	SQLUSMALLINT); // taskId
@@ -91,6 +100,12 @@ typedef SQLRETURN FN_cleanup();
 
 namespace ExtensionApiTest
 {
+
+	// Forward declaration
+	//
+	template<class SQLType>
+	class ColumnInfo;
+
 	// All the tests in the RExtensionApiTest suite run one after the other
 	//
 	class RExtensionApiTest : public ::testing::Test
@@ -148,11 +163,14 @@ namespace ExtensionApiTest
 		//
 		static void DoCleanup();
 
-		// Initialize a valid, default session for later tests
+		// Initialize a valid session.
 		//
-		void InitializeSession(SQLUSMALLINT inputSchemaColumnsNumber = 0);
+		void InitializeSession(
+			SQLUSMALLINT inputSchemaColumnsNumber = 0,
+			SQLCHAR      *script = static_cast<SQLCHAR*>(static_cast<void *>(const_cast<char*>(""))),
+			SQLULEN      scriptStringLength = 0);
 
-		// Initialize a column
+		// Initialize a column.
 		//
 		void InitializeColumn(
 			SQLSMALLINT columnNumber,
@@ -160,7 +178,10 @@ namespace ExtensionApiTest
 			SQLSMALLINT dataType,
 			SQLULEN     columnSize);
 
-		// Cleanup a valid, default session for later tests
+		template<class SQLType, SQLSMALLINT dataType>
+		void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
+
+		// Cleanup a valid session.
 		//
 		void CleanupSession();
 
@@ -187,15 +208,19 @@ namespace ExtensionApiTest
 			SQLULEN        paramSize,
 			bool           isFixedType);
 
-		template<class SQLType>
+		// Fill a contiguous array columnData with members from the given columnVector
+		//
 		void GenerateContiguousData(
-			SQLType                     *charCol1Data,
-			std::vector<const SQLType*> charVector,
-			SQLINTEGER                  *strLenOrInd);
+			char                     *charCol1Data,
+			std::vector<const char*> charVector,
+			SQLINTEGER               *strLenOrInd);
 
+		// Get sum of lengths in strLenOrInd skipping SQL_NULL_DATA.
+		//
 		SQLINTEGER GetSumOfLengths(
 			SQLINTEGER *strLenOrInd,
-			SQLULEN    rowsNumber);
+			SQLULEN    rowsNumber,
+			SQLINTEGER *maxLen);
 
 		// Templatized function to compare the given vector and data for equality.
 		//
@@ -206,6 +231,8 @@ namespace ExtensionApiTest
 			void        *expectedVector,
 			SQLINTEGER  *strLen_or_Ind);
 
+		// Compare the given character vector and data for equality
+		//
 		void CheckCharacterVectorEquality(
 			SQLULEN               expectedRowsNumber,
 			Rcpp::CharacterVector vectorToTest,
@@ -229,27 +256,38 @@ namespace ExtensionApiTest
 		// Templatized function to Test Execute with default script
 		//
 		template<class SQLType, class RType, SQLSMALLINT dataType>
-		void TestExecute(
+		void Execute(
 			SQLULEN                  rowsNumber,
 			void**                   dataSet,
 			SQLINTEGER               **strLen_or_Ind,
-			std::vector<std::string> columnNames);
+			std::vector<std::string> columnNames,
+			bool                     test = true);
 
 		// Test Execute with default script for Character columns.
 		//
-		void TestExecuteChar(
+		void ExecuteChar(
 			SQLULEN                  rowsNumber,
 			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
-			std::vector<std::string> columnNames);
+			std::vector<std::string> columnNames,
+			bool                     test = true);
+
+		// Test GetResultColumn to verify the expected result column information.
+		//
+		void TestGetResultColumn(
+			SQLUSMALLINT columnNumber,
+			SQLSMALLINT  expectedDataType,
+			SQLULEN      expectedColumnSize,
+			SQLSMALLINT  expectedDecimalDigits,
+			SQLSMALLINT  expectedNullable);
 
 		// Objects declared here can be used by all tests in the test suite.
 		//
 		SQLGUID *m_sessionId;
 		SQLUSMALLINT m_taskId;
 		SQLUSMALLINT m_numTasks;
-		SQLUSMALLINT m_parametersNumber;
 
+		SQLUSMALLINT m_parametersNumber;
 		SQLCHAR *m_paramName = nullptr;
 		std::string m_paramNameString;
 
@@ -267,6 +305,15 @@ namespace ExtensionApiTest
 		std::string m_outputDataNameString;
 
 		const std::string m_printMessage = "Hello RExtension World!";
+
+		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLCHAR>> m_logicalInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLREAL>> m_realInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLDOUBLE>> m_doubleInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLBIGINT>> m_bigIntInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLSMALLINT>> m_smallIntInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLCHAR>> m_tinyIntInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLCHAR>> m_charInfo = nullptr;
 
 		// R global environment
 		//
@@ -296,6 +343,10 @@ namespace ExtensionApiTest
 		//
 		static FN_execute *m_executeFuncPtr;
 
+		// Pointer to the GetResultColumn function
+		//
+		static FN_getResultColumn *m_getResultColumnFuncPtr;
+
 		// Pointer to the CleanupSession function
 		//
 		static FN_cleanupSession *m_cleanupSessionFuncPtr;
@@ -303,5 +354,34 @@ namespace ExtensionApiTest
 		// Pointer to the Cleanup function
 		//
 		static FN_cleanup *m_cleanupFuncPtr;
+	};
+
+	// ColumnInfo template class to store information
+	// about integer, basic numeric and logical columns.
+	// This assumes two columns and five rows.
+	//
+	template<class SQLType>
+	class ColumnInfo
+	{
+	public:
+		ColumnInfo(
+			std::string column1Name, std::vector<SQLType> column1,
+			std::vector<SQLINTEGER> col1StrLenOrInd,
+			std::string column2Name, std::vector<SQLType> column2,
+			std::vector<SQLINTEGER> col2StrLenOrInd);
+
+		SQLUSMALLINT GetColumnsNumber() const
+		{
+			return m_columnNames.size();
+		}
+
+		static const SQLULEN m_rowsNumber = 5;
+		std::vector<std::string> m_columnNames;
+		std::vector<SQLType> m_column1;
+		std::vector<SQLType> m_column2;
+		std::vector<void*> m_dataSet;
+		std::vector<SQLINTEGER> m_col1StrLenOrInd;
+		std::vector<SQLINTEGER> m_col2StrLenOrInd;
+		std::vector<SQLINTEGER*> m_strLen_or_Ind;
 	};
 }

@@ -63,6 +63,7 @@ namespace ExtensionApiTest
 	FN_initColumn *RExtensionApiTest::m_initColumnFuncPtr = nullptr;
 	FN_initParam *RExtensionApiTest::m_initParamFuncPtr = nullptr;
 	FN_execute *RExtensionApiTest::m_executeFuncPtr = nullptr;
+	FN_getResultColumn *RExtensionApiTest::m_getResultColumnFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
 
@@ -165,6 +166,12 @@ namespace ExtensionApiTest
 				"Execute"));
 		ASSERT_TRUE(m_executeFuncPtr != nullptr);
 
+		m_getResultColumnFuncPtr = reinterpret_cast<FN_getResultColumn*>(
+			Utilities::CrossPlatGetFunctionFromLibHandle(
+				m_libHandle,
+				"GetResultColumn"));
+		ASSERT_TRUE(m_getResultColumnFuncPtr != nullptr);
+
 		m_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
 				m_libHandle,
@@ -245,6 +252,65 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str()))
 			);
 
+		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
+			"IntegerColumn1",
+			vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
+			vector<SQLINTEGER>(),
+			"IntegerColumn2",
+			vector<SQLINTEGER>{ 2'147'483'647, -2'147'483'647, 0, -2'147'483'648, -1 },
+			vector<SQLINTEGER>{ 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+
+		m_logicalInfo = make_unique<ColumnInfo<SQLCHAR>>(
+			"LogicalColumn1",
+			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
+			vector<SQLINTEGER>(),
+			"LogicalColumn2",
+			vector<SQLCHAR>{ '0', '2', '1', '0', '1' },
+			vector<SQLINTEGER>{ SQL_NULL_DATA, 0, 0, 0, SQL_NULL_DATA });
+
+		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
+			"RealColumn1",
+			vector<SQLREAL>{ 0.34, 1.33, 83.98, 72.45, 68e10 },
+			vector<SQLINTEGER>(),
+			"RealColumn2",
+			vector<SQLREAL>{ 3.4e38F, 0, -3.4e38F, -1, 0 },
+			vector<SQLINTEGER>{ 0, SQL_NULL_DATA, 0, SQL_NULL_DATA, 0 });
+
+		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
+			"DoubleColumn1",
+			vector<SQLDOUBLE>{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 },
+			vector<SQLINTEGER>(),
+			"DoubleColumn2",
+			vector<SQLDOUBLE>{ 0, 1.79e308, 0, -1.79e308, -1 },
+			vector<SQLINTEGER>{ SQL_NULL_DATA, 0, SQL_NULL_DATA, 0, SQL_NULL_DATA });
+
+		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
+			"BigIntColumn1",
+			vector<SQLBIGINT>{ 9'223'372'036'854'775'807LL, 1,
+				88883939, -9'223'372'036'854'775'807LL, -622280108 },
+			vector<SQLINTEGER>(),
+			"BigIntColumn2",
+			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
+			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
+				SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+
+		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
+			"SmallIntColumn1",
+			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
+			vector<SQLINTEGER>(),
+			"SmallIntColumn2",
+			vector<SQLSMALLINT>{ -1, 0, 32'767, -32'768, 3'276 },
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, 0));
+
+		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
+			"TinyIntColumn1",
+			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
+			vector<SQLINTEGER>(),
+			"RealColumn2",
+			vector<SQLCHAR>{ 255, 0, 1, 0, 128 },
+			vector<SQLINTEGER>{ 0, SQL_NULL_DATA,
+				SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+
 		// Retrieve the global environment
 		//
 		m_globalEnvironment = Rcpp::Environment::global_env();
@@ -293,7 +359,10 @@ namespace ExtensionApiTest
 	// Description:
 	// Initialize a valid, default session for later tests
 	//
-	void RExtensionApiTest::InitializeSession(SQLUSMALLINT inputSchemaColumnsNumber)
+	void RExtensionApiTest::InitializeSession(
+		SQLUSMALLINT inputSchemaColumnsNumber,
+		SQLCHAR      *script,
+		SQLULEN      scriptStringLength)
 	{
 		SQLRETURN result = SQL_SUCCESS;
 
@@ -301,8 +370,8 @@ namespace ExtensionApiTest
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
-			m_script,
-			m_scriptString.length(),
+			script,
+			scriptStringLength,
 			inputSchemaColumnsNumber,
 			m_parametersNumber,
 			m_inputDataName,
@@ -327,5 +396,158 @@ namespace ExtensionApiTest
 			m_taskId);
 
 		EXPECT_EQ(result, SQL_SUCCESS);
+	}
+
+	// Name: InitializeColumns
+	//
+	// Description:
+	// Templetized function to call InitializeColumn for all columns.
+	//
+	template<class SQLType, SQLSMALLINT dataType>
+	void RExtensionApiTest::InitializeColumns(ColumnInfo<SQLType> *ColumnInfo)
+	{
+		SQLUSMALLINT inputSchemaColumnsNumber = ColumnInfo->GetColumnsNumber();
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
+		{
+			InitializeColumn(columnNumber,
+				ColumnInfo->m_columnNames[columnNumber],
+				dataType,
+				sizeof(SQLType));
+		}
+	}
+
+	// Template instantiations
+	//
+	template void RExtensionApiTest::InitializeColumns<SQLINTEGER, SQL_C_SLONG>(
+		ColumnInfo<SQLINTEGER> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQLCHAR, SQL_C_BIT>(
+		ColumnInfo<SQLCHAR> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQLREAL, SQL_C_FLOAT>(
+		ColumnInfo<SQLREAL> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(
+		ColumnInfo<SQLDOUBLE> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(
+		ColumnInfo<SQLBIGINT> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(
+		ColumnInfo<SQLSMALLINT> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
+		ColumnInfo<SQLCHAR> *ColumnInfo);
+
+	// Name: InitializeColumn
+	//
+	// Description:
+	// Call InitColumn for the given columnNumber, columnName, dataType and columnSize.
+	//
+	void RExtensionApiTest::InitializeColumn(
+		SQLSMALLINT columnNumber,
+		string      columnNameString,
+		SQLSMALLINT dataType,
+		SQLULEN     columnSize)
+	{
+		SQLCHAR *columnName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(columnNameString.c_str()))
+			);
+
+		SQLRETURN result = SQL_ERROR;
+
+		result = (*m_initColumnFuncPtr)(
+				*m_sessionId,
+				m_taskId,
+				columnNumber,
+				columnName,
+				columnNameString.length(),
+				dataType,
+				columnSize,
+				0,         // decimalDigits
+				1,         // nullable
+				-1,        // partitionByNumber
+				-1);       // orderByNumber
+		EXPECT_EQ(result, SQL_SUCCESS);
+	}
+
+	// Name: GenerateContiguousData
+	//
+	// Description:
+	// Fill a contiguous array columnData with members from the given columnVector
+	// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
+	//
+	void RExtensionApiTest::GenerateContiguousData(
+		char                *columnData,
+		vector<const char*> columnVector,
+		SQLINTEGER          *strLenOrInd)
+	{
+		SQLINTEGER baseIndex = 0;
+		for (SQLULEN index = 0 ; index < columnVector.size(); index++)
+		{
+			if (strLenOrInd[index] != SQL_NULL_DATA)
+			{
+				memcpy(columnData + baseIndex, columnVector[index], strLenOrInd[index]);
+				baseIndex += strLenOrInd[index];
+			}
+		}
+	}
+
+	// Name: GetSumOfLengths
+	//
+	// Description:
+	// Get sum of lengths in strLenOrInd skipping SQL_NULL_DATA.
+	//
+	SQLINTEGER RExtensionApiTest::GetSumOfLengths(
+		SQLINTEGER *strLenOrInd,
+		SQLULEN    rowsNumber,
+		SQLINTEGER *maxLen)
+	{
+		SQLINTEGER sumOfLengths = 0;
+		for(SQLULEN index = 0 ; index < rowsNumber; index++)
+		{
+			if(strLenOrInd[index] != SQL_NULL_DATA)
+			{
+				sumOfLengths += strLenOrInd[index];
+
+				if (maxLen != nullptr && *maxLen < strLenOrInd[index])
+				{
+					*maxLen = strLenOrInd[index];
+				}
+			}
+		}
+
+		return sumOfLengths;
+	}
+
+	// Name: ColumnInfo
+	//
+	// Description:
+	// Templetized constructor for the type information.
+	// Useful for ColumnInfo of integer, basic numeric and logical types.
+	//
+	template<class SQLType>
+	ColumnInfo<SQLType>::ColumnInfo(
+		string column1Name, vector<SQLType> column1, vector<SQLINTEGER> col1StrLenOrInd,
+		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd)
+	{
+		m_columnNames = { column1Name, column2Name };
+		m_column1 = column1;
+		m_column2 = column2;
+		m_dataSet = { m_column1.data(), m_column2.data()};
+		m_col1StrLenOrInd = col1StrLenOrInd;
+		if (m_col1StrLenOrInd.empty())
+		{
+			m_strLen_or_Ind.push_back(nullptr);
+		}
+		else
+		{
+			m_strLen_or_Ind.push_back(m_col1StrLenOrInd.data());
+		}
+
+		m_col2StrLenOrInd = col2StrLenOrInd;
+		if (m_col2StrLenOrInd.empty())
+		{
+			m_strLen_or_Ind.push_back(nullptr);
+		}
+		else
+		{
+			m_strLen_or_Ind.push_back(m_col2StrLenOrInd.data());
+		}
+
 	}
 }

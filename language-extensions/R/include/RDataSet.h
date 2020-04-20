@@ -39,7 +39,7 @@ public:
 
 	// Initialize the RDataSet.
 	//
-	void Init(
+	virtual void Init(
 		const SQLCHAR *dataName,
 		SQLUSMALLINT  dataNameLength,
 		SQLUSMALLINT  schemaColumnsNumber);
@@ -61,6 +61,23 @@ public:
 	SQLUSMALLINT GetDataFrameColumnsNumber() const
 	{
 		return m_dataFrame.length();
+	}
+
+	// Returns the number of rows in the RDataSet that have been added to
+	// to the underlying DataFrame at the time this is called.
+	// Note: The length returned increases as a single new column is added to the DataFrame,
+	// then stays the same for further addition of columns.
+	//
+	SQLUSMALLINT GetDataFrameRowsNumber() const
+	{
+		return m_dataFrame.nrows();
+	}
+
+	// Getter for m_columns.
+	//
+	std::vector<std::unique_ptr<RColumn>>& Columns()
+	{
+		return m_columns;
 	}
 
 protected:
@@ -88,8 +105,6 @@ protected:
 	// For a column, strLen_or_Ind is specified for each row.
 	//
 	std::vector<SQLINTEGER*> m_columnNullMap;
-
-	static std::unordered_set<SQLSMALLINT> m_supportedDataTypes;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -123,13 +138,23 @@ public:
 	// Adds a single column of values into the R DataFrame
 	//
 	void AddColumnToDataFrame(
-		SQLSMALLINT columnIndex,
+		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data);
 
 	// Adds the underlying R DataFrame to embedded R.
 	//
 	void AddDataFrameToEmbeddedR();
+
+	void Init(
+		const SQLCHAR *dataName,
+		SQLUSMALLINT  dataNameLength,
+		SQLUSMALLINT  schemaColumnsNumber) override;
+
+private:
+	// A set of supported column data types
+	//
+	static const std::unordered_set<SQLSMALLINT> m_supportedDataTypes;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -145,4 +170,102 @@ public:
 	// Retrieves the DataFrame with m_name from embedded R if it exists.
 	//
 	void RetrieveDataFrameFromEmbeddedR();
+
+	// Gets columns from the DataFrame and stores the data.
+	//
+	void GetColumnsFromDataFrame();
+
+	// Looks up the map m_fnGetColumnMap to find and call GetColumnFromDataFrame.
+	//
+	void GetColumnFromDataFrameWrapper(
+		SQLUSMALLINT columnNumber,
+		SQLSMALLINT  dataType,
+		SQLULEN      &columnSize,
+		SQLSMALLINT  &decimalDigits,
+		SQLSMALLINT  &nullable);
+
+	// Gets the column information, adds data to m_data and nullmap to m_columnNullMap
+	//
+	template<class RType, class SQLType, SQLSMALLINT dataType>
+	void GetColumnFromDataFrame(
+		SQLUSMALLINT columnNumber,
+		SQLULEN      &columnSize,
+		SQLSMALLINT  &decimalDigits,
+		SQLSMALLINT  &nullable);
+
+	// Gets the character column information, adds data to m_data and nullmap to m_columnNullMap
+	//
+	void GetCharacterColumnFromDataFrame(
+		SQLUSMALLINT columnNumber,
+		SQLULEN      &columnSize,
+		SQLSMALLINT  &decimalDigits,
+		SQLSMALLINT  &nullable);
+
+	// Gets the raw column information, adds data to m_data and nullmap to m_columnNullMap
+	//
+	void GetRawColumnFromDataFrame(
+		SQLUSMALLINT columnNumber,
+		SQLULEN      &columnSize,
+		SQLSMALLINT  &decimalDigits,
+		SQLSMALLINT  &nullable);
+
+	// Gets the data type of all columns in the DataFrame.
+	//
+	void GetColumnsDataType();
+
+	// Determine the data type of the given columnNumber.
+	//
+	SQLSMALLINT GetColumnDataType(SQLUSMALLINT columnNumber);
+
+	// Populate numberOfRows based on dataType.
+	//
+	void PopulateNumberOfRows();
+
+	// Call CleanupColumn on each column.
+	//
+	void CleanupColumns();
+
+	// Cleanup data buffer and nullmap.
+	//
+	template<class SQLType>
+	void CleanupColumn(SQLUSMALLINT columnNumber);
+
+private:
+	// Vector of pointers to data from all columns to be sent back to ExtHost.
+	//
+	std::vector<SQLPOINTER> m_data;
+
+	// Number of rows in the DataSet.
+	//
+	SQLULEN m_numberOfRows = 0;
+
+	// A vector of ODBC C data type of all columns.
+	//
+	std::vector<SQLSMALLINT> m_columnsDataType;
+
+	// GetColumn function pointer definition.
+	//
+	using fnGetColumn = void (ROutputDataSet::*)(
+		SQLUSMALLINT columnNumber,
+		SQLULEN      &columnSize,
+		SQLSMALLINT  &decimalDigits,
+		SQLSMALLINT  &nullable);
+
+	// CleanupColumn function pointer definition.
+	//
+	using fnCleanupColumn = void (ROutputDataSet::*)(
+		SQLUSMALLINT columnNumber);
+
+	// Function map for getting column from DataSet
+	//
+	static const std::unordered_map<SQLSMALLINT, fnGetColumn> m_fnGetColumnMap;
+
+	// Function map for Cleanup
+	//
+	static const std::unordered_map<SQLSMALLINT, fnCleanupColumn> m_fnCleanupColumnMap;
+
+	// Function map typedefs.
+	//
+	typedef std::unordered_map<SQLSMALLINT, fnGetColumn> GetColumnFnMap;
+	typedef std::unordered_map<SQLSMALLINT, fnCleanupColumn> CleanupColumnFnMap;
 };

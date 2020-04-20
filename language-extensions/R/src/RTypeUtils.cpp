@@ -27,7 +27,6 @@
 
 #include "Common.h"
 #include <iostream>
-#include <sqlext.h>
 
 #include "Logger.h"
 #include "RTypeUtils.h"
@@ -35,6 +34,17 @@
 #include "Rcpp.h"
 
 using namespace std;
+
+// Map to store the R class to ODBC C type mapping
+//
+const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
+{
+	{"logical", SQL_C_BIT},
+	{"integer", SQL_C_SLONG},
+	{"numeric", SQL_C_DOUBLE},
+	{"character", SQL_C_CHAR},
+	{"raw", SQL_C_BINARY}
+};
 
 //-------------------------------------------------------------------------------------------------
 // Name: CreateVector
@@ -56,17 +66,17 @@ RType RTypeUtils::CreateVector(
 {
 	LOG("RTypeUtils::CreateVector");
 
-	RType vectorInR = RType::create();
+	RType vectorInR(rowsNumber);
 	for (SQLULEN j = 0; j < rowsNumber; j++)
 	{
 		if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
 		{
-			vectorInR.push_back(valueForNA);
+			vectorInR[j] = valueForNA;
 		}
 		else
 		{
 			SQLType value = static_cast<SQLType *>(data)[j];
-			vectorInR.push_back(value);
+			vectorInR[j] = value;
 		}
 	}
 
@@ -89,23 +99,23 @@ Rcpp::LogicalVector RTypeUtils::CreateLogicalVector(
 {
 	LOG("RTypeUtils::CreateLogicalVector");
 
-	Rcpp::LogicalVector logicalVector = Rcpp::LogicalVector::create();
+	Rcpp::LogicalVector logicalVector(rowsNumber);
 	for (SQLULEN j = 0; j < rowsNumber; j++)
 	{
 		if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
 		{
-			logicalVector.push_back(NA_LOGICAL);
+			logicalVector[j] = NA_LOGICAL;
 		}
 		else
 		{
 			SQLCHAR value = static_cast<SQLCHAR *>(data)[j];
 			if (value != '0')
 			{
-				logicalVector.push_back(true);
+				logicalVector[j] = true;
 			}
 			else
 			{
-				logicalVector.push_back(false);
+				logicalVector[j] = false;
 			}
 		}
 	}
@@ -131,21 +141,21 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 
 	char *baseCharData = static_cast<char *>(data);
 	SQLULEN cumulativeLength = 0;
-	Rcpp::CharacterVector charVector = Rcpp::CharacterVector::create();
+	Rcpp::CharacterVector charVector(rowsNumber);
 
 	for (SQLULEN j = 0; j < rowsNumber; j++)
 	{
 		if ((strLen_or_Ind == nullptr) ||
 			(strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA))
 		{
-			charVector.push_back(NA_STRING);
+			charVector[j] = NA_STRING;
 		}
 		else
 		{
 			char *str = baseCharData + cumulativeLength;
 			SQLINTEGER strlen = strLen_or_Ind[j] / sizeof(char);
 			string value(str, strlen);
-			charVector.push_back(value.c_str());
+			charVector[j] = value.c_str();
 			cumulativeLength += strlen;
 		}
 	}
@@ -171,7 +181,6 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 	LOG("RTypeUtils::CreateRawVector");
 
 	Rcpp::RawVector rawVector = Rcpp::RawVector::create();
-	Rcpp::RawVector valueForNA = Rcpp::RawVector::create();
 	SQLCHAR* baseRawData = static_cast<SQLCHAR *>(data);
 	int cumulativeRawDataLength = 0;
 

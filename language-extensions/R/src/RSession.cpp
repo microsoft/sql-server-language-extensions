@@ -190,6 +190,10 @@ void RSession::ExecuteWorkflow(
 	//
 	(*g_embeddedRPtr).parseEvalQ(m_script.c_str());
 
+	// In case of streaming clean up the previous stream batch's output buffers
+	//
+	m_outputDataSet.CleanupColumns();
+
 	// After script evaluation, retrieve the DataFrame for OutputDataSet.
 	//
 	m_outputDataSet.RetrieveDataFrameFromEmbeddedR();
@@ -198,6 +202,13 @@ void RSession::ExecuteWorkflow(
 	// and set it to be the outputSchemaColumnsNumber.
 	//
 	*outputSchemaColumnsNumber = m_outputDataSet.GetDataFrameColumnsNumber();
+
+	if (*outputSchemaColumnsNumber > 0)
+	{
+		m_outputDataSet.GetColumnsDataType();
+		m_outputDataSet.PopulateNumberOfRows();
+		m_outputDataSet.GetColumnsFromDataFrame();
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -213,7 +224,25 @@ void RSession::GetResultColumn(
 	SQLSMALLINT  *decimalDigits,
 	SQLSMALLINT  *nullable)
 {
+	LOG("RSession::GetResultColumn for column # " + to_string(columnNumber));
 
+	*dataType = SQL_UNKNOWN_TYPE;
+	*columnSize = 0;
+	*decimalDigits = 0;
+	*nullable = 0;
+
+	if (columnNumber >= m_outputDataSet.GetVectorColumnsNumber())
+	{
+		throw invalid_argument("Invalid column # " + to_string(columnNumber));
+	}
+
+	vector<unique_ptr<RColumn>>& resultColumns = m_outputDataSet.Columns();
+	RColumn *resultColumn = resultColumns[columnNumber].get();
+
+	*dataType = resultColumn->DataType();
+	*columnSize = resultColumn->Size();
+	*decimalDigits = resultColumn->DecimalDigits();
+	*nullable = resultColumn->Nullable();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -253,4 +282,6 @@ void RSession::GetOutputParam(
 void RSession::Cleanup()
 {
 	LOG("RSession::Cleanup");
+
+	m_outputDataSet.CleanupColumns();
 }

@@ -61,4 +61,12 @@ public:
 		SQLULEN    rowsNumber,
 		SQLPOINTER data,
 		SQLINTEGER *strLen_or_Ind);
+
+	// Map to store the R class to ODBC C type mapping
+	//
+	static const std::unordered_map<std::string, SQLSMALLINT> m_classInRToOdbcTypeMap;
+
+	// Type map typedefs
+	//
+	typedef std::unordered_map<std::string, SQLSMALLINT> RToOdbcTypeMap;
 };

@@ -32,6 +32,7 @@
 #endif
 
 #include <memory>
+#include <sqlext.h>
 #include <sqltypes.h>
 #include <string>
 #include <vector>

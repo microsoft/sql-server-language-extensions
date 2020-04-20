@@ -84,9 +84,9 @@ DEFAULT_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
 
 # Find JAVA_HOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
-# 
+#
 if [ -z "${JAVA_HOME}" ]; then
-	if [ -d "${DEFAULT_JAVA_HOME}" ]; then 
+	if [ -d "${DEFAULT_JAVA_HOME}" ]; then
 		JAVA_HOME=${DEFAULT_JAVA_HOME}
 	else
 		echo "JAVA_HOME is empty"
@@ -101,7 +101,7 @@ if [ "$1" == "" ]; then
 fi
 
 while [ "$1" != "" ]; do
-	# Advance arg passed to build.cmd
+	# Advance arg passed to build.sh
 	#
 	build $1
 	shift

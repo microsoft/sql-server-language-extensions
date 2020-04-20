@@ -27,7 +27,6 @@
 #include "Common.h"
 
 #include <exception>
-#include <sqlext.h>
 
 #include "RPathSettings.h"
 
