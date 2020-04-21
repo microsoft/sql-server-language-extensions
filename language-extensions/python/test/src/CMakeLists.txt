@@ -35,12 +35,13 @@ if (${PLATFORM} STREQUAL linux)
 	
 	find_library(PYTHON_LIB python3.7 ${PYTHON_LIB_PATH})
 	find_library(BOOST_PYTHON_LIB boost_python37 ${BOOST_PYTHON_ROOT})
-	
+	find_library(BOOST_NUMPY_LIB boost_numpy37 ${BOOST_PYTHON_ROOT})
+
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python3.7 PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
 	
-	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${PYTHON_INCLUDE})
-	
+	set(ADDITIONAL_INCLUDES ${PYTHON_INCLUDE} ${BOOST_INCLUDE})
+
 	find_library(DL dl ${USR_LIB_PATH})
 	
 	set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -57,26 +58,20 @@ if (${PLATFORM} STREQUAL linux)
 	
 elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-
-	# Compile options /W2 for severe warnings
-	#
-	set(COMPILE_OPTIONS /W2 /std:c++14)
+	set(COMPILE_OPTIONS /std:c++14)
 	
 	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)
-
-	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0 GTEST_HOME)
-	file(TO_CMAKE_PATH ${GTEST_HOME}/build/native/include GTEST_INCLUDE_DIR)
-	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/${CMAKE_CONFIGURATION} GTEST_LIB_PATH)
-	find_library(GTEST_LIB gtest ${GTEST_LIB_PATH})
 	
-	# Build static lib to test with 
+	# MDd is for debug DLL and MD is for release DLL
 	#
 	if (${CMAKE_CONFIGURATION} STREQUAL debug)
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MDd)
-		find_library(BOOST_PYTHON_LIB libboost_python37-vc141-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python37-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy37-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
 	else()
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MD)
-		find_library(BOOST_PYTHON_LIB libboost_python37-vc141-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python37-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy37-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
 	endif()
 	
 	target_compile_options(pythonextension-test PRIVATE ${COMPILE_OPTIONS})
@@ -88,10 +83,15 @@ elseif(${PLATFORM} STREQUAL windows)
 	file(TO_CMAKE_PATH ${PYTHONHOME}/include PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${BOOST_ROOT}/include BOOST_INCLUDE)
 
-	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${PYTHON_INCLUDE})
+	set(ADDITIONAL_INCLUDES ${PYTHON_INCLUDE} ${BOOST_INCLUDE})
+
+	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0 GTEST_HOME)
+	file(TO_CMAKE_PATH ${GTEST_HOME}/build/native/include GTEST_INCLUDE_DIR)
+	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/${CMAKE_CONFIGURATION} GTEST_LIB_PATH)
+	find_library(GTEST_LIB gtest ${GTEST_LIB_PATH})
 endif()
 
-add_definitions(-DBOOST_USE_STATIC_LIBS -DBOOST_PYTHON_STATIC_LIB -DBOOST_ALL_NO_LIB)
+add_definitions(-DBOOST_USE_STATIC_LIBS -DBOOST_PYTHON_STATIC_LIB -DBOOST_ALL_NO_LIB -DBOOST_NUMPY_STATIC_LIB)
 
 # this is not a standard include path so test projects need
 # to add it explicitly
@@ -106,7 +106,7 @@ include_directories(
 # The string comparison is case sensitive
 #
 if (${CMAKE_CONFIGURATION} STREQUAL debug)
-	add_definitions(-DDEBUG)
+	add_definitions(-D_DEBUG)
 else()
 	add_definitions(-DNDEBUG)
 endif()
@@ -116,6 +116,7 @@ target_link_libraries(pythonextension-test
 	${PYTHONEXTENSION_LIB}
 	${PYTHON_LIB} 
 	${BOOST_PYTHON_LIB}
+	${BOOST_NUMPY_LIB}
 )
 
 target_include_directories(pythonextension-test

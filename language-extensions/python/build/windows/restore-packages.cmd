@@ -7,5 +7,11 @@ mkdir python
 for /D %%d in (*cab_spo*) do (
 	expand %%d\*.cab -F:* python >> extract.txt
 )
+
+for /D %%d in (*External-Boost*) do (
+	copy %%d\Windows\lib-debug\* %%d\Windows\lib\ >> extract.txt
+)
+
 del extract.txt
+
 popd

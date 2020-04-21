@@ -72,6 +72,7 @@ SQLRETURN Init(
 		// This allows us to start using Python API and boost functions.
 		//
 		Py_Initialize();
+		boost::python::numpy::initialize();
 	}
 	catch (const exception &ex)
 	{

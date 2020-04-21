@@ -17,8 +17,6 @@
 #include <windows.h>
 #endif
 
-#include <boost/python.hpp>
-
 #include <string>
 #include <iostream>
 #include <exception>
@@ -27,3 +25,6 @@
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
+
+#include <boost/python.hpp>
+#include <boost/python/numpy.hpp>

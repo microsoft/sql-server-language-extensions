@@ -10,16 +10,16 @@
 //  Test the Python extension columns using the Extension API
 //
 //*************************************************************************************************
-#include "PythonExtensionApiTest.h"
+#include "PythonExtensionApiTests.h"
 
 namespace ExtensionApiTest
 {
 	// Positive Test
 	// Test InitColumn() API with valid values
 	//
-	TEST_F(PythonExtensionApiTest, InitColumnTest)
+	TEST_F(PythonExtensionApiTests, InitColumnTest)
 	{
-		InitializeSession();
+		InitializeSession(1);
 
 		SQLCHAR * columnName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>("Column1")));
@@ -43,9 +43,9 @@ namespace ExtensionApiTest
 	// Negative test
 	// Test InitColumn() API with null column name
 	//
-	TEST_F(PythonExtensionApiTest, InitInvalidColumnTest)
+	TEST_F(PythonExtensionApiTests, InitInvalidColumnTest)
 	{
-		InitializeSession();
+		InitializeSession(1);
 
 		SQLRETURN result = InitColumn(
 			*m_sessionId,
@@ -66,9 +66,9 @@ namespace ExtensionApiTest
 	// Negative test
 	// Test InitColumn() API with bad column numbers (too big)
 	//
-	TEST_F(PythonExtensionApiTest, InitInvalidColumnNumberTest)
+	TEST_F(PythonExtensionApiTests, InitInvalidColumnNumberTest)
 	{
-		InitializeSession();
+		InitializeSession(1);
 
 		SQLCHAR * columnName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>("Column1")));
@@ -77,7 +77,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = InitColumn(
 			*m_sessionId,
 			m_taskId,
-			m_inputSchemaColumnsNumber + 1, // column number greater than m_inputSchemaColumnsNumber
+			2,                              // column number greater than initialized columns
 			columnName,
 			columnNameLength,
 			SQL_C_SLONG,                    // Data Type

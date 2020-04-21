@@ -55,6 +55,11 @@ if [ -z "${PYTHONHOME}" ]; then
 	fi
 fi
 
+# Build in debug mode if nothing is specified
+#
+if [ "$1" == "" ]; then
+	set -- debug
+fi
 
 while [ "$1" != "" ]; do
 	# Advance arg passed to build.cmd

@@ -13,9 +13,11 @@
 
 #include "Logger.h"
 #include "PythonSession.h"
+#include "PythonExtensionUtils.h"
 
 using namespace std;
 namespace py = boost::python;
+namespace np = boost::python::numpy;
 
 // Init the session
 //
@@ -52,13 +54,30 @@ void PythonSession::Init(
 		throw runtime_error("Main module or namespace was None");
 	}
 
-	// Store the number of input columns
+	// Initialize the script
 	//
-	m_inputSchemaColumnsNumber = inputSchemaColumnsNumber;
+	if (script == nullptr)
+	{
+		throw invalid_argument("Invalid script, the script value cannot be NULL");
+	}
+
+	// Initialize and store the user script
+	//
+	m_script = string(reinterpret_cast<const char*>(script), scriptLength);
+	m_scriptLength = scriptLength;
 
 	// Initialize the parameters container.
 	//
 	m_paramContainer.Init(parametersNumber);
+
+	// Initialize the InputDataSet
+	//
+	m_inputDataSet.Init(inputDataName, inputDataNameLength, inputSchemaColumnsNumber);
+
+	// Initialize the OutputDataSet
+	//
+	m_outputDataSet.Init(outputDataName, outputDataNameLength, 0);
+
 }
 
 // Init the input column
@@ -76,21 +95,14 @@ void PythonSession::InitColumn(
 {
 	LOG("PythonSession::InitColumn #" + to_string(columnNumber));
 
-	if (columnName == nullptr)
-	{
-		throw invalid_argument("Invalid input column name supplied");
-	}
-	else if (columnNumber != m_inputColumns.size() ||  // Confirm that columnNumber is the next column index
-			columnNumber >= m_inputSchemaColumnsNumber)
-	{
-		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
-	}
-
-	// Store the information for this column
-	//
-	string name(reinterpret_cast<const char*>(columnName), columnNameLength - 1); // Remove null terminator
-
-	m_inputColumns.emplace_back(PythonColumn(name, dataType, columnSize, nullable, decimalDigits));
+	m_inputDataSet.InitColumn(
+		columnNumber,
+		columnName,
+		columnNameLength,
+		dataType,
+		columnSize,
+		decimalDigits,
+		nullable);
  }
 
 // Init the input parameter
@@ -141,6 +153,50 @@ void PythonSession::ExecuteWorkflow(
 	SQLUSMALLINT *outputSchemaColumnsNumber)
 {
 	LOG("PythonSession::ExecuteWorkflow");
+
+	*outputSchemaColumnsNumber = 0;
+
+	// Add columns to the input DataFrame.
+	//
+	m_inputDataSet.AddColumnsToDictionary(rowsNumber, data, strLen_or_Ind);
+
+	// Add the dictionary for InputDataSet to the python namespace and convert to a DataFrame.
+	//
+	m_inputDataSet.AddDictionaryToNamespace(m_mainNamespace);
+
+	// Execute the script, capturing the output and error
+	//
+	try
+	{
+		// Scripts to redirect stdout and stderr to variables to extract afterwards
+		//
+		string redirectPyOut = "import sys; from io import StringIO\n"
+			"_temp_out_ = StringIO(); _temp_err_ = StringIO()\n"
+			"sys.stdout = _temp_out_; sys.stderr = _temp_err_\n";
+
+		string resetPyOut = "sys.stdout = sys.__stdout__\n"
+			"sys.stderr = sys.__stderr__\n"
+			"_temp_out_ = _temp_out_.getvalue()\n"
+			"_temp_err_ = _temp_err_.getvalue()";
+
+		// Execute script and capture output
+		//
+		py::exec(redirectPyOut.c_str(), m_mainNamespace);
+		py::exec(m_script.c_str(), m_mainNamespace);
+		py::exec(resetPyOut.c_str(), m_mainNamespace);
+
+		string pyStdOut = py::extract<string>(m_mainNamespace["_temp_out_"]);
+		string pyStdErr = py::extract<string>(m_mainNamespace["_temp_err_"]);
+
+		cout << pyStdOut << endl;
+		cerr << pyStdErr << endl;
+	}
+	catch (py::error_already_set &)
+	{
+		string pyError = PythonExtensionUtils::ParsePythonException();
+		LOG_ERROR(pyError);
+		throw runtime_error("Error running python:\n" + pyError);
+	}
 }
 
 // Get the metadata for the output column
@@ -169,10 +225,10 @@ void PythonSession::GetResults(
 //
 void PythonSession::GetOutputParam(
 	SQLUSMALLINT paramNumber,
-	SQLPOINTER  *paramValue,
-	SQLINTEGER  *strLen_or_Ind)
+	SQLPOINTER   *paramValue,
+	SQLINTEGER   *strLen_or_Ind)
 {
-	LOG(("PythonSession::GetOutputParam"));
+	LOG("PythonSession::GetOutputParam");
 }
 
 // Cleanup session

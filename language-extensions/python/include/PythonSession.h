@@ -14,6 +14,7 @@
 #pragma once
 #include "Common.h"
 #include "PythonColumn.h"
+#include "PythonDataSet.h"
 #include "PythonParam.h"
 #include "PythonParamContainer.h"
 
@@ -103,14 +104,18 @@ private:
 	boost::python::object m_mainModule;    // The boost python module; python will run in this object
 	boost::python::object m_mainNamespace; // The boost python namespace; dictionary containing all python variables
 
-	SQLUSMALLINT m_inputSchemaColumnsNumber;
-	std::vector<PythonColumn> m_inputColumns;
+	SQLGUID m_sessionId{ 0, 0, 0, {0} };
+	SQLUSMALLINT m_taskId = 0;
+	SQLUSMALLINT m_numTasks = 0;
 
-	SQLGUID m_sessionId;
+	std::string m_script;
+	SQLULEN m_scriptLength;
+
+	PythonInputDataSet m_inputDataSet;
+	PythonOutputDataSet m_outputDataSet;
 
 	// Parameters
 	//
 	PythonParamContainer m_paramContainer;
 
-	// TODO: Work item 13292456: Create a DataSet class to wrap input/output dataset
 };

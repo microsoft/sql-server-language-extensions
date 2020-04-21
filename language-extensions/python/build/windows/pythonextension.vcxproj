@@ -25,8 +25,8 @@
     <IncludeDirectory>..\..\include</IncludeDirectory>
     <PackageDirectory>$(EnlRoot)\packages</PackageDirectory>
     <ExtensionApiIncludeDirectory>$(EnlRoot)\extension-host\include</ExtensionApiIncludeDirectory>
-    <BoostRoot>$(PackageDirectory)\boost.1.69.0.0\lib\native</BoostRoot>
-    <BoostPythonRoot>$(PackageDirectory)\boost_python37-vc141.1.69.0.0\lib\native</BoostPythonRoot>
+    <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1020</ExternalBoostRoot>
+    <ExternalBoostWindowsRoot>$(ExternalBoostRoot)\Windows</ExternalBoostWindowsRoot>
     <PythonRoot>$(PackageDirectory)\python</PythonRoot>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -99,7 +99,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>
       $(ExtensionApiIncludeDirectory);
-      $(BoostRoot)\Include;
+      $(ExternalBoostRoot)\Include;
       $(PythonRoot)\Include;
       $(IncludeDirectory);
       %(AdditionalIncludeDirectories);
@@ -113,9 +113,17 @@
     <Link>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalDependencies);$(BoostPythonRoot)\libboost_python37-vc141-mt-gd-x64-1_69.lib</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalDependencies);$(BoostPythonRoot)\libboost_python37-vc141-mt-x64-1_69.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(BoostPythonRoot);$(PythonRoot)\libs;</AdditionalLibraryDirectories>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      %(AdditionalDependencies);
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_python37-vc140-mt-gd-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy37-vc140-mt-gd-x64-1_69.lib;
+      </AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      %(AdditionalDependencies);
+      $(ExternalBoostWindowsRoot)\lib\libboost_python37-vc140-mt-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_numpy37-vc140-mt-x64-1_69.lib;
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PythonRoot)\libs;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -126,6 +134,7 @@
     <ClInclude Include="$(IncludeDirectory)\PythonColumn.h" />
     <ClInclude Include="$(IncludeDirectory)\Logger.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonExtensionUtils.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonDataSet.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonParam.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonParamContainer.h" />
   </ItemGroup>
@@ -134,6 +143,8 @@
     <ClCompile Include="$(SourceDirectory)\PythonSession.cpp" />
     <ClCompile Include="$(SourceDirectory)\Logger.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonColumn.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonExtensionUtils.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonDataSet.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonParam.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonParamContainer.cpp" />
     <ClCompile Include="$(SourceDirectory)\windows\PythonExtensionUtils_win.cpp" />

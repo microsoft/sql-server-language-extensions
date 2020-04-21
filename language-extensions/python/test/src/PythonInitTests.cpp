@@ -4,14 +4,14 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: PythonInitTest.cpp
+// @File: PythonInitTests.cpp
 //
 // Purpose:
 //  Test the Python extension initialization and
 //  session initialization using the Extension API
 //
 //*************************************************************************************************
-#include "PythonExtensionApiTest.h"
+#include "PythonExtensionApiTests.h"
 
 using namespace std;
 
@@ -23,7 +23,7 @@ namespace ExtensionApiTest
 	// We may need to make this fail later when we implement and
 	// require external params/libraries
 	//
-	TEST_F(PythonExtensionApiTest, InitWithNullsTest)
+	TEST_F(PythonExtensionApiTests, InitWithNullsTest)
 	{
 		SQLRETURN result = Init(
 			nullptr, // Extension Params
@@ -40,7 +40,7 @@ namespace ExtensionApiTest
 
 	// Test Init() API with actual values.
 	//
-	TEST_F(PythonExtensionApiTest, InitTest)
+	TEST_F(PythonExtensionApiTests, InitTest)
 	{
 		SQLCHAR *extensionParams = nullptr;
 		SQLULEN extensionParamsLength = 0;
@@ -64,27 +64,6 @@ namespace ExtensionApiTest
 			publicLibraryPathLength,
 			privateLibraryPath,
 			privateLibraryPathLength
-		);
-		EXPECT_EQ(result, SQL_SUCCESS);
-	}
-
-	// Test InitSession() API with valid values
-	//
-	TEST_F(PythonExtensionApiTest, InitSessionTest)
-	{
-		Init(nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0);
-		SQLRETURN result = InitSession(
-			*m_sessionId,
-			m_taskId,
-			m_numTasks,
-			m_script,
-			m_scriptLength,
-			m_inputSchemaColumnsNumber,
-			m_parametersNumber,
-			m_inputDataName,
-			m_inputDataNameLength,
-			m_outputDataName,
-			m_outputDataNameLength
 		);
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}

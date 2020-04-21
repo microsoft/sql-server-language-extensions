@@ -50,7 +50,7 @@ std::string PythonExtensionUtils::GetEnvVariable(const std::string &envVarName)
 			std::string errorHex;
 			errorHex.resize(8); // hex is max size 8 bytes
 			sprintf_s(&errorHex[0], errorHex.size() + 1, "%08X", dwError);
-			throw std::runtime_error("Error while loading "+ envVarName + ": 0x" + errorHex);
+			throw std::runtime_error("Error while loading " + envVarName + ": 0x" + errorHex);
 		}
 	}
 
@@ -68,7 +68,7 @@ std::string PythonExtensionUtils::GetEnvVariable(const std::string &envVarName)
 		DWORD dwError = GetLastError();
 		std::string errorHex;
 		errorHex.resize(8); // hex is max size 8 bytes
-		sprintf_s(&errorHex[0], errorHex.size()+1, "%08X", dwError);
+		sprintf_s(&errorHex[0], errorHex.size() + 1, "%08X", dwError);
 		throw std::runtime_error("Error while loading " + envVarName + ": 0x" + errorHex);
 	}
 

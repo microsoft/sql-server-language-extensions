@@ -41,9 +41,9 @@
     <ExtensionIncludeDirectory>$(EnlRoot)\language-extensions\python\include</ExtensionIncludeDirectory>
     <TestIncludeDirectory>$(EnlRoot)\language-extensions\python\test\include</TestIncludeDirectory>
     <TestSrcDirectory>$(EnlRoot)\language-extensions\python\test\src</TestSrcDirectory>
-    <ExtensionBuildDirectory>$(EnlRoot)\build-output\python-extension</ExtensionBuildDirectory>
-    <BoostRoot>$(PackageDirectory)\boost.1.69.0.0\lib\native</BoostRoot>
-    <BoostPythonRoot>$(PackageDirectory)\boost_python37-vc141.1.69.0.0\lib\native</BoostPythonRoot>
+    <ExtensionBuildDirectory>$(EnlRoot)\build-output\pythonextension</ExtensionBuildDirectory>
+    <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1020</ExternalBoostRoot>
+    <ExternalBoostWindowsRoot>$(ExternalBoostRoot)\Windows</ExternalBoostWindowsRoot>
     <PythonRoot>$(PackageDirectory)\python</PythonRoot>
     <GtestHome>$(EnlRoot)\packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0</GtestHome>
     <GtestInclude>$(GtestHome)\build\native\include</GtestInclude>
@@ -56,12 +56,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>_WIN64;_DEBUG;_WINDOWS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;_DEBUG;_WINDOWS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>
       $(ExtensionApiIncludeDirectory);
       $(ExtensionIncludeDirectory);
       $(TestIncludeDirectory);
-      $(BoostRoot)\Include;
+      $(ExternalBoostRoot)\Include;
       $(PythonRoot)\Include;
       $(GtestInclude);
       %(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
@@ -73,18 +73,20 @@
       <AdditionalDependencies>
       $(GtestDebugLib)\gtest.lib;
       $(ExtensionBuildDirectory)\Windows\Debug\pythonextension.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_python37-vc140-mt-gd-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy37-vc140-mt-gd-x64-1_69.lib;
       %(AdditionalDependencies);
       </AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>_WIN64;NDEBUG;_WINDOWS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;NDEBUG;_WINDOWS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>
       $(ExtensionApiIncludeDirectory);
       $(ExtensionIncludeDirectory);
       $(TestIncludeDirectory);
-      $(BoostRoot)\Include;
+      $(ExternalBoostRoot)\Include;
       $(PythonRoot)\Include;
       $(GtestInclude);
       %(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
@@ -98,6 +100,8 @@
       <AdditionalDependencies>
       $(GtestReleaseLib)\gtest.lib;
       $(ExtensionBuildDirectory)\Windows\Release\pythonextension.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_python37-vc140-mt-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_numpy37-vc140-mt-x64-1_69.lib;
       %(AdditionalDependencies);
       </AdditionalDependencies>
     </Link>
@@ -115,12 +119,10 @@
       <SubSystem>Console</SubSystem>
       <AdditionalOptions>/GUARD:CF</AdditionalOptions>
       <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      $(BoostPythonRoot);
       $(PythonRoot)\libs;
       $(ExtensionBuildDirectory)\Windows\Debug
       </AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      $(BoostPythonRoot);
       $(PythonRoot)\libs;
       $(ExtensionBuildDirectory)\Windows\Release
       </AdditionalLibraryDirectories>
@@ -140,11 +142,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(TestSrcDirectory)\main.cpp" />
-    <ClCompile Include="$(TestSrcDirectory)\PythonInitTest.cpp" />
-    <ClCompile Include="$(TestSrcDirectory)\PythonInitColumnTest.cpp" />
-    <ClCompile Include="$(TestSrcDirectory)\PythonInitParamsTest.cpp" />
-    <ClCompile Include="$(TestSrcDirectory)\PythonExtensionApiTest.cpp" />
-    <ClInclude Include="$(TestIncludeDirectory)\PythonExtensionApiTest.h" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonExecuteTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonInitTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonInitColumnTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonInitParamTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonExtensionApiTests.cpp" />
+    <ClInclude Include="$(TestIncludeDirectory)\PythonExtensionApiTests.h" />
     <ClInclude Include="$(TestIncludeDirectory)\Common.h" />
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallanguage.h" />
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallibrary.h" />

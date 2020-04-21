@@ -4,14 +4,14 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: PythonInitParamsTest.cpp
+// @File: PythonInitParamTests.cpp
 //
 // Purpose:
 //  Test the Python extension parameters using the Extension API
 //
 //*************************************************************************************************
 
-#include "PythonExtensionApiTest.h"
+#include "PythonExtensionApiTests.h"
 
 #include <boost/python/stl_iterator.hpp>
 #include <memory>
@@ -24,7 +24,7 @@ namespace ExtensionApiTest
 	// Negative test
 	// Test InitParam() API with null parameter name
 	//
-	TEST_F(PythonExtensionApiTest, InitNullNameParamTest)
+	TEST_F(PythonExtensionApiTests, InitNullNameParamTest)
 	{
 		InitializeSession();
 
@@ -51,7 +51,7 @@ namespace ExtensionApiTest
 	// Negative test
 	// Test InitParam() API with bad param numbers (too big)
 	//
-	TEST_F(PythonExtensionApiTest, InitInvalidParamNumberTest)
+	TEST_F(PythonExtensionApiTests, InitInvalidParamNumberTest)
 	{
 		InitializeSession();
 
@@ -80,7 +80,7 @@ namespace ExtensionApiTest
 
 	// Test multiple SQLINTEGER values
 	//
-	TEST_F(PythonExtensionApiTest, InitIntegerParamTest)
+	TEST_F(PythonExtensionApiTests, InitIntegerParamTest)
 	{
 		InitializeSession();
 
@@ -108,7 +108,7 @@ namespace ExtensionApiTest
 
 	// Test multiple BIT values
 	//
-	TEST_F(PythonExtensionApiTest, InitBitParamTest)
+	TEST_F(PythonExtensionApiTests, InitBitParamTest)
 	{
 		InitializeSession();
 
@@ -136,7 +136,7 @@ namespace ExtensionApiTest
 
 	// Test multiple FLOAT(24) (SQLREAL) values
 	//
-	TEST_F(PythonExtensionApiTest, InitFloatParamTest)
+	TEST_F(PythonExtensionApiTests, InitFloatParamTest)
 	{
 		InitializeSession();
 
@@ -164,7 +164,7 @@ namespace ExtensionApiTest
 
 	// Test multiple FLOAT(53) (DOUBLE) values
 	//
-	TEST_F(PythonExtensionApiTest, InitDoubleParamTest)
+	TEST_F(PythonExtensionApiTests, InitDoubleParamTest)
 	{
 		InitializeSession();
 
@@ -192,7 +192,7 @@ namespace ExtensionApiTest
 
 	// Test multiple SQLBIGINT values
 	//
-	TEST_F(PythonExtensionApiTest, InitBigIntParamTest)
+	TEST_F(PythonExtensionApiTests, InitBigIntParamTest)
 	{
 		InitializeSession();
 
@@ -220,7 +220,7 @@ namespace ExtensionApiTest
 
 	// Test multiple TINYINT values
 	//
-	TEST_F(PythonExtensionApiTest, InitTinyIntParamTest)
+	TEST_F(PythonExtensionApiTests, InitTinyIntParamTest)
 	{
 		InitializeSession();
 
@@ -253,7 +253,7 @@ namespace ExtensionApiTest
 
 	// Test multiple SMALLINT values
 	//
-	TEST_F(PythonExtensionApiTest, InitSmallIntParamTest)
+	TEST_F(PythonExtensionApiTests, InitSmallIntParamTest)
 	{
 		InitializeSession();
 
@@ -281,48 +281,48 @@ namespace ExtensionApiTest
 
 	// Test multiple CHAR and VARCHAR values
 	//
-	TEST_F(PythonExtensionApiTest, InitCharParamTest)
+	TEST_F(PythonExtensionApiTests, InitCharParamTest)
 	{
 		InitializeSession();
 
 		// Test simple CHAR(5) value
 		//
-		TestCharParameter(
+		TestStringParameter(
 			"HELLO",
 			5,       // paramSize
 			true);   // isFixedType
 
 		// Test simple CHAR(6) value with parameter length less than size - should be padded.
 		//
-		TestCharParameter(
+		TestStringParameter(
 			"WORLD",
 			6,       // paramSize
 			true);   // isFixedType
 
 		// Test null CHAR(5) value
 		//
-		TestCharParameter(
+		TestStringParameter(
 			nullptr, // paramValue
 			5,       // paramSize
 			true);   // isFixedType
 
 		// Test simple VARCHAR(6) value
 		//
-		TestCharParameter(
+		TestStringParameter(
 			"WORLD!",
 			6,        // paramSize
 			false);   // isFixedType
 
 		// Test simple VARCHAR(8) value with parameter length less than size - no padding.
 		//
-		TestCharParameter(
+		TestStringParameter(
 			"WORLD",
 			8,       // paramSize
 			false);  // isFixedType
 
 		// Test null VARCHAR(5) value
 		//
-		TestCharParameter(
+		TestStringParameter(
 			nullptr, // paramValue
 			5,       // paramSize
 			false);  // isFixedType
@@ -330,7 +330,7 @@ namespace ExtensionApiTest
 
 	// Test multiple BINARY and VARBINARY values
 	//
-	TEST_F(PythonExtensionApiTest, InitBinaryParamTest)
+	TEST_F(PythonExtensionApiTests, InitBinaryParamTest)
 	{
 		InitializeSession();
 
@@ -338,7 +338,7 @@ namespace ExtensionApiTest
 		//
 		SQLCHAR binaryValue[] = { 0x01, 0x01, 0xe2, 0x40 };
 
-		TestBinaryParameter(
+		TestRawParameter(
 			binaryValue,
 			sizeof(binaryValue) / sizeof(SQLCHAR), // strLenOrInd
 			sizeof(binaryValue) / sizeof(SQLCHAR), // paramSize
@@ -346,7 +346,7 @@ namespace ExtensionApiTest
 
 		// Test null binary(4) value
 		//
-		TestBinaryParameter(
+		TestRawParameter(
 			nullptr,       // paramValue
 			SQL_NULL_DATA, // strLenOrInd
 			4,             // paramSize
@@ -354,7 +354,7 @@ namespace ExtensionApiTest
 
 		// Test binary(5) value with length less than size - should be padded.
 		//
-		TestBinaryParameter(
+		TestRawParameter(
 			binaryValue,
 			5,           // strLenOrInd
 			5,           // paramSize
@@ -362,7 +362,7 @@ namespace ExtensionApiTest
 
 		// Test simple varbinary(4) value
 		//
-		TestBinaryParameter(
+		TestRawParameter(
 			binaryValue,
 			sizeof(binaryValue) / sizeof(SQLCHAR), // strLenOrInd
 			sizeof(binaryValue) / sizeof(SQLCHAR), // paramSize
@@ -370,7 +370,7 @@ namespace ExtensionApiTest
 
 		// Test null varbinary(5) value
 		//
-		TestBinaryParameter(
+		TestRawParameter(
 			nullptr,       // paramValue
 			SQL_NULL_DATA, // strLenOrInd
 			4,             // paramSize
@@ -378,7 +378,7 @@ namespace ExtensionApiTest
 
 		// Test varbinary(5) value with length less than size.
 		//
-		TestBinaryParameter(
+		TestRawParameter(
 			binaryValue,
 			sizeof(binaryValue) / sizeof(SQLCHAR), // strLenOrInd
 			5,                                     // paramSize
@@ -392,7 +392,7 @@ namespace ExtensionApiTest
 	// Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
-	void PythonExtensionApiTest::TestParameter(
+	void PythonExtensionApiTests::TestParameter(
 		SQLType paramValue,
 		bool    isNull)
 	{
@@ -447,12 +447,12 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: TestCharParameter
+	// Name: TestStringParameter
 	//
 	// Description:
 	// Testing if InitParam is implemented correctly for the char/varchar dataType.
 	//
-	void PythonExtensionApiTest::TestCharParameter(
+	void PythonExtensionApiTests::TestStringParameter(
 		const char    *paramValue,
 		const SQLULEN paramSize,
 		bool          isFixedType)
@@ -527,12 +527,12 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: TestBinaryParameter
+	// Name: TestRawParameter
 	//
 	// Description:
 	// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 	//
-	void PythonExtensionApiTest::TestBinaryParameter(
+	void PythonExtensionApiTests::TestRawParameter(
 		const SQLCHAR paramValue[],
 		SQLINTEGER    strLenOrInd,
 		SQLULEN       paramSize,
@@ -614,5 +614,3 @@ namespace ExtensionApiTest
 		}
 	}
 }
-
-

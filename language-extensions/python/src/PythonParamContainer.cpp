@@ -29,7 +29,7 @@ unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamConta
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonParamTemplate<SQLINTEGER>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
-	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonParamTemplate< SQLDOUBLE>>)},
+	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonParamTemplate<SQLDOUBLE>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonParamTemplate<SQLREAL>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),

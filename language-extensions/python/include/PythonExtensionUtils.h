@@ -17,12 +17,27 @@
 class PythonExtensionUtils
 {
 public:
-	static std::string GetEnvVariable(const std::string & envVarName);
 
+	// Parses the value of the active python exception
+	// Type, value, and traceback are in separate pointers
+	//
+	static std::string ParsePythonException();
+
+	// Get the value of an environment variable
+	//
+	static std::string GetEnvVariable(const std::string &envVarName);
+
+	// Converts a SQLGUID to a string
+	//
 	static std::string ConvertGuidToString(const SQLGUID *guid);
 
+	// Close an open dll handle
+	//
 	static void FreeDLL(void *pDll);
 
 private:
 
+	// Extract the string from a boost::python object
+	//
+	static std::string ExtractString(PyObject * pObj);
 };

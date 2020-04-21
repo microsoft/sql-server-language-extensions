@@ -85,7 +85,7 @@ const std::string Logger::GetCurrentTimestamp()
 	char buf[80];
 
 	tstruct = *localtime(&now);
-	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S.000", &tstruct); // No millisecond support
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S.000\t", &tstruct); // No millisecond support
 	return buf;
 #endif
 }

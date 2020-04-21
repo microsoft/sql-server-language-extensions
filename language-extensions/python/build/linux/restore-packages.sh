@@ -6,11 +6,15 @@ apt-get update
 apt-get --no-install-recommends -y install curl zip unzip 
 
 apt-get update
-apt-get install software-properties-common
+apt-get install -y software-properties-common
 add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
 
-apt-get install -y python3.7-dev libboost-all-dev 
+apt-get install -y python3.7-dev libboost-all-dev python3-pip
+
+python3 -m pip install numpy
+/usr/bin/python3.7 -m pip install numpy
+/usr/bin/python3.7 -m pip install pandas
 
 wget -O boost_1_69_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.69.0/boost_1_69_0.tar.gz/download
 tar xzvf boost_1_69_0.tar.gz -C /usr/lib/
@@ -28,6 +32,8 @@ sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-c
 
 ./b2 --clean
 ./b2 toolset=gcc variant=debug address-model=64 include=/usr/include/python3.7m/ link=static threading=multi -j12
+
+cp -rf boost /usr/include/
 
 popd
 

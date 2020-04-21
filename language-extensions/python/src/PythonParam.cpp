@@ -40,9 +40,23 @@ PythonParam::PythonParam(
 	m_strLenOrInd(strLen_or_Ind),
 	m_inputOutputType(inputOutputType)
 {
-	// Remove "@" from the front of the name and the length
+
+	// Remove "@" from the front of the name
 	//
-	m_name = string(reinterpret_cast<const char*>(paramName + 1), paramNameLength - 1);
+	const char *name = static_cast<const char*>(static_cast<const void*>(paramName + 1));
+
+	// paramNameLength includes @, we remove it
+	//
+#if defined(_DEBUG)
+	if (static_cast<size_t>(paramNameLength - 1) != strlen(name))
+	{
+		throw invalid_argument("Invalid parameter name length, it doesn't match string length.");
+	}
+#endif
+
+	// Store the information for this column
+	//
+	m_name = string(name, paramNameLength - 1);
 };
 
 //-------------------------------------------------------------------------------------------------

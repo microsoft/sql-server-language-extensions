@@ -13,16 +13,32 @@
 
 #include "PythonColumn.h"
 
+using namespace std;
+
 PythonColumn::PythonColumn(
-	std::string name,
-	SQLSMALLINT dataType,
-	SQLULEN     size,
-	SQLSMALLINT nullable,
-	SQLSMALLINT decimalDigits)
+	const SQLCHAR *columnName,
+	SQLSMALLINT   columnNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       columnSize,
+	SQLSMALLINT   decimalDigits,
+	SQLSMALLINT   nullable) :
+	m_dataType(dataType),
+	m_size(columnSize),
+	m_decimalDigits(decimalDigits),
+	m_nullable(nullable)
 {
-	m_name = name;
-	m_dataType = dataType;
-	m_size = size;
-	m_nullable = nullable;
-	m_decimalDigits = decimalDigits;
+	const char *name = static_cast<const char*>(static_cast<const void*>(columnName));
+
+	// columnNameLength does not include the null terminator.
+	//
+#if defined(_DEBUG)
+	if (static_cast<size_t>(columnNameLength) != strlen(name))
+	{
+		throw invalid_argument("Invalid parameter name length, it doesn't match string length.");
+	}
+#endif
+
+	// Store the information for this column
+	//
+	m_name = string(name, columnNameLength);
 }

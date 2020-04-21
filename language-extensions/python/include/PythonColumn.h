@@ -20,11 +20,12 @@ class PythonColumn
 {
 public:
 	PythonColumn(
-		std::string name,
-		SQLSMALLINT dataType,
-		SQLULEN     size,
-		SQLSMALLINT nullable,
-		SQLSMALLINT decimalDigits);
+		const SQLCHAR *columnName,
+		SQLSMALLINT   columnNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       columnSize,
+		SQLSMALLINT   decimalDigits,
+		SQLSMALLINT   nullable);
 
 	const std::string& Name() const
 	{
@@ -36,25 +37,25 @@ public:
 		return m_dataType;
 	}
 
-	SQLULEN Size()
-	{
-		return m_size;
-	}
+protected:
 
-	SQLSMALLINT Nullable()
-	{
-		return m_nullable;
-	}
-
-	SQLSMALLINT DecimalDigits()
-	{
-		return m_decimalDigits;
-	}
-
-private:
+	// Name of the column.
+	//
 	std::string m_name;
+
+	// Data Type of the column.
+	//
 	SQLSMALLINT m_dataType;
+
+	// Size of the column.
+	//
 	SQLULEN m_size;
-	SQLSMALLINT m_nullable;
+
+	// Decimal digits of the column.
+	//
 	SQLSMALLINT m_decimalDigits;
+
+	// The column is nullable or not.
+	//
+	SQLSMALLINT m_nullable;
 };
