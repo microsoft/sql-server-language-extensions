@@ -34,12 +34,11 @@ public:
 	// Templatized function to create a vector of an equivalent R type for the given SQL type
 	// with the given data. This is only for numeric or integer R types.
 	//
-	template<class SQLType, class RType, class NAType>
+	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 	static RType CreateVector(
 		SQLULEN      rowsNumber,
 		SQLPOINTER   data,
-		SQLINTEGER   *strLen_or_Ind,
-		const NAType valueForNA);
+		SQLINTEGER   *strLen_or_Ind);
 
 	// Create a logical vector in R corresponding to the given data.
 	//
@@ -62,11 +61,15 @@ public:
 		SQLPOINTER data,
 		SQLINTEGER *strLen_or_Ind);
 
+	// Map to store the ODBC C type to NA value mapping
+	//
+	static const std::unordered_map<SQLSMALLINT, SQLPOINTER> m_dataTypeToNAMap;
+
 	// Map to store the R class to ODBC C type mapping
 	//
 	static const std::unordered_map<std::string, SQLSMALLINT> m_classInRToOdbcTypeMap;
 
-	// Type map typedefs
+	// Map typedef.
 	//
 	typedef std::unordered_map<std::string, SQLSMALLINT> RToOdbcTypeMap;
 };

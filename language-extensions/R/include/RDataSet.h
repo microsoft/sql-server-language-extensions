@@ -21,7 +21,7 @@
 // @File: RDataSet.h
 //
 // Purpose:
-// Classes handling loading and retrieving data from an R Dataframe.
+//  Classes handling loading and retrieving data from an R Dataframe.
 //
 //*************************************************************************************************
 
@@ -31,7 +31,7 @@
 // Name: RDataSet
 //
 // Description:
-// Base class storing information about the RExtension DataSet.
+//  Base class storing information about the RExtension DataSet.
 //
 class RDataSet
 {
@@ -111,7 +111,7 @@ protected:
 // Name: RInputDataSet
 //
 // Description:
-// Class representing an input DataSet for data load from RExtension to the Embedded R environment.
+//  Class representing an input DataSet for data load from RExtension to the Embedded R environment.
 //
 class RInputDataSet : public RDataSet
 {
@@ -136,8 +136,24 @@ public:
 		SQLINTEGER **strLen_or_Ind);
 
 	// Adds a single column of values into the R DataFrame
+	// template for basic numeric and integer types.
 	//
+	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 	void AddColumnToDataFrame(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data);
+
+	// Adds a single column of logical values into the R DataFrame.
+	//
+	void AddLogicalColumnToDataFrame(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data);
+
+	// Adds a single column of character values into the R DataFrame.
+	//
+	void AddCharacterColumnToDataFrame(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data);
@@ -151,17 +167,26 @@ public:
 		SQLUSMALLINT  dataNameLength,
 		SQLUSMALLINT  schemaColumnsNumber) override;
 
+	using fnAddColumn = void (RInputDataSet::*)(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data);
+
 private:
-	// A set of supported column data types
+	// Function map for adding column to DataSet
 	//
-	static const std::unordered_set<SQLSMALLINT> m_supportedDataTypes;
+	static const std::unordered_map<SQLSMALLINT, fnAddColumn> m_fnAddColumnMap;
+
+	// Map typedef.
+	//
+	typedef std::unordered_map<SQLSMALLINT, fnAddColumn> AddColumnFnMap;
 };
 
 //-------------------------------------------------------------------------------------------------
 // Name: ROutputDataSet
 //
 // Description:
-// Class representing an output DataSet for data retrieval from Embedded R environment to RExtension.
+//  Class representing an output DataSet for data retrieval from Embedded R environment to RExtension.
 //
 class ROutputDataSet : public RDataSet
 {

@@ -35,7 +35,22 @@
 
 using namespace std;
 
-// Map to store the R class to ODBC C type mapping
+//-------------------------------------------------------------------------------------------------
+// Map to store the ODBC C datatype to NA value in R.
+// R_NaInt, R_NaReal are R's special values indicative of null in C++.
+//
+const unordered_map<SQLSMALLINT, SQLPOINTER> RTypeUtils::m_dataTypeToNAMap =
+{
+	{SQL_C_BIT, static_cast<SQLPOINTER>(&R_NaInt)},
+	{SQL_C_SLONG, static_cast<SQLPOINTER>(&R_NaInt)},
+	{SQL_C_FLOAT, static_cast<SQLPOINTER>(&R_NaReal)},
+	{SQL_C_DOUBLE, static_cast<SQLPOINTER>(&R_NaReal)},
+	{SQL_C_SBIGINT, static_cast<SQLPOINTER>(&R_NaReal)},
+	{SQL_C_SSHORT, static_cast<SQLPOINTER>(&R_NaInt)},
+	{SQL_C_UTINYINT, static_cast<SQLPOINTER>(&R_NaInt)}
+};
+
+// Map to store the R class to ODBC C dataType mapping
 //
 const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
 {
@@ -50,19 +65,18 @@ const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
 // Name: CreateVector
 //
 // Description:
-// Templatized function to create an Rcpp vector encapsulating SEXP pointers to the equivalent R
-// objects for the given SQL type with given data. This is only for numeric or integer R types.
-// rowsNumber indicates the number of elements to be added in the vector.
-// Iterate over data to push_back the value to the vector.
-// If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the equivalent R NA value instead.
-// Creating the R object and Encapsulating an SEXP pointer (pointing to the R object) in an Rcpp object.
+//  Templatized function to create an Rcpp vector encapsulating SEXP pointers to the equivalent R
+//  objects for the given SQL type with given data. This is only for numeric or integer R types.
+//  rowsNumber indicates the number of elements to be added in the vector.
+//  Iterate over data to push_back the value to the vector.
+//  If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the equivalent R NA value instead.
+//  Creating the R object and Encapsulating an SEXP pointer (pointing to the R object) in an Rcpp object.
 //
-template<class SQLType, class RType, class NAType>
+template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 RType RTypeUtils::CreateVector(
 	SQLULEN      rowsNumber,
 	SQLPOINTER   data,
-	SQLINTEGER   *strLen_or_Ind,
-	const NAType valueForNA)
+	SQLINTEGER   *strLen_or_Ind)
 {
 	LOG("RTypeUtils::CreateVector");
 
@@ -71,6 +85,7 @@ RType RTypeUtils::CreateVector(
 	{
 		if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
 		{
+			NAType valueForNA = *(static_cast<NAType*>(m_dataTypeToNAMap.at(DataType)));
 			vectorInR[j] = valueForNA;
 		}
 		else
@@ -87,10 +102,10 @@ RType RTypeUtils::CreateVector(
 // Name: CreateLogicalVector
 //
 // Description:
-// Create an Rcpp logical vector encapsulating SEXP pointers to the equivalent R boolean objects
-// with the given data. rowsNumber indicates the number of elements to be added in the vector.
-// Iterate over data to push_back the value to the vector. False if value is '0', else true.
-// If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_LOGICAL value.
+//  Create an Rcpp logical vector encapsulating SEXP pointers to the equivalent R boolean objects
+//  with the given data. rowsNumber indicates the number of elements to be added in the vector.
+//  Iterate over data to push_back the value to the vector. False if value is '0', else true.
+//  If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_LOGICAL value.
 //
 Rcpp::LogicalVector RTypeUtils::CreateLogicalVector(
 	SQLULEN    rowsNumber,
@@ -127,10 +142,10 @@ Rcpp::LogicalVector RTypeUtils::CreateLogicalVector(
 // Name: CreateCharacterVector
 //
 // Description:
-// Create a character Rcpp vector encapsulating SEXP pointers to the equivalent R character
-// objects with the given data. rowsNumber indicates the number of elements
-// to be added in the vector. Iterate over data to push_back the value to the vector.
-// If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_STRING value.
+//  Create a character Rcpp vector encapsulating SEXP pointers to the equivalent R character
+//  objects with the given data. rowsNumber indicates the number of elements
+//  to be added in the vector. Iterate over data to push_back the value to the vector.
+//  If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_STRING value.
 //
 Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 	SQLULEN    rowsNumber,
@@ -167,11 +182,11 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 // Name: CreateRawVector
 //
 // Description:
-// Create a raw Rcpp vector in R encapsulating SEXP pointers to the equivalent R raw objects
-// with the given data. rowsNumber indicates the number of elements to be added in the vector.
-// strLen_or_Ind indicates the length of each element.
-// Iterate over data and for each element, over each byte to push_back the value to the vector.
-// If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the empty raw(0) element.
+//  Create a raw Rcpp vector in R encapsulating SEXP pointers to the equivalent R raw objects
+//  with the given data. rowsNumber indicates the number of elements to be added in the vector.
+//  strLen_or_Ind indicates the length of each element.
+//  Iterate over data and for each element, over each byte to push_back the value to the vector.
+//  If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the empty raw(0) element.
 //
 Rcpp::RawVector RTypeUtils::CreateRawVector(
 	SQLULEN    rowsNumber,
@@ -210,42 +225,37 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 	return rawVector;
 }
 
+//-------------------------------------------------------------------------------------------------
 // Do explicit template instantiations, so that object code is generated for these
 // and the linker is able to find their definitions even after instantiations are in different
 // translation units (i.e. CreateVector instantiation is in RParam.cpp)
 //
-template Rcpp::IntegerVector RTypeUtils::CreateVector<SQLINTEGER, Rcpp::IntegerVector, int>(
+template Rcpp::IntegerVector RTypeUtils::CreateVector<SQLINTEGER, Rcpp::IntegerVector, int, SQL_C_SLONG>(
 	SQLULEN    rowsNumber,
 	SQLPOINTER data,
-	SQLINTEGER *strLen_or_Ind,
-	const int  valueForNA);
+	SQLINTEGER *strLen_or_Ind);
 
-template Rcpp::NumericVector RTypeUtils::CreateVector<SQLREAL, Rcpp::NumericVector, double>(
+template Rcpp::NumericVector RTypeUtils::CreateVector<SQLREAL, Rcpp::NumericVector, double, SQL_C_FLOAT>(
 	SQLULEN      rowsNumber,
 	SQLPOINTER   data,
-	SQLINTEGER   *strLen_or_Ind,
-	const double valueForNA);
+	SQLINTEGER   *strLen_or_Ind);
 
-template Rcpp::NumericVector RTypeUtils::CreateVector<SQLDOUBLE, Rcpp::NumericVector, double>(
+template Rcpp::NumericVector RTypeUtils::CreateVector<SQLDOUBLE, Rcpp::NumericVector, double, SQL_C_DOUBLE>(
 	SQLULEN      rowsNumber,
 	SQLPOINTER   data,
-	SQLINTEGER   *strLen_or_Ind,
-	const double valueForNA);
+	SQLINTEGER   *strLen_or_Ind);
 
-template Rcpp::NumericVector RTypeUtils::CreateVector<SQLBIGINT, Rcpp::NumericVector, double>(
+template Rcpp::NumericVector RTypeUtils::CreateVector<SQLBIGINT, Rcpp::NumericVector, double, SQL_C_SBIGINT>(
 	SQLULEN      rowsNumber,
 	SQLPOINTER   data,
-	SQLINTEGER   *strLen_or_Ind,
-	const double valueForNA);
+	SQLINTEGER   *strLen_or_Ind);
 
-template Rcpp::IntegerVector RTypeUtils::CreateVector<SQLSMALLINT, Rcpp::IntegerVector, int>(
+template Rcpp::IntegerVector RTypeUtils::CreateVector<SQLSMALLINT, Rcpp::IntegerVector, int, SQL_C_SSHORT>(
 	SQLULEN    rowsNumber,
 	SQLPOINTER data,
-	SQLINTEGER *strLen_or_Ind,
-	const int  valueForNA);
+	SQLINTEGER *strLen_or_Ind);
 
-template Rcpp::IntegerVector RTypeUtils::CreateVector<SQLCHAR, Rcpp::IntegerVector, int>(
+template Rcpp::IntegerVector RTypeUtils::CreateVector<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>(
 	SQLULEN    rowsNumber,
 	SQLPOINTER data,
-	SQLINTEGER *strLen_or_Ind,
-	const int  valueForNA);
+	SQLINTEGER *strLen_or_Ind);

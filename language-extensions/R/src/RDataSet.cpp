@@ -21,7 +21,7 @@
 // @File: RDataset.cpp
 //
 // Purpose:
-// Class handling loading and retrieving data from an R Dataframe.
+//  Class handling loading and retrieving data from an R Dataframe.
 //
 //*************************************************************************************************
 
@@ -38,18 +38,33 @@
 
 using namespace std;
 
-// A set of supported column data types
+//-------------------------------------------------------------------------------------------------
+// Function map - maps a ODBC C data type to the function for adding a column
 //
-const unordered_set<SQLSMALLINT> RInputDataSet::m_supportedDataTypes =
+const RInputDataSet::AddColumnFnMap RInputDataSet::m_fnAddColumnMap =
 {
-	SQL_C_SLONG,    // INT
-	SQL_C_BIT,      // BIT
-	SQL_C_FLOAT,    // REAL
-	SQL_C_DOUBLE,   // FLOAT(53)
-	SQL_C_SBIGINT,  // BIGINT
-	SQL_C_UTINYINT, // TINYINT
-	SQL_C_SSHORT,   // SMALLINT
-	SQL_C_CHAR      // CHAR(n), VARCHAR(n), VARCHAR(max)
+	{static_cast<SQLSMALLINT>(SQL_C_SLONG),                           // INT
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLINTEGER, Rcpp::IntegerVector, int, SQL_C_SLONG>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),                         // BIGINT
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLBIGINT, Rcpp::NumericVector, double, SQL_C_SBIGINT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),                           // REAL
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLREAL, Rcpp::NumericVector, double, SQL_C_FLOAT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),                          // FLOAT (53)
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLDOUBLE, Rcpp::NumericVector, double, SQL_C_DOUBLE>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),                          // SMALLINT
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLSMALLINT, Rcpp::IntegerVector, int, SQL_C_SSHORT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),                       // TINYINT
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_BIT),                            // BIT
+		static_cast<fnAddColumn>(&RInputDataSet::AddLogicalColumnToDataFrame)},
+	{static_cast<SQLSMALLINT>(SQL_C_CHAR),                           // CHAR(n), VARCHAR(n), VARCHAR(max)
+		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame)},
 };
 
 // Map of function pointers for getting a column information.
@@ -98,7 +113,7 @@ const ROutputDataSet::CleanupColumnFnMap ROutputDataSet::m_fnCleanupColumnMap =
 // Name: RDataSet::Init
 //
 // Description:
-// Initialize the DataSet with name and number of columns.
+//  Initialize the DataSet with name and number of columns.
 //
 void RDataSet::Init(
 	const SQLCHAR  *dataName,
@@ -136,8 +151,8 @@ void RDataSet::Init(
 // Name: RInputDataSet::Init
 //
 // Description:
-// Call the base Init and create the underlying DataFrame with stringsAsFactors = false.
-// This makes sure when character columns are added, they are not converted into factors.
+//  Call the base Init and create the underlying DataFrame with stringsAsFactors = false.
+//  This makes sure when character columns are added, they are not converted into factors.
 //
 void RInputDataSet::Init(
 	const SQLCHAR  *dataName,
@@ -152,7 +167,7 @@ void RInputDataSet::Init(
 // Name: RInputDataSet::InitColumn
 //
 // Description:
-// Initializes each RColumn of the member vector m_columns.
+//  Initializes each RColumn of the member vector m_columns.
 //
 void RInputDataSet::InitColumn(
 	SQLUSMALLINT   columnNumber,
@@ -174,7 +189,7 @@ void RInputDataSet::InitColumn(
 		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
 	}
 
-	if (m_supportedDataTypes.find(dataType) == m_supportedDataTypes.end())
+	if (m_fnAddColumnMap.find(dataType) == m_fnAddColumnMap.end())
 	{
 		throw invalid_argument("Unsupported data type " + to_string(dataType) + " encountered for "
 			"column id " + to_string(columnNumber) + " in input data.");
@@ -201,7 +216,7 @@ void RInputDataSet::InitColumn(
 // Name: RInputDataSet::AddColumnsToDataFrame
 //
 // Description:
-// Add columns to the underlying R DataFrame with the given rowsNumber and data.
+//  Add columns to the underlying R DataFrame with the given rowsNumber and data.
 //
 void RInputDataSet::AddColumnsToDataFrame(
 	SQLULEN      rowsNumber,
@@ -225,7 +240,16 @@ void RInputDataSet::AddColumnsToDataFrame(
 			colData = data[columnNumber];
 		}
 
-		AddColumnToDataFrame(
+		SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
+		AddColumnFnMap::const_iterator it = m_fnAddColumnMap.find(dataType);
+
+		if (it == m_fnAddColumnMap.end())
+		{
+			throw runtime_error("Unsupported input column type encountered when adding column #"
+				+ to_string(columnNumber));
+		}
+
+		(this->*it->second)(
 			columnNumber,
 			rowsNumber,
 			colData);
@@ -236,8 +260,9 @@ void RInputDataSet::AddColumnsToDataFrame(
 // Name: RInputDataSet::AddColumnToDataFrame
 //
 // Description:
-// Adds a single column of values into the R DataFrame
+//  Adds a single column of values into the R DataFrame
 //
+template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 void RInputDataSet::AddColumnToDataFrame(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -247,108 +272,78 @@ void RInputDataSet::AddColumnToDataFrame(
 
 	if (m_columns[columnNumber] == nullptr)
 	{
-		throw runtime_error("InitColumn not called for columnNumber " + to_string(columnNumber));
+		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
 	}
 
 	string name = m_columns[columnNumber].get()->Name();
-	SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
-	switch (dataType)
+
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
+		rowsNumber,
+		data,
+		strLen_or_Ind);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: RInputDataSet::AddLogicalColumnToDataFrame
+//
+// Description:
+//  Adds a single column of logical values into the R DataFrame.
+//
+void RInputDataSet::AddLogicalColumnToDataFrame(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data)
+{
+	LOG("RInputDataSet::AddLogicalColumnToDataFrame");
+
+	if (m_columns[columnNumber] == nullptr)
 	{
-		case SQL_C_SLONG:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateVector<SQLINTEGER, Rcpp::IntegerVector, int>(
-					rowsNumber,
-					data,
-					strLen_or_Ind,
-					NA_INTEGER);
-			break;
-		}
-		case SQL_C_BIT:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateLogicalVector(
-					rowsNumber,
-					data,
-					strLen_or_Ind);
-			break;
-		}
-		case SQL_C_FLOAT:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateVector<SQLREAL, Rcpp::NumericVector, double>(
-					rowsNumber,
-					data,
-					strLen_or_Ind,
-					NA_REAL);
-			break;
-		}
-		case SQL_C_DOUBLE:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateVector<SQLDOUBLE, Rcpp::NumericVector, double>(
-					rowsNumber,
-					data,
-					strLen_or_Ind,
-					NA_REAL);
-			break;
-		}
-		case SQL_C_SBIGINT:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateVector<SQLBIGINT, Rcpp::NumericVector, double>(
-					rowsNumber,
-					data,
-					strLen_or_Ind,
-					NA_REAL);
-			break;
-		}
-		case SQL_C_UTINYINT:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateVector<SQLCHAR, Rcpp::IntegerVector, int>(
-					rowsNumber,
-					data,
-					strLen_or_Ind,
-					NA_INTEGER);
-			break;
-		}
-		case SQL_C_SSHORT:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateVector<SQLSMALLINT, Rcpp::IntegerVector, int>(
-					rowsNumber,
-					data,
-					strLen_or_Ind,
-					NA_INTEGER);
-			break;
-		}
-		case SQL_C_CHAR:
-		{
-			m_dataFrame[name.c_str()] =
-				RTypeUtils::CreateCharacterVector(
-					rowsNumber,
-					data,
-					strLen_or_Ind);
-			break;
-		}
-		case SQL_C_BINARY:
-		case SQL_C_WCHAR:
-		case SQL_C_GUID:
-		case SQL_C_TYPE_DATE:
-		case SQL_C_NUMERIC:
-		case SQL_C_TYPE_TIMESTAMP:
-		default:
-			throw invalid_argument("Unsupported input column type");
+		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
 	}
+
+	string name = m_columns[columnNumber].get()->Name();
+	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateLogicalVector(
+		rowsNumber,
+		data,
+		strLen_or_Ind);
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Name: RInputDataSet::AddCharacterColumnToDataFrame
+//
+// Description:
+//  Adds a single column of character values into the R DataFrame.
+//
+void RInputDataSet::AddCharacterColumnToDataFrame(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data)
+{
+	LOG("RInputDataSet::AddCharacterColumnToDataFrame");
+
+	if (m_columns[columnNumber] == nullptr)
+	{
+		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
+	}
+
+	string name = m_columns[columnNumber].get()->Name();
+	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateCharacterVector(
+		rowsNumber,
+		data,
+		strLen_or_Ind);
 }
 
 //--------------------------------------------------------------------------------------------------
 // Name: RInputDataSet::AddDataFrameToEmbeddedR
 //
 // Description:
-// Add the underlying R DataFrame to the embedded R environment.
+//  Add the underlying R DataFrame to the embedded R environment.
 //
 void RInputDataSet::AddDataFrameToEmbeddedR()
 {
@@ -368,7 +363,7 @@ void RInputDataSet::AddDataFrameToEmbeddedR()
 // Name: ROutputDataSet::RetrieveDataFrameFromEmbeddedR
 //
 // Description:
-// Retrieves the DataFrame with m_name from embedded R if it exists.
+//  Retrieves the DataFrame with m_name from embedded R if it exists.
 //
 void ROutputDataSet::RetrieveDataFrameFromEmbeddedR()
 {
@@ -388,7 +383,7 @@ void ROutputDataSet::RetrieveDataFrameFromEmbeddedR()
 // Name: ROutputDataset::GetColumnsFromDataFrame
 //
 // Description:
-// Gets columns from the DataFrame and stores their data, nullmap and other information.
+//  Gets columns from the DataFrame and stores their data, nullmap and other information.
 //
 void ROutputDataSet::GetColumnsFromDataFrame()
 {
@@ -441,9 +436,9 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 // Name: ROutputDataSet::GetColumnFromDataFrame
 //
 // Description:
-// Templatized function to get the column information from the underlying m_dataFrame,
-// adds data to m_data and nullmap to m_columnNullMap.
-// Templated for integer, numeric and logical R class types.
+//  Templatized function to get the column information from the underlying m_dataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
+//  Templated for integer, numeric and logical R class types.
 //
 template<class RType, class SQLType, SQLSMALLINT dataType>
 void ROutputDataSet::GetColumnFromDataFrame(
@@ -500,8 +495,8 @@ void ROutputDataSet::GetColumnFromDataFrame(
 // Name: ROutputDataSet::GetCharacterColumnFromDataFrame
 //
 // Description:
-// Get character column information from the underlying m_dataFrame,
-// adds data to m_data and nullmap to m_columnNullMap.
+//  Get character column information from the underlying m_dataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
 //
 void ROutputDataSet::GetCharacterColumnFromDataFrame(
 	SQLUSMALLINT columnNumber,
@@ -565,8 +560,8 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 // Name: ROutputDataSet::GetRawColumnFromDataFrame
 //
 // Description:
-// Get raw column information from the underlying m_dataFrame,
-// adds data to m_data and nullmap to m_columnNullMap.
+//  Get raw column information from the underlying m_dataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
 //
 void ROutputDataSet::GetRawColumnFromDataFrame(
 	SQLUSMALLINT columnNumber,
@@ -620,9 +615,9 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 // Name: ROutputDataSet::GetColumnsDataType
 //
 // Description:
-// Finds the data type for each column and stores it in the member m_columnsDataType.
-// If a binary data type is found when numberOfColumns is > 1, an exception is thrown
-// since OutputData having a binary column is not supported when it has more than 1 columns.
+//  Finds the data type for each column and stores it in the member m_columnsDataType.
+//  If a binary data type is found when numberOfColumns is > 1, an exception is thrown
+//  since OutputData having a binary column is not supported when it has more than 1 columns.
 //
 void ROutputDataSet::GetColumnsDataType()
 {
@@ -649,8 +644,11 @@ void ROutputDataSet::GetColumnsDataType()
 // Name: ROutputDataSet::GetColumnDataType
 //
 // Description:
-// First, evaluates class(m_name[1,columnNumber+1]) to give the R class.
-// Then gets the column data type by looking up the map with the R class as the key.
+//  First, evaluates class(m_name[1,columnNumber+1]) to give the R class.
+//  Then gets the column data type by looking up the map with the R class as the key.
+//
+// Returns:
+//  The ODBC C data type of the column.
 //
 SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 {
@@ -688,9 +686,9 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 // Name: ROutputDataSet::PopulateNumberOfRows
 //
 // Description:
-// Set the number of rows from the underlying DataFrame.
-// If there is a binary column, number of rows is set to 1 even if the underlying DataFrame has more
-// rows since all the bytes are returned in a single row.
+//  Set the number of rows from the underlying DataFrame.
+//  If there is a binary column, number of rows is set to 1 even if the underlying DataFrame has more
+//  rows since all the bytes are returned in a single row.
 //
 void ROutputDataSet::PopulateNumberOfRows()
 {
@@ -718,8 +716,8 @@ void ROutputDataSet::PopulateNumberOfRows()
 // Name: ROutputDataSet::CleanupColumns
 //
 // Description:
-// Looks up the CleanupColumnFnMap to find the the respective CleanupColumn function for every column
-// and calls that.
+//  Looks up the CleanupColumnFnMap to find the the respective CleanupColumn function for every column
+//  and calls that.
 //
 void ROutputDataSet::CleanupColumns()
 {
@@ -746,8 +744,8 @@ void ROutputDataSet::CleanupColumns()
 // Name: ROutputDataSet::CleanupColumn
 //
 // Description:
-// For the given columnNumber, cleans up the data buffer used to hold the data
-// before being sent to ExtHost. Also cleans up the columnNullMap.
+//  For the given columnNumber, cleans up the data buffer used to hold the data
+//  before being sent to ExtHost. Also cleans up the columnNullMap.
 //
 template<class SQLType>
 void ROutputDataSet::CleanupColumn(SQLUSMALLINT columnNumber)

@@ -21,7 +21,7 @@
 // @File: RParam.h
 //
 // Purpose:
-// Classes storing information about an RExtension input/output parameter.
+//  Classes storing information about an RExtension input/output parameter.
 //
 //*************************************************************************************************
 #pragma once
@@ -30,7 +30,7 @@
 // Name: RParam
 //
 // Description:
-// Base class storing information about the RExtension input/output parameter.
+//  Base class storing information about the RExtension input/output parameter.
 //
 class RParam
 {
@@ -117,10 +117,10 @@ private:
 // Name: RParamTemplate
 //
 // Description:
-// Template class representing numeric, integer parameters by storing the RcppVector of
-// given RType for the corresponding SQLType and having NA value of NAType.
+//  Template class representing numeric, integer parameters by storing the RcppVector of
+//  given RType for the corresponding SQLType and having NA value of NAType.
 //
-template<class SQLType, class RType, class NAType>
+template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 class RParamTemplate : public RParam
 {
 
@@ -136,8 +136,7 @@ public:
 		SQLSMALLINT   decimalDigits,
 		SQLPOINTER    paramValue,
 		SQLINTEGER    strLen_or_Ind,
-		SQLSMALLINT   inputOutputType,
-		const NAType  valueForNA);
+		SQLSMALLINT   inputOutputType);
 
 	// Get m_RcppVector
 	//
@@ -148,10 +147,8 @@ public:
 
 	// Templatized function to set the RcppVector by creating an equivalent R type
 	// for the given SQL type with given value. This is only for numeric or integer R types.
-	// NA is R's special value indicative of null in C++.
-	// For each R type, there is a special NA value with a corresponding NA type in C++.
 	//
-	void SetRcppVector(SQLPOINTER paramValue, const NAType valueForNA);
+	void SetRcppVector(SQLPOINTER paramValue);
 
 	// The Rcpp::Vector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
@@ -163,8 +160,8 @@ public:
 // Name: RLogicalParam
 //
 // Description:
-// Class representing a logical parameter by storing Rcpp::LogicalVector
-// corresponding to ODBC C type SQL_C_BIT and SQL type SQLCHAR.
+//  Class representing a logical parameter by storing Rcpp::LogicalVector
+//  corresponding to ODBC C type SQL_C_BIT and SQL type SQLCHAR.
 //
 class RLogicalParam : public RParam
 {
@@ -206,7 +203,7 @@ private:
 // Name: RCharacterParam
 //
 // Description:
-// Class representing a character parameter by storing Rcpp::CharacterVector.
+//  Class representing a character parameter by storing Rcpp::CharacterVector.
 //
 class RCharacterParam : public RParam
 {
@@ -248,7 +245,7 @@ private:
 // Name: RRawParam
 //
 // Description:
-// Class representing a raw parameter by storing Rcpp::RawVector.
+//  Class representing a raw parameter by storing Rcpp::RawVector.
 //
 class RRawParam : public RParam
 {

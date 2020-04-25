@@ -21,7 +21,7 @@
 // @File: RParam.cpp
 //
 // Purpose:
-// Class storing information about the RExtension input/output parameter.
+//  Class storing information about the RExtension input/output parameter.
 //
 //*************************************************************************************************
 
@@ -41,7 +41,7 @@ using namespace std;
 // Name: RParam
 //
 // Description:
-// Constructor.
+//  Constructor.
 //
 RParam::RParam(
 	SQLUSMALLINT  paramNumber,
@@ -81,8 +81,8 @@ RParam::RParam(
 // Name: CheckParamSize
 //
 // Description:
-// Verifies if m_Size is equal to the size of the template type T.
-// Returns nothing if the check succeeds, throws an exception otherwise.
+//  Verifies if m_Size is equal to the size of the template type T.
+//  Returns nothing if the check succeeds, throws an exception otherwise.
 //
 template<class T>
 void RParam::CheckParamSize()
@@ -104,10 +104,10 @@ void RParam::CheckParamSize()
 // Name: RParamTemplate
 //
 // Description:
-// Constructor.
+//  Constructor.
 //
-template<class SQLType, class RType, class NAType>
-RParamTemplate<SQLType, RType, NAType>::RParamTemplate(
+template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
+RParamTemplate<SQLType, RType, NAType, DataType>::RParamTemplate(
 	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -116,8 +116,7 @@ RParamTemplate<SQLType, RType, NAType>::RParamTemplate(
 	SQLSMALLINT   decimalDigits,
 	SQLPOINTER    paramValue,
 	SQLINTEGER    strLen_or_Ind,
-	SQLSMALLINT   inputOutputType,
-	const NAType  valueForNA)
+	SQLSMALLINT   inputOutputType)
 	: RParam(paramNumber,
 		paramName,
 		paramNameLength,
@@ -127,24 +126,23 @@ RParamTemplate<SQLType, RType, NAType>::RParamTemplate(
 		strLen_or_Ind,
 		inputOutputType)
 {
-	SetRcppVector(paramValue, valueForNA);
+	SetRcppVector(paramValue);
 }
 
 //-------------------------------------------------------------------------------------------------
 // Name: SetRcppVector
 //
 // Description:
-// Templatized function to set RcppVector with given paramValue.
-// This is only for numeric or integer R types.
-// It is a wrapper to CreateVector with rowsNumber = 1.
-// Before creation, it verifies whether m_size is equal to size of the SQL type.
-// NA is R's special value indicative of null in C++.
-// For each R type, there is a special NA value with a corresponding NA type in C++.
+//  Templatized function to set RcppVector with given paramValue.
+//  This is only for numeric or integer R types.
+//  It is a wrapper to CreateVector with rowsNumber = 1.
+//  Before creation, it verifies whether m_size is equal to size of the SQL type.
+//  NA is R's special value indicative of null in C++.
+//  For each R type, there is a special NA value with a corresponding NA type in C++.
 //
-template<class SQLType, class RType, class NAType>
-void RParamTemplate<SQLType, RType, NAType>::SetRcppVector(
-	SQLPOINTER   paramValue,
-	const NAType valueForNA)
+template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
+void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
+	SQLPOINTER   paramValue)
 {
 	LOG("RParamTemplate::SetRcppVector");
 
@@ -153,19 +151,17 @@ void RParamTemplate<SQLType, RType, NAType>::SetRcppVector(
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		SQLINTEGER strLen_or_Ind[1] = {SQL_NULL_DATA};
-		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType>(
+		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
 			1, // rowsNumber
 			paramValue,
-			strLen_or_Ind,
-			valueForNA);
+			strLen_or_Ind);
 	}
 	else
 	{
-		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType>(
+		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
 			1, // rowsNumber
 			paramValue,
-			nullptr, // strLen_or_Ind
-			valueForNA);
+			nullptr); // strLen_or_Ind
 	}
 }
 
@@ -173,7 +169,7 @@ void RParamTemplate<SQLType, RType, NAType>::SetRcppVector(
 // Name: RLogicalParam
 //
 // Description:
-// Constructor.
+//  Constructor.
 //
 RLogicalParam::RLogicalParam(
 	SQLUSMALLINT  paramNumber,
@@ -201,10 +197,10 @@ RLogicalParam::RLogicalParam(
 // Name: SetRcppVector
 //
 // Description:
-// Set the RcppVector for RLogicalParam with the given paramValue.
-// This is a wrapper to CreateLogicalVector with rowsNumber = 1.
-// Before creation, it verifies whether m_size is equal to size of SQLCHAR.
-// For null parameters, a size one vector with member value = NA_LOGICAL is created.
+//  Set the RcppVector for RLogicalParam with the given paramValue.
+//  This is a wrapper to CreateLogicalVector with rowsNumber = 1.
+//  Before creation, it verifies whether m_size is equal to size of SQLCHAR.
+//  For null parameters, a size one vector with member value = NA_LOGICAL is created.
 //
 void RLogicalParam::SetRcppVector(SQLPOINTER paramValue)
 {
@@ -233,7 +229,7 @@ void RLogicalParam::SetRcppVector(SQLPOINTER paramValue)
 // Name: RCharacterParam
 //
 // Description:
-// Constructor.
+//  Constructor.
 //
 RCharacterParam::RCharacterParam(
 	SQLUSMALLINT  paramNumber,
@@ -261,9 +257,9 @@ RCharacterParam::RCharacterParam(
 // Name: SetRcppVector
 //
 // Description:
-// Set the RcppVector for RCharacterParam with the given paramValue.
-// This is a wrapper to CreateCharacterVector with rowsNumber = 1.
-// For null parameters, a size one vector with member value = NA_STRING is created.
+//  Set the RcppVector for RCharacterParam with the given paramValue.
+//  This is a wrapper to CreateCharacterVector with rowsNumber = 1.
+//  For null parameters, a size one vector with member value = NA_STRING is created.
 //
 void RCharacterParam::SetRcppVector(SQLPOINTER paramValue)
 {
@@ -291,7 +287,7 @@ void RCharacterParam::SetRcppVector(SQLPOINTER paramValue)
 // Name: RRawParam
 //
 // Description:
-// Constructor.
+//  Constructor.
 //
 RRawParam::RRawParam(
 	SQLUSMALLINT  paramNumber,
@@ -319,9 +315,9 @@ RRawParam::RRawParam(
 // Name: SetRcppVector
 //
 // Description:
-// Set the RcppVector for RRawParam with the given paramValue.
-// This is a wrapper to CreateRawVector with rowsNumber = 1.
-// For null parameters, a size one vector with member value = raw(0) is created.
+//  Set the RcppVector for RRawParam with the given paramValue.
+//  This is a wrapper to CreateRawVector with rowsNumber = 1.
+//  For null parameters, a size one vector with member value = raw(0) is created.
 //
 void RRawParam::SetRcppVector(SQLPOINTER paramValue)
 {
@@ -341,7 +337,7 @@ void RRawParam::SetRcppVector(SQLPOINTER paramValue)
 // and the linker is able to find their definitions even after instantiations are in different
 // translation units (i.e. RParamTemplate instantiation is in RParamContainer.cpp)
 //
-template RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>::RParamTemplate(
+template RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int, SQL_C_SLONG>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -350,10 +346,9 @@ template RParamTemplate<SQLINTEGER, Rcpp::IntegerVector, int>::RParamTemplate(
 	SQLSMALLINT,
 	SQLPOINTER,
 	SQLINTEGER,
-	SQLSMALLINT,
-	int);
+	SQLSMALLINT);
 
-template RParamTemplate<SQLREAL, Rcpp::NumericVector, double>::RParamTemplate(
+template RParamTemplate<SQLREAL, Rcpp::NumericVector, double, SQL_C_FLOAT>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -362,10 +357,9 @@ template RParamTemplate<SQLREAL, Rcpp::NumericVector, double>::RParamTemplate(
 	SQLSMALLINT,
 	SQLPOINTER,
 	SQLINTEGER,
-	SQLSMALLINT,
-	double);
+	SQLSMALLINT);
 
-template RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>::RParamTemplate(
+template RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double, SQL_C_DOUBLE>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -374,10 +368,9 @@ template RParamTemplate<SQLDOUBLE, Rcpp::NumericVector, double>::RParamTemplate(
 	SQLSMALLINT,
 	SQLPOINTER,
 	SQLINTEGER,
-	SQLSMALLINT,
-	double);
+	SQLSMALLINT);
 
-template RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>::RParamTemplate(
+template RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double, SQL_C_SBIGINT>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -386,10 +379,9 @@ template RParamTemplate<SQLBIGINT, Rcpp::NumericVector, double>::RParamTemplate(
 	SQLSMALLINT,
 	SQLPOINTER,
 	SQLINTEGER,
-	SQLSMALLINT,
-	double);
+	SQLSMALLINT);
 
-template RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>::RParamTemplate(
+template RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int, SQL_C_SSHORT>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -398,10 +390,9 @@ template RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int>::RParamTemplate(
 	SQLSMALLINT,
 	SQLPOINTER,
 	SQLINTEGER,
-	SQLSMALLINT,
-	int);
+	SQLSMALLINT);
 
-template RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int>::RParamTemplate(
+template RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -410,5 +401,4 @@ template RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int>::RParamTemplate(
 	SQLSMALLINT,
 	SQLPOINTER,
 	SQLINTEGER,
-	SQLSMALLINT,
-	int);
+	SQLSMALLINT);
