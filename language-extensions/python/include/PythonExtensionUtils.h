@@ -13,6 +13,7 @@
 
 #pragma once
 #include "Common.h"
+#include <unordered_map>
 
 class PythonExtensionUtils
 {
@@ -34,6 +35,10 @@ public:
 	// Close an open dll handle
 	//
 	static void FreeDLL(void *pDll);
+
+	// Map to store the ODBC C type to null value mapping
+	//
+	static const std::unordered_map<SQLSMALLINT, const void*> m_dataTypeToNullMap;
 
 private:
 

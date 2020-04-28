@@ -389,7 +389,7 @@ namespace ExtensionApiTest
 	//
 	// Description:
 	// Templatized function to call InitParam for the given paramValue and dataType.
-	// Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
+	// Testing if InitParam is implemented correctly for integer/numeric/boolean dataTypes.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
 	void PythonExtensionApiTests::TestParameter(

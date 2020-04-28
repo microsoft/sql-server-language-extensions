@@ -22,6 +22,7 @@
 #include "sqlexternallanguage.h"
 
 using namespace std;
+namespace py = boost::python;
 
 static void *g_pyDLL = nullptr;
 static unordered_map<string, PythonSession *> g_pySessionMap;
@@ -79,6 +80,12 @@ SQLRETURN Init(
 		result = SQL_ERROR;
 
 		LOG_ERROR(ex.what());
+	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
 	}
 	catch (...)
 	{
@@ -140,6 +147,12 @@ SQLRETURN InitSession(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -196,6 +209,12 @@ SQLRETURN InitColumn(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -250,6 +269,12 @@ SQLRETURN InitParam(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -296,6 +321,12 @@ SQLRETURN Execute(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -334,6 +365,12 @@ SQLRETURN GetResultColumn(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -367,6 +404,12 @@ SQLRETURN GetResults(
 		result = SQL_ERROR;
 
 		LOG_ERROR(ex.what());
+	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
 	}
 	catch (...)
 	{
@@ -402,6 +445,12 @@ SQLRETURN GetOutputParam(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -435,6 +484,12 @@ SQLRETURN CleanupSession(
 
 		LOG_ERROR(ex.what());
 	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
+	}
 	catch (...)
 	{
 		result = SQL_ERROR;
@@ -458,6 +513,12 @@ SQLRETURN Cleanup()
 		result = SQL_ERROR;
 
 		LOG_ERROR(ex.what());
+	}
+	catch (const py::error_already_set&)
+	{
+		result = SQL_ERROR;
+
+		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
 	}
 	catch (...)
 	{

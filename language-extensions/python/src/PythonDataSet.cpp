@@ -19,6 +19,7 @@
 
 using namespace std;
 namespace py = boost::python;
+namespace np = boost::python::numpy;
 
 // Function map - maps a SQL data type to the appropriate function that
 // adds a column to the dictionary
@@ -26,19 +27,19 @@ namespace py = boost::python;
 unordered_map<SQLSMALLINT, PythonInputDataSet::fnAddColumn> PythonInputDataSet::m_fnAddColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR, bool>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLINTEGER>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLINTEGER, int>)},
 	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLDOUBLE>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLDOUBLE, double>)},
 	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLREAL>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLREAL, double>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLSMALLINT>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLSMALLINT, int>)},
 	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR, int>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLBIGINT>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLBIGINT, int>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddStringColumnToDictionary)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
@@ -90,13 +91,13 @@ void PythonDataSet::Init(
 //  Initializes each PythonColumn of the member vector m_columns.
 //
 void PythonInputDataSet::InitColumn(
-	SQLUSMALLINT   columnNumber,
-	const SQLCHAR  *columnName,
-	SQLSMALLINT    columnNameLength,
-	SQLSMALLINT    dataType,
-	SQLULEN        columnSize,
-	SQLSMALLINT    decimalDigits,
-	SQLSMALLINT    nullable)
+	SQLUSMALLINT  columnNumber,
+	const SQLCHAR *columnName,
+	SQLSMALLINT   columnNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       columnSize,
+	SQLSMALLINT   decimalDigits,
+	SQLSMALLINT   nullable)
 {
 	LOG("PythonInputDataSet::InitColumn #" + to_string(columnNumber));
 
@@ -108,7 +109,6 @@ void PythonInputDataSet::InitColumn(
 	{
 		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
 	}
-
 
 	AddColumnFnMap::const_iterator it = m_fnAddColumnMap.find(dataType);
 
@@ -142,9 +142,9 @@ void PythonInputDataSet::InitColumn(
 //  Add columns to the underlying boost python dictionary with the given rowsNumber and data.
 //
 void PythonInputDataSet::AddColumnsToDictionary(
-	SQLULEN      rowsNumber,
-	SQLPOINTER   *data,
-	SQLINTEGER   **strLen_or_Ind)
+	SQLULEN    rowsNumber,
+	SQLPOINTER *data,
+	SQLINTEGER **strLen_or_Ind)
 {
 	LOG("PythonInputDataSet::AddColumnsToDictionary");
 
@@ -193,7 +193,7 @@ void PythonInputDataSet::AddColumnsToDictionary(
 //  Add a column to the python dictionary that will be the DataFrame.
 //  Works for simple types like numbers and logical
 //
-template<class SQLType>
+template<class SQLType, class NullType>
 void PythonInputDataSet::AddColumnToDictionary(
 	SQLSMALLINT columnIndex,
 	SQLULEN     rowsNumber,
@@ -204,30 +204,53 @@ void PythonInputDataSet::AddColumnToDictionary(
 
 	string name = m_columns[columnIndex].get()->Name();
 	SQLSMALLINT dataType = m_columns[columnIndex].get()->DataType();
+	NullType valueForNull =
+		*(static_cast<const NullType*>(PythonExtensionUtils::m_dataTypeToNullMap.at(dataType)));
 
-	py::list dataList = py::list();
+	// Properties of the numpy array that will be populated in from_data below.
+	// dt     - Numpy DataType
+	// stride - size of each element of the array, so numpy knows how to separate elements
+	// shape  - shape of the array as a tuple of sizes of each dimension (we only have 1 dimension)
+	// own    - python object to hold a reference until it is transferred to the namespace
+	//
+	np::dtype dt = np::dtype::get_builtin<SQLType>();
+	py::tuple stride = py::make_tuple(sizeof(SQLType));
+	py::tuple shape = py::make_tuple(rowsNumber);
+	py::object own;
 
-	for (SQLULEN j = 0; j < rowsNumber; j++)
+	// We need to specify the type is boolean not SQL_CHAR for bools so python knows
+	//
+	if (dataType == SQL_C_BIT)
 	{
-		SQLType* t = static_cast<SQLType *>(data);
-		SQLType value = t[j];
+		dt = np::dtype::get_builtin<bool>();
+		stride = py::make_tuple(sizeof(bool));
+	}
 
+	SQLType* dataArray = static_cast<SQLType *>(data);
+
+	// We modify the data array that is passed in by ExtHost in place so that
+	// numpy can use that memory location for its data and not need to copy it out.
+	//
+	for (SQLULEN i = 0; i < rowsNumber; i++)
+	{
+		// We need to specify the type is boolean not SQL_CHAR for bools so python knows
+		//
 		if (dataType == SQL_C_BIT)
 		{
-			 value = value != '0' ? true : false;
+			dataArray[i] = dataArray[i] != '0';
 		}
 
-		if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
+		if (strLen_or_Ind != nullptr && strLen_or_Ind[i] == SQL_NULL_DATA)
 		{
-			dataList.append(py::object());
-		}
-		else
-		{
-			dataList.append(value);
+			dataArray[i] = valueForNull;
 		}
 	}
 
-	m_dataDict[name] = py::numpy::array(dataList);
+	// Create a numpy array that points directly to the C++ data array.
+	// This DOES NOT copy the data, so numpy will directly point to the data location.
+	//
+	np::ndarray npDataArray = np::from_data(dataArray, dt, shape, stride, own);
+	m_dataDict[name] = npDataArray;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -246,29 +269,46 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 
 	string name = m_columns[columnIndex].get()->Name();
 
-	py::list dataList = py::list();
-
 	char *strArray = reinterpret_cast<char*>(data);
 	int length = 0;
 
-	for (SQLULEN j = 0; j < rowsNumber; j++)
+	// Create an empty numpy array of type python object
+	//
+	py::tuple shape = py::make_tuple(rowsNumber);
+	np::ndarray nArray = np::empty(shape, objType);
+
+	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
 		if ((strLen_or_Ind == nullptr) ||
-			(strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA))
+			(strLen_or_Ind != nullptr && strLen_or_Ind[i] == SQL_NULL_DATA))
 		{
-			dataList.append(py::object());
+			// If this string should be NULL, then we set it to the Python None object.
+			//
+			nArray[i] = py::object();
 		}
 		else
 		{
 			char *str = strArray + length;
-			SQLINTEGER strlen = strLen_or_Ind[j] / sizeof(CHAR);
-			string value(str, strlen);
-			dataList.append(value);
+			SQLINTEGER strlen = strLen_or_Ind[i] / sizeof(CHAR);
+
+			// Create a string PyObject from the str and strLen.
+			// This DOES copy the underlying string into a new buffer and null terminates it.
+			// Then, convert to a boost object so that boost handles ref counting.
+			//
+			py::object strObj = py::object(py::handle<>(
+				PyUnicode_FromStringAndSize(str, strlen)
+			));
+
+			nArray[i] = strObj;
 			length += strlen;
 		}
 	}
 
-	m_dataDict[name] = py::numpy::array(dataList);
+	// By assigning the boost python objects into the data dictionary, the memory will not be
+	// deallocated because we keep at least one reference to the PyObjects that were created
+	// in the loop above.
+	//
+	m_dataDict[name] = nArray;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -287,37 +327,47 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 
 	string name = m_columns[columnIndex].get()->Name();
 
-	py::list dataList = py::list();
-
 	char *rawArray = reinterpret_cast<char*>(data);
 	int length = 0;
 
-	for (SQLULEN j = 0; j < rowsNumber; j++)
+	// Create an empty numpy array of type python object
+	//
+	py::tuple shape = py::make_tuple(rowsNumber);
+	np::ndarray nArray = np::empty(shape, objType);
+
+	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
 		if ((strLen_or_Ind == nullptr) ||
-			(strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA))
+			(strLen_or_Ind != nullptr && strLen_or_Ind[i] == SQL_NULL_DATA))
 		{
-			dataList.append(py::object());
+			// If this string should be NULL, then we set it to the Python None object.
+			//
+			nArray[i] = py::object();
 		}
 		else
 		{
 			char *rawVal = rawArray + length;
-			SQLINTEGER strlen = strLen_or_Ind[j] / sizeof(SQLCHAR);
+			SQLINTEGER strlen = strLen_or_Ind[i] / sizeof(CHAR);
 
-			// Create a Python bytes object from binary
+			// Create a bytes PyObject from the raw bytes and strLen.
+			// We create a PyMemoryViewObject (which does not copy the underlying data) then
+			// convert to a Bytes object. This step DOES copy the data.
+			// Then, convert to a boost object so that boost handles ref counting.
 			//
-			py::object rawObj = py::object(py::handle<>(
-				PyBytes_FromObject(PyMemoryView_FromMemory(
-					static_cast<char*>(rawVal), strlen, PyBUF_READ
-				))
+			py::object bytesObj = py::object(py::handle<>(
+				PyBytes_FromObject(PyMemoryView_FromMemory(rawVal, strlen, PyBUF_READ))
 			));
 
-			dataList.append(rawObj);
+			nArray[i] = bytesObj;
 			length += strlen;
 		}
 	}
 
-	m_dataDict[name] = py::numpy::array(dataList);
+	// By assigning the boost python objects into the data dictionary, the memory will not be
+	// deallocated because we keep at least one reference to the PyObjects that were created
+	// in the loop above.
+	//
+	m_dataDict[name] = nArray;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -330,27 +380,13 @@ void PythonInputDataSet::AddDictionaryToNamespace(py::object m_mainNamespace)
 {
 	LOG("PythonInputDataSet::AddDictionaryToNamespace");
 
-	try
-	{
-		// Create the InputDataSet DataFrame in the namespace
-		//
-		m_mainNamespace[m_name] = m_dataDict;
+	// Create the InputDataSet DataFrame in the namespace
+	//
+	m_mainNamespace[m_name] = m_dataDict;
 
-		string pandasDataFrame = "from pandas import DataFrame";
-		string createDataFrameScript = m_name + " = DataFrame(" + m_name + ")";
+	string pandasDataFrame = "from pandas import DataFrame";
+	string createDataFrameScript = m_name + " = DataFrame(" + m_name + ")";
 
-		py::exec(pandasDataFrame.c_str(), m_mainNamespace);
-		py::exec(createDataFrameScript.c_str(), m_mainNamespace);
-
-	}
-	catch (py::error_already_set&)
-	{
-		string pyError = PythonExtensionUtils::ParsePythonException();
-		LOG_ERROR(pyError);
-		throw runtime_error(pyError);
-	}
-	catch (exception &ex)
-	{
-		LOG_ERROR(ex.what());
-	}
+	py::exec(pandasDataFrame.c_str(), m_mainNamespace);
+	py::exec(createDataFrameScript.c_str(), m_mainNamespace);
 }

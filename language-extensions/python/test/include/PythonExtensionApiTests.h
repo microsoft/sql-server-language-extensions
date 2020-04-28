@@ -93,17 +93,27 @@ namespace ExtensionApiTest
 
 		// Template function to Test Execute with default script
 		//
-		template<class SQLType, SQLSMALLINT dataType>
+		template<class SQLType, SQLSMALLINT dataType, class NullType>
 		void TestExecute(
 			SQLULEN                  rowsNumber,
 			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
-			std::vector<std::string> columnNames);
+			std::vector<std::string> columnNames,
+			const NullType           valueForNull = NULL);
 
 		// Template function to compare the given column and data for equality.
 		//
-		template<class SQLType, SQLSMALLINT dataType>
+		template<class SQLType, SQLSMALLINT dataType, class NullType>
 		void CheckColumnEquality(
+			SQLULEN             expectedRowsNumber,
+			boost::python::dict columnToTest,
+			void                *expectedColumn,
+			SQLINTEGER          *strLen_or_Ind,
+			const NullType      valueForNull);
+
+		// Compare a given boolean column with another for equality
+		//
+		void CheckBooleanColumnEquality(
 			SQLULEN             expectedRowsNumber,
 			boost::python::dict columnToTest,
 			void                *expectedColumn,
@@ -148,6 +158,11 @@ namespace ExtensionApiTest
 		SQLSMALLINT m_outputDataNameLength;
 
 		const std::string m_printMessage = "Hello PythonExtension!";
+
+		const double m_doubleNull = NAN;
+		const int m_intNull = 0;
+		const bool m_boolNull = false;
+		const char m_charNull = '0';
 
 		// The boost python module; python will run in this object
 		//

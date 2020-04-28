@@ -36,15 +36,8 @@ void PythonSession::Init(
 {
 	LOG("PythonSession::Init");
 
-	try
-	{
-		m_mainModule = py::import("__main__");
-		m_mainNamespace = m_mainModule.attr("__dict__");
-	}
-	catch (py::error_already_set&)
-	{
-		throw runtime_error("Error loading main module and namespace");
-	}
+	m_mainModule = py::import("__main__");
+	m_mainNamespace = m_mainModule.attr("__dict__");
 
 	// Check that the module and namespace are populated, not None objects
 	//
@@ -164,39 +157,28 @@ void PythonSession::ExecuteWorkflow(
 	//
 	m_inputDataSet.AddDictionaryToNamespace(m_mainNamespace);
 
-	// Execute the script, capturing the output and error
+	// Scripts to redirect stdout and stderr to variables to extract afterwards
 	//
-	try
-	{
-		// Scripts to redirect stdout and stderr to variables to extract afterwards
-		//
-		string redirectPyOut = "import sys; from io import StringIO\n"
-			"_temp_out_ = StringIO(); _temp_err_ = StringIO()\n"
-			"sys.stdout = _temp_out_; sys.stderr = _temp_err_\n";
+	string redirectPyOut = "import sys; from io import StringIO\n"
+		"_temp_out_ = StringIO(); _temp_err_ = StringIO()\n"
+		"sys.stdout = _temp_out_; sys.stderr = _temp_err_\n";
 
-		string resetPyOut = "sys.stdout = sys.__stdout__\n"
-			"sys.stderr = sys.__stderr__\n"
-			"_temp_out_ = _temp_out_.getvalue()\n"
-			"_temp_err_ = _temp_err_.getvalue()";
+	string resetPyOut = "sys.stdout = sys.__stdout__\n"
+		"sys.stderr = sys.__stderr__\n"
+		"_temp_out_ = _temp_out_.getvalue()\n"
+		"_temp_err_ = _temp_err_.getvalue()";
 
-		// Execute script and capture output
-		//
-		py::exec(redirectPyOut.c_str(), m_mainNamespace);
-		py::exec(m_script.c_str(), m_mainNamespace);
-		py::exec(resetPyOut.c_str(), m_mainNamespace);
+	// Execute script and capture output
+	//
+	py::exec(redirectPyOut.c_str(), m_mainNamespace);
+	py::exec(m_script.c_str(), m_mainNamespace);
+	py::exec(resetPyOut.c_str(), m_mainNamespace);
 
-		string pyStdOut = py::extract<string>(m_mainNamespace["_temp_out_"]);
-		string pyStdErr = py::extract<string>(m_mainNamespace["_temp_err_"]);
+	string pyStdOut = py::extract<string>(m_mainNamespace["_temp_out_"]);
+	string pyStdErr = py::extract<string>(m_mainNamespace["_temp_err_"]);
 
-		cout << pyStdOut << endl;
-		cerr << pyStdErr << endl;
-	}
-	catch (py::error_already_set &)
-	{
-		string pyError = PythonExtensionUtils::ParsePythonException();
-		LOG_ERROR(pyError);
-		throw runtime_error("Error running python:\n" + pyError);
-	}
+	cout << pyStdOut << endl;
+	cerr << pyStdErr << endl;
 }
 
 // Get the metadata for the output column

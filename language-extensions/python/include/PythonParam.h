@@ -130,19 +130,19 @@ public:
 };
 
 //-------------------------------------------------------------------------------------------------
-// Name: PythonLogicalParam
+// Name: PythonBooleanParam
 //
 // Description:
 // Class representing a logical parameter.
 // Corresponds to ODBC C type SQL_C_BIT.
 //
-class PythonLogicalParam : public PythonParam
+class PythonBooleanParam : public PythonParam
 {
 public:
 
 	// Constructor to initialize the members
 	//
-	PythonLogicalParam(
+	PythonBooleanParam(
 		SQLUSMALLINT  id,
 		const SQLCHAR *paramName,
 		SQLSMALLINT   paramNameLength,

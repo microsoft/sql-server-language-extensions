@@ -38,8 +38,8 @@ namespace ExtensionApiTest
 		string integerColumn2Name = "IntegerColumn2";
 		InitializeColumn(1, integerColumn2Name, SQL_C_SLONG, sizeof(SQLINTEGER));
 
-		vector<SQLINTEGER> intCol1Data{ 1, 2, 3, 4 };
-		vector<SQLINTEGER> intCol2Data{ 2'147'483'647, -2'147'483'647, 0, -1 };
+		vector<SQLINTEGER> intCol1Data{ 0, 1, 2, 3 };
+		vector<SQLINTEGER> intCol2Data{ 2'147'483'647, -2'147'483'647, 10, -1 };
 		vector<void*> dataSet = { intCol1Data.data(), intCol2Data.data() };
 
 		SQLINTEGER strLenOrIndCol2[] = { 0, 0, SQL_NULL_DATA, 0 };
@@ -47,45 +47,47 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ integerColumn1Name, integerColumn2Name };
 
-		TestExecute<SQLINTEGER, SQL_C_SLONG>(
+		TestExecute<SQLINTEGER, SQL_C_SLONG, int>(
 			intCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_intNull);
 	}
 
-	// Name: ExecuteLogicalColumnsTest
+	// Name: ExecuteBooleanColumnsTest
 	//
 	// Description:
-	// Test Execute using an InputDataSet of Logical columns.
+	// Test Execute using an InputDataSet of Boolean columns.
 	//
-	TEST_F(PythonExtensionApiTests, ExecuteLogicalColumnsTest)
+	TEST_F(PythonExtensionApiTests, ExecuteBooleanColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello World
 		// and assigns InputDataSet to OutputDataSet
 		//
 		InitializeSession(2);    // inputSchemaColumnsNumber
 
-		string logicalColumn1Name = "LogicalColumn1";
-		InitializeColumn(0, logicalColumn1Name, SQL_C_BIT, sizeof(SQLCHAR));
+		string booleanColumn1Name = "BooleanColumn1";
+		InitializeColumn(0, booleanColumn1Name, SQL_C_BIT, sizeof(SQLCHAR));
 
-		string logicalColumn2Name = "LogicalColumn2";
-		InitializeColumn(1, logicalColumn2Name, SQL_C_BIT, sizeof(SQLCHAR));
+		string booleanColumn2Name = "BooleanColumn2";
+		InitializeColumn(1, booleanColumn2Name, SQL_C_BIT, sizeof(SQLCHAR));
 
-		vector<SQLCHAR> logicalCol1Data{ '1', '0', '1', '0', '1' };
-		vector<SQLCHAR> logicalCol2Data{ '0', '2', '1', '0', '1' };
-		vector<void*> dataSet = { logicalCol1Data.data(), logicalCol2Data.data() };
+		vector<SQLCHAR> booleanCol1Data{ '1', '0', '1', '0', '1' };
+		vector<SQLCHAR> booleanCol2Data{ '0', '2', '1', '0', '1' };
+		vector<void*> dataSet = { booleanCol1Data.data(), booleanCol2Data.data() };
 
 		SQLINTEGER strLenOrIndCol2[] = { SQL_NULL_DATA, 0, 0, 0, SQL_NULL_DATA };
 		vector<SQLINTEGER*> strLen_or_Ind{ nullptr, strLenOrIndCol2 };
 
-		vector<string> columnNames{ logicalColumn1Name, logicalColumn2Name };
+		vector<string> columnNames{ booleanColumn1Name, booleanColumn2Name };
 
-		TestExecute<SQLCHAR, SQL_C_BIT>(
-			logicalCol1Data.size(),
+		TestExecute<SQLCHAR, SQL_C_BIT, char>(
+			booleanCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_boolNull);
 	}
 
 	// Name: ExecuteRealColumnsTest
@@ -115,11 +117,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ realColumn1Name, realColumn2Name };
 
-		TestExecute<SQLREAL, SQL_C_FLOAT>(
+		TestExecute<SQLREAL, SQL_C_FLOAT, double>(
 			realCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_doubleNull);
 	}
 
 	// Name: ExecuteDoubleColumnsTest
@@ -150,11 +153,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ doubleColumn1Name, doubleColumn2Name };
 
-		TestExecute<SQLDOUBLE, SQL_C_DOUBLE>(
+		TestExecute<SQLDOUBLE, SQL_C_DOUBLE, double>(
 			doubleCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_doubleNull);
 	}
 
 	// Name: ExecuteBigIntColumnsTest
@@ -186,11 +190,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ bigIntColumn1Name, bigIntColumn2Name };
 
-		TestExecute<SQLBIGINT, SQL_C_SBIGINT>(
+		TestExecute<SQLBIGINT, SQL_C_SBIGINT, int>(
 			bigIntCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_intNull);
 	}
 
 	// Name: ExecuteSmallIntColumnsTest
@@ -220,11 +225,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ smallIntColumn1Name, smallIntColumn2Name };
 
-		TestExecute<SQLSMALLINT, SQL_C_SSHORT>(
+		TestExecute<SQLSMALLINT, SQL_C_SSHORT, int>(
 			smallIntCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_intNull);
 	}
 
 	// Name: ExecuteTinyIntColumnsTest
@@ -255,11 +261,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ tinyIntColumn1Name, tinyIntColumn2Name };
 
-		TestExecute<SQLCHAR, SQL_C_UTINYINT>(
+		TestExecute<SQLCHAR, SQL_C_UTINYINT, int>(
 			tinyIntCol1Data.size(),
 			dataSet.data(),
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_intNull);
 	}
 
 	// Name: ExecuteStringColumnsTest
@@ -314,11 +321,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ charColumn1Name, charColumn2Name, charColumn3Name };
 
-		TestExecute<SQLCHAR, SQL_C_CHAR>(
+		TestExecute<SQLCHAR, SQL_C_CHAR, char>(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_charNull);
 	}
 
 	// Name: ExecuteRawColumnsTest
@@ -386,11 +394,12 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ binaryColumn1Name, binaryColumn2Name, binaryColumn3Name };
 
-		TestExecute<SQLCHAR, SQL_C_BINARY>(
+		TestExecute<SQLCHAR, SQL_C_BINARY, char>(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
-			columnNames);
+			columnNames,
+			m_charNull);
 	}
 
 	// Name: ExecuteDifferentColumnsTest
@@ -455,33 +464,34 @@ namespace ExtensionApiTest
 			string createDictScript = m_inputDataNameString + ".to_dict()";
 			py::dict inputDataSet = py::extract<py::dict>(py::eval(createDictScript.c_str(), m_mainNamespace));
 
-			py::dict intColumn = py::extract<py::dict>(inputDataSet.get(integerColumnName));
-			CheckColumnEquality<SQLINTEGER, SQL_C_SLONG>(
-				rowsNumber,
-				intColumn,
-				dataSet[0],
-				strLen_or_Ind[0]);
-
-			py::dict numericColumn = py::extract<py::dict>(inputDataSet.get(doubleColumnName));
-			CheckColumnEquality<SQLDOUBLE, SQL_C_DOUBLE>(
-				rowsNumber,
-				numericColumn,
-				dataSet[1],
-				strLen_or_Ind[1]);
-
-			py::dict charColumn = py::extract<py::dict>(inputDataSet.get(charColumnName));
-			CheckStringColumnEquality(
-				rowsNumber,
-				charColumn,
-				dataSet[2],
-				strLen_or_Ind[2]);
-
-			// Test OutputDataSet
-			//
 			createDictScript = m_outputDataNameString + ".to_dict()";
 			py::dict outputDataSet = py::extract<py::dict>(py::eval(createDictScript.c_str(), m_mainNamespace));
 
-			ASSERT_EQ(outputDataSet, inputDataSet);
+			for(py::dict ds : {inputDataSet, outputDataSet})
+			{
+				py::dict intColumn = py::extract<py::dict>(ds.get(integerColumnName));
+				CheckColumnEquality<SQLINTEGER, SQL_C_SLONG, int>(
+					rowsNumber,
+					intColumn,
+					dataSet[0],
+					strLen_or_Ind[0],
+					m_intNull);
+
+				py::dict numericColumn = py::extract<py::dict>(ds.get(doubleColumnName));
+				CheckColumnEquality<SQLDOUBLE, SQL_C_DOUBLE, double>(
+					rowsNumber,
+					numericColumn,
+					dataSet[1],
+					strLen_or_Ind[1],
+					m_doubleNull);
+
+				py::dict charColumn = py::extract<py::dict>(ds.get(charColumnName));
+				CheckStringColumnEquality(
+					rowsNumber,
+					charColumn,
+					dataSet[2],
+					strLen_or_Ind[2]);
+			}
 		}
 		catch (py::error_already_set &)
 		{
@@ -556,12 +566,13 @@ namespace ExtensionApiTest
 	//  2. InputDataSet and
 	//  3. OutputDataSet
 	//
-	template<class SQLType, SQLSMALLINT dataType>
+	template<class SQLType, SQLSMALLINT dataType, class NullType>
 	void PythonExtensionApiTests::TestExecute(
 		SQLULEN        rowsNumber,
 		void           **dataSet,
 		SQLINTEGER     **strLen_or_Ind,
-		vector<string> columnNames)
+		vector<string> columnNames,
+		const NullType valueForNull)
 	{
 		testing::internal::CaptureStdout();
 
@@ -585,42 +596,53 @@ namespace ExtensionApiTest
 			string createDictScript = m_inputDataNameString + ".to_dict()";
 			py::dict inputDataSet = py::extract<py::dict>(py::eval(createDictScript.c_str(), m_mainNamespace));
 
-			for (SQLUSMALLINT columnIndex = 0; columnIndex < columnNames.size(); columnIndex++)
-			{
-				py::dict columnToTest = py::extract<py::dict>(inputDataSet.get(columnNames[columnIndex]));
-
-				if(dataType == SQL_C_CHAR)
-				{
-					CheckStringColumnEquality(
-						rowsNumber,
-						columnToTest,
-						dataSet[columnIndex],
-						strLen_or_Ind[columnIndex]);
-				}
-				else if(dataType == SQL_C_BINARY)
-				{
-					CheckRawColumnEquality(
-						rowsNumber,
-						columnToTest,
-						dataSet[columnIndex],
-						strLen_or_Ind[columnIndex]);
-				}
-				else
-				{
-					CheckColumnEquality<SQLType, dataType>(
-						rowsNumber,
-						columnToTest,
-						dataSet[columnIndex],
-						strLen_or_Ind[columnIndex]);
-				}
-			}
-
-			// Test OutputDataSet
-			//
 			createDictScript = m_outputDataNameString + ".to_dict()";
 			py::dict outputDataSet = py::extract<py::dict>(py::eval(createDictScript.c_str(), m_mainNamespace));
 
-			ASSERT_EQ(outputDataSet, inputDataSet);
+			for (SQLUSMALLINT columnIndex = 0; columnIndex < columnNames.size(); columnIndex++)
+			{
+				py::dict inputColumnToTest = py::extract<py::dict>(inputDataSet.get(columnNames[columnIndex]));
+				py::dict outputColumnToTest = py::extract<py::dict>(outputDataSet.get(columnNames[columnIndex]));
+
+				for (py::dict column : { inputColumnToTest, outputColumnToTest })
+				{
+					switch (dataType)
+					{
+					case SQL_C_BIT:
+						CheckBooleanColumnEquality(
+							rowsNumber,
+							column,
+							dataSet[columnIndex],
+							strLen_or_Ind[columnIndex]);
+						break;
+
+					case SQL_C_CHAR:
+						CheckStringColumnEquality(
+							rowsNumber,
+							column,
+							dataSet[columnIndex],
+							strLen_or_Ind[columnIndex]);
+						break;
+
+					case SQL_C_BINARY:
+						CheckRawColumnEquality(
+							rowsNumber,
+							column,
+							dataSet[columnIndex],
+							strLen_or_Ind[columnIndex]);
+						break;
+
+					default:
+						CheckColumnEquality<SQLType, dataType, NullType>(
+							rowsNumber,
+							column,
+							dataSet[columnIndex],
+							strLen_or_Ind[columnIndex],
+							valueForNull);
+						break;
+					}
+				}
+			}
 		}
 		catch (py::error_already_set &)
 		{
@@ -634,8 +656,48 @@ namespace ExtensionApiTest
 	// Description:
 	// Template function to compare the given columns for equality
 	//
-	template<class SQLType, SQLSMALLINT dataType>
+	template<class SQLType, SQLSMALLINT dataType, class NullType>
 	void PythonExtensionApiTests::CheckColumnEquality(
+		SQLULEN        expectedRowsNumber,
+		py::dict       columnToTest,
+		void           *expectedColumn,
+		SQLINTEGER     *strLen_or_Ind,
+		const NullType valueForNull)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		{
+			py::object val = columnToTest[index];
+			SQLType typeVal = py::extract<SQLType>(val);
+			SQLType expectedValue = static_cast<SQLType*>(expectedColumn)[index];
+
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
+			{
+				// Check for NAN by comparing to itself, will always be false if NAN
+				//
+				if(valueForNull != valueForNull)
+				{
+					EXPECT_NE(typeVal, typeVal);
+				}
+				else
+				{
+					EXPECT_EQ(typeVal, valueForNull);
+				}
+			}
+			else
+			{
+				EXPECT_EQ(typeVal, expectedValue);
+			}
+		}
+	}
+
+	// Name: CheckBooleanColumnEquality
+	//
+	// Description:
+	//  Check boolean columns for equality
+	//
+	void PythonExtensionApiTests::CheckBooleanColumnEquality(
 		SQLULEN    expectedRowsNumber,
 		py::dict   columnToTest,
 		void       *expectedColumn,
@@ -646,24 +708,17 @@ namespace ExtensionApiTest
 		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
 		{
 			py::object val = columnToTest[index];
+			bool expectedValue = static_cast<bool*>(expectedColumn)[index];
+
+			bool typeVal = py::extract<bool>(val);
+
 			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
-				EXPECT_TRUE(val.is_none());
+				EXPECT_EQ(typeVal, false);
 			}
 			else
 			{
-				SQLType expectedValue = static_cast<SQLType*>(expectedColumn)[index];
-
-				if (dataType == SQL_C_BIT)
-				{
-					bool typeVal = py::extract<bool>(val);
-					EXPECT_EQ(typeVal, expectedValue != '0' ? true : false);
-				}
-				else
-				{
-					SQLType typeVal = py::extract<SQLType>(val);
-					EXPECT_EQ(typeVal, expectedValue);
-				}
+				EXPECT_EQ(typeVal, expectedValue);
 			}
 		}
 	}
@@ -704,7 +759,6 @@ namespace ExtensionApiTest
 				cumulativeLength += strLen_or_Ind[index];
 			}
 		}
-
 	}
 
 	// Name: CheckRawColumnEquality

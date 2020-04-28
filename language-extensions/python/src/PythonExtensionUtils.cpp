@@ -11,12 +11,30 @@
 //
 //**************************************************************************************************
 
-
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 
 using namespace std;
 namespace py = boost::python;
+
+// Null values
+//
+constexpr static double m_doubleNull = NAN;
+const static int m_intNull = 0;
+const static bool m_boolNull = false;
+
+// Map to store the ODBC C datatype to null value in Python.
+//
+const unordered_map<SQLSMALLINT, const void*> PythonExtensionUtils::m_dataTypeToNullMap =
+{
+	{SQL_C_BIT, static_cast<const void*>(&m_boolNull)},
+	{SQL_C_SLONG, static_cast<const void*>(&m_intNull)},
+	{SQL_C_FLOAT, static_cast<const void*>(&m_doubleNull)},
+	{SQL_C_DOUBLE, static_cast<const void*>(&m_doubleNull)},
+	{SQL_C_SBIGINT, static_cast<const void*>(&m_intNull)},
+	{SQL_C_SSHORT, static_cast<const void*>(&m_intNull)},
+	{SQL_C_UTINYINT, static_cast<const void*>(&m_intNull)}
+};
 
 // Parses the value of the active python exception
 // Type, value, and traceback are in separate pointers

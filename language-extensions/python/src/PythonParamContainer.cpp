@@ -25,7 +25,7 @@ namespace py = boost::python;
 unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamContainer::m_fnCreateParamMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
-	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonLogicalParam>)},
+	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonBooleanParam>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonParamTemplate<SQLINTEGER>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),

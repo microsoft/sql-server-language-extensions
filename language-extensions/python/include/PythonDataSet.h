@@ -114,7 +114,7 @@ public:
 	// Adds a column of values into the python dictionary
 	// Valid for integer, simple numeric, and logical dataTypes.
 	//
-	template<class SQLType>
+	template<class SQLType, class NullType>
 	void AddColumnToDictionary(
 		SQLSMALLINT columnIndex,
 		SQLULEN     rowsNumber,
@@ -142,6 +142,11 @@ public:
 	void AddDictionaryToNamespace(boost::python::object m_mainNamespace);
 
 private:
+
+	// dtype of simple python objects
+	//
+	const boost::python::numpy::dtype objType =
+		boost::python::numpy::array(boost::python::object()).get_dtype();
 
 	// Add column function pointer definition
 	//

@@ -121,14 +121,14 @@ PythonParamTemplate<SQLType>::PythonParamTemplate(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: PythonLogicalParam
+// Name: PythonBooleanParam
 //
 // Description:
 //  Constructor.
 //  Calls the base constructor then populates m_pyObject with a boost::python object that contains
 //  the parameter value, in a way that python can use, or py::object which is None.
 //
-PythonLogicalParam::PythonLogicalParam(
+PythonBooleanParam::PythonBooleanParam(
 	SQLUSMALLINT  id,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
