@@ -215,7 +215,7 @@ void RSession::ExecuteWorkflow(
 // Name: RSession::GetResultColumn
 //
 // Description:
-//  Returns information about the output column
+//  Returns information about the output column.
 //
 void RSession::GetResultColumn(
 	SQLUSMALLINT columnNumber,
@@ -233,7 +233,8 @@ void RSession::GetResultColumn(
 
 	if (columnNumber >= m_outputDataSet.GetVectorColumnsNumber())
 	{
-		throw invalid_argument("Invalid column # " + to_string(columnNumber));
+		throw invalid_argument("Invalid column #" + to_string(columnNumber)
+			+ "provided to GetResultColumn().");
 	}
 
 	vector<unique_ptr<RColumn>>& resultColumns = m_outputDataSet.Columns();
@@ -249,14 +250,26 @@ void RSession::GetResultColumn(
 // Name: RSession::GetResults
 //
 // Description:
-//	Returns the output data and the null map retrieved from the user program
+//  Returns the output data and the null map retrieved from the user script.
+//  When rowsNumber is 0, the data and strLenOrInd returned contain address of nullptr.
 //
 void RSession::GetResults(
 	SQLULEN    *rowsNumber,
 	SQLPOINTER **data,
 	SQLINTEGER ***strLen_or_Ind)
 {
+	LOG("RSession::GetResults");
 
+	if (rowsNumber != nullptr && data != nullptr && strLen_or_Ind != nullptr)
+	{
+		*rowsNumber = m_outputDataSet.RowsNumber();
+		*data = m_outputDataSet.GetData();
+		*strLen_or_Ind = m_outputDataSet.GetColumnNullMap();
+	}
+	else
+	{
+		throw runtime_error("Invalid parameters provided to GetResults()");
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -277,7 +290,7 @@ void RSession::GetOutputParam(
 // Name: RSession::Cleanup()
 //
 // Description:
-//	Cleans up the R session
+//  Cleans up the R session
 //
 void RSession::Cleanup()
 {

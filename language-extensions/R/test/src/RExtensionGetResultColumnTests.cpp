@@ -44,6 +44,9 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetIntegerResultColumnsTest)
 	{
+		// Initialize with a default Session that prints Hello World
+		// and assigns InputDataSet to OutputDataSet
+		//
 		InitializeSession((*m_integerInfo).GetColumnsNumber(),
 			m_script,
 			m_scriptString.length());
@@ -520,7 +523,7 @@ namespace ExtensionApiTest
 	TEST_F(RExtensionApiTest, GetEmptyResultColumnTest)
 	{
 		string scriptString = ""
-			"OutputDataSet <- data.frame(intCol = as.integer(c()));"
+			"OutputDataSet <- data.frame(intCol = as.integer(c()))\n"
 			"print(OutputDataSet)";
 		SQLCHAR *script = static_cast<SQLCHAR*>(
 			static_cast<void*>(const_cast<char*>(scriptString.c_str())));

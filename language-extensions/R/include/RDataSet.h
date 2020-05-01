@@ -80,6 +80,13 @@ public:
 		return m_columns;
 	}
 
+	// Get the underlying pointer of m_columnNullMap.
+	//
+	SQLINTEGER** GetColumnNullMap()
+	{
+		return m_columnNullMap.data();
+	}
+
 protected:
 
 	// A protected constructor to stop instantiation of RDataSet
@@ -245,6 +252,20 @@ public:
 	// Populate numberOfRows based on dataType.
 	//
 	void PopulateNumberOfRows();
+
+	// Getter for number of rows
+	//
+	SQLULEN RowsNumber()
+	{
+		return m_numberOfRows;
+	}
+
+	// Get the underlying pointer of m_data.
+	//
+	SQLPOINTER* GetData()
+	{
+		return m_data.data();
+	}
 
 	// Call CleanupColumn on each column.
 	//

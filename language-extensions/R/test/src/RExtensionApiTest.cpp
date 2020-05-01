@@ -64,6 +64,7 @@ namespace ExtensionApiTest
 	FN_initParam *RExtensionApiTest::m_initParamFuncPtr = nullptr;
 	FN_execute *RExtensionApiTest::m_executeFuncPtr = nullptr;
 	FN_getResultColumn *RExtensionApiTest::m_getResultColumnFuncPtr = nullptr;
+	FN_getResults *RExtensionApiTest::m_getResultsFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
 
@@ -172,6 +173,12 @@ namespace ExtensionApiTest
 				"GetResultColumn"));
 		ASSERT_TRUE(m_getResultColumnFuncPtr != nullptr);
 
+		m_getResultsFuncPtr = reinterpret_cast<FN_getResults*>(
+			Utilities::CrossPlatGetFunctionFromLibHandle(
+				m_libHandle,
+				"GetResults"));
+		ASSERT_TRUE(m_getResultsFuncPtr != nullptr);
+
 		m_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
 				m_libHandle,
@@ -252,64 +259,80 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str()))
 			);
 
+		const SQLINTEGER intSize = sizeof(SQLINTEGER);
 		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
 			"IntegerColumn1",
 			vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
-			vector<SQLINTEGER>(),
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, intSize),
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ 2'147'483'647, -2'147'483'647, 0, -2'147'483'648, -1 },
-			vector<SQLINTEGER>{ 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+			vector<SQLINTEGER>{ intSize, intSize, SQL_NULL_DATA,
+				SQL_NULL_DATA, intSize });
 
+		const SQLINTEGER logicalSize = sizeof(SQLCHAR);
 		m_logicalInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"LogicalColumn1",
 			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
-			vector<SQLINTEGER>(),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, logicalSize),
 			"LogicalColumn2",
 			vector<SQLCHAR>{ '0', '2', '1', '0', '1' },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, 0, 0, 0, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, logicalSize, logicalSize,
+				logicalSize, SQL_NULL_DATA });
 
+		const SQLINTEGER doubleSize = sizeof(SQLDOUBLE);
+
+		// the input column information set here is the same used to test the expected output
+		// column results; real/bigInt input columns are returned back as double
+		// output columns and so the strLenInd values are set to doubleSize.
+		//
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
 			vector<SQLREAL>{ 0.34, 1.33, 83.98, 72.45, 68e10 },
-			vector<SQLINTEGER>(),
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, doubleSize),
 			"RealColumn2",
 			vector<SQLREAL>{ 3.4e38F, 0, -3.4e38F, -1, 0 },
-			vector<SQLINTEGER>{ 0, SQL_NULL_DATA, 0, SQL_NULL_DATA, 0 });
+			vector<SQLINTEGER>{ doubleSize, SQL_NULL_DATA, doubleSize,
+				SQL_NULL_DATA, doubleSize });
 
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
 			vector<SQLDOUBLE>{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 },
-			vector<SQLINTEGER>(),
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, doubleSize),
 			"DoubleColumn2",
 			vector<SQLDOUBLE>{ 0, 1.79e308, 0, -1.79e308, -1 },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, 0, SQL_NULL_DATA, 0, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, doubleSize, SQL_NULL_DATA,
+				doubleSize, SQL_NULL_DATA });
 
 		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
 			"BigIntColumn1",
 			vector<SQLBIGINT>{ 9'223'372'036'854'775'807LL, 1,
 				88883939, -9'223'372'036'854'775'807LL, -622280108 },
-			vector<SQLINTEGER>(),
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, doubleSize),
 			"BigIntColumn2",
 			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
 				SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
+		// the input column information set here is the same used to test the
+		// expected output column results; smallint/tinyint input columns are returned back as
+		// integer output columns and so the strLenInd values here are set to intSize.
+		//
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
 			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
-			vector<SQLINTEGER>(),
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, intSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ -1, 0, 32'767, -32'768, 3'276 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, 0));
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, intSize));
 
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
 			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
-			vector<SQLINTEGER>(),
-			"RealColumn2",
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, intSize),
+			"TinyIntColumn2",
 			vector<SQLCHAR>{ 255, 0, 1, 0, 128 },
-			vector<SQLINTEGER>{ 0, SQL_NULL_DATA,
-				SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+			vector<SQLINTEGER>{ intSize, SQL_NULL_DATA,
+				SQL_NULL_DATA, SQL_NULL_DATA, intSize });
 
 		// Retrieve the global environment
 		//
@@ -401,7 +424,7 @@ namespace ExtensionApiTest
 	// Name: InitializeColumns
 	//
 	// Description:
-	// Templetized function to call InitializeColumn for all columns.
+	// Templatized function to call InitializeColumn for all columns in ColumnInfo.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
 	void RExtensionApiTest::InitializeColumns(ColumnInfo<SQLType> *ColumnInfo)
@@ -512,6 +535,115 @@ namespace ExtensionApiTest
 		}
 
 		return sumOfLengths;
+	}
+
+	// Name: CheckVectorEquality
+	//
+	// Description:
+	// Templatized function to compare the given vector and data for equality.
+	// for integer/numeric/logical data types.
+	// The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
+	// Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
+	//
+	template<class SQLType, class RType, SQLSMALLINT dataType>
+	void RExtensionApiTest::CheckVectorEquality(
+		SQLULEN    expectedRowsNumber,
+		RType      vectorToTest,
+		void       *expectedData,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<size_t>(vectorToTest.size()), expectedRowsNumber);
+		for(SQLULEN index = 0 ; index < expectedRowsNumber; index++)
+		{
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
+			{
+				EXPECT_TRUE(RType::is_na(vectorToTest[index]));
+			}
+			else
+			{
+				SQLType expectedValue = static_cast<SQLType*>(expectedData)[index];
+				if (dataType == SQL_C_BIT)
+				{
+					EXPECT_EQ(vectorToTest[index],
+						expectedValue != '0' ? true : false);
+				}
+				else
+				{
+					EXPECT_EQ(vectorToTest[index], expectedValue);
+				}
+			}
+		}
+	}
+
+	// Template instantiations
+	//
+	template void RExtensionApiTest::CheckVectorEquality<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+		SQLULEN              expectedRowsNumber,
+		Rcpp::IntegerVector  vectorToTest,
+		void                 *expectedData,
+		SQLINTEGER           *strLenOrInd);
+	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
+		SQLULEN             expectedRowsNumber,
+		Rcpp::LogicalVector vectorToTest,
+		void                *expectedData,
+		SQLINTEGER          *strLen_or_Ind);
+	template void RExtensionApiTest::CheckVectorEquality<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
+		SQLULEN             expectedRowsNumber,
+		Rcpp::NumericVector vectorToTest,
+		void                *expectedData,
+		SQLINTEGER          *strLen_or_Ind);
+	template void RExtensionApiTest::CheckVectorEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
+		SQLULEN             expectedRowsNumber,
+		Rcpp::NumericVector vectorToTest,
+		void                *expectedData,
+		SQLINTEGER          *strLen_or_Ind);
+	template void RExtensionApiTest::CheckVectorEquality<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
+		SQLULEN             expectedRowsNumber,
+		Rcpp::NumericVector vectorToTest,
+		void                *expectedData,
+		SQLINTEGER          *strLen_or_Ind);
+	template void RExtensionApiTest::CheckVectorEquality<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
+		SQLULEN             expectedRowsNumber,
+		Rcpp::IntegerVector vectorToTest,
+		void                *expectedData,
+		SQLINTEGER          *strLen_or_Ind);
+	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
+		SQLULEN              expectedRowsNumber,
+		Rcpp::IntegerVector vectorToTest,
+		void                 *expectedData,
+		SQLINTEGER           *strLen_or_Ind);
+
+	// Name: CheckCharacterVectorEquality
+	//
+	// Description:
+	// Compare character vector with the given data and corresponding strLen_or_Ind.
+	// The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
+	// Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
+	//
+	void RExtensionApiTest::CheckCharacterVectorEquality(
+		SQLULEN               expectedRowsNumber,
+		Rcpp::CharacterVector vectorToTest,
+		void                  *expectedData,
+		SQLINTEGER            *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<size_t>(vectorToTest.size()), expectedRowsNumber);
+		SQLINTEGER cumulativeLength = 0 ;
+		for(SQLULEN index = 0 ; index < expectedRowsNumber; index++)
+		{
+			if (strLen_or_Ind == nullptr ||
+			  (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			{
+				EXPECT_TRUE(Rcpp::CharacterVector::is_na(vectorToTest[index]));
+			}
+			else
+			{
+				string expectedString = string(
+					static_cast<char*>(expectedData) + cumulativeLength,
+					strLen_or_Ind[index]);
+				EXPECT_EQ(vectorToTest[index], expectedString);
+				cumulativeLength += strLen_or_Ind[index];
+			}
+		}
 	}
 
 	// Name: ColumnInfo

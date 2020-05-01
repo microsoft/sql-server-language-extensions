@@ -92,6 +92,13 @@ typedef SQLRETURN FN_getResultColumn(
 	SQLSMALLINT *,  // decimalDigits,
 	SQLSMALLINT *); // nullable
 
+typedef SQLRETURN FN_getResults(
+	SQLGUID,         // sessionId
+	SQLUSMALLINT,    // taskId
+	SQLULEN *,       // rowsNumber
+	SQLPOINTER **,   // data
+	SQLINTEGER ***); // strLen_or_Ind
+
 typedef SQLRETURN FN_cleanupSession(
 	SQLGUID,       // sessionId
 	SQLUSMALLINT); // taskId
@@ -178,6 +185,8 @@ namespace ExtensionApiTest
 			SQLSMALLINT dataType,
 			SQLULEN     columnSize);
 
+		// Templatized function to call InitializeColumn for all columns in ColumnInfo.
+		//
 		template<class SQLType, SQLSMALLINT dataType>
 		void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
 
@@ -197,16 +206,16 @@ namespace ExtensionApiTest
 		//
 		void TestCharParameter(
 			const char  *paramValue,
-			SQLULEN      paramSize,
-			bool         isFixedType);
+			SQLULEN     paramSize,
+			bool        isFixedType);
 
 		// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 		//
 		void TestBinaryParameter(
 			const SQLCHAR *paramValue,
-			SQLINTEGER     strLenOrInd,
-			SQLULEN        paramSize,
-			bool           isFixedType);
+			SQLINTEGER    strLenOrInd,
+			SQLULEN       paramSize,
+			bool          isFixedType);
 
 		// Fill a contiguous array columnData with members from the given columnVector
 		//
@@ -258,7 +267,7 @@ namespace ExtensionApiTest
 		template<class SQLType, class RType, SQLSMALLINT dataType>
 		void Execute(
 			SQLULEN                  rowsNumber,
-			void**                   dataSet,
+			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
 			std::vector<std::string> columnNames,
 			bool                     test = true);
@@ -280,6 +289,43 @@ namespace ExtensionApiTest
 			SQLULEN      expectedColumnSize,
 			SQLSMALLINT  expectedDecimalDigits,
 			SQLSMALLINT  expectedNullable);
+
+		// Test GetResults to verify the expected results are obtained.
+		//
+		template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT outputDataType>
+		void TestGetResults(
+			SQLULEN        expectedRowsNumber,
+			SQLPOINTER     *expectedData,
+			SQLINTEGER     **expectedStrLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Test GetResults to verify the expected results are obtained for character data.
+		//
+		void TestGetCharResults(
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Templatized function to compare the given column data
+		// & nullMap with rowsNumber for equality.
+		//
+		template<class InputSQLType, class OutputSQLType, SQLSMALLINT outputDataType>
+		void CheckColumnDataEquality(
+			SQLULEN        rowsNumber,
+			InputSQLType   *expectedColumnData,
+			OutputSQLType  *columnData,
+			SQLINTEGER     *expectedColumnStrLenOrInd,
+			SQLINTEGER     *columnStrLenOrInd);
+
+		// Compare the given character data & nullMap with rowsNumber for equality.
+		//
+		void CheckCharDataEquality(
+			SQLULEN    rowsNumber,
+			char*      expectedColumnData,
+			char*      columnData,
+			SQLINTEGER *expectedColumnStrLenOrInd,
+			SQLINTEGER *columnStrLenOrInd);
 
 		// Objects declared here can be used by all tests in the test suite.
 		//
@@ -346,6 +392,10 @@ namespace ExtensionApiTest
 		// Pointer to the GetResultColumn function
 		//
 		static FN_getResultColumn *m_getResultColumnFuncPtr;
+
+		// Pointer to the GetResults function
+		//
+		static FN_getResults *m_getResultsFuncPtr;
 
 		// Pointer to the CleanupSession function
 		//
