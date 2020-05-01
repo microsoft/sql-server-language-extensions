@@ -19,7 +19,11 @@ using namespace std;
 namespace py = boost::python;
 namespace np = boost::python::numpy;
 
-// Init the session
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::Init
+//
+// Description:
+//  Initializes the Python session, storing all the information passed in.
 //
 void PythonSession::Init(
 	const SQLGUID *sessionId,
@@ -47,6 +51,11 @@ void PythonSession::Init(
 		throw runtime_error("Main module or namespace was None");
 	}
 
+	// Import pandas DataFrame and numpy for use later
+	//
+	string importScript = "from pandas import DataFrame; import numpy as np";
+	py::exec(importScript.c_str(), m_mainNamespace);
+
 	// Initialize the script
 	//
 	if (script == nullptr)
@@ -65,15 +74,19 @@ void PythonSession::Init(
 
 	// Initialize the InputDataSet
 	//
-	m_inputDataSet.Init(inputDataName, inputDataNameLength, inputSchemaColumnsNumber);
+	m_inputDataSet.Init(inputDataName, inputDataNameLength, inputSchemaColumnsNumber, m_mainNamespace);
 
 	// Initialize the OutputDataSet
 	//
-	m_outputDataSet.Init(outputDataName, outputDataNameLength, 0);
+	m_outputDataSet.Init(outputDataName, outputDataNameLength, 0, m_mainNamespace);
 
 }
 
-// Init the input column
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::Init
+//
+// Description:
+//  Initializes the input column for this session
 //
 void PythonSession::InitColumn(
 	SQLUSMALLINT  columnNumber,
@@ -98,7 +111,11 @@ void PythonSession::InitColumn(
 		nullable);
  }
 
-// Init the input parameter
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::InitParam
+//
+// Description:
+//  Initializes an input parameter for this session
 //
 void PythonSession::InitParam(
 	SQLUSMALLINT  paramNumber,
@@ -137,7 +154,11 @@ void PythonSession::InitParam(
 		inputOutputType);
 }
 
-// Execute the workflow for the session
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::ExecuteWorkflow
+//
+// Description:
+//  Execute the workflow for the session
 //
 void PythonSession::ExecuteWorkflow(
 	SQLULEN      rowsNumber,
@@ -155,16 +176,21 @@ void PythonSession::ExecuteWorkflow(
 
 	// Add the dictionary for InputDataSet to the python namespace and convert to a DataFrame.
 	//
-	m_inputDataSet.AddDictionaryToNamespace(m_mainNamespace);
+	m_inputDataSet.AddDictionaryToNamespace();
+
+	// Initialize a dictionary for OutputDataSet to the python namespace .
+	//
+	m_outputDataSet.InitializeDataFrameInNamespace();
 
 	// Scripts to redirect stdout and stderr to variables to extract afterwards
 	//
 	string redirectPyOut = "import sys; from io import StringIO\n"
 		"_temp_out_ = StringIO(); _temp_err_ = StringIO()\n"
-		"sys.stdout = _temp_out_; sys.stderr = _temp_err_\n";
+		"sys.stdout = _temp_out_; sys.stderr = _temp_err_\n"
+		"_original_stdout_ = sys.stdout; _original_stderr_ = sys.stderr";
 
-	string resetPyOut = "sys.stdout = sys.__stdout__\n"
-		"sys.stderr = sys.__stderr__\n"
+	string resetPyOut = "sys.stdout = _original_stdout_\n"
+		"sys.stderr = _original_stderr_\n"
 		"_temp_out_ = _temp_out_.getvalue()\n"
 		"_temp_err_ = _temp_err_.getvalue()";
 
@@ -179,9 +205,29 @@ void PythonSession::ExecuteWorkflow(
 
 	cout << pyStdOut << endl;
 	cerr << pyStdErr << endl;
+
+	// In case of streaming clean up the previous stream batch's output buffers
+	//
+	m_outputDataSet.CleanupColumns();
+
+	// Get the column number from the underlying DataFrame
+	// and set it to be the outputSchemaColumnsNumber.
+	//
+	*outputSchemaColumnsNumber = m_outputDataSet.GetDataFrameColumnsNumber();
+
+	if (*outputSchemaColumnsNumber > 0)
+	{
+		m_outputDataSet.PopulateColumnsDataType();
+		m_outputDataSet.PopulateNumberOfRows();
+		m_outputDataSet.RetrieveColumnsFromDataFrame();
+	}
 }
 
-// Get the metadata for the output column
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::GetResultColumn
+//
+// Description:
+//  Returns metadata information about the output column
 //
 void PythonSession::GetResultColumn(
 	SQLUSMALLINT columnNumber,
@@ -190,10 +236,40 @@ void PythonSession::GetResultColumn(
 	SQLSMALLINT  *decimalDigits,
 	SQLSMALLINT  *nullable)
 {
-	LOG("PythonSession::GetResultColumn");
+	LOG("PythonSession::GetResultColumn for column #" + to_string(columnNumber));
+
+	*dataType = SQL_UNKNOWN_TYPE;
+	*columnSize = 0;
+	*decimalDigits = 0;
+	*nullable = 0;
+
+	if (columnNumber >= m_outputDataSet.GetVectorColumnsNumber())
+	{
+		throw invalid_argument("Invalid column # " + to_string(columnNumber));
+	}
+
+	const vector<unique_ptr<PythonColumn>>& resultColumns = m_outputDataSet.Columns();
+	PythonColumn *resultColumn = resultColumns[columnNumber].get();
+
+	if(resultColumn != nullptr)
+	{
+		*dataType = resultColumn->DataType();
+		*columnSize = resultColumn->Size();
+		*decimalDigits = resultColumn->DecimalDigits();
+		*nullable = resultColumn->Nullable();
+	}
+	else
+	{
+		throw runtime_error("ResultColumn #" + to_string(columnNumber) +
+			" is not initialized for the output dataset");
+	}
 }
 
-// Get the results
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::GetResults
+//
+// Description:
+//	Returns the output data and the null map retrieved from the user program
 //
 void PythonSession::GetResults(
 	SQLULEN    *rowsNumber,
@@ -203,7 +279,11 @@ void PythonSession::GetResults(
 	LOG("PythonSession::GetResults");
 }
 
-// Get the the output parameter
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::GetOutputParam
+//
+// Description:
+//  Returns the data and size of the output parameter
 //
 void PythonSession::GetOutputParam(
 	SQLUSMALLINT paramNumber,
@@ -213,9 +293,15 @@ void PythonSession::GetOutputParam(
 	LOG("PythonSession::GetOutputParam");
 }
 
-// Cleanup session
+//-------------------------------------------------------------------------------------------------
+// Name: PythonSession::Cleanup()
+//
+// Description:
+//	Cleans up the Python session
 //
 void PythonSession::Cleanup()
 {
 	LOG("PythonSession::Cleanup");
+
+	m_outputDataSet.CleanupColumns();
 }

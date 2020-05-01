@@ -19,21 +19,37 @@
 
 using namespace std;
 namespace py = boost::python;
-namespace np = boost::python::numpy;
+namespace np = py::numpy;
+
+// Maps the ODBC C type to python type
+//
+const unordered_map<string, SQLSMALLINT> PythonDataSet::m_pythonToOdbcTypeMap =
+{
+	{"bool", SQL_C_BIT},
+	{"uint8", SQL_C_UTINYINT},
+	{"int16", SQL_C_SSHORT},
+	{"int32", SQL_C_SLONG},
+	{"int64", SQL_C_SBIGINT},
+	{"float32", SQL_C_FLOAT},
+	{"float64", SQL_C_DOUBLE},
+	{"str", SQL_C_CHAR},
+	{"bytes", SQL_C_BINARY},
+	{"NoneType", SQL_C_CHAR}
+};
 
 // Function map - maps a SQL data type to the appropriate function that
 // adds a column to the dictionary
 //
-unordered_map<SQLSMALLINT, PythonInputDataSet::fnAddColumn> PythonInputDataSet::m_fnAddColumnMap =
+const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::m_fnAddColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR, bool>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLINTEGER, int>)},
 	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLDOUBLE, double>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLDOUBLE, float>)},
 	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLREAL, double>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLREAL, float>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLSMALLINT, int>)},
 	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),
@@ -46,16 +62,67 @@ unordered_map<SQLSMALLINT, PythonInputDataSet::fnAddColumn> PythonInputDataSet::
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddRawColumnToDictionary)},
 };
 
+// Function map - maps a SQL data type to the appropriate function that
+// adds a column to the dictionary
+//
+const PythonOutputDataSet::GetColumnFnMap PythonOutputDataSet::m_fnRetrieveColumnMap =
+{
+	{static_cast<SQLSMALLINT>(SQL_C_BIT),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLCHAR, bool, SQL_C_BIT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLINTEGER, int, SQL_C_SLONG>)},
+	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLDOUBLE, float, SQL_C_DOUBLE>)},
+	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLREAL, float, SQL_C_FLOAT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLSMALLINT, int, SQL_C_SSHORT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLCHAR, int, SQL_C_UTINYINT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLBIGINT, int, SQL_C_SBIGINT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveStringColumnFromDataFrame)},
+	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveRawColumnFromDataFrame)},
+};
+
+// Map of function pointers for cleaning up output data buffers and null map.
+//
+const PythonOutputDataSet::CleanupColumnFnMap PythonOutputDataSet::m_fnCleanupColumnMap =
+{
+	{static_cast<SQLSMALLINT>(SQL_C_BIT),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLINTEGER>)},
+	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLDOUBLE>)},
+	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLREAL>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLSMALLINT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)},
+	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLBIGINT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)},
+	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)}
+};
+
 //-------------------------------------------------------------------------------------------------
 // Name: PythonDataSet::Init
 //
 // Description:
-// Initialize the PythonDataSet with name and number of columns.
+//  Initialize the PythonDataSet with name and number of column
+//  and a reference to the python namespace.
 //
 void PythonDataSet::Init(
 	const SQLCHAR  *dataName,
 	SQLUSMALLINT   dataNameLength,
-	SQLUSMALLINT   schemaColumnsNumber)
+	SQLUSMALLINT   schemaColumnsNumber,
+	py::object     mainNamespace)
 {
 	LOG("PythonDataSet::Init");
 
@@ -77,6 +144,8 @@ void PythonDataSet::Init(
 #endif
 
 	m_name = string(name, dataNameLength);
+
+	m_mainNamespace = mainNamespace;
 
 	// Set the size of the columns vector to the given schema columns number.
 	//
@@ -150,36 +219,36 @@ void PythonInputDataSet::AddColumnsToDictionary(
 
 	SQLUSMALLINT numberOfCols = GetVectorColumnsNumber();
 
-	for (SQLUSMALLINT columnIndex = 0; columnIndex < numberOfCols; columnIndex++)
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
 	{
 		SQLPOINTER colData = nullptr;
 		SQLINTEGER *colNullMap = nullptr;
 
 		if (strLen_or_Ind != nullptr)
 		{
-			colNullMap = strLen_or_Ind[columnIndex];
+			colNullMap = strLen_or_Ind[columnNumber];
 		}
 
 		if (data != nullptr)
 		{
-			colData = data[columnIndex];
+			colData = data[columnNumber];
 		}
 
-		if (m_columns[columnIndex] == nullptr)
+		if (m_columns[columnNumber] == nullptr)
 		{
-			throw runtime_error("InitColumn not called for columnNumber " + to_string(columnIndex));
+			throw runtime_error("InitColumn not called for columnNumber " + to_string(columnNumber));
 		}
 
-		SQLSMALLINT dataType = m_columns[columnIndex].get()->DataType();
+		SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
 		AddColumnFnMap::const_iterator it = m_fnAddColumnMap.find(dataType);
 
 		if (it == m_fnAddColumnMap.end())
 		{
-			throw runtime_error("Unsupported column type encountered when adding column #" + to_string(columnIndex));
+			throw runtime_error("Unsupported column type encountered when adding column #" + to_string(columnNumber));
 		}
 
 		(this->*it->second)(
-			columnIndex,
+			columnNumber,
 			rowsNumber,
 			colData,
 			colNullMap);
@@ -191,21 +260,21 @@ void PythonInputDataSet::AddColumnsToDictionary(
 //
 // Description:
 //  Add a column to the python dictionary that will be the DataFrame.
-//  Works for simple types like numbers and logical
+//  Works for simple types like numbers and boolean
 //
 template<class SQLType, class NullType>
 void PythonInputDataSet::AddColumnToDictionary(
-	SQLSMALLINT columnIndex,
+	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
 	SQLPOINTER  data,
 	SQLINTEGER  *strLen_or_Ind)
 {
 	LOG("PythonInputDataSet::AddColumnToDictionary");
 
-	string name = m_columns[columnIndex].get()->Name();
-	SQLSMALLINT dataType = m_columns[columnIndex].get()->DataType();
+	string name = m_columns[columnNumber].get()->Name();
+	SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
 	NullType valueForNull =
-		*(static_cast<const NullType*>(PythonExtensionUtils::m_dataTypeToNullMap.at(dataType)));
+		*(static_cast<const NullType*>(PythonExtensionUtils::m_DataTypeToNullMap.at(dataType)));
 
 	// Properties of the numpy array that will be populated in from_data below.
 	// dt     - Numpy DataType
@@ -231,7 +300,7 @@ void PythonInputDataSet::AddColumnToDictionary(
 	// We modify the data array that is passed in by ExtHost in place so that
 	// numpy can use that memory location for its data and not need to copy it out.
 	//
-	for (SQLULEN i = 0; i < rowsNumber; i++)
+	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
 		// We need to specify the type is boolean not SQL_CHAR for bools so python knows
 		//
@@ -260,14 +329,14 @@ void PythonInputDataSet::AddColumnToDictionary(
 //  Add a string column to the python dictionary that will be the DataFrame
 //
 void PythonInputDataSet::AddStringColumnToDictionary(
-	SQLSMALLINT columnIndex,
+	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
 	SQLPOINTER  data,
 	SQLINTEGER  *strLen_or_Ind)
 {
 	LOG("PythonInputDataSet::AddStringColumnToDictionary");
 
-	string name = m_columns[columnIndex].get()->Name();
+	string name = m_columns[columnNumber].get()->Name();
 
 	char *strArray = reinterpret_cast<char*>(data);
 	int length = 0;
@@ -275,7 +344,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 	// Create an empty numpy array of type python object
 	//
 	py::tuple shape = py::make_tuple(rowsNumber);
-	np::ndarray nArray = np::empty(shape, objType);
+	np::ndarray nArray = np::empty(shape, m_ObjType);
 
 	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
@@ -318,14 +387,14 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 //  Add a raw column to the python dictionary that will be the DataFrame
 //
 void PythonInputDataSet::AddRawColumnToDictionary(
-	SQLSMALLINT columnIndex,
+	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
 	SQLPOINTER  data,
 	SQLINTEGER  *strLen_or_Ind)
 {
 	LOG("PythonInputDataSet::AddRawColumnToDictionary");
 
-	string name = m_columns[columnIndex].get()->Name();
+	string name = m_columns[columnNumber].get()->Name();
 
 	char *rawArray = reinterpret_cast<char*>(data);
 	int length = 0;
@@ -333,7 +402,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 	// Create an empty numpy array of type python object
 	//
 	py::tuple shape = py::make_tuple(rowsNumber);
-	np::ndarray nArray = np::empty(shape, objType);
+	np::ndarray nArray = np::empty(shape, m_ObjType);
 
 	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
@@ -376,7 +445,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 // Description:
 //  Adds the underlying boost::python dictionary to namespace as a pandas DataFrame.
 //
-void PythonInputDataSet::AddDictionaryToNamespace(py::object m_mainNamespace)
+void PythonInputDataSet::AddDictionaryToNamespace()
 {
 	LOG("PythonInputDataSet::AddDictionaryToNamespace");
 
@@ -384,9 +453,506 @@ void PythonInputDataSet::AddDictionaryToNamespace(py::object m_mainNamespace)
 	//
 	m_mainNamespace[m_name] = m_dataDict;
 
-	string pandasDataFrame = "from pandas import DataFrame";
-	string createDataFrameScript = m_name + " = DataFrame(" + m_name + ")";
+	string createDataFrameScript = m_name + " = DataFrame(" + m_name + ", copy=False)";
 
-	py::exec(pandasDataFrame.c_str(), m_mainNamespace);
 	py::exec(createDataFrameScript.c_str(), m_mainNamespace);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::InitializeDataFrameInNamespace
+//
+// Description:
+//  Initialize the OutputDataSet DataFrame as an empty boost::python dictionary.
+//
+void PythonOutputDataSet::InitializeDataFrameInNamespace()
+{
+	LOG("PythonOutputDataSet::InitializeDataFrameInNamespace");
+
+	string createDataFrameScript = m_name + " = DataFrame()";
+
+	py::exec(createDataFrameScript.c_str(), m_mainNamespace);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::GetDataFrameColumnsNumber
+//
+// Description:
+//  Gets the number of columns in the DataFrame
+//
+SQLUSMALLINT PythonOutputDataSet::GetDataFrameColumnsNumber()
+{
+	LOG("PythonOutputDataSet::GetDataFrameColumnsNumber");
+
+	if(m_columnsNumber == 0)
+	{
+		string getColumnsNumberScript = "len("+ m_name +".columns)";
+
+		m_columnsNumber = py::extract<SQLUSMALLINT>(py::eval(getColumnsNumberScript.c_str(), m_mainNamespace));
+	}
+
+	return m_columnsNumber;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::GetColumnNames
+//
+// Description:
+//  Returns the list of names of the columns of the DataFrame
+//
+py::list PythonOutputDataSet::GetColumnNames()
+{
+	LOG("PythonOutputDataSet::GetColumnNames");
+
+	if(py::len(m_columnNames) == 0)
+	{
+		string getColumnNamesScript = "list(" + m_name + ".columns)";
+		m_columnNames = py::extract<py::list>(py::eval(getColumnNamesScript.c_str(), m_mainNamespace));
+	}
+
+	return m_columnNames;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::RetrieveColumnsFromDataFrame
+//
+// Description:
+//  Gets columns from the DataFrame and stores their data, nullmap and other information.
+//
+void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
+{
+	LOG("PythonOutputDataSet::RetrieveColumnsFromDataFrame");
+
+	py::list columnNames = GetColumnNames();
+
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < py::len(columnNames); columnNumber++)
+	{
+		string columnName = py::extract<string>(columnNames[columnNumber]);
+		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
+		SQLULEN columnSize = 0;
+		SQLSMALLINT decimalDigits = 0;
+		SQLSMALLINT nullable = SQL_NO_NULLS;
+
+		// Gets the column information, add data to m_data and nullmap to m_columnNullMap
+		//
+		GetColumnFnMap::const_iterator it = m_fnRetrieveColumnMap.find(dataType);
+
+		if (it == m_fnRetrieveColumnMap.end())
+		{
+			throw invalid_argument("Unsupported data type "
+				+ to_string(dataType) + " in output data for column # " + to_string(columnNumber));
+		}
+
+		(this->*it->second)(
+			columnName,
+			columnSize,
+			decimalDigits,
+			nullable);
+
+		// Store the column information obtained above in m_columns.
+		//
+		const SQLCHAR *unsignedColumnName = static_cast<const SQLCHAR*>(
+			static_cast<const void*>(columnName.c_str()));
+
+		m_columns.push_back(make_unique<PythonColumn>(
+			unsignedColumnName,
+			static_cast<SQLSMALLINT>(columnName.length()),
+			dataType,
+			columnSize,
+			decimalDigits,
+			nullable));
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::RetrieveColumnFromDataFrame
+//
+// Description:
+//  Templatized function to get the column information from the underlying DataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
+//  Templated for integer, simple numeric, and boolean types.
+//
+template<class SQLType, class NullType, SQLSMALLINT DataType>
+void PythonOutputDataSet::RetrieveColumnFromDataFrame(
+	string       columnName,
+	SQLULEN      &columnSize,
+	SQLSMALLINT  &decimalDigits,
+	SQLSMALLINT  &nullable)
+{
+	LOG("PythonOutputDataSet::RetrieveColumnFromDataFrame");
+
+	SQLType *columnData = nullptr;
+	SQLINTEGER *nullMap = nullptr;
+	NullType valueForNull = *(static_cast<const NullType*>(
+		PythonExtensionUtils::m_DataTypeToNullMap.at(DataType)));
+
+	if (m_rowsNumber > 0)
+	{
+		columnData = new SQLType[m_rowsNumber];
+		nullMap = new SQLINTEGER[m_rowsNumber];
+	}
+
+	columnSize = sizeof(SQLType);
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+
+	// Get the column of values
+	//
+	np::ndarray column = ExtractArrayFromDataFrame(columnName);
+
+	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	{
+		py::object pyObj = column[i];
+
+		// Make sure the object is not pointing at Python None, or else it will crash on extract
+		//
+		if (!pyObj.is_none())
+		{
+			// Extract the data value from the iterator
+			//
+			py::extract<SQLType> extractedData(pyObj);
+
+			// Check to make sure the extracted data exists and is of the correct type
+			//
+			if (extractedData.check())
+			{
+				SQLType data = extractedData;
+
+				if (is_same<NullType, float>::value && isnan(data))
+				{
+					nullMap[i] = SQL_NULL_DATA;
+					nullable = SQL_NULLABLE;
+					columnData[i] = valueForNull;
+				}
+				else if (DataType != SQL_C_BIT)
+				{
+					columnData[i] = data;
+					nullMap[i] = sizeof(SQLType);
+				}
+				else
+				{
+					columnData[i] = data ? '1' : '0';
+				}
+			}
+		}
+		else
+		{
+			// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
+			//
+			nullMap[i] = SQL_NULL_DATA;
+			nullable = SQL_NULLABLE;
+			columnData[i] = valueForNull;
+
+		}
+	}
+
+	m_data.push_back(static_cast<SQLPOINTER>(columnData));
+	m_columnNullMap.push_back(nullMap);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::RetrieveStringColumnFromDataFrame
+//
+// Description:
+//  Get string column information from the underlying DataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
+//
+void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
+	string       columnName,
+	SQLULEN      &columnSize,
+	SQLSMALLINT  &decimalDigits,
+	SQLSMALLINT  &nullable)
+{
+	LOG("PythonOutputDataSet::RetrieveStringColumnFromDataFrame");
+
+	vector<SQLCHAR> *columnData = nullptr;
+	SQLINTEGER *strLenOrNullMap = nullptr;
+	if (m_rowsNumber > 0)
+	{
+		columnData = new vector<SQLCHAR>();
+		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
+	}
+
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+
+	np::ndarray column = ExtractArrayFromDataFrame(columnName);
+
+	// Insert the string column into the columnData vector contiguously.
+	//
+	SQLINTEGER maxLen = 0;
+	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	{
+		py::object pyObj = column[i];
+
+		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
+		//
+		if (!pyObj.is_none())
+		{
+			py::extract<string> extractedData(pyObj);
+
+			// Check to make sure the extracted data exists and is of the correct type
+			//
+			if (extractedData.check())
+			{
+				string data = extractedData;
+				strLenOrNullMap[i] = data.length();
+
+				// Concatenate the string data into the full column data
+				//
+				columnData->insert(columnData->end(), data.begin(), data.end());
+
+				// Store the maximum length to find the widest the column needs to be
+				//
+				if (maxLen < strLenOrNullMap[i])
+				{
+					maxLen = strLenOrNullMap[i];
+				}
+			}
+		}
+		else
+		{
+			strLenOrNullMap[i] = SQL_NULL_DATA;
+			nullable = SQL_NULLABLE;
+		}
+	}
+
+	columnSize = maxLen;
+	if (m_rowsNumber > 0)
+	{
+		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+	}
+	else
+	{
+		m_data.push_back(nullptr);
+	}
+
+	m_columnNullMap.push_back(strLenOrNullMap);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::RetrieveRawColumnFromDataFrame
+//
+// Description:
+//  Get raw column information from the underlying DataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
+//
+void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
+	string       columnName,
+	SQLULEN      &columnSize,
+	SQLSMALLINT  &decimalDigits,
+	SQLSMALLINT  &nullable)
+{
+	LOG("PythonOutputDataSet::RetrieveRawColumnFromDataFrame");
+
+	vector<SQLCHAR> *columnData = nullptr;
+	SQLINTEGER *strLenOrNullMap = nullptr;
+	if (m_rowsNumber > 0)
+	{
+		columnData = new vector<SQLCHAR>();
+		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
+	}
+
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+
+	np::ndarray column = ExtractArrayFromDataFrame(columnName);
+
+	// Insert the raw column into the columnData vector contiguously.
+	//
+	SQLINTEGER maxLen = 0;
+	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	{
+		py::object pyObj = column[i];
+
+		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
+		//
+		if (!pyObj.is_none())
+		{
+			// Extract the size and bytes of the pyObj
+			//
+			PyObject *baseObj = pyObj.ptr();
+
+			int size = PyBytes_Size(baseObj);
+			SQLCHAR *bytes = static_cast<SQLCHAR*>(static_cast<void*>(PyBytes_AsString(baseObj)));
+
+			strLenOrNullMap[i] = size;
+
+			// Append the bytes data into the full column data
+			//
+			columnData->insert(columnData->end(), bytes, bytes + size);
+
+			// Store the maximum length to find the widest the column needs to be
+			//
+			if (maxLen < strLenOrNullMap[i])
+			{
+				maxLen = strLenOrNullMap[i];
+			}
+		}
+		else
+		{
+			strLenOrNullMap[i] = SQL_NULL_DATA;
+			nullable = SQL_NULLABLE;
+		}
+	}
+
+	columnSize = maxLen;
+	if (m_rowsNumber > 0)
+	{
+		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+	}
+	else
+	{
+		m_data.push_back(nullptr);
+	}
+
+	m_columnNullMap.push_back(strLenOrNullMap);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::ExtractArrayFromDataFrame
+//
+// Description:
+//  Extract a numpy ndarray from the pandas DataFrame in the python namespace
+//
+np::ndarray PythonOutputDataSet::ExtractArrayFromDataFrame(const string columnName)
+{
+	string getNumpyArrayScript = "np.array(" + m_name + "['" + columnName + "'], copy=False)";
+
+	return py::extract<np::ndarray>(py::eval(getNumpyArrayScript.c_str(), m_mainNamespace));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::PopulateColumnsDataType
+//
+// Description:
+//  Finds the data type for each column and stores it in the member m_columnsDataType.
+//
+void PythonOutputDataSet::PopulateColumnsDataType()
+{
+	LOG("PythonOutputDataSet::PopulateColumnsDataType");
+
+	SQLUSMALLINT numberOfCols = GetDataFrameColumnsNumber();
+
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
+	{
+		SQLSMALLINT dataType = PopulateColumnDataType(columnNumber);
+
+		m_columnsDataType.push_back(dataType);
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::PopulateColumnDataType
+//
+// Description:
+// Get the python type from the value in the column,
+// then get the column data type by looking up the python to odbc type map.
+//
+SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumber) const
+{
+	LOG("PythonOutputDataSet::PopulateColumnDataType");
+
+	string getColumnString = "np.array(" + m_name + "[" + m_name + ".columns[" +
+		to_string(columnNumber) + "]], copy=False)";
+
+	np::ndarray column = py::extract<np::ndarray>(py::eval(getColumnString.c_str(), m_mainNamespace));
+
+	np::dtype dType = column.get_dtype();
+	string type = "NoneType";
+
+	if(!np::equivalent(dType, m_ObjType))
+	{
+		type = py::extract<string>(py::str(dType));
+	}
+	else
+	{
+		// Create an iterator over the column values.
+		// The uninitialized "end" iterator is equivalent to the end of the list.
+		//
+		py::stl_input_iterator<py::object> itVal(column), end;
+		while(type == "NoneType" && itVal != end)
+		{
+			type = itVal->ptr()->ob_type->tp_name;
+			++itVal;
+		}
+	}
+
+	PythonDataSet::pythonToOdbcTypeMap::const_iterator it =
+		PythonDataSet::m_pythonToOdbcTypeMap.find(type);
+
+	if (it == PythonDataSet::m_pythonToOdbcTypeMap.end())
+	{
+		throw invalid_argument("Unsupported data type " + type + " in output data for column # "
+			+ to_string(columnNumber) + ".");
+	}
+
+	SQLSMALLINT dataType = it->second;
+
+	return dataType;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::PopulateNumberOfRows
+//
+// Description:
+//  Set the number of rows from the underlying DataFrame
+//
+void PythonOutputDataSet::PopulateNumberOfRows()
+{
+	LOG("PythonOutputDataSet::PopulateNumberOfRows");
+	string getNumRowsScript = "len(" + m_name + ".index)";
+	m_rowsNumber = py::extract<int>(py::eval(getNumRowsScript.c_str(), m_mainNamespace));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::CleanupColumns
+//
+// Description:
+//  Looks up the CleanupColumnFnMap to find the the respective CleanupColumn function for every
+//  column and calls that.
+//
+void PythonOutputDataSet::CleanupColumns()
+{
+	LOG("PythonOutputDataSet::CleanupColumns");
+
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < m_data.size(); ++columnNumber)
+	{
+		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
+
+		CleanupColumnFnMap::const_iterator it = m_fnCleanupColumnMap.find(dataType);
+
+		if (it == m_fnCleanupColumnMap.end())
+		{
+			throw invalid_argument("In cleanup, unsupported data type "
+				+ to_string(dataType) + " in output data for column # "
+				+ to_string(columnNumber));
+		}
+
+		(this->*it->second)(columnNumber);
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::CleanupColumn
+//
+// Description:
+//  For the given columnNumber and SQLType, cleans up the data buffer used to hold the data
+//  before being sent to ExtHost. Also cleans up the columnNullMap.
+//
+template<class SQLType>
+void PythonOutputDataSet::CleanupColumn(SQLUSMALLINT columnNumber)
+{
+	LOG("PythonOutputDataSet::CleanupColumn");
+
+	if (m_data[columnNumber] != nullptr)
+	{
+		delete[] reinterpret_cast<SQLType*>(m_data[columnNumber]);
+		m_data[columnNumber] = nullptr;
+	}
+
+	if (m_columnNullMap[columnNumber] != nullptr)
+	{
+		delete[] m_columnNullMap[columnNumber];
+		m_columnNullMap[columnNumber] = nullptr;
+	}
 }

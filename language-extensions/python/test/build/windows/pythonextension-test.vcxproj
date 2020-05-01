@@ -146,6 +146,7 @@
     <ClCompile Include="$(TestSrcDirectory)\PythonInitTests.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonInitColumnTests.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonInitParamTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonGetResultColumnTests.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonExtensionApiTests.cpp" />
     <ClInclude Include="$(TestIncludeDirectory)\PythonExtensionApiTests.h" />
     <ClInclude Include="$(TestIncludeDirectory)\Common.h" />

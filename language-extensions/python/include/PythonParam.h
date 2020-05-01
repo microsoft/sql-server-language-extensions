@@ -133,7 +133,7 @@ public:
 // Name: PythonBooleanParam
 //
 // Description:
-// Class representing a logical parameter.
+// Class representing a boolean parameter.
 // Corresponds to ODBC C type SQL_C_BIT.
 //
 class PythonBooleanParam : public PythonParam

@@ -73,7 +73,7 @@ SQLRETURN Init(
 		// This allows us to start using Python API and boost functions.
 		//
 		Py_Initialize();
-		boost::python::numpy::initialize();
+		py::numpy::initialize();
 	}
 	catch (const exception &ex)
 	{
@@ -337,6 +337,15 @@ SQLRETURN Execute(
 	return result;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: GetResultColumn
+//
+// Description:
+//  Returns information about the output column
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
 SQLRETURN GetResultColumn(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
@@ -381,6 +390,15 @@ SQLRETURN GetResultColumn(
 	return result;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: GetResults
+//
+// Description:
+//	Returns the output data as well as the null map retrieved from the user program
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
 SQLRETURN GetResults(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
@@ -421,6 +439,15 @@ SQLRETURN GetResults(
 	return result;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: GetOutputParam
+//
+// Description:
+//	Returns the output parameter's data.
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
 SQLRETURN GetOutputParam(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
@@ -461,6 +488,16 @@ SQLRETURN GetOutputParam(
 	return result;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: CleanupSession
+//
+// Description:
+//	Cleans up the output data buffers that we persist for
+//	ExtHost to finish processing the data
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
 SQLRETURN CleanupSession(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId
@@ -500,6 +537,15 @@ SQLRETURN CleanupSession(
 	return result;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: Cleanup
+//
+// Description:
+//	Completely clean up the extension
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
 SQLRETURN Cleanup()
 {
 	LOG("Cleanup");

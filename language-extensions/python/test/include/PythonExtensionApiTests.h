@@ -12,9 +12,15 @@
 //*************************************************************************************************
 #pragma once
 #include "Common.h"
+#include <unordered_map>
 
 namespace ExtensionApiTest
 {
+	// Forward declaration
+	//
+	template<class SQLType>
+	class ColumnInfo;
+
 	// All the tests in the PythonextensionApiTest suite run one after the other
 	//
 	class PythonExtensionApiTests : public ::testing::Test
@@ -31,9 +37,12 @@ namespace ExtensionApiTest
 		//
 		void TearDown() override;
 
-		// Initialize a valid, default session for later tests
+		// Initialize a valid session.
 		//
-		void InitializeSession(SQLUSMALLINT inputSchemaColumnsNumber = 0);
+		void InitializeSession(
+			SQLUSMALLINT inputSchemaColumnsNumber = 0,
+			SQLCHAR      *script = static_cast<SQLCHAR*>(static_cast<void *>(const_cast<char*>(""))),
+			SQLULEN      scriptStringLength = 0);
 
 		// Initialize a column
 		//
@@ -42,6 +51,13 @@ namespace ExtensionApiTest
 			std::string columnNameString,
 			SQLSMALLINT dataType,
 			SQLULEN     columnSize);
+
+		// Get max length of all strings from strLenOrInd.
+		//
+		SQLINTEGER GetMaxLength(SQLINTEGER *strLenOrInd, SQLULEN rowsNumber);
+
+		template<class SQLType, SQLSMALLINT dataType>
+		void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
 
 		// Set up default, valid variables for use in tests
 		//
@@ -92,24 +108,32 @@ namespace ExtensionApiTest
 			SQLINTEGER                  *strLenOrInd);
 
 		// Template function to Test Execute with default script
+		// The "validate" parameter can be false to run the execution
+		// without validating DataSets to set up outputs.
 		//
-		template<class SQLType, SQLSMALLINT dataType, class NullType>
+		template<class SQLType, SQLSMALLINT dataType>
 		void TestExecute(
 			SQLULEN                  rowsNumber,
 			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
 			std::vector<std::string> columnNames,
-			const NullType           valueForNull = NULL);
+			bool                     validate = true);
 
 		// Template function to compare the given column and data for equality.
 		//
-		template<class SQLType, SQLSMALLINT dataType, class NullType>
-		void CheckColumnEquality(
+		template<class SQLType>
+		void CheckIntColumnEquality(
 			SQLULEN             expectedRowsNumber,
 			boost::python::dict columnToTest,
 			void                *expectedColumn,
-			SQLINTEGER          *strLen_or_Ind,
-			const NullType      valueForNull);
+			SQLINTEGER          *strLen_or_Ind);
+
+		template<class SQLType>
+		void CheckFloatColumnEquality(
+			SQLULEN             expectedRowsNumber,
+			boost::python::dict columnToTest,
+			void                *expectedColumn,
+			SQLINTEGER          *strLen_or_Ind);
 
 		// Compare a given boolean column with another for equality
 		//
@@ -135,6 +159,15 @@ namespace ExtensionApiTest
 			void                *expectedColumn,
 			SQLINTEGER          *strLen_or_Ind);
 
+		// Test GetResultColumn to verify the expected result column information.
+		//
+		void TestGetResultColumn(
+			SQLUSMALLINT columnNumber,
+			SQLSMALLINT  expectedDataType,
+			SQLULEN      expectedColumnSize,
+			SQLSMALLINT  expectedDecimalDigits,
+			SQLSMALLINT  expectedNullable);
+
 		// Objects declared here can be used by all tests in the test suite.
 		//
 		SQLGUID *m_sessionId;
@@ -159,7 +192,16 @@ namespace ExtensionApiTest
 
 		const std::string m_printMessage = "Hello PythonExtension!";
 
-		const double m_doubleNull = NAN;
+		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLCHAR>> m_booleanInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLREAL>> m_realInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLDOUBLE>> m_doubleInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLBIGINT>> m_bigIntInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLSMALLINT>> m_smallIntInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLCHAR>> m_tinyIntInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQLCHAR>> m_charInfo = nullptr;
+
+		const float m_floatNull = NAN;
 		const int m_intNull = 0;
 		const bool m_boolNull = false;
 		const char m_charNull = '0';
@@ -171,5 +213,51 @@ namespace ExtensionApiTest
 		// The boost python namespace; dictionary containing all python variables
 		//
 		boost::python::object m_mainNamespace;
+
+		// Check column equality function pointer definition
+		//
+		using fnCheckColumnEquality = void (PythonExtensionApiTests::*)(
+			SQLULEN             expectedRowsNumber,
+			boost::python::dict columnToTest,
+			void                *expectedColumn,
+			SQLINTEGER          *strLen_or_Ind);
+
+		// The underlying boost::python dictionary.
+		//
+		boost::python::dict m_dataDict;
+
+		// Function map to add columns to the data frame and its typedef
+		//
+		static const std::unordered_map<SQLSMALLINT, fnCheckColumnEquality> m_fnCheckColumnEqualityMap;
+		typedef std::unordered_map<SQLSMALLINT, fnCheckColumnEquality> CheckColumnEqualityFnMap;
+	};
+
+	// ColumnInfo template class to store information
+	// about integer, basic numeric and boolean columns.
+	// This assumes two columns and five rows.
+	//
+	template<class SQLType>
+	class ColumnInfo
+	{
+	public:
+		ColumnInfo(
+			std::string column1Name, std::vector<SQLType> column1,
+			std::vector<SQLINTEGER> col1StrLenOrInd,
+			std::string column2Name, std::vector<SQLType> column2,
+			std::vector<SQLINTEGER> col2StrLenOrInd);
+
+		SQLUSMALLINT GetColumnsNumber() const
+		{
+			return m_columnNames.size();
+		}
+
+		static const SQLULEN m_rowsNumber = 5;
+		std::vector<std::string> m_columnNames;
+		std::vector<SQLType> m_column1;
+		std::vector<SQLType> m_column2;
+		std::vector<void*> m_dataSet;
+		std::vector<SQLINTEGER> m_col1StrLenOrInd;
+		std::vector<SQLINTEGER> m_col2StrLenOrInd;
+		std::vector<SQLINTEGER*> m_strLen_or_Ind;
 	};
 }

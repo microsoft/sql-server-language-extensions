@@ -32,13 +32,27 @@ public:
 		return m_name;
 	}
 
-	SQLSMALLINT DataType()
+	SQLSMALLINT DataType() const
 	{
 		return m_dataType;
 	}
 
-protected:
+	SQLULEN Size() const
+	{
+		return m_size;
+	}
 
+	SQLSMALLINT DecimalDigits() const
+	{
+		return m_decimalDigits;
+	}
+
+	SQLSMALLINT Nullable() const
+	{
+		return m_nullable;
+	}
+
+protected:
 	// Name of the column.
 	//
 	std::string m_name;

@@ -49,9 +49,9 @@ public:
 	// so the size returned here does not change even after adding parameters to
 	// the boost::python namespace.
 	//
-	SQLSMALLINT GetSize()
+	SQLUSMALLINT GetSize() const
 	{
-		return m_params.size();
+		return static_cast<SQLUSMALLINT>(m_params.size());
 	}
 
 private:

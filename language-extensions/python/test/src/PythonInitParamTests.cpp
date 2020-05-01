@@ -281,7 +281,7 @@ namespace ExtensionApiTest
 
 	// Test multiple CHAR and VARCHAR values
 	//
-	TEST_F(PythonExtensionApiTests, InitCharParamTest)
+	TEST_F(PythonExtensionApiTests, InitStringParamTest)
 	{
 		InitializeSession();
 

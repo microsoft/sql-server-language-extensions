@@ -66,6 +66,65 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str())));
 		m_outputDataNameLength = m_outputDataNameString.length();
 
+		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
+			"IntegerColumn1",
+			vector<SQLINTEGER>{ 0, 1, 2, 3, 4},
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, 0),
+			"IntegerColumn2",
+			vector<SQLINTEGER>{ 2'147'483'647, -2'147'483'647, 10, 0, -1 },
+			vector<SQLINTEGER>{ 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+
+		m_booleanInfo = make_unique<ColumnInfo<SQLCHAR>>(
+			"BooleanColumn1",
+			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, 0),
+			"BooleanColumn2",
+			vector<SQLCHAR>{ '0', '2', '1', '0', '1' },
+			vector<SQLINTEGER>{ SQL_NULL_DATA, 0, 0, 0, SQL_NULL_DATA });
+
+		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
+			"RealColumn1",
+			vector<SQLREAL>{ 0.34F, 1.33F, 3.4e38F, -3.4e38F, 68e10F },
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, 0),
+			"RealColumn2",
+			vector<SQLREAL>{  0, -1, INFINITY, -INFINITY, NAN },
+			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA, 0, 0, SQL_NULL_DATA });
+
+		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
+			"DoubleColumn1",
+			vector<SQLDOUBLE>{ -1.79e301, 1.33, 1.79e308, -1.79e308, 1.79e30 },
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, 0),
+			"DoubleColumn2",
+			vector<SQLDOUBLE>{  0, -1, INFINITY, -INFINITY, NAN },
+			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA, 0, 0, SQL_NULL_DATA });
+
+		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
+			"BigIntColumn1",
+			vector<SQLBIGINT>{ 9'223'372'036'854'775'807LL, 1,
+			88883939, -9'223'372'036'854'775'807LL, -622280108 },
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
+			"BigIntColumn2",
+			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
+			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+
+		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
+			"SmallIntColumn1",
+			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, 0),
+			"SmallIntColumn2",
+			vector<SQLSMALLINT>{ -1, 0, 32'767, -32'768, 3'276 },
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, 0));
+
+		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
+			"TinyIntColumn1",
+			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, 0),
+			"TinyIntColumn2",
+			vector<SQLCHAR>{ 255, 0, 1, 0, 128 },
+			vector<SQLINTEGER>{ 0, SQL_NULL_DATA,
+			SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+
 		try
 		{
 			m_mainModule = py::import("__main__");
@@ -88,7 +147,10 @@ namespace ExtensionApiTest
 	// Initialize a valid, default session for non-Init tests
 	// Tests InitSession API
 	//
-	void PythonExtensionApiTests::InitializeSession(SQLUSMALLINT inputSchemaColumnsNumber)
+	void PythonExtensionApiTests::InitializeSession(
+		SQLUSMALLINT inputSchemaColumnsNumber,
+		SQLCHAR      *script,
+		SQLULEN      scriptStringLength)
 	{
 		SQLRETURN result = SQL_ERROR;
 
@@ -108,8 +170,8 @@ namespace ExtensionApiTest
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
-			m_script,
-			m_scriptLength,
+			script,
+			scriptStringLength,
 			inputSchemaColumnsNumber,
 			m_parametersNumber,
 			m_inputDataName,
@@ -132,6 +194,164 @@ namespace ExtensionApiTest
 
 		result = Cleanup();
 		EXPECT_EQ(result, SQL_SUCCESS);
+	}
+
+	// Name: InitializeColumns
+	//
+	// Description:
+	// Templetized function to call InitializeColumn for all columns.
+	//
+	template<class SQLType, SQLSMALLINT dataType>
+	void PythonExtensionApiTests::InitializeColumns(ColumnInfo<SQLType> *ColumnInfo)
+	{
+		SQLUSMALLINT inputSchemaColumnsNumber = ColumnInfo->GetColumnsNumber();
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
+		{
+			InitializeColumn(columnNumber,
+				ColumnInfo->m_columnNames[columnNumber],
+				dataType,
+				sizeof(SQLType));
+		}
+	}
+
+	// Template instantiations
+	//
+	template void PythonExtensionApiTests::InitializeColumns<SQLINTEGER, SQL_C_SLONG>(
+		ColumnInfo<SQLINTEGER> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_BIT>(
+		ColumnInfo<SQLCHAR> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQLREAL, SQL_C_FLOAT>(
+		ColumnInfo<SQLREAL> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(
+		ColumnInfo<SQLDOUBLE> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(
+		ColumnInfo<SQLBIGINT> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(
+		ColumnInfo<SQLSMALLINT> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
+		ColumnInfo<SQLCHAR> *ColumnInfo);
+
+	// Name: InitializeColumn
+	//
+	// Description:
+	// Call InitColumn for the given columnNumber, columnName, dataType and columnSize.
+	//
+	void PythonExtensionApiTests::InitializeColumn(
+		SQLSMALLINT columnNumber,
+		string      columnNameString,
+		SQLSMALLINT dataType,
+		SQLULEN     columnSize)
+	{
+		SQLCHAR *columnName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(columnNameString.c_str()))
+			);
+
+		SQLRETURN result = SQL_ERROR;
+
+		result = InitColumn(
+			*m_sessionId,
+			m_taskId,
+			columnNumber,
+			columnName,
+			columnNameString.length(),
+			dataType,
+			columnSize,
+			0,         // decimalDigits
+			1,         // nullable
+			-1,        // partitionByNumber
+			-1);       // orderByNumber
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+	}
+
+	// Name: GenerateContiguousData
+	//
+	// Description:
+	// Fill a contiguous array columnData with members from the given columnVector
+	// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
+	//
+	template<class SQLType>
+	vector<SQLType> PythonExtensionApiTests::GenerateContiguousData(
+		vector<const SQLType*> columnVector,
+		SQLINTEGER             *strLenOrInd)
+	{
+		vector<SQLType> retVal;
+
+		for (SQLULEN index = 0; index < columnVector.size(); index++)
+		{
+			if (strLenOrInd[index] != SQL_NULL_DATA)
+			{
+				vector<char> data(columnVector[index], columnVector[index] + strLenOrInd[index]);
+				retVal.insert(retVal.end(), data.begin(), data.end());
+			}
+		}
+
+		return retVal;
+	}
+
+	template vector<char> PythonExtensionApiTests::GenerateContiguousData(
+		vector<const char*> columnVector,
+		SQLINTEGER          *strLenOrInd);
+	template vector<SQLCHAR> PythonExtensionApiTests::GenerateContiguousData(
+		vector<const SQLCHAR*> columnVector,
+		SQLINTEGER             *strLenOrInd);
+
+	// Name: GetMaxLength
+	//
+	// Description:
+	// Get max length of all strings from strLenOrInd.
+	//
+	SQLINTEGER PythonExtensionApiTests::GetMaxLength(
+		SQLINTEGER *strLenOrInd,
+		SQLULEN    rowsNumber)
+	{
+		SQLINTEGER maxLen = 0;
+		for (SQLULEN index = 0; index < rowsNumber; index++)
+		{
+			if (strLenOrInd[index] != SQL_NULL_DATA && maxLen < strLenOrInd[index])
+			{
+				maxLen = strLenOrInd[index];
+			}
+		}
+
+		return maxLen;
+	}
+
+	// Name: ColumnInfo
+	//
+	// Description:
+	// Templetized constructor for the type information.
+	// Useful for ColumnInfo of integer, basic numeric and boolean types.
+	//
+	template<class SQLType>
+	ColumnInfo<SQLType>::ColumnInfo(
+		string column1Name, vector<SQLType> column1, vector<SQLINTEGER> col1StrLenOrInd,
+		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd)
+	{
+		m_columnNames = { column1Name, column2Name };
+		m_column1 = column1;
+		m_column2 = column2;
+		m_dataSet = { m_column1.data(), m_column2.data() };
+		m_col1StrLenOrInd = col1StrLenOrInd;
+		if (m_col1StrLenOrInd.empty())
+		{
+			m_strLen_or_Ind.push_back(nullptr);
+		}
+		else
+		{
+			m_strLen_or_Ind.push_back(m_col1StrLenOrInd.data());
+		}
+
+		m_col2StrLenOrInd = col2StrLenOrInd;
+		if (m_col2StrLenOrInd.empty())
+		{
+			m_strLen_or_Ind.push_back(nullptr);
+		}
+		else
+		{
+			m_strLen_or_Ind.push_back(m_col2StrLenOrInd.data());
+		}
+
 	}
 
 	// Parses the value of the active python exception

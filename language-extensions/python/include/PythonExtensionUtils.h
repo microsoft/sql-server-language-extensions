@@ -38,7 +38,7 @@ public:
 
 	// Map to store the ODBC C type to null value mapping
 	//
-	static const std::unordered_map<SQLSMALLINT, const void*> m_dataTypeToNullMap;
+	static const std::unordered_map<SQLSMALLINT, const void*> m_DataTypeToNullMap;
 
 private:
 

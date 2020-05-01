@@ -202,7 +202,9 @@ PythonStringParam::PythonStringParam(
 // Name: PythonRawParam
 //
 // Description:
-// Constructor.
+//  Constructor.
+//  Calls the base constructor then populates m_pyObject with a boost::python object that contains
+//  the bytes object of the data, in a way that python can use, or py::object which is None.
 //
 PythonRawParam::PythonRawParam(
 	SQLUSMALLINT  id,
