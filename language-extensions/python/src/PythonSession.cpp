@@ -245,7 +245,8 @@ void PythonSession::GetResultColumn(
 
 	if (columnNumber >= m_outputDataSet.GetVectorColumnsNumber())
 	{
-		throw invalid_argument("Invalid column # " + to_string(columnNumber));
+		throw invalid_argument("Invalid column #" + to_string(columnNumber)
+			+ " provided to GetResultColumn().");
 	}
 
 	const vector<unique_ptr<PythonColumn>>& resultColumns = m_outputDataSet.Columns();
@@ -277,6 +278,17 @@ void PythonSession::GetResults(
 	SQLINTEGER ***strLen_or_Ind)
 {
 	LOG("PythonSession::GetResults");
+
+	if (rowsNumber != nullptr && data != nullptr && strLen_or_Ind != nullptr)
+	{
+		*rowsNumber = m_outputDataSet.RowsNumber();
+		*data = m_outputDataSet.GetData();
+		*strLen_or_Ind = m_outputDataSet.GetColumnNullMap();
+	}
+	else
+	{
+		throw runtime_error("Invalid parameters provided to GetResults()");
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -297,7 +309,7 @@ void PythonSession::GetOutputParam(
 // Name: PythonSession::Cleanup()
 //
 // Description:
-//	Cleans up the Python session
+//  Cleans up the python session
 //
 void PythonSession::Cleanup()
 {

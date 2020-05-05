@@ -68,7 +68,7 @@ const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::m_fnAddColumnMap =
 const PythonOutputDataSet::GetColumnFnMap PythonOutputDataSet::m_fnRetrieveColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
-	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLCHAR, bool, SQL_C_BIT>)},
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame)},
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
 	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveColumnFromDataFrame<SQLINTEGER, int, SQL_C_SLONG>)},
 	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
@@ -115,7 +115,7 @@ const PythonOutputDataSet::CleanupColumnFnMap PythonOutputDataSet::m_fnCleanupCo
 // Name: PythonDataSet::Init
 //
 // Description:
-//  Initialize the PythonDataSet with name and number of column
+//  Initializes the PythonDataSet with name and number of column
 //  and a reference to the python namespace.
 //
 void PythonDataSet::Init(
@@ -208,7 +208,7 @@ void PythonInputDataSet::InitColumn(
 // Name: PythonInputDataSet::AddColumnsToDictionary
 //
 // Description:
-//  Add columns to the underlying boost python dictionary with the given rowsNumber and data.
+//  Adds columns to the underlying boost python dictionary with the given rowsNumber and data.
 //
 void PythonInputDataSet::AddColumnsToDictionary(
 	SQLULEN    rowsNumber,
@@ -259,7 +259,7 @@ void PythonInputDataSet::AddColumnsToDictionary(
 // Name: PythonInputDataSet::AddColumnToDictionary
 //
 // Description:
-//  Add a column to the python dictionary that will be the DataFrame.
+//  Adds a column to the python dictionary that will be the DataFrame.
 //  Works for simple types like numbers and boolean
 //
 template<class SQLType, class NullType>
@@ -326,7 +326,7 @@ void PythonInputDataSet::AddColumnToDictionary(
 // Name: PythonInputDataSet::AddStringColumnToDictionary
 //
 // Description:
-//  Add a string column to the python dictionary that will be the DataFrame
+//  Adds a string column to the python dictionary that will be the DataFrame
 //
 void PythonInputDataSet::AddStringColumnToDictionary(
 	SQLSMALLINT columnNumber,
@@ -384,7 +384,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 // Name: PythonInputDataSet::AddRawColumnToDictionary
 //
 // Description:
-//  Add a raw column to the python dictionary that will be the DataFrame
+//  Adds a raw column to the python dictionary that will be the DataFrame
 //
 void PythonInputDataSet::AddRawColumnToDictionary(
 	SQLSMALLINT columnNumber,
@@ -462,7 +462,7 @@ void PythonInputDataSet::AddDictionaryToNamespace()
 // Name: PythonOutputDataSet::InitializeDataFrameInNamespace
 //
 // Description:
-//  Initialize the OutputDataSet DataFrame as an empty boost::python dictionary.
+//  Initializes the OutputDataSet DataFrame as an empty boost::python dictionary.
 //
 void PythonOutputDataSet::InitializeDataFrameInNamespace()
 {
@@ -569,7 +569,7 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 // Description:
 //  Templatized function to get the column information from the underlying DataFrame,
 //  adds data to m_data and nullmap to m_columnNullMap.
-//  Templated for integer, simple numeric, and boolean types.
+//  Templated for integer and simple numeric types.
 //
 template<class SQLType, class NullType, SQLSMALLINT DataType>
 void PythonOutputDataSet::RetrieveColumnFromDataFrame(
@@ -623,15 +623,19 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 					nullable = SQL_NULLABLE;
 					columnData[i] = valueForNull;
 				}
-				else if (DataType != SQL_C_BIT)
+				else
 				{
 					columnData[i] = data;
 					nullMap[i] = sizeof(SQLType);
 				}
-				else
-				{
-					columnData[i] = data ? '1' : '0';
-				}
+			}
+			else
+			{
+				// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
+				//
+				nullMap[i] = SQL_NULL_DATA;
+				nullable = SQL_NULLABLE;
+				columnData[i] = valueForNull;
 			}
 		}
 		else
@@ -641,7 +645,79 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 			nullMap[i] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
 			columnData[i] = valueForNull;
+		}
+	}
 
+	m_data.push_back(static_cast<SQLPOINTER>(columnData));
+	m_columnNullMap.push_back(nullMap);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame
+//
+// Description:
+//  Gets boolean column information from the underlying DataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
+//
+void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
+	string      columnName,
+	SQLULEN     &columnSize,
+	SQLSMALLINT &decimalDigits,
+	SQLSMALLINT &nullable)
+{
+	LOG("PythonOutputDataSet::RetrieveBooleanColumnFromDictionary");
+
+	bool *columnData = nullptr;
+	SQLINTEGER *nullMap = nullptr;
+
+	if (m_rowsNumber > 0)
+	{
+		columnData = new bool[m_rowsNumber];
+		nullMap = new SQLINTEGER[m_rowsNumber];
+	}
+
+	columnSize = sizeof(bool);
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+
+	// Get the column of values
+	//
+	np::ndarray column = ExtractArrayFromDataFrame(columnName);
+
+	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	{
+		py::object pyObj = column[i];
+
+		// Make sure the object is not pointing at Python None, or else it will crash on extract
+		//
+		if (!pyObj.is_none())
+		{
+			// Extract the data value from the iterator
+			//
+			py::extract<bool> extractedData(pyObj);
+
+			// Check to make sure the extracted data exists and is of the correct type
+			//
+			if (extractedData.check())
+			{
+				bool data = extractedData;
+
+				columnData[i] = data;
+			}
+			else
+			{
+				columnData[i] = false;
+			}
+
+			nullMap[i] = sizeof(SQLCHAR);
+		}
+		else
+		{
+			// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
+			//
+			nullMap[i] = SQL_NULL_DATA;
+			nullable = SQL_NULLABLE;
+			columnData[i] = false;
 		}
 	}
 
@@ -653,7 +729,7 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 // Name: PythonOutputDataSet::RetrieveStringColumnFromDataFrame
 //
 // Description:
-//  Get string column information from the underlying DataFrame,
+//  Gets string column information from the underlying DataFrame,
 //  adds data to m_data and nullmap to m_columnNullMap.
 //
 void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
@@ -708,6 +784,11 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 					maxLen = strLenOrNullMap[i];
 				}
 			}
+			else
+			{
+				strLenOrNullMap[i] = SQL_NULL_DATA;
+				nullable = SQL_NULLABLE;
+			}
 		}
 		else
 		{
@@ -733,7 +814,7 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 // Name: PythonOutputDataSet::RetrieveRawColumnFromDataFrame
 //
 // Description:
-//  Get raw column information from the underlying DataFrame,
+//  Gets raw column information from the underlying DataFrame,
 //  adds data to m_data and nullmap to m_columnNullMap.
 //
 void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
@@ -812,7 +893,7 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 // Name: PythonOutputDataSet::ExtractArrayFromDataFrame
 //
 // Description:
-//  Extract a numpy ndarray from the pandas DataFrame in the python namespace
+//  Extracts a numpy ndarray from the pandas DataFrame in the python namespace
 //
 np::ndarray PythonOutputDataSet::ExtractArrayFromDataFrame(const string columnName)
 {
@@ -845,8 +926,8 @@ void PythonOutputDataSet::PopulateColumnsDataType()
 // Name: PythonOutputDataSet::PopulateColumnDataType
 //
 // Description:
-// Get the python type from the value in the column,
-// then get the column data type by looking up the python to odbc type map.
+//  Gets the python type from the value in the column,
+//  then get the column data type by looking up the python to odbc type map.
 //
 SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumber) const
 {

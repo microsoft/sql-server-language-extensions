@@ -119,7 +119,7 @@ namespace ExtensionApiTest
 			std::vector<std::string> columnNames,
 			bool                     validate = true);
 
-		// Template function to compare the given column and data for equality.
+		// Template function to compare the given integer column and data for equality.
 		//
 		template<class SQLType>
 		void CheckIntColumnEquality(
@@ -128,6 +128,8 @@ namespace ExtensionApiTest
 			void                *expectedColumn,
 			SQLINTEGER          *strLen_or_Ind);
 
+		// Template function to compare the given float/double column and data for equality.
+		//
 		template<class SQLType>
 		void CheckFloatColumnEquality(
 			SQLULEN             expectedRowsNumber,
@@ -167,6 +169,61 @@ namespace ExtensionApiTest
 			SQLULEN      expectedColumnSize,
 			SQLSMALLINT  expectedDecimalDigits,
 			SQLSMALLINT  expectedNullable);
+
+		// Test GetResults to verify the expected results are obtained.
+		// For numeric, boolean and integer types.
+		//
+		template<class SQLType, SQLSMALLINT dataType>
+		void TestGetResults(
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Test GetResults to verify the expected string results are obtained.
+		//
+		void TestGetStringResults(
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Test GetResults to verify the expected raw results are obtained.
+		//
+		void TestGetRawResults(
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
+			std::vector<std::string> columnNames);
+
+		// Template function to compare the given column data and nullMap for equality.
+		// For numeric, boolean and integer types.
+		//
+		template<class SQLType>
+		void CheckColumnDataEquality(
+			SQLULEN    rowsNumber,
+			SQLType    *expectedColumnData,
+			SQLType    *columnData,
+			SQLINTEGER *expectedColumnStrLenOrInd,
+			SQLINTEGER *columnStrLenOrInd);
+
+		// Compare the given string column data and nullMap for equality.
+		//
+		void CheckStringDataEquality(
+			SQLULEN    rowsNumber,
+			char       *expectedColumnData,
+			char       *columnData,
+			SQLINTEGER *expectedColumnStrLenOrInd,
+			SQLINTEGER *columnStrLenOrInd);
+
+		// Compare the given raw column data and nullMap for equality.
+		//
+		void CheckRawDataEquality(
+			SQLULEN    rowsNumber,
+			SQLCHAR    *expectedColumnData,
+			SQLCHAR    *columnData,
+			SQLINTEGER *expectedColumnStrLenOrInd,
+			SQLINTEGER *columnStrLenOrInd);
 
 		// Objects declared here can be used by all tests in the test suite.
 		//
@@ -221,10 +278,6 @@ namespace ExtensionApiTest
 			boost::python::dict columnToTest,
 			void                *expectedColumn,
 			SQLINTEGER          *strLen_or_Ind);
-
-		// The underlying boost::python dictionary.
-		//
-		boost::python::dict m_dataDict;
 
 		// Function map to add columns to the data frame and its typedef
 		//

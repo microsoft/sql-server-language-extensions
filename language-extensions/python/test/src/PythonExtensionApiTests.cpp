@@ -17,6 +17,31 @@ namespace py = boost::python;
 
 namespace ExtensionApiTest
 {
+	// Function map - maps a SQL data type to the appropriate function that
+	// adds a column to the dictionary
+	//
+	const PythonExtensionApiTests::CheckColumnEqualityFnMap PythonExtensionApiTests::m_fnCheckColumnEqualityMap =
+	{
+		{static_cast<SQLSMALLINT>(SQL_C_BIT),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckBooleanColumnEquality)},
+		{static_cast<SQLSMALLINT>(SQL_C_SLONG),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckIntColumnEquality<SQLINTEGER>)},
+		{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckFloatColumnEquality<SQLDOUBLE>)},
+		{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckFloatColumnEquality<SQLREAL>)},
+		{static_cast<SQLSMALLINT>(SQL_C_SSHORT),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckIntColumnEquality<SQLSMALLINT>)},
+		{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckIntColumnEquality<SQLCHAR>)},
+		{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckIntColumnEquality<SQLBIGINT>)},
+		{static_cast<SQLSMALLINT>(SQL_C_CHAR),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckStringColumnEquality)},
+		{static_cast<SQLSMALLINT>(SQL_C_BINARY),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckRawColumnEquality)},
+	};
+
 	// Code here will be called immediately after the constructor (right
 	// before each test).
 	//
@@ -66,64 +91,71 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str())));
 		m_outputDataNameLength = m_outputDataNameString.length();
 
+		const SQLINTEGER intSize = sizeof(SQLINTEGER);
 		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
 			"IntegerColumn1",
 			vector<SQLINTEGER>{ 0, 1, 2, 3, 4},
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, intSize),
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ 2'147'483'647, -2'147'483'647, 10, 0, -1 },
-			vector<SQLINTEGER>{ 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+			vector<SQLINTEGER>{ intSize, intSize, SQL_NULL_DATA, SQL_NULL_DATA, intSize });
 
+		const SQLINTEGER booleanSize = sizeof(SQLCHAR);
 		m_booleanInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"BooleanColumn1",
 			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, booleanSize),
 			"BooleanColumn2",
 			vector<SQLCHAR>{ '0', '2', '1', '0', '1' },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, 0, 0, 0, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, booleanSize, booleanSize, booleanSize, SQL_NULL_DATA });
 
+		const SQLINTEGER realSize = sizeof(SQLREAL);
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
 			vector<SQLREAL>{ 0.34F, 1.33F, 3.4e38F, -3.4e38F, 68e10F },
-			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, realSize),
 			"RealColumn2",
 			vector<SQLREAL>{  0, -1, INFINITY, -INFINITY, NAN },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA, 0, 0, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA, realSize, realSize, SQL_NULL_DATA });
 
+		const SQLINTEGER doubleSize = sizeof(SQLDOUBLE);
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
 			vector<SQLDOUBLE>{ -1.79e301, 1.33, 1.79e308, -1.79e308, 1.79e30 },
-			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, doubleSize),
 			"DoubleColumn2",
 			vector<SQLDOUBLE>{  0, -1, INFINITY, -INFINITY, NAN },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA, 0, 0, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA, doubleSize, doubleSize, SQL_NULL_DATA });
 
+		const SQLINTEGER bigIntSize = sizeof(SQLBIGINT);
 		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
 			"BigIntColumn1",
 			vector<SQLBIGINT>{ 9'223'372'036'854'775'807LL, 1,
 			88883939, -9'223'372'036'854'775'807LL, -622280108 },
-			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, bigIntSize),
 			"BigIntColumn2",
-			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
+			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, bigIntSize),
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
+		const SQLINTEGER smallIntSize = sizeof(SQLSMALLINT);
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
 			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, smallIntSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ -1, 0, 32'767, -32'768, 3'276 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, 0));
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, smallIntSize));
 
+		const SQLINTEGER tinyIntSize = sizeof(SQLCHAR);
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
 			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, 0),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, tinyIntSize),
 			"TinyIntColumn2",
 			vector<SQLCHAR>{ 255, 0, 1, 0, 128 },
-			vector<SQLINTEGER>{ 0, SQL_NULL_DATA,
-			SQL_NULL_DATA, SQL_NULL_DATA, 0 });
+			vector<SQLINTEGER>{ tinyIntSize, SQL_NULL_DATA,
+			SQL_NULL_DATA, SQL_NULL_DATA, tinyIntSize });
 
 		try
 		{
@@ -199,7 +231,7 @@ namespace ExtensionApiTest
 	// Name: InitializeColumns
 	//
 	// Description:
-	// Templetized function to call InitializeColumn for all columns.
+	//  Template function to call InitializeColumn for all columns.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
 	void PythonExtensionApiTests::InitializeColumns(ColumnInfo<SQLType> *ColumnInfo)
@@ -234,7 +266,7 @@ namespace ExtensionApiTest
 	// Name: InitializeColumn
 	//
 	// Description:
-	// Call InitColumn for the given columnNumber, columnName, dataType and columnSize.
+	//  Call InitColumn for the given columnNumber, columnName, dataType and columnSize.
 	//
 	void PythonExtensionApiTests::InitializeColumn(
 		SQLSMALLINT columnNumber,
@@ -267,8 +299,8 @@ namespace ExtensionApiTest
 	// Name: GenerateContiguousData
 	//
 	// Description:
-	// Fill a contiguous array columnData with members from the given columnVector
-	// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
+	//  Fill a contiguous array columnData with members from the given columnVector
+	//  having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 	//
 	template<class SQLType>
 	vector<SQLType> PythonExtensionApiTests::GenerateContiguousData(
@@ -299,7 +331,7 @@ namespace ExtensionApiTest
 	// Name: GetMaxLength
 	//
 	// Description:
-	// Get max length of all strings from strLenOrInd.
+	//  Get max length of all strings from strLenOrInd.
 	//
 	SQLINTEGER PythonExtensionApiTests::GetMaxLength(
 		SQLINTEGER *strLenOrInd,
@@ -320,8 +352,8 @@ namespace ExtensionApiTest
 	// Name: ColumnInfo
 	//
 	// Description:
-	// Templetized constructor for the type information.
-	// Useful for ColumnInfo of integer, basic numeric and boolean types.
+	//  Template constructor for the type information.
+	//  Useful for ColumnInfo of integer, basic numeric and boolean types.
 	//
 	template<class SQLType>
 	ColumnInfo<SQLType>::ColumnInfo(
@@ -352,6 +384,177 @@ namespace ExtensionApiTest
 			m_strLen_or_Ind.push_back(m_col2StrLenOrInd.data());
 		}
 
+	}
+
+	// Name: CheckColumnEquality
+	//
+	// Description:
+	//  Template function to compare the given columns for equality
+	//
+	template<class SQLType>
+	void PythonExtensionApiTests::CheckIntColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		{
+			py::object val = columnToTest[index];
+			SQLType typeVal = py::extract<SQLType>(val);
+			SQLType expectedValue = static_cast<SQLType*>(expectedColumn)[index];
+
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
+			{
+				EXPECT_EQ(typeVal, m_intNull);
+			}
+			else
+			{
+				EXPECT_EQ(typeVal, expectedValue);
+			}
+		}
+	}
+
+	// Name: CheckFloatColumnEquality
+	//
+	// Description:
+	//  Check float/double columns for equality
+	//
+	template<class SQLType>
+	void PythonExtensionApiTests::CheckFloatColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		{
+			py::object val = columnToTest[index];
+			SQLType typeVal = py::extract<SQLType>(val);
+			SQLType expectedValue = static_cast<SQLType*>(expectedColumn)[index];
+
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
+			{
+				EXPECT_TRUE(isnan(typeVal));
+			}
+			else
+			{
+				EXPECT_EQ(typeVal, expectedValue);
+			}
+		}
+	}
+
+	// Name: CheckBooleanColumnEquality
+	//
+	// Description:
+	//  Check boolean columns for equality
+	//
+	void PythonExtensionApiTests::CheckBooleanColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		{
+			py::object val = columnToTest[index];
+			bool expectedValue = static_cast<bool*>(expectedColumn)[index];
+
+			bool typeVal = py::extract<bool>(val);
+
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
+			{
+				EXPECT_EQ(typeVal, m_boolNull);
+			}
+			else
+			{
+				EXPECT_EQ(typeVal, expectedValue);
+			}
+		}
+	}
+
+	// Name: CheckStringColumnEquality
+	//
+	// Description:
+	//  Compare string column with the given data and corresponding strLen_or_Ind.
+	//  The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
+	//  Where strLen_or_Ind == SQL_NULL_DATA, check for None.
+	//
+	void PythonExtensionApiTests::CheckStringColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		SQLINTEGER cumulativeLength = 0;
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		{
+			py::object val = columnToTest[index];
+			if (strLen_or_Ind == nullptr ||
+				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			{
+				EXPECT_TRUE(val.is_none());
+			}
+			else
+			{
+				string typeVal = py::extract<string>(val);
+				string expectedString = string(
+					static_cast<char*>(expectedColumn) + cumulativeLength,
+					strLen_or_Ind[index]);
+
+				EXPECT_EQ(typeVal, expectedString);
+				cumulativeLength += strLen_or_Ind[index];
+			}
+		}
+	}
+
+	// Name: CheckRawColumnEquality
+	//
+	// Description:
+	//  Compare raw column with the given data and corresponding strLen_or_Ind.
+	//  The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
+	//  Where strLen_or_Ind == SQL_NULL_DATA, check for None.
+	//
+	void PythonExtensionApiTests::CheckRawColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		SQLINTEGER cumulativeLength = 0;
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		{
+			py::object val = columnToTest[index];
+
+			if (strLen_or_Ind == nullptr ||
+				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			{
+				EXPECT_TRUE(val.is_none());
+			}
+			else
+			{
+				SQLCHAR *expectedValue = static_cast<SQLCHAR*>(expectedColumn) + cumulativeLength;
+
+				for (SQLINTEGER i = 0; i < strLen_or_Ind[index]; ++i)
+				{
+					EXPECT_EQ(val[i], expectedValue[i]);
+				}
+
+				cumulativeLength += strLen_or_Ind[index];
+			}
+		}
 	}
 
 	// Parses the value of the active python exception

@@ -19,7 +19,7 @@ namespace ExtensionApiTest
 	// Name: GetIntegerResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  Test GetResultColumn with default script expecting an OutputDataSet of Integer columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetIntegerResultColumnsTest)
 	{
@@ -52,7 +52,7 @@ namespace ExtensionApiTest
 	// Name: GetBooleanResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Boolean columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of Boolean columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetBooleanResultColumnsTest)
 	{
@@ -88,7 +88,7 @@ namespace ExtensionApiTest
 	// Name: GetRealResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Real columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of Real columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetRealResultColumnsTest)
 	{
@@ -124,7 +124,7 @@ namespace ExtensionApiTest
 	// Name: GetDoubleResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Double columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of Double columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetDoubleResultColumnsTest)
 	{
@@ -160,7 +160,7 @@ namespace ExtensionApiTest
 	// Name: GetBigIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of BigInteger columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of BigInteger columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetBigIntResultColumnsTest)
 	{
@@ -196,7 +196,7 @@ namespace ExtensionApiTest
 	// Name: GetSmallIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of SmallInt columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of SmallInt columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetSmallIntResultColumnsTest)
 	{
@@ -232,7 +232,7 @@ namespace ExtensionApiTest
 	// Name: GetTinyIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of TinyInt columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of TinyInt columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetTinyIntResultColumnsTest)
 	{
@@ -268,7 +268,7 @@ namespace ExtensionApiTest
 	// Name: GetStringResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of String columns.
+	//  Test GetResultColumn with default script using an OutputDataSet of String columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetStringResultColumnsTest)
 	{
@@ -293,36 +293,36 @@ namespace ExtensionApiTest
 		vector<const char*> stringCol1{ "Hello", "test", "data", "World", "-123" };
 		vector<const char*> stringCol2{ "", 0, nullptr, "verify", "-1" };
 
-		SQLINTEGER strLenOrIndCol1[] =
+		vector<SQLINTEGER> strLenOrIndCol1 =
 		{ static_cast<SQLINTEGER>(strlen(stringCol1[0])),
-		static_cast<SQLINTEGER>(strlen(stringCol1[1])),
-		static_cast<SQLINTEGER>(strlen(stringCol1[2])),
-		static_cast<SQLINTEGER>(strlen(stringCol1[3])),
-		static_cast<SQLINTEGER>(strlen(stringCol1[4])) };
-
-		SQLINTEGER strLenOrIndCol2[] =
+		  static_cast<SQLINTEGER>(strlen(stringCol1[1])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[2])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[3])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[4])) };
+		vector<SQLINTEGER> strLenOrIndCol2 =
 		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
-		static_cast<SQLINTEGER>(strlen(stringCol2[3])),
-		static_cast<SQLINTEGER>(strlen(stringCol2[4])) };
+		  static_cast<SQLINTEGER>(strlen(stringCol2[3])),
+		  static_cast<SQLINTEGER>(strlen(stringCol2[4])) };
 
-		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1, strLenOrIndCol2, nullptr };
+		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), nullptr };
 
 		// Coalesce the arrays of each row of each column
 		// into a contiguous array for each column.
 		//
-		int rowsNumber = stringCol1.size();
-
-		vector<char> stringCol1Data = GenerateContiguousData<char>(stringCol1, strLenOrIndCol1);
-		vector<char> stringCol2Data = GenerateContiguousData<char>(stringCol2, strLenOrIndCol2);
+		vector<char> stringCol1Data = GenerateContiguousData<char>(stringCol1, strLenOrIndCol1.data());
+		vector<char> stringCol2Data = GenerateContiguousData<char>(stringCol2, strLenOrIndCol2.data());
 
 		void* dataSet[] = { stringCol1Data.data(),
 							stringCol2Data.data(),
 							nullptr };
 
+		int rowsNumber = stringCol1.size();
+
 		vector<string> columnNames{ stringColumn1Name, stringColumn2Name, stringColumn3Name };
 
-		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1, rowsNumber);
-		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2, rowsNumber);
+		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
 
 		TestExecute<SQLCHAR, SQL_C_CHAR>(
 			rowsNumber,
@@ -353,7 +353,7 @@ namespace ExtensionApiTest
 	// Name: GetRawResultColumnTest
 	//
 	// Description:
-	// Test GetResultColumn with a script that returns OutputDataSet with raw columns.
+	//  Test GetResultColumn with a script that returns OutputDataSet with raw columns.
 	//
 	TEST_F(PythonExtensionApiTests, GetRawResultColumnTest)
 	{
@@ -451,7 +451,7 @@ namespace ExtensionApiTest
 	// Name: GetDifferentResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of different column types.
+	//  Test GetResultColumn with default script using an OutputDataSet of different column types.
 	//
 	TEST_F(PythonExtensionApiTests, GetDifferentResultColumnsTest)
 	{
@@ -477,7 +477,8 @@ namespace ExtensionApiTest
 		vector<SQLDOUBLE> doubleColData{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 };
 		vector<const char*> stringCol{ "Hello", "test", "data", "World", "-123" };
 
-		SQLINTEGER strLenOrIndCol1[] = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
+		const SQLINTEGER intSize = sizeof(SQLINTEGER);
+		SQLINTEGER strLenOrIndCol1[] = { intSize, intSize, SQL_NULL_DATA, SQL_NULL_DATA, intSize };
 		SQLINTEGER strLenOrIndCol3[] =
 		{ static_cast<SQLINTEGER>(strlen(stringCol[0])),
 		static_cast<SQLINTEGER>(strlen(stringCol[1])),
@@ -525,7 +526,7 @@ namespace ExtensionApiTest
 	// Name: GetEmptyResultColumnTest
 	//
 	// Description:
-	// Test GetResultColumn with a script that returns OutputDataSet with empty rows.
+	//  Test GetResultColumn with a script that returns OutputDataSet with empty rows.
 	//
 	TEST_F(PythonExtensionApiTests, GetEmptyResultColumnTest)
 	{
@@ -565,7 +566,7 @@ namespace ExtensionApiTest
 	// Name: TestGetResultColumn
 	//
 	// Description:
-	// Test GetResultColumn to verify the expected result column information is obtained.
+	//  Test GetResultColumn to verify the expected result column information is obtained.
 	//
 	void PythonExtensionApiTests::TestGetResultColumn(
 		SQLUSMALLINT columnNumber,

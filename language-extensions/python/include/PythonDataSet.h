@@ -41,7 +41,7 @@ public:
 	// Note: Once Init() resizes the vector to schemaColumnsNumber, its size
 	// doesn't increase when InitColumn is done for each column.
 	//
-	SQLUSMALLINT GetVectorColumnsNumber()
+	SQLUSMALLINT GetVectorColumnsNumber() const
 	{
 		return m_columns.size();
 	}
@@ -51,6 +51,13 @@ public:
 	const std::vector<std::unique_ptr<PythonColumn>>& Columns() const
 	{
 		return m_columns;
+	}
+
+	// Get the underlying pointer of m_columnNullMap.
+	//
+	SQLINTEGER** GetColumnNullMap()
+	{
+		return m_columnNullMap.data();
 	}
 
 protected:
@@ -159,7 +166,6 @@ private:
 		SQLPOINTER  data,
 		SQLINTEGER  *strLen_or_Ind);
 
-
 	// Add column function pointer definition
 	//
 	using fnAddColumn = void (PythonInputDataSet::*)(
@@ -216,6 +222,20 @@ public:
 	//
 	void PopulateNumberOfRows();
 
+	// Getter for numberOfRows.
+	//
+	SQLULEN RowsNumber() const
+	{
+		return m_rowsNumber;
+	}
+
+	// Get the underlying pointer of m_data.
+	//
+	SQLPOINTER* GetData()
+	{
+		return m_data.data();
+	}
+
 	// Call CleanupColumn on each column.
 	//
 	void CleanupColumns();
@@ -225,6 +245,14 @@ private:
 	//
 	template<class SQLType, class NullType, SQLSMALLINT DataType>
 	void RetrieveColumnFromDataFrame(
+		std::string columnName,
+		SQLULEN     &columnSize,
+		SQLSMALLINT &decimalDigits,
+		SQLSMALLINT &nullable);
+
+	// Gets the boolean column information, adds data to m_data and nullmap to m_columnNullMap
+	//
+	void RetrieveBooleanColumnFromDataFrame(
 		std::string columnName,
 		SQLULEN     &columnSize,
 		SQLSMALLINT &decimalDigits,
