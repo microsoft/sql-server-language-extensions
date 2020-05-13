@@ -34,11 +34,47 @@
 //
 class RParam
 {
-	friend class RParamContainer;
-
 public:
 
-	// Constructor to initialize the members
+	// Verifies if the input paramSize is equal to the size of the template type T.
+	//
+	template<class T>
+	void CheckParamSize();
+
+	// Retrieve data from m_RcppVector, fill it in m_value
+	// and set m_strLenOrInd accordingly.
+	//
+	virtual void RetrieveValueAndStrLenInd() = 0;
+
+	// Get m_name
+	//
+	const std::string& Name() const
+	{
+		return m_name;
+	}
+
+	// Get m_value
+	//
+	virtual SQLPOINTER Value() const = 0;
+
+	// Get m_strLenOrInd
+	//
+	SQLINTEGER StrLenOrInd() const
+	{
+		return m_strLenOrInd;
+	}
+
+	// Get m_inputOutputType
+	//
+	SQLSMALLINT InputOutputType() const
+	{
+		return m_inputOutputType;
+	}
+
+protected:
+
+	// Protected constructor to initialize the members.
+	// Do not allow other classes to create objects of this class - it is used as a base class.
 	//
 	RParam(
 		SQLUSMALLINT  paramNumber,
@@ -49,27 +85,6 @@ public:
 		SQLSMALLINT   decimalDigits,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
-
-	// Verifies if the input paramSize is equal to the size of the template type T.
-	//
-	template<class T>
-	void CheckParamSize();
-
-	// Get m_name
-	//
-	const std::string& Name() const
-	{
-		return m_name;
-	}
-
-	// Get m_strLenOrInd
-	//
-	SQLINTEGER StrLenOrInd() const
-	{
-		return m_strLenOrInd;
-	}
-
-private:
 
 	// Id of the parameter.
 	//
@@ -117,7 +132,7 @@ private:
 // Name: RParamTemplate
 //
 // Description:
-//  Template class representing numeric, integer parameters by storing the RcppVector of
+//  Template class representing numeric, integer, logical parameters by storing the RcppVector of
 //  given RType for the corresponding SQLType and having NA value of NAType.
 //
 template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
@@ -138,65 +153,50 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
+	// Retrieve data from m_RcppVector, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd() override;
+
 	// Get m_RcppVector
 	//
-	RType& GetRcppVector()
+	RType& RcppVector()
 	{
 		return m_RcppVector;
 	}
 
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLType*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+
 	// Templatized function to set the RcppVector by creating an equivalent R type
-	// for the given SQL type with given value. This is only for numeric or integer R types.
+	// for the given SQL type with given value.
 	//
 	void SetRcppVector(SQLPOINTER paramValue);
+
+	// Vector holding the value of the parameter as retrieved from embedded R environment,
+	// holding the contents before sending them back to ExtHost
+	// Only useful for output parameter types.
+	//
+	std::vector<SQLType> m_value;
 
 	// The Rcpp::Vector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
 	//
 	RType m_RcppVector;
-};
-
-//-------------------------------------------------------------------------------------------------
-// Name: RLogicalParam
-//
-// Description:
-//  Class representing a logical parameter by storing Rcpp::LogicalVector
-//  corresponding to ODBC C type SQL_C_BIT and SQL type SQLCHAR.
-//
-class RLogicalParam : public RParam
-{
-public :
-
-	// Constructor to initialize the members
-	//
-	RLogicalParam(
-		SQLUSMALLINT  paramNumber,
-		const SQLCHAR *paramName,
-		SQLSMALLINT   paramNameLength,
-		SQLSMALLINT   dataType,
-		SQLULEN       paramSize,
-		SQLSMALLINT   decimalDigits,
-		SQLPOINTER    paramValue,
-		SQLINTEGER    strLen_or_Ind,
-		SQLSMALLINT   inputOutputType);
-
-	// Get m_RcppVector
-	//
-	Rcpp::LogicalVector& GetRcppVector()
-	{
-		return m_RcppVector;
-	}
-
-	// Set the RcppVector by creating a logical object in R with given value.
-	//
-	void SetRcppVector(SQLPOINTER paramValue);
-
-private:
-
-	// The Rcpp::LogicalVector encapsulating the SEXP pointer
-	// pointing to the R object with the param value.
-	//
-	Rcpp::LogicalVector m_RcppVector;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -222,11 +222,31 @@ public :
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
+	// Retrieve data from m_RcppVector, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd() override;
+
 	// Get m_RcppVector
 	//
-	Rcpp::CharacterVector& GetRcppVector()
+	Rcpp::CharacterVector& RcppVector()
 	{
 		return m_RcppVector;
+	}
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLCHAR*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 
 	// Set the RcppVector by creating a character object in R with given value.
@@ -234,6 +254,11 @@ public :
 	void SetRcppVector(SQLPOINTER paramValue);
 
 private:
+
+	// Character vector holding the contents before sending them back to ExtHost.
+	// Useful for output parameter types.
+	//
+	std::vector<SQLCHAR> m_value;
 
 	// The Rcpp::CharacterVector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
@@ -264,13 +289,32 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
+	// Retrieve data from m_RcppVector, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd() override;
+
 	// Get m_RcppVector
 	//
-	Rcpp::RawVector& GetRcppVector()
+	Rcpp::RawVector& RcppVector()
 	{
 		return m_RcppVector;
 	}
 
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLCHAR*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 
 	// Set the RcppVector by creating a raw object in R with given value.
 	//
@@ -282,4 +326,9 @@ private:
 	// pointing to the R object with the param value.
 	//
 	Rcpp::RawVector m_RcppVector;
+
+	// Character vector holding the raw contents before sending them back to ExtHost.
+	// Useful for output parameter types.
+	//
+	std::vector<SQLCHAR> m_value;
 };

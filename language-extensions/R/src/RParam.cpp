@@ -38,7 +38,7 @@
 using namespace std;
 
 //-------------------------------------------------------------------------------------------------
-// Name: RParam
+// Name: RParam::RParam
 //
 // Description:
 //  Constructor.
@@ -75,10 +75,10 @@ RParam::RParam(
 	// paramNameLength includes @ so do a -1 to exclude it.
 	//
 	m_name = string(name + 1, paramNameLength - 1);
-};
+}
 
 //-------------------------------------------------------------------------------------------------
-// Name: CheckParamSize
+// Name: RParam::CheckParamSize
 //
 // Description:
 //  Verifies if m_Size is equal to the size of the template type T.
@@ -101,7 +101,7 @@ void RParam::CheckParamSize()
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: RParamTemplate
+// Name: RParamTemplate::RParamTemplate
 //
 // Description:
 //  Constructor.
@@ -130,7 +130,7 @@ RParamTemplate<SQLType, RType, NAType, DataType>::RParamTemplate(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: SetRcppVector
+// Name: RParamTemplate::SetRcppVector
 //
 // Description:
 //  Templatized function to set RcppVector with given paramValue.
@@ -151,82 +151,68 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		SQLINTEGER strLen_or_Ind[1] = {SQL_NULL_DATA};
-		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
-			1, // rowsNumber
-			paramValue,
-			strLen_or_Ind);
+		m_RcppVector =
+			RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
+				1, // rowsNumber
+				paramValue,
+				strLen_or_Ind);
 	}
 	else
 	{
 		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
-			1, // rowsNumber
+			1,          // rowsNumber
 			paramValue,
-			nullptr); // strLen_or_Ind
+			nullptr);   // strLen_or_Ind
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: RLogicalParam
+// Name: RParamTemplate::RetrieveValueAndStrLenInd
 //
 // Description:
-//  Constructor.
+//  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
-RLogicalParam::RLogicalParam(
-	SQLUSMALLINT  paramNumber,
-	const SQLCHAR *paramName,
-	SQLSMALLINT   paramNameLength,
-	SQLSMALLINT   dataType,
-	SQLULEN       paramSize,
-	SQLSMALLINT   decimalDigits,
-	SQLPOINTER    paramValue,
-	SQLINTEGER    strLen_or_Ind,
-	SQLSMALLINT   inputOutputType)
-	: RParam(paramNumber,
-		paramName,
-		paramNameLength,
-		dataType,
-		paramSize,
-		decimalDigits,
-		strLen_or_Ind,
-		inputOutputType)
+template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
+void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd()
 {
-	SetRcppVector(paramValue);
-}
+	LOG("RParamTemplate::RetrieveValueAndStrLenInd");
 
-//-------------------------------------------------------------------------------------------------
-// Name: SetRcppVector
-//
-// Description:
-//  Set the RcppVector for RLogicalParam with the given paramValue.
-//  This is a wrapper to CreateLogicalVector with rowsNumber = 1.
-//  Before creation, it verifies whether m_size is equal to size of SQLCHAR.
-//  For null parameters, a size one vector with member value = NA_LOGICAL is created.
-//
-void RLogicalParam::SetRcppVector(SQLPOINTER paramValue)
-{
-	LOG("RLogicalParam::SetRcppVector");
+	Rcpp::Environment globalEnv = Rcpp::Environment::global_env();
 
-	CheckParamSize<SQLCHAR>();
-	SQLINTEGER strLenOrInd = StrLenOrInd();
-	if (strLenOrInd == SQL_NULL_DATA)
+	if (globalEnv.exists(m_name.c_str()))
 	{
-		SQLINTEGER strLen_or_Ind[1] = {SQL_NULL_DATA};
-		m_RcppVector = RTypeUtils::CreateLogicalVector(
-			1, // rowsNumber
-			paramValue,
-			strLen_or_Ind);
+		Logger::LogRVariable(m_name);
+
+		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+
+		if (m_RcppVector.size() == 0)
+		{
+			m_strLenOrInd = SQL_NULL_DATA;
+		}
+		else
+		{
+			SQLSMALLINT nullable = SQL_NO_NULLS;
+
+			// m_RcppVector could possibly have size > 1,
+			// but fill only the first value as the parameter value.
+			// hence pass in rowsNumber = 1.
+			//
+			RTypeUtils::FillDataFromRVector<SQLType, RType, DataType>(
+				1,  // rowsNumber
+				m_RcppVector,
+				&m_value,
+				&m_strLenOrInd,
+				nullable);
+		}
 	}
 	else
 	{
-		m_RcppVector = RTypeUtils::CreateLogicalVector(
-			1, // rowsNumber
-			paramValue,
-			nullptr); // strLenOrInd
+		m_strLenOrInd = SQL_NULL_DATA;
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: RCharacterParam
+// Name: RCharacterParam::RCharacterParam
 //
 // Description:
 //  Constructor.
@@ -254,7 +240,7 @@ RCharacterParam::RCharacterParam(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: SetRcppVector
+// Name: RCharacterParam::SetRcppVector
 //
 // Description:
 //  Set the RcppVector for RCharacterParam with the given paramValue.
@@ -269,9 +255,9 @@ void RCharacterParam::SetRcppVector(SQLPOINTER paramValue)
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		m_RcppVector = RTypeUtils::CreateCharacterVector(
-			1,       // rowsNumber
-			nullptr, // data
-			nullptr);// strLen_or_Ind
+			1,        // rowsNumber
+			nullptr,  // data
+			nullptr); // strLen_or_Ind
 	}
 	else
 	{
@@ -284,7 +270,54 @@ void RCharacterParam::SetRcppVector(SQLPOINTER paramValue)
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: RRawParam
+// Name: RCharacterParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
+//
+void RCharacterParam::RetrieveValueAndStrLenInd()
+{
+	LOG("RCharacterParam::RetrieveValueAndStrLenInd");
+
+	Rcpp::Environment globalEnv = Rcpp::Environment::global_env();
+
+	if (globalEnv.exists(m_name.c_str()))
+	{
+		Logger::LogRVariable(m_name);
+
+		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+
+		if (m_RcppVector.size() == 0)
+		{
+			m_strLenOrInd = SQL_NULL_DATA;
+		}
+		else
+		{
+			SQLSMALLINT nullable = SQL_NO_NULLS;
+			SQLULEN maxLen = 0;
+
+			// m_RcppVector could possibly have size > 1,
+			// but fill only the first value as the parameter value.
+			// hence pass in rowsNumber = 1.
+			//
+			RTypeUtils::FillDataFromCharacterVector(
+				1,  // rowsNumber
+				m_RcppVector,
+				m_size,
+				&m_value,
+				&m_strLenOrInd,
+				nullable,
+				maxLen);
+		}
+	}
+	else
+	{
+		m_strLenOrInd = SQL_NULL_DATA;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: RRawParam::RRawParam
 //
 // Description:
 //  Constructor.
@@ -312,7 +345,7 @@ RRawParam::RRawParam(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: SetRcppVector
+// Name: RRawParam::SetRcppVector
 //
 // Description:
 //  Set the RcppVector for RRawParam with the given paramValue.
@@ -330,6 +363,43 @@ void RRawParam::SetRcppVector(SQLPOINTER paramValue)
 		1,        // rowsNumber
 		paramValue,
 		strLen_or_IndArray);
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: RRawParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
+//
+void RRawParam::RetrieveValueAndStrLenInd()
+{
+	LOG("RRawParam::RetrieveValueAndStrLenInd");
+
+	Rcpp::Environment globalEnv = Rcpp::Environment::global_env();
+
+	if (globalEnv.exists(m_name.c_str()))
+	{
+		Logger::LogRVariable(m_name);
+
+		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+
+		if (m_RcppVector.size() == 0)
+		{
+			m_strLenOrInd = SQL_NULL_DATA;
+		}
+		else
+		{
+			RTypeUtils::FillDataFromRawVector(
+				m_RcppVector,
+				m_size,
+				&m_value,
+				&m_strLenOrInd);
+		}
+	}
+	else
+	{
+		m_strLenOrInd = SQL_NULL_DATA;
+	}
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -393,6 +463,17 @@ template RParamTemplate<SQLSMALLINT, Rcpp::IntegerVector, int, SQL_C_SSHORT>::RP
 	SQLSMALLINT);
 
 template RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>::RParamTemplate(
+	SQLUSMALLINT,
+	const SQLCHAR*,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template RParamTemplate<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>::RParamTemplate(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,

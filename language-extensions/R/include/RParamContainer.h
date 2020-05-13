@@ -53,6 +53,25 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
+	// For the given paramNumber, retrieve and return paramValue and strLen_or_Ind.
+	//
+	void GetParamValueAndStrLenInd(
+		SQLUSMALLINT paramNumber,
+		SQLPOINTER   *paramValue,
+		SQLINTEGER   *strLen_or_Ind);
+
+	// Returns the number of parameters in the container.
+	// Note: The container is initialized with the desired number of parameters,
+	// so the size returned here does not change even after adding parameters to
+	// embedded R.
+	//
+	SQLSMALLINT GetSize()
+	{
+		return m_params.size();
+	}
+
+private:
+
 	// Creates an RParam object, adds the parameter with paramValue for given dataType
 	// to the Embedded R environment and stores it in m_params for future use.
 	//
@@ -80,22 +99,6 @@ public:
 		SQLPOINTER    paramValue,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
-
-	// In debug or verbose mode, prints the parameter value as retrieved from the embedded R environment.
-	//
-	void PrintParamValue(SQLUSMALLINT id);
-
-	// Returns the number of parameters in the container.
-	// Note: The container is initialized with the desired number of parameters,
-	// so the size returned here does not change even after adding parameters to
-	// embedded R.
-	//
-	SQLSMALLINT GetSize()
-	{
-		return m_params.size();
-	}
-
-private:
 
 	std::vector<std::unique_ptr<RParam>> m_params;
 

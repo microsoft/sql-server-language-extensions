@@ -44,12 +44,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetIntegerResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_integerInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_integerInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
@@ -58,15 +58,15 @@ namespace ExtensionApiTest
 			(*m_integerInfo).m_dataSet.data(),
 			(*m_integerInfo).m_strLen_or_Ind.data(),
 			(*m_integerInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_SLONG,       // dataType
 			sizeof(SQLINTEGER),// columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_SLONG,       // dataType
 			sizeof(SQLINTEGER),// columnSize
 			0,                 // decimalDigits
@@ -80,12 +80,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetLogicalResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_logicalInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_logicalInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLCHAR, SQL_C_BIT>(m_logicalInfo.get());
 
@@ -94,15 +94,15 @@ namespace ExtensionApiTest
 			(*m_logicalInfo).m_dataSet.data(),
 			(*m_logicalInfo).m_strLen_or_Ind.data(),
 			(*m_logicalInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_BIT,         // dataType
 			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_BIT,         // dataType
 			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
@@ -116,12 +116,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetRealResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_realInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_realInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLREAL, SQL_C_FLOAT>(m_realInfo.get());
 
@@ -130,15 +130,15 @@ namespace ExtensionApiTest
 			(*m_realInfo).m_dataSet.data(),
 			(*m_realInfo).m_strLen_or_Ind.data(),
 			(*m_realInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
@@ -152,12 +152,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetDoubleResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_doubleInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_doubleInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(m_doubleInfo.get());
 
@@ -166,15 +166,15 @@ namespace ExtensionApiTest
 			(*m_doubleInfo).m_dataSet.data(),
 			(*m_doubleInfo).m_strLen_or_Ind.data(),
 			(*m_doubleInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
@@ -188,12 +188,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetBigIntResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_bigIntInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_bigIntInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(m_bigIntInfo.get());
 
@@ -202,15 +202,15 @@ namespace ExtensionApiTest
 			(*m_bigIntInfo).m_dataSet.data(),
 			(*m_bigIntInfo).m_strLen_or_Ind.data(),
 			(*m_bigIntInfo).m_columnNames,
-			false); // test
+			false); // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
@@ -224,12 +224,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetSmallIntResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_smallIntInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_smallIntInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(m_smallIntInfo.get());
 
@@ -238,15 +238,15 @@ namespace ExtensionApiTest
 			(*m_smallIntInfo).m_dataSet.data(),
 			(*m_smallIntInfo).m_strLen_or_Ind.data(),
 			(*m_smallIntInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResultColumn(0,  // columnNumber
+		GetResultColumn(0,  // columnNumber
 			SQL_C_SLONG,        // dataType
 			sizeof(SQLINTEGER), // columnSize
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
 
-		TestGetResultColumn(1,   // columnNumber
+		GetResultColumn(1,   // columnNumber
 			SQL_C_SLONG,         // dataType
 			sizeof(SQLINTEGER),  // columnSize
 			0,                   // decimalDigits
@@ -260,12 +260,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetTinyIntResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_tinyIntInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_tinyIntInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(m_tinyIntInfo.get());
 
@@ -274,15 +274,15 @@ namespace ExtensionApiTest
 			(*m_tinyIntInfo).m_dataSet.data(),
 			(*m_tinyIntInfo).m_strLen_or_Ind.data(),
 			(*m_tinyIntInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_SLONG,       // dataType
 			sizeof(SQLINTEGER),// columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_SLONG,       // dataType
 			sizeof(SQLINTEGER),// columnSize
 			0,                 // decimalDigits
@@ -298,12 +298,12 @@ namespace ExtensionApiTest
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession(inputSchemaColumnsNumber,
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			inputSchemaColumnsNumber,
+			m_scriptString);
 
 		string charColumn1Name = "CharColumn1";
 		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, sizeof(SQLCHAR));
@@ -315,7 +315,7 @@ namespace ExtensionApiTest
 		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, sizeof(SQLCHAR));
 
 		SQLULEN rowsNumber = 5;
-		vector<const char*> charCol1{ "Hello", "test", "data", "World", "-123" };
+		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
 		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
 
 		SQLINTEGER strLenOrIndCol1[rowsNumber] =
@@ -349,21 +349,21 @@ namespace ExtensionApiTest
 			dataSet,
 			strLen_or_Ind.data(),
 			columnNames,
-			false); // test
+			false); // validate
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_CHAR,        // dataType
 			maxCol1Len,        // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_CHAR,        // dataType
 			maxCol2Len,        // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 
-		TestGetResultColumn(2, // columnNumber
+		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType
 			0,                 // columnSize
 			0,                 // decimalDigits
@@ -380,15 +380,13 @@ namespace ExtensionApiTest
 		string scriptString = "rawChars <- charToRaw(paste(letters[1:26], collapse=''));"
 			"OutputDataSet <- data.frame(rawChars);"
 			"print(OutputDataSet)";
-		SQLCHAR *script = static_cast<SQLCHAR*>(
-			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		// Initialize with a Session that executes the above script
 		// that assigns creates an OutputDataSet with a single raw column.
 		//
-		InitializeSession(0,
-			script,
-			scriptString.length());
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = (*m_executeFuncPtr)(
@@ -402,7 +400,7 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_BINARY,      // dataType
 			26,                // columnSize
 			0,                 // decimalDigits
@@ -413,15 +411,13 @@ namespace ExtensionApiTest
 		scriptString = "rawChars <- raw(0);"
 			"OutputDataSet <- data.frame(rawChars);"
 			"print(OutputDataSet)";
-		script = static_cast<SQLCHAR*>(
-			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		// Initialize with a Session that executes the above script
 		// that assigns creates an OutputDataSet with a null raw column.
 		//
-		InitializeSession(0,
-			script,
-			scriptString.length());
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
 
 		outputschemaColumnsNumber = 0;
 		result = (*m_executeFuncPtr)(
@@ -435,7 +431,7 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_BINARY,      // dataType
 			0,                 // columnSize
 			0,                 // decimalDigits
@@ -449,12 +445,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetDifferentResultColumnsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession(3,
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			3,               // inputSchemaColumnsNumber
+			m_scriptString);
 
 		string integerColumnName = "IntegerColumn";
 		InitializeColumn(0, integerColumnName, SQL_C_SLONG, sizeof(SQLINTEGER));
@@ -466,9 +462,9 @@ namespace ExtensionApiTest
 		InitializeColumn(2, charColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
 
 		SQLULEN rowsNumber = 5;
-		vector<SQLINTEGER> intColData{ 2'147'483'647, -2'147'483'647, 0, -2'147'483'648, -1 };
-		vector<SQLDOUBLE> doubleColData{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 };
-		vector<const char*> charCol{ "Hello", "test", "data", "World", "-123" };
+		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 };
+		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
+		vector<const char*> charCol{ "Hello", "test", "data", "RExtension", "-123" };
 
 		SQLINTEGER strLenOrIndCol1[rowsNumber] = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
 		SQLINTEGER strLenOrIndCol3[rowsNumber] =
@@ -496,19 +492,19 @@ namespace ExtensionApiTest
 			&outputschemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		TestGetResultColumn(0, // columnNumber
+		GetResultColumn(0, // columnNumber
 			SQL_C_SLONG,       // dataType
 			sizeof(SQLINTEGER),// columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
+		GetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType
 			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(2, // columnNumber
+		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType
 			maxLen,            // columnSize
 			0,                 // decimalDigits
@@ -525,15 +521,13 @@ namespace ExtensionApiTest
 		string scriptString = ""
 			"OutputDataSet <- data.frame(intCol = as.integer(c()))\n"
 			"print(OutputDataSet)";
-		SQLCHAR *script = static_cast<SQLCHAR*>(
-			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		// Initialize with a Session that executes the above script
 		// that creates an empty row 1 column OutputDataSet.
 		//
-		InitializeSession(0,
-			script,
-			scriptString.length());
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = (*m_executeFuncPtr)(
@@ -547,19 +541,19 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
-		TestGetResultColumn(0,  // columnNumber
+		GetResultColumn(0,  // columnNumber
 			SQL_C_SLONG,        // dataType
 			sizeof(SQLINTEGER), // columnSize
 			0,                  // decimalDigits
 			SQL_NO_NULLS);       // nullable
 	}
 
-	// Name: TestGetResultColumn
+	// Name: GetResultColumn
 	//
 	// Description:
 	// Test GetResultColumn to verify the expected result column information is obtained.
 	//
-	void RExtensionApiTest::TestGetResultColumn(
+	void RExtensionApiTest::GetResultColumn(
 		SQLUSMALLINT columnNumber,
 		SQLSMALLINT  expectedDataType,
 		SQLULEN      expectedColumnSize,

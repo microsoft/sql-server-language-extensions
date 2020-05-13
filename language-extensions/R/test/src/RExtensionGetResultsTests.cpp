@@ -44,12 +44,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetIntegerResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_integerInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_integerInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
@@ -58,9 +58,9 @@ namespace ExtensionApiTest
 			(*m_integerInfo).m_dataSet.data(),
 			(*m_integerInfo).m_strLen_or_Ind.data(),
 			(*m_integerInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResults<SQLINTEGER, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
+		GetResults<SQLINTEGER, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
 			ColumnInfo<SQLINTEGER>::m_rowsNumber,
 			(*m_integerInfo).m_dataSet.data(),
 			(*m_integerInfo).m_strLen_or_Ind.data(),
@@ -74,12 +74,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetLogicalResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_logicalInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_logicalInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLCHAR, SQL_C_BIT>(m_logicalInfo.get());
 
@@ -88,9 +88,9 @@ namespace ExtensionApiTest
 			(*m_logicalInfo).m_dataSet.data(),
 			(*m_logicalInfo).m_strLen_or_Ind.data(),
 			(*m_logicalInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResults<SQLCHAR, Rcpp::LogicalVector, SQLCHAR, SQL_C_BIT>(
+		GetResults<SQLCHAR, Rcpp::LogicalVector, SQLCHAR, SQL_C_BIT>(
 			ColumnInfo<SQLCHAR>::m_rowsNumber,
 			(*m_logicalInfo).m_dataSet.data(),
 			(*m_logicalInfo).m_strLen_or_Ind.data(),
@@ -104,12 +104,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetRealResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_realInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_realInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLREAL, SQL_C_FLOAT>(m_realInfo.get());
 
@@ -118,9 +118,9 @@ namespace ExtensionApiTest
 			(*m_realInfo).m_dataSet.data(),
 			(*m_realInfo).m_strLen_or_Ind.data(),
 			(*m_realInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResults<SQLREAL, Rcpp::NumericVector, SQLDOUBLE, SQL_C_DOUBLE>(
+		GetResults<SQLREAL, Rcpp::NumericVector, SQLDOUBLE, SQL_C_DOUBLE>(
 			ColumnInfo<SQLREAL>::m_rowsNumber,
 			(*m_realInfo).m_dataSet.data(),
 			(*m_realInfo).m_strLen_or_Ind.data(),
@@ -134,12 +134,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetDoubleResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_doubleInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_doubleInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(m_doubleInfo.get());
 
@@ -148,9 +148,9 @@ namespace ExtensionApiTest
 			(*m_doubleInfo).m_dataSet.data(),
 			(*m_doubleInfo).m_strLen_or_Ind.data(),
 			(*m_doubleInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResults<SQLDOUBLE, Rcpp::NumericVector, SQLDOUBLE, SQL_C_DOUBLE>(
+		GetResults<SQLDOUBLE, Rcpp::NumericVector, SQLDOUBLE, SQL_C_DOUBLE>(
 			ColumnInfo<SQLDOUBLE>::m_rowsNumber,
 			(*m_doubleInfo).m_dataSet.data(),
 			(*m_doubleInfo).m_strLen_or_Ind.data(),
@@ -164,12 +164,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetBigIntResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_bigIntInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_bigIntInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(m_bigIntInfo.get());
 
@@ -178,9 +178,9 @@ namespace ExtensionApiTest
 			(*m_bigIntInfo).m_dataSet.data(),
 			(*m_bigIntInfo).m_strLen_or_Ind.data(),
 			(*m_bigIntInfo).m_columnNames,
-			false); // test
+			false); // validate
 
-		TestGetResults<SQLBIGINT, Rcpp::NumericVector, SQLDOUBLE, SQL_C_DOUBLE>(
+		GetResults<SQLBIGINT, Rcpp::NumericVector, SQLDOUBLE, SQL_C_DOUBLE>(
 			ColumnInfo<SQLBIGINT>::m_rowsNumber,
 			(*m_bigIntInfo).m_dataSet.data(),
 			(*m_bigIntInfo).m_strLen_or_Ind.data(),
@@ -194,12 +194,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetSmallIntResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_smallIntInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_smallIntInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(m_smallIntInfo.get());
 
@@ -208,9 +208,9 @@ namespace ExtensionApiTest
 			(*m_smallIntInfo).m_dataSet.data(),
 			(*m_smallIntInfo).m_strLen_or_Ind.data(),
 			(*m_smallIntInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResults<SQLSMALLINT, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
+		GetResults<SQLSMALLINT, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
 			ColumnInfo<SQLSMALLINT>::m_rowsNumber,
 			(*m_smallIntInfo).m_dataSet.data(),
 			(*m_smallIntInfo).m_strLen_or_Ind.data(),
@@ -224,12 +224,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetTinyIntResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession((*m_tinyIntInfo).GetColumnsNumber(),
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			(*m_tinyIntInfo).GetColumnsNumber(),
+			m_scriptString);
 
 		InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(m_tinyIntInfo.get());
 
@@ -238,9 +238,9 @@ namespace ExtensionApiTest
 			(*m_tinyIntInfo).m_dataSet.data(),
 			(*m_tinyIntInfo).m_strLen_or_Ind.data(),
 			(*m_tinyIntInfo).m_columnNames,
-			false);  // test
+			false);  // validate
 
-		TestGetResults<SQLCHAR, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
+		GetResults<SQLCHAR, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
 			ColumnInfo<SQLCHAR>::m_rowsNumber,
 			(*m_tinyIntInfo).m_dataSet.data(),
 			(*m_tinyIntInfo).m_strLen_or_Ind.data(),
@@ -256,12 +256,12 @@ namespace ExtensionApiTest
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession(inputSchemaColumnsNumber,
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			inputSchemaColumnsNumber,
+			m_scriptString);
 
 		string charColumn1Name = "CharColumn1";
 		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, sizeof(SQLCHAR));
@@ -273,7 +273,7 @@ namespace ExtensionApiTest
 		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, sizeof(SQLCHAR));
 
 		SQLULEN rowsNumber = 5;
-		vector<const char*> charCol1{ "Hello", "test", "data", "World", "-123" };
+		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
 		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
 
 		vector<SQLINTEGER> strLenOrIndCol1 =
@@ -309,9 +309,9 @@ namespace ExtensionApiTest
 			dataSet,
 			strLen_or_Ind.data(),
 			columnNames,
-			false); // test
+			false); // validate
 
-		TestGetCharResults(
+		GetCharResults(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
@@ -328,15 +328,13 @@ namespace ExtensionApiTest
 		string scriptString = "rawChars <- charToRaw(paste(letters[1:5], collapse=''));"
 			"OutputDataSet <- data.frame(rawChars);"
 			"print(OutputDataSet)";
-		SQLCHAR *script = static_cast<SQLCHAR*>(
-			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		// Initialize with a Session that executes the above script
 		// that creates an OutputDataSet with a single raw column.
 		//
-		InitializeSession(0,
-			script,
-			scriptString.length());
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
 		SQLRETURN result = (*m_executeFuncPtr)(
@@ -383,15 +381,13 @@ namespace ExtensionApiTest
 		scriptString = "rawChars <- raw(0);"
 			"OutputDataSet <- data.frame(rawChars);"
 			"print(OutputDataSet)";
-		script = static_cast<SQLCHAR*>(
-			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		// Initialize with a Session that executes the above script
 		// that creates an OutputDataSet with a null raw column.
 		//
-		InitializeSession(0,
-			script,
-			scriptString.length());
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
 
 		outputSchemaColumnsNumber = 0;
 		result = (*m_executeFuncPtr)(
@@ -425,12 +421,12 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetDifferentColumnResultsTest)
 	{
-		// Initialize with a default Session that prints Hello World
+		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
 		//
-		InitializeSession(3,
-			m_script,
-			m_scriptString.length());
+		InitializeSession(
+			3,               // inputSchemaColumnsNumber
+			m_scriptString);
 
 		const SQLINTEGER intSize = sizeof(SQLINTEGER);
 		const SQLINTEGER doubleSize = sizeof(SQLDOUBLE);
@@ -445,9 +441,9 @@ namespace ExtensionApiTest
 		InitializeColumn(2, charColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
 
 		SQLULEN expectedRowsNumber = 5;
-		vector<SQLINTEGER> intColData{ 2'147'483'647, -2'147'483'647, 0, -2'147'483'648, -1 };
-		vector<SQLDOUBLE> doubleColData{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 };
-		vector<const char*> charCol{ "Hello", "test", "data", "World", "-123" };
+		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 };
+		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
+		vector<const char*> charCol{ "Hello", "test", "data", "RExtension", "-123" };
 
 		vector<SQLINTEGER> strLenOrIndCol1 = { intSize, intSize, SQL_NULL_DATA,
 			SQL_NULL_DATA, intSize };
@@ -551,15 +547,13 @@ namespace ExtensionApiTest
 		string scriptString = ""
 			"OutputDataSet <- data.frame(intCol = as.integer(c()))\n"
 			"print(OutputDataSet)";
-		SQLCHAR *script = static_cast<SQLCHAR*>(
-			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		// Initialize with a Session that executes the above script
 		// that creates an empty row 1 column OutputDataSet.
 		//
-		InitializeSession(0,
-			script,
-			scriptString.length());
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = (*m_executeFuncPtr)(
@@ -573,21 +567,21 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
-		TestGetResults<SQLINTEGER, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
+		GetResults<SQLINTEGER, Rcpp::IntegerVector, SQLINTEGER, SQL_C_SLONG>(
 			0, // expected rowsNumber
 			vector<void*>{nullptr}.data(),
 			vector<SQLINTEGER*>{nullptr}.data(),
 			vector<string>{"intCol"});
 	}
 
-	// Name: TestGetResults
+	// Name: GetResults
 	//
 	// Description:
 	// Test GetResults to verify the expected results are obtained.
 	// For numeric, logical and integer types.
 	//
 	template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT outputDataType>
-	void RExtensionApiTest::TestGetResults(
+	void RExtensionApiTest::GetResults(
 		SQLULEN        expectedRowsNumber,
 		SQLPOINTER     *expectedData,
 		SQLINTEGER     **expectedStrLen_or_Ind,
@@ -659,7 +653,24 @@ namespace ExtensionApiTest
 			EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
 			if (columnStrLenOrInd[index] == SQL_NULL_DATA)
 			{
-				EXPECT_EQ(columnData[index], 0);
+				if (is_same<OutputSQLType, SQLDOUBLE>::value)
+				{
+					EXPECT_TRUE(isnan(static_cast<SQLDOUBLE>(columnData[index])));
+				}
+				else
+				{
+					if (is_same<InputSQLType, OutputSQLType>::value)
+					{
+						EXPECT_EQ(columnData[index], expectedColumnData[index]);
+					}
+					else
+					{
+						// All the cases where InputSQLType is not same as OutputSQLType
+						// and it is not a NAN are for SQLINTEGER so check for NA_INTEGER here.
+						//
+						EXPECT_EQ(columnData[index], NA_INTEGER);
+					}
+				}
 			}
 			else
 			{
@@ -675,12 +686,12 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: TestGetCharResults
+	// Name: GetCharResults
 	//
 	// Description:
 	// Test GetResults to verify the expected results are obtained for character data.
 	//
-	void RExtensionApiTest::TestGetCharResults(
+	void RExtensionApiTest::GetCharResults(
 		SQLULEN        expectedRowsNumber,
 		SQLPOINTER     *expectedData,
 		SQLINTEGER     **expectedStrLen_or_Ind,

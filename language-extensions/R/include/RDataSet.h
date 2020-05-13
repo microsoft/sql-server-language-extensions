@@ -44,6 +44,10 @@ public:
 		SQLUSMALLINT  dataNameLength,
 		SQLUSMALLINT  schemaColumnsNumber);
 
+	// Cleanup the DataFrame from R environment.
+	//
+	virtual void Cleanup();
+
 	// Returns the number of columns in the RDataSet from the vector of RColumns
 	// at the time this is called.
 	// Note: Once Init() resizes the vector to schemaColumnsNumber, its size
@@ -75,7 +79,7 @@ public:
 
 	// Getter for m_columns.
 	//
-	std::vector<std::unique_ptr<RColumn>>& Columns()
+	const std::vector<std::unique_ptr<RColumn>>& Columns() const
 	{
 		return m_columns;
 	}
@@ -147,13 +151,6 @@ public:
 	//
 	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 	void AddColumnToDataFrame(
-		SQLSMALLINT columnNumber,
-		SQLULEN     rowsNumber,
-		SQLPOINTER  data);
-
-	// Adds a single column of logical values into the R DataFrame.
-	//
-	void AddLogicalColumnToDataFrame(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data);
@@ -255,7 +252,7 @@ public:
 
 	// Getter for number of rows
 	//
-	SQLULEN RowsNumber()
+	SQLULEN RowsNumber() const
 	{
 		return m_numberOfRows;
 	}

@@ -65,6 +65,7 @@ namespace ExtensionApiTest
 	FN_execute *RExtensionApiTest::m_executeFuncPtr = nullptr;
 	FN_getResultColumn *RExtensionApiTest::m_getResultColumnFuncPtr = nullptr;
 	FN_getResults *RExtensionApiTest::m_getResultsFuncPtr = nullptr;
+	FN_getOutputParam *RExtensionApiTest::m_getOutputParamFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
 
@@ -179,6 +180,12 @@ namespace ExtensionApiTest
 				"GetResults"));
 		ASSERT_TRUE(m_getResultsFuncPtr != nullptr);
 
+		m_getOutputParamFuncPtr = reinterpret_cast<FN_getOutputParam*>(
+			Utilities::CrossPlatGetFunctionFromLibHandle(
+				m_libHandle,
+				"GetOutputParam"));
+		ASSERT_TRUE(m_getOutputParamFuncPtr != nullptr);
+
 		m_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
 				m_libHandle,
@@ -229,12 +236,7 @@ namespace ExtensionApiTest
 		m_taskId = 0;
 		m_numTasks = 1;
 		m_inputSchemaColumnsNumber = 1;
-		m_parametersNumber = 1;
-
-		m_paramNameString = "@param1";
-		m_paramName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(m_paramNameString.c_str()))
-			);
+		m_parametersNumber = 0;
 
 		m_columnNameString = "Column1";
 		m_columnName = static_cast<SQLCHAR *>(
@@ -259,80 +261,77 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str()))
 			);
 
-		const SQLINTEGER intSize = sizeof(SQLINTEGER);
 		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
 			"IntegerColumn1",
 			vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, intSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, m_IntSize),
 			"IntegerColumn2",
-			vector<SQLINTEGER>{ 2'147'483'647, -2'147'483'647, 0, -2'147'483'648, -1 },
-			vector<SQLINTEGER>{ intSize, intSize, SQL_NULL_DATA,
-				SQL_NULL_DATA, intSize });
+			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 },
+			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA,
+				SQL_NULL_DATA, m_IntSize });
 
-		const SQLINTEGER logicalSize = sizeof(SQLCHAR);
 		m_logicalInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"LogicalColumn1",
 			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, logicalSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_LogicalSize),
 			"LogicalColumn2",
-			vector<SQLCHAR>{ '0', '2', '1', '0', '1' },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, logicalSize, logicalSize,
-				logicalSize, SQL_NULL_DATA });
-
-		const SQLINTEGER doubleSize = sizeof(SQLDOUBLE);
+			vector<SQLCHAR>{ '\0', '2', '1', '0',
+				'\0' }, // static_cast from NA_LOGICAL to SQLCHAR is '\0'.
+			vector<SQLINTEGER>{ SQL_NULL_DATA, m_LogicalSize, m_LogicalSize,
+				m_LogicalSize, SQL_NULL_DATA });
 
 		// the input column information set here is the same used to test the expected output
 		// column results; real/bigInt input columns are returned back as double
-		// output columns and so the strLenInd values are set to doubleSize.
+		// output columns and so the strLenInd values are set to m_DoubleSize.
 		//
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
 			vector<SQLREAL>{ 0.34, 1.33, 83.98, 72.45, 68e10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, doubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, m_DoubleSize),
 			"RealColumn2",
-			vector<SQLREAL>{ 3.4e38F, 0, -3.4e38F, -1, 0 },
-			vector<SQLINTEGER>{ doubleSize, SQL_NULL_DATA, doubleSize,
-				SQL_NULL_DATA, doubleSize });
+			vector<SQLREAL>{ m_MaxReal, NAN, m_MinReal, NAN, 0 },
+			vector<SQLINTEGER>{ m_DoubleSize, SQL_NULL_DATA, m_DoubleSize,
+				SQL_NULL_DATA, m_DoubleSize });
 
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
 			vector<SQLDOUBLE>{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 },
-			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, doubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, m_DoubleSize),
 			"DoubleColumn2",
-			vector<SQLDOUBLE>{ 0, 1.79e308, 0, -1.79e308, -1 },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, doubleSize, SQL_NULL_DATA,
-				doubleSize, SQL_NULL_DATA });
+			vector<SQLDOUBLE>{ NAN, m_MaxDouble, NAN, m_MinDouble, NAN },
+			vector<SQLINTEGER>{ SQL_NULL_DATA, m_DoubleSize, SQL_NULL_DATA,
+				m_DoubleSize, SQL_NULL_DATA });
 
 		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
 			"BigIntColumn1",
-			vector<SQLBIGINT>{ 9'223'372'036'854'775'807LL, 1,
-				88883939, -9'223'372'036'854'775'807LL, -622280108 },
-			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, doubleSize),
+			vector<SQLBIGINT>{ m_MaxBigInt, 1,
+				88883939, m_MinBigInt, -622280108 },
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, m_DoubleSize),
 			"BigIntColumn2",
-			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, 0),
+			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, NA_REAL),
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
 				SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
 		// the input column information set here is the same used to test the
 		// expected output column results; smallint/tinyint input columns are returned back as
-		// integer output columns and so the strLenInd values here are set to intSize.
+		// integer output columns and so the strLenInd values here are set to m_IntSize.
 		//
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
 			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, intSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, m_IntSize),
 			"SmallIntColumn2",
-			vector<SQLSMALLINT>{ -1, 0, 32'767, -32'768, 3'276 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, intSize));
+			vector<SQLSMALLINT>{ -1, 0, m_MaxSmallInt, m_MinSmallInt, 3'276 },
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, m_IntSize));
 
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
 			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, intSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_IntSize),
 			"TinyIntColumn2",
-			vector<SQLCHAR>{ 255, 0, 1, 0, 128 },
-			vector<SQLINTEGER>{ intSize, SQL_NULL_DATA,
-				SQL_NULL_DATA, SQL_NULL_DATA, intSize });
+			vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 1, 0, 128 },
+			vector<SQLINTEGER>{ m_IntSize, SQL_NULL_DATA,
+				SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize });
 
 		// Retrieve the global environment
 		//
@@ -384,19 +383,22 @@ namespace ExtensionApiTest
 	//
 	void RExtensionApiTest::InitializeSession(
 		SQLUSMALLINT inputSchemaColumnsNumber,
-		SQLCHAR      *script,
-		SQLULEN      scriptStringLength)
+		string       scriptString,
+		SQLUSMALLINT parametersNumber)
 	{
 		SQLRETURN result = SQL_SUCCESS;
+
+		SQLCHAR *script = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		result = (*m_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
 			script,
-			scriptStringLength,
+			scriptString.length(),
 			inputSchemaColumnsNumber,
-			m_parametersNumber,
+			parametersNumber,
 			m_inputDataName,
 			m_inputDataNameString.length(),
 			m_outputDataName,

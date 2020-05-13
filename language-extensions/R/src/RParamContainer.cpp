@@ -61,7 +61,8 @@ const RParamContainer::CreateParamFnMap RParamContainer::m_fnCreateParamMap =
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam
 		<RParamTemplate<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
-		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RLogicalParam>)},
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam
+		<RParamTemplate<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
@@ -158,8 +159,44 @@ void RParamContainer::CreateParam(
 			inputOutputType);
 	(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
 		static_cast<RParamType*>(
-			paramToBeAdded.get())->GetRcppVector();
+			paramToBeAdded.get())->RcppVector();
 
 	Logger::LogRVariable(paramToBeAdded.get()->Name());
 	m_params[paramNumber] = std::move(paramToBeAdded);
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: RParamContainer::GetParamValueAndStrLenInd
+//
+// Description:
+//  For the given paramNumber, call RetriveValueAndStrLenOrInd() to retrieve the value from R and
+//  return it via paramValue. Return the strLenOrInd as well.
+//  Note the value returned is allocated on the heap and will be cleaned up when param is destructed.
+//
+void RParamContainer::GetParamValueAndStrLenInd(
+	SQLUSMALLINT paramNumber,
+	SQLPOINTER   *paramValue,
+	SQLINTEGER   *strLen_or_Ind)
+{
+	LOG("RParamContainer::GetParamValueAndStrLenInd");
+
+	if (m_params[paramNumber] == nullptr)
+	{
+		throw runtime_error("InitParam not called for paramNumber " + to_string(paramNumber));
+	}
+
+	RParam *param = m_params[paramNumber].get();
+
+	if (param->InputOutputType() < SQL_PARAM_INPUT_OUTPUT)
+	{
+		throw runtime_error("Requested param #" + to_string(paramNumber) +
+			" is not initialized as an output parameter");
+	}
+
+	// Retrieve the value from R
+	//
+	param->RetrieveValueAndStrLenInd();
+
+	*paramValue = param->Value();
+	*strLen_or_Ind = param->StrLenOrInd();
 }

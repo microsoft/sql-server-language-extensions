@@ -26,6 +26,7 @@
 //*************************************************************************************************
 
 #include "Common.h"
+#include <limits>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -62,7 +63,8 @@ const RInputDataSet::AddColumnFnMap RInputDataSet::m_fnAddColumnMap =
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),                            // BIT
-		static_cast<fnAddColumn>(&RInputDataSet::AddLogicalColumnToDataFrame)},
+		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
+		<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),                           // CHAR(n), VARCHAR(n), VARCHAR(max)
 		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame)},
 };
@@ -145,6 +147,28 @@ void RDataSet::Init(
 	//
 	m_columns.resize(schemaColumnsNumber);
 	m_columnNullMap.resize(schemaColumnsNumber);
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: RDataSet::Cleanup
+//
+// Description:
+//  Cleanup the DataFrame from the global R environment.
+//
+void RDataSet::Cleanup()
+{
+	LOG("RDataSet::Cleanup");
+
+	Rcpp::Environment globalEnv = Rcpp::Environment::global_env();
+
+	if (m_name.length() > 0 && globalEnv.exists(m_name.c_str()))
+	{
+		string cleanupScript = "rm(" + m_name + ");";
+
+		// Execute the cleanup script to remove the DataFrame from the global R environment.
+		//
+		(*g_embeddedRPtr).parseEvalQ(cleanupScript.c_str());
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -285,34 +309,6 @@ void RInputDataSet::AddColumnToDataFrame(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Name: RInputDataSet::AddLogicalColumnToDataFrame
-//
-// Description:
-//  Adds a single column of logical values into the R DataFrame.
-//
-void RInputDataSet::AddLogicalColumnToDataFrame(
-	SQLSMALLINT columnNumber,
-	SQLULEN     rowsNumber,
-	SQLPOINTER  data)
-{
-	LOG("RInputDataSet::AddLogicalColumnToDataFrame");
-
-	if (m_columns[columnNumber] == nullptr)
-	{
-		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
-	}
-
-	string name = m_columns[columnNumber].get()->Name();
-	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
-
-	m_dataFrame[name.c_str()] = RTypeUtils::CreateLogicalVector(
-		rowsNumber,
-		data,
-		strLen_or_Ind);
-}
-
-
-//--------------------------------------------------------------------------------------------------
 // Name: RInputDataSet::AddCharacterColumnToDataFrame
 //
 // Description:
@@ -440,7 +436,7 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 //  adds data to m_data and nullmap to m_columnNullMap.
 //  Templated for integer, numeric and logical R class types.
 //
-template<class RType, class SQLType, SQLSMALLINT dataType>
+template<class RType, class SQLType, SQLSMALLINT DataType>
 void ROutputDataSet::GetColumnFromDataFrame(
 	SQLUSMALLINT columnNumber,
 	SQLULEN      &columnSize,
@@ -449,46 +445,33 @@ void ROutputDataSet::GetColumnFromDataFrame(
 {
 	LOG("ROutputDataSet::GetColumnFromDataFrame");
 
-	SQLType *columnData = nullptr;
-	SQLINTEGER *nullMap = nullptr;
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+	columnSize = sizeof(SQLType);
+
+	vector<SQLType> *columnData = nullptr;
+	SQLINTEGER *strLenOrInd = nullptr;
 
 	if(m_numberOfRows > 0)
 	{
-		columnData = new SQLType[m_numberOfRows];
-		nullMap = new SQLINTEGER[m_numberOfRows];
+		columnData = new vector<SQLType>();
+		strLenOrInd = new SQLINTEGER[m_numberOfRows];
+
+		RType column = m_dataFrame[columnNumber];
+		RTypeUtils::FillDataFromRVector<SQLType, RType, DataType>(
+			m_numberOfRows,
+			column,
+			columnData,
+			strLenOrInd,
+			nullable);
+		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
 	}
-
-	decimalDigits = 0;
-	nullable = SQL_NO_NULLS;
-
-	RType column = m_dataFrame[columnNumber];
-	columnSize = sizeof(SQLType);
-
-	for(SQLULEN index = 0 ; index < m_numberOfRows; index++)
+	else
 	{
-		if (!RType::is_na(column[index]))
-		{
-			if (dataType != SQL_C_BIT)
-			{
-				columnData[index] = static_cast<SQLType>(column[index]);
-			}
-			else
-			{
-				columnData[index] = column[index] ? '1' : '0';
-			}
-
-			nullMap[index] = sizeof(SQLType);
-		}
-		else
-		{
-			nullMap[index] = SQL_NULL_DATA;
-			nullable = SQL_NULLABLE;
-			columnData[index] = 0;
-		}
+		m_data.push_back(nullptr);
 	}
 
-	m_data.push_back(static_cast<SQLPOINTER>(columnData));
-	m_columnNullMap.push_back(nullMap);
+	m_columnNullMap.push_back(strLenOrInd);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -506,46 +489,28 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 {
 	LOG("ROutputDataSet::GetCharacterColumnFromDataFrame");
 
-	vector<SQLCHAR> *columnData = nullptr;
-	SQLINTEGER *strLenOrNullMap = nullptr;
-	if(m_numberOfRows > 0)
-	{
-		columnData = new vector<SQLCHAR>();
-		strLenOrNullMap = new SQLINTEGER[m_numberOfRows];
-	}
-
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
 
-	Rcpp::CharacterVector column = m_dataFrame[columnNumber];
-
-	// Insert the character column into the columnData vector contiguously.
-	//
+	vector<SQLCHAR> *columnData = nullptr;
+	SQLINTEGER *strLenOrInd = nullptr;
 	SQLULEN maxLen = 0;
-	for(SQLULEN index = 0 ; index < m_numberOfRows; index++)
+
+	if(m_numberOfRows > 0)
 	{
-		if (!Rcpp::CharacterVector::is_na(column[index]))
-		{
-			strLenOrNullMap[index] = strlen(column[index]);
+		columnData = new vector<SQLCHAR>();
+		strLenOrInd = new SQLINTEGER[m_numberOfRows];
 
-			if (maxLen < static_cast<SQLULEN>(strLenOrNullMap[index]))
-			{
-				maxLen = strLenOrNullMap[index];
-			}
+		Rcpp::CharacterVector column = m_dataFrame[columnNumber];
+		RTypeUtils::FillDataFromCharacterVector(
+			m_numberOfRows,
+			column,
+			numeric_limits<SQLULEN>::max(),
+			columnData,
+			strLenOrInd,
+			nullable,
+			maxLen);
 
-			string stringToCopy(column[index]);
-			columnData->insert(columnData->end(), stringToCopy.begin(), stringToCopy.end());
-		}
-		else
-		{
-			nullable = SQL_NULLABLE;
-			strLenOrNullMap[index] = SQL_NULL_DATA;
-		}
-	}
-
-	columnSize = maxLen;
-	if (m_numberOfRows > 0)
-	{
 		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
 	}
 	else
@@ -553,7 +518,8 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 		m_data.push_back(nullptr);
 	}
 
-	m_columnNullMap.push_back(strLenOrNullMap);
+	columnSize = maxLen;
+	m_columnNullMap.push_back(strLenOrInd);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -571,44 +537,39 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 {
 	LOG("ROutputDataSet::GetRawColumnFromDataFrame");
 
-	SQLCHAR *columnData = nullptr;
-
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
+
+	vector<SQLCHAR> *columnData = nullptr;
+	SQLINTEGER *strLenOrInd = nullptr;
 
 	Rcpp::RawVector column = m_dataFrame[columnNumber];
 	columnSize = column.size();
 
-	if (columnSize > 0)
+	if (m_numberOfRows > 0)
 	{
-		// All the bytes returned in the column are returned in a single row.
+		// If there are rows in the DataFrame, they are all grouped together in
+		// a single row for raw column i.e. m_numberOfRows = 1.
+		// And if m_numberOfRows > 0, it means columnSize > 0
 		//
-		columnData = new SQLCHAR[columnSize];
-		for(SQLULEN index = 0 ; index < columnSize; index++)
-		{
-			columnData[index] = column[index];
-		}
+		columnData = new vector<SQLCHAR>();
+		strLenOrInd = new SQLINTEGER[m_numberOfRows];
 
+		RTypeUtils::FillDataFromRawVector(
+			column,
+			numeric_limits<SQLULEN>::max(),
+			columnData,
+			strLenOrInd);
+
+		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
 	}
 	else
 	{
+		m_data.push_back(nullptr);
 		nullable = SQL_NULLABLE;
 	}
 
-	SQLINTEGER *strLenOrNullMap = nullptr;
-
-	if (m_numberOfRows > 0)
-	{
-		strLenOrNullMap = new SQLINTEGER[columnSize];
-
-		// If there are rows in the DataFrame, they are all clubbed together in
-		// a single row for raw column.
-		//
-		strLenOrNullMap[0] = columnSize;
-	}
-
-	m_data.push_back(static_cast<SQLPOINTER>(columnData));
-	m_columnNullMap.push_back(strLenOrNullMap);
+	m_columnNullMap.push_back(strLenOrInd);
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -50,8 +50,10 @@ void* Utilities::CrossPlatLoadLibrary(const char *libPath)
 	if (libHandle == nullptr)
 	{
 		char *error = dlerror();
-		throw runtime_error("CrossPlatLoadLibrary failed loading '" + string(libPath) +
+		string errorString("CrossPlatLoadLibrary failed loading '" + string(libPath) +
 			"' with error: " + string(error));
+		cout << errorString << endl;
+		throw runtime_error(errorString);
 	}
 
 	return libHandle;
@@ -79,8 +81,10 @@ void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::s
 		{
 			char *error = dlerror();
 			CrossPlatCloseLibrary(libHandle);
-			throw runtime_error("CrossPlatGetFunctionFromLibHandle failed finding function '"
+			string errorString("CrossPlatGetFunctionFromLibHandle failed finding function '"
 				+ fnName + "' with error:" + string(error));
+			cout << errorString << endl;
+			throw runtime_error(errorString);
 		}
 	}
 	else
@@ -108,7 +112,9 @@ void Utilities::CrossPlatCloseLibrary(void *libHandle)
 		if( returnVal != 0 )
 		{
 			char *error = dlerror();
-			throw runtime_error("CrossPlatCloseLibrary failed with error: " + string(error));
+			string errorString("CrossPlatCloseLibrary failed with error: " + string(error));
+			cout << errorString << endl;
+			throw runtime_error(errorString);
 		}
 	}
 }

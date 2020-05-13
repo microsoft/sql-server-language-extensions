@@ -32,20 +32,13 @@ class RTypeUtils
 public:
 
 	// Templatized function to create a vector of an equivalent R type for the given SQL type
-	// with the given data. This is only for numeric or integer R types.
+	// with the given data. This is only for numeric, integer or logical R types.
 	//
 	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 	static RType CreateVector(
 		SQLULEN      rowsNumber,
 		SQLPOINTER   data,
 		SQLINTEGER   *strLen_or_Ind);
-
-	// Create a logical vector in R corresponding to the given data.
-	//
-	static Rcpp::LogicalVector CreateLogicalVector(
-		SQLULEN    rowsNumber,
-		SQLPOINTER data,
-		SQLINTEGER *strLen_or_Ind);
 
 	// Create a character vector in R with the given data.
 	//
@@ -60,6 +53,35 @@ public:
 		SQLULEN    rowsNumber,
 		SQLPOINTER data,
 		SQLINTEGER *strLen_or_Ind);
+
+	// Given the vectorInR, copy its content into the given std::vector pointed to by data.
+	//
+	template<class SQLType, class RType, SQLSMALLINT DataType>
+	static void FillDataFromRVector(
+		SQLULEN              rowsNumber,
+		RType                vectorInR,
+		std::vector<SQLType> *data,
+		SQLINTEGER           *strLen_or_Ind,
+		SQLSMALLINT          &nullable);
+
+	// Given the vectorInR, copy its content into the given std::vector pointed to by charVector.
+	//
+	static void FillDataFromCharacterVector(
+		SQLULEN               rowsNumber,
+		Rcpp::CharacterVector vectorInR,
+		SQLULEN               allowedLen,
+		std::vector<SQLCHAR>  *data,
+		SQLINTEGER            *strLenOrInd,
+		SQLSMALLINT           &nullable,
+		SQLULEN               &maxLen);
+
+	// Given the raw vectorInR, copy its content into the given std::vector pointed to by rawCharVector.
+	//
+	static void FillDataFromRawVector(
+		Rcpp::RawVector      vectorInR,
+		SQLULEN              allowedLen,
+		std::vector<SQLCHAR> *data,
+		SQLINTEGER           *strLenOrInd);
 
 	// Map to store the ODBC C type to NA value mapping
 	//

@@ -237,13 +237,21 @@ void RSession::GetResultColumn(
 			+ "provided to GetResultColumn().");
 	}
 
-	vector<unique_ptr<RColumn>>& resultColumns = m_outputDataSet.Columns();
+	const vector<unique_ptr<RColumn>>& resultColumns = m_outputDataSet.Columns();
 	RColumn *resultColumn = resultColumns[columnNumber].get();
 
-	*dataType = resultColumn->DataType();
-	*columnSize = resultColumn->Size();
-	*decimalDigits = resultColumn->DecimalDigits();
-	*nullable = resultColumn->Nullable();
+	if (resultColumn != nullptr)
+	{
+		*dataType = resultColumn->DataType();
+		*columnSize = resultColumn->Size();
+		*decimalDigits = resultColumn->DecimalDigits();
+		*nullable = resultColumn->Nullable();
+	}
+	else
+	{
+		throw runtime_error("ResultColumn #" + to_string(columnNumber) +
+			" is not initialized for the output dataset.");
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -283,7 +291,22 @@ void RSession::GetOutputParam(
 	SQLPOINTER   *paramValue,
 	SQLINTEGER   *strLen_or_Ind)
 {
+	LOG("Initializing output parameter #" + to_string(paramNumber));
 
+	if (paramValue == nullptr || strLen_or_Ind == nullptr)
+	{
+		throw invalid_argument("Null arguments supplied to GetOutputParam().");
+	}
+
+	if (paramNumber < m_paramContainer.GetSize())
+	{
+		m_paramContainer.GetParamValueAndStrLenInd(paramNumber, paramValue, strLen_or_Ind);
+	}
+	else
+	{
+		throw invalid_argument("Invalid output parameter id supplied to GetOutputParam(): " +
+			to_string(paramNumber));
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -296,5 +319,7 @@ void RSession::Cleanup()
 {
 	LOG("RSession::Cleanup");
 
+	m_inputDataSet.Cleanup();
 	m_outputDataSet.CleanupColumns();
+	m_outputDataSet.Cleanup();
 }

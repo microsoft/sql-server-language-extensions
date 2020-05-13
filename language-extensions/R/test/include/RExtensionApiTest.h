@@ -71,7 +71,7 @@ typedef SQLRETURN FN_initParam(
 	SQLSMALLINT,  // dataType
 	SQLULEN,      // argSize
 	SQLSMALLINT,  // decimalDigits
-	SQLPOINTER,   // argValue
+	SQLPOINTER,   // paramValue
 	SQLINTEGER,   // strLen_or_Ind
 	SQLSMALLINT); // inputOutputType
 
@@ -98,6 +98,13 @@ typedef SQLRETURN FN_getResults(
 	SQLULEN *,       // rowsNumber
 	SQLPOINTER **,   // data
 	SQLINTEGER ***); // strLen_or_Ind
+
+typedef SQLRETURN FN_getOutputParam(
+	SQLGUID,       // sessionId
+	SQLUSMALLINT,  // taskId
+	SQLUSMALLINT,  // paramNumber
+	SQLPOINTER *,  // paramValue
+	SQLINTEGER *); // strLen_or_Ind
 
 typedef SQLRETURN FN_cleanupSession(
 	SQLGUID,       // sessionId
@@ -148,7 +155,7 @@ namespace ExtensionApiTest
 		//
 		static void GetHandles();
 
-		// Do Init where embedded R is initialized - can be called only once in the test suite.
+		// Do Init where embedded R is initialized - can be called only once in the validate suite.
 		// Testing if Init is implemented correctly.
 		//
 		static void DoInit();
@@ -174,8 +181,8 @@ namespace ExtensionApiTest
 		//
 		void InitializeSession(
 			SQLUSMALLINT inputSchemaColumnsNumber = 0,
-			SQLCHAR      *script = static_cast<SQLCHAR*>(static_cast<void *>(const_cast<char*>(""))),
-			SQLULEN      scriptStringLength = 0);
+			std::string  scriptString = "",
+			SQLUSMALLINT parametersNumber = 0);
 
 		// Initialize a column.
 		//
@@ -197,25 +204,30 @@ namespace ExtensionApiTest
 		// Templatized function to call InitParam for the given paramValue and dataType.
 		// Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
 		//
-		template<class SQLType, class RType, SQLSMALLINT dataType>
-		void TestParameter(
-			SQLType paramValue,
-			bool inRange = true);
+		template<class SQLType, class RType, SQLSMALLINT DataType>
+		void InitParam(
+			std::vector<std::shared_ptr<SQLType>> expectedParamValues,
+			std::vector<SQLINTEGER>               strLenOrInd,
+			std::vector<SQLSMALLINT>              inputOutputTypes,
+			bool                                  validate = true);
 
 		// Testing if InitParam is implemented correctly for the char/varchar dataType.
 		//
-		void TestCharParameter(
-			const char  *paramValue,
-			SQLULEN     paramSize,
-			bool        isFixedType);
+		void InitCharParam(
+			std::vector<const char*> expectedParamValues,
+			std::vector<SQLULEN>     paramSizes,
+			std::vector<bool>        isFixedType,
+			std::vector<SQLSMALLINT> inputOutputTypes,
+			bool                     validate = true);
 
 		// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 		//
-		void TestBinaryParameter(
-			const SQLCHAR *paramValue,
-			SQLINTEGER    strLenOrInd,
-			SQLULEN       paramSize,
-			bool          isFixedType);
+		void InitRawParam(
+			std::vector<SQLCHAR*>    expectedParamValues,
+			std::vector<SQLINTEGER>  strLenOrInd,
+			std::vector<SQLULEN>     paramSizes,
+			std::vector<SQLSMALLINT> inputOutputTypes,
+			bool                     validate = true);
 
 		// Fill a contiguous array columnData with members from the given columnVector
 		//
@@ -270,7 +282,7 @@ namespace ExtensionApiTest
 			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
 			std::vector<std::string> columnNames,
-			bool                     test = true);
+			bool                     validate = true);
 
 		// Test Execute with default script for Character columns.
 		//
@@ -279,11 +291,11 @@ namespace ExtensionApiTest
 			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
 			std::vector<std::string> columnNames,
-			bool                     test = true);
+			bool                     validate = true);
 
 		// Test GetResultColumn to verify the expected result column information.
 		//
-		void TestGetResultColumn(
+		void GetResultColumn(
 			SQLUSMALLINT columnNumber,
 			SQLSMALLINT  expectedDataType,
 			SQLULEN      expectedColumnSize,
@@ -293,15 +305,15 @@ namespace ExtensionApiTest
 		// Test GetResults to verify the expected results are obtained.
 		//
 		template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT outputDataType>
-		void TestGetResults(
-			SQLULEN        expectedRowsNumber,
-			SQLPOINTER     *expectedData,
-			SQLINTEGER     **expectedStrLen_or_Ind,
+		void GetResults(
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
 			std::vector<std::string> columnNames);
 
 		// Test GetResults to verify the expected results are obtained for character data.
 		//
-		void TestGetCharResults(
+		void GetCharResults(
 			SQLULEN                  expectedRowsNumber,
 			SQLPOINTER               *expectedData,
 			SQLINTEGER               **expectedStrLen_or_Ind,
@@ -327,6 +339,25 @@ namespace ExtensionApiTest
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 
+		// Templatized function to test output param value and strLenOrInd is as expected.
+		//
+		template<class SQLType>
+		void GetOutputParam(
+			std::vector<std::shared_ptr<SQLType>> expectedParamValues,
+			std::vector<SQLINTEGER>               expectedStrLenOrInd);
+
+		// Test character output param value and strLenOrInd is as expected.
+		//
+		void GetCharOutputParam(
+			std::vector<SQLCHAR*>   expectedParamValues,
+			std::vector<SQLINTEGER> expectedStrLenOrInd);
+
+		// Test raw(binary) output param value and strLenOrInd is as expected.
+		//
+		void GetRawOutputParam(
+			std::vector<SQLCHAR*>   expectedParamValues,
+			std::vector<SQLINTEGER> expectedStrLenOrInd);
+
 		// Objects declared here can be used by all tests in the test suite.
 		//
 		SQLGUID *m_sessionId;
@@ -334,8 +365,6 @@ namespace ExtensionApiTest
 		SQLUSMALLINT m_numTasks;
 
 		SQLUSMALLINT m_parametersNumber;
-		SQLCHAR *m_paramName = nullptr;
-		std::string m_paramNameString;
 
 		SQLCHAR *m_columnName = nullptr;
 		std::string m_columnNameString;
@@ -350,7 +379,60 @@ namespace ExtensionApiTest
 		SQLCHAR *m_outputDataName = nullptr;
 		std::string m_outputDataNameString;
 
-		const std::string m_printMessage = "Hello RExtension World!";
+		const std::string m_printMessage = "Hello RExtension!";
+
+		// A value of 2'147'483'647
+		//
+		const SQLINTEGER m_MaxInt = std::numeric_limits<SQLINTEGER>::max();
+
+		// A value of -2'147'483'647
+		// In R, std::numeric_limits<SQLINTEGER>::min() i.e. -2'147'483'648 represents NA
+		// So, m_MinInt is 1 greater than the actual min.
+		//
+		const SQLINTEGER m_MinInt = std::numeric_limits<SQLINTEGER>::min() + 1;
+
+		// A value of 9'223'372'036'854'775'807LL
+		//
+		const SQLBIGINT m_MaxBigInt = std::numeric_limits<SQLBIGINT>::max();
+
+		// A value of -9'223'372'036'854'775'808LL gives compiler error;
+		// Use numeric_limits to represent this value.
+		// In R, -9'223'372'036'854'775'808LL = -9.223372e+18
+		//
+		const SQLBIGINT m_MinBigInt = std::numeric_limits<SQLBIGINT>::min();
+
+		// A value of 32'767
+		//
+		const SQLSMALLINT m_MaxSmallInt = std::numeric_limits<SQLSMALLINT>::max();
+
+		// A value of -32'768
+		//
+		const SQLSMALLINT m_MinSmallInt = std::numeric_limits<SQLSMALLINT>::min();
+
+		// A value of 255
+		//
+		const SQLCHAR m_MaxTinyInt = std::numeric_limits<SQLCHAR>::max();
+
+		// A value of 0
+		//
+		const SQLCHAR m_MinTinyInt = std::numeric_limits<SQLCHAR>::min();
+
+		// For floating types, not using numeric_limits because they can't be
+		// used for equality comparisons.
+		//
+		const SQLREAL m_MaxReal = 3.4e38F;
+		const SQLREAL m_MinReal = -3.4e38F;
+		const SQLDOUBLE m_MaxDouble = 1.79e308;
+		const SQLDOUBLE m_MinDouble = -1.79e308;
+
+		const SQLINTEGER m_IntSize = sizeof(SQLINTEGER);
+		const SQLINTEGER m_LogicalSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_RealSize = sizeof(SQLREAL);
+		const SQLINTEGER m_DoubleSize = sizeof(SQLDOUBLE);
+		const SQLINTEGER m_BigIntSize = sizeof(SQLBIGINT);
+		const SQLINTEGER m_SmallIntSize = sizeof(SQLSMALLINT);
+		const SQLINTEGER m_TinyIntSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_logicalInfo = nullptr;
@@ -396,6 +478,10 @@ namespace ExtensionApiTest
 		// Pointer to the GetResults function
 		//
 		static FN_getResults *m_getResultsFuncPtr;
+
+		// Pointer to the GetOutputParam function
+		//
+		static FN_getOutputParam *m_getOutputParamFuncPtr;
 
 		// Pointer to the CleanupSession function
 		//

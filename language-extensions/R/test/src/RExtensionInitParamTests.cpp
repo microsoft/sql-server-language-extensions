@@ -48,69 +48,62 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitIntegerParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			5); // parametersNumber
 
-		// Test max INT value with respect to R
+		// Test max INT value, min INT value with respect to R,
+		// a normal value, NA value and
+		// a NULL INT value.
 		//
-		TestParameter<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-			2'147'483'647); // paramValue
+		vector<shared_ptr<SQLINTEGER>> expectedParamValues = {
+			make_shared<SQLINTEGER>(m_MaxInt),
+			make_shared<SQLINTEGER>(m_MinInt),
+			make_shared<SQLINTEGER>(5),
+			make_shared<SQLINTEGER>(R_NaInt),
+			nullptr };
+		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA};
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test min INT value with respect to R
-		//
-		TestParameter<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-			-2'147'483'647); // paramValue
-
-		// Test a normal value
-		//
-		TestParameter<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-			4); // paramValue
-
-		// Test out of range INT value with respect to R
-		//
-		TestParameter<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-			-2'147'483'648, // paramValue
-			false);         // inRange
-
-		// Test null INT value
-		//
-		TestParameter<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-			0,               // paramValue
-			false);          // inRange
+		InitParam<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
-	// Name: InitBitParamTest
+	// Name: InitLogicalParamTest
 	//
 	// Description:
-	// Test multiple bit values
+	// Test multiple logical (bit) values
 	//
-	TEST_F(RExtensionApiTest, InitBitParamTest)
+	TEST_F(RExtensionApiTest, InitLogicalParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			5); // parametersNumber
 
-		// Test '1' BIT value
+		// Test '1', '0', NA, NULL and > 1 BIT values.
+		// When testing out of range NA value with respect to R,
+		// returned paramValue is '\0' even though parameter is NA in R
+		// since type casting NA (which is -2'147'483'648) to SQLCHAR returns \0.
 		//
-		TestParameter<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
-			'1');            // paramValue
+		vector<shared_ptr<SQLCHAR>> expectedParamValues = {
+			make_shared<SQLCHAR>('1'),
+			make_shared<SQLCHAR>('0'),
+			make_shared<SQLCHAR>(NA_LOGICAL),
+			nullptr,
+			make_shared<SQLCHAR>('2') };
+		vector<SQLINTEGER> strLenOrInd = { 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA, 0};
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test '0' BIT value
-		//
-		TestParameter<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
-			'0');            // paramValue
-
-		TestParameter<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
-			NA_LOGICAL,      // paramValue
-			false);          // inRange
-
-		// Test NULL BIT value
-		//
-		TestParameter<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
-			0,               // paramValue
-			false);          // inRange
-
-		// Test > 1 BIT value
-		//
-		TestParameter<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
-			'2');            // paramValue
+		InitParam<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
 	// Name: InitRealParamTest
@@ -120,34 +113,27 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitRealParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			5); // parametersNumber
 
-		// Test max FLOAT(24) i.e. REAL value
+		// Test max FLOAT(24), min FLOAT(24), a normal, NA_REAL and nullptr REAL values
 		//
-		TestParameter<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
-			3.4e38F);        // paramValue
+		vector<shared_ptr<SQLREAL>> expectedParamValues = {
+			make_shared<SQLREAL>(m_MaxReal),
+			make_shared<SQLREAL>(m_MinReal),
+			make_shared<SQLREAL>(2.3e4),
+			make_shared<SQLREAL>(NA_REAL),
+			nullptr };
+		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA };
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test min FLOAT(24) i.e. REAL value
-		//
-		TestParameter<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
-			-3.4e38F);       // paramValue
-
-		// Test a normal FLOAT(24) value
-		//
-		TestParameter<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
-			2.3e4F);        // paramValue
-
-		// Test NA_REAL FLOAT(24) i.e. REAL value - this is NaN
-		//
-		TestParameter<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
-			NA_REAL,         // paramValue
-			false);          // inRange
-
-		// Test NULL FLOAT(24) i.e. REAL value - this is NA
-		//
-		TestParameter<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
-			0,               // paramValue
-			false);          // inRange
+		InitParam<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
 	// Name: InitDoubleParamTest
@@ -157,34 +143,28 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitDoubleParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			5); // parametersNumber
 
-		// Test max FLOAT(53) i.e. DOUBLE PRECISION value
+		// Test max FLOAT(53), min FLOAT(53), a normal, NA_REAL and nullptr
+		// i.e. DOUBLE PRECISION values
 		//
-		TestParameter<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
-			1.79e308);       // paramValue
+		vector<shared_ptr<SQLDOUBLE>> expectedParamValues = {
+			make_shared<SQLDOUBLE>(m_MaxDouble),
+			make_shared<SQLDOUBLE>(m_MinDouble),
+			make_shared<SQLDOUBLE>(1.45e38),
+			make_shared<SQLDOUBLE>(NA_REAL),
+			nullptr };
+		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA};
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test min FLOAT(53) i.e. DOUBLE PRECISION value
-		//
-		TestParameter<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
-			-1.79e308);      // paramValue
-
-		// Test normal FLOAT(53) i.e. DOUBLE PRECISION value
-		//
-		TestParameter<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
-			1.45e38);       // paramValue
-
-		// Test NA_REAL FLOAT(53) value i.e. DOUBLE PRECISION value
-		//
-		TestParameter<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
-			NA_REAL,         // paramValue
-			false);          // inRange
-
-		// Test NULL FLOAT(53) value i.e. DOUBLE PRECISION value
-		//
-		TestParameter<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
-			0,               // paramValue
-			false);          // inRange
+		InitParam<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
 	// Name: InitBigIntParamTest
@@ -194,34 +174,27 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitBigIntParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			5); // parametersNumber
 
-		// Test max BIGINT value
+		// Test max, min, normal, NA and NULL BIGINT values
 		//
-		TestParameter<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
-			9'223'372'036'854'775'807LL); // paramValue
+		vector<shared_ptr<SQLBIGINT>> expectedParamValues = {
+			make_shared<SQLBIGINT>(m_MaxBigInt),
+			make_shared<SQLBIGINT>(m_MinBigInt),
+			make_shared<SQLBIGINT>(9'372'036'854'775),
+			make_shared<SQLBIGINT>(NA_REAL),
+			nullptr };
+		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA };
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test min BIGINT value : -9'223'372'036'854'775'808 gives compiler error
-		// In R, -9'223'372'036'854'775'807 = -9.223372e+18
-		//
-		TestParameter<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
-			-9'223'372'036'854'775'807LL); // paramValue
-
-		// Test normal BIGINT value
-		//
-		TestParameter<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
-			9'372'036'854'775LL); // paramValue
-
-		// Test NA_REAL BIGINT value - this is actually in range
-		//
-		TestParameter<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
-			NA_REAL);         // paramValue
-
-		// Test NULL BIGINT value - need to send a NULL value to test NA_REAL for BIGINT
-		//
-		TestParameter<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
-			0,               // paramValue
-			false);          // inRange
+		InitParam<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
 	// Name: InitSmallIntParamTest
@@ -231,34 +204,30 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitSmallIntParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			5); // parametersNumber
 
-		// Test max SMALLINT value
+		// Test max, min, normal, NA_INTEGER and NULL SMALLINT values
 		//
-		TestParameter<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
-			32'767);         // paramValue
+		vector<shared_ptr<SQLSMALLINT>> expectedParamValues = {
+			make_shared<SQLSMALLINT>(m_MaxSmallInt),
+			make_shared<SQLSMALLINT>(m_MinSmallInt),
+			make_shared<SQLSMALLINT>(0),
+			// Since NA_INTEGER in R is a bigger value than the type SQLSMALLINT can hold,
+			// static type casting leads to a 0 value. But this is differentiated by SQL_NULL_DATA.
+			//
+			make_shared<SQLSMALLINT>(0),
+			nullptr };
+		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA};
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test min SMALLINT value
-		//
-		TestParameter<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
-			-32'768);        // paramValue
-
-		// Test normal SMALLINT value
-		//
-		TestParameter<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
-			3'007);         // paramValue
-
-		// Test NA_INTEGER SMALLINT value
-		//
-		TestParameter<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
-			NA_INTEGER,      // paramValue
-			false);          // inRange
-
-		// Test NULL SMALLINT value
-		//
-		TestParameter<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
-			0,               // paramValue
-			false);          // inRange
+		InitParam<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
 	// Name: InitTinyIntParamTest
@@ -268,39 +237,31 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitTinyIntParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			6); // parametersNumber
 
-		// Test max TINYINT value
+		// Test max, min, normal, NA, NULL, (-1) underflows to max TINYINT values
 		//
-		TestParameter<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			255);            // paramValue
+		vector<shared_ptr<SQLCHAR>> expectedParamValues = {
+			make_shared<SQLCHAR>(m_MaxTinyInt),
+			make_shared<SQLCHAR>(m_MinTinyInt),
+			make_shared<SQLCHAR>(123),
+			// When value is NA, expectedParamValue is type casted to '\0'.
+			// even though in R it is NA_INTEGER which is larger than what SQLCHAR can hold.
+			//
+			make_shared<SQLCHAR>('\0'),
+			nullptr,
+			make_shared<SQLCHAR>(-1)};
+		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0,
+			SQL_NULL_DATA, SQL_NULL_DATA, 0 };
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		// Test min TINYINT value
-		//
-		TestParameter<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			0);              // paramValue
-
-		// Test normal TINYINT value
-		//
-		TestParameter<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			123);            // paramValue
-
-		// Test NA_INTEGER TINYINT value with respect to R
-		//
-		TestParameter<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			NA_INTEGER,      // paramValue
-			false);          // inRange
-
-		// Test NULL TINYINT value
-		//
-		TestParameter<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			0,               // paramValue
-			false);          // inRange
-
-		// Test -1 TINYINT value converted to 255
-		//
-		TestParameter<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			-1);             // paramValue
+		InitParam<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
 	}
 
 	// Name: InitCharParamTest
@@ -310,300 +271,314 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, InitCharParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			8); // parametersNumber
 
-		// Test simple CHAR(5) value
-		//
-		TestCharParameter(
+		vector<const char*> expectedParamValues = {
+			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
+			//
 			"HELLO",
-			5,     // paramSize
-			true); // isFixedType
-
-		// Test simple CHAR(6) value with parameter length less than size - should be padded.
-		//
-		TestCharParameter(
+			// Test simple CHAR(6) value with parameter length less than size - should be padded.
+			//
 			"WORLD",
-			6,     // paramSize
-			true); // isFixedType
-
-		// Test null CHAR(5) value
-		//
-		TestCharParameter(
-			nullptr,  // paramValue
-			5,        // paramSize
-			true);    // isFixedType
-
-		// Test simple VARCHAR(6) value
-		//
-		TestCharParameter(
+			// Test null CHAR(5) value
+			//
+			nullptr,
+			// Test a 0 length CHAR(5) value
+			//
+			"",
+			// Test simple VARCHAR(6) value
+			//
 			"WORLD!",
-			6,      // paramSize
-			false); // isFixedType
-
-		// Test simple VARCHAR(8) value with parameter length less than size - no padding.
-		//
-		TestCharParameter(
+			// Test simple VARCHAR(8) value with parameter length less than size - no padding.
+			//
 			"WORLD",
-			8,      // paramSize
-			false); // isFixedType
+			// Test null VARCHAR(5) value
+			//
+			nullptr,
+			// Test 0 length VARCHAR(6) value
+			//
+			""};
 
-		// Test null VARCHAR(5) value
-		//
-		TestCharParameter(
-			nullptr,  // paramValue
-			5,        // paramSize
-			false);   // isFixedType
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 5, 6, 8, 5, 6 };
+
+		vector<bool> isFixedType = { true, true, true, true, false, false, false, false, false };
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
+
+		InitCharParam(
+			expectedParamValues,
+			paramSizes,
+			isFixedType,
+			inputOutputTypes);
 	}
 
-	// Name: InitBinaryParamTest
+	// Name: InitRawParamTest
 	//
 	// Description:
 	// Test multiple binary values
 	//
-	TEST_F(RExtensionApiTest, InitBinaryParamTest)
+	TEST_F(RExtensionApiTest, InitRawParamTest)
 	{
-		InitializeSession();
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			6); // parametersNumber
 
-		// Test simple binary(4) value
+		// Test binary(4) value - binary length matching with type.
 		//
-		SQLCHAR binaryValue[] = {0x00, 0x01, 0xe2, 0x40};
-		TestBinaryParameter(
-			binaryValue,
-			sizeof(binaryValue)/sizeof(SQLCHAR), // strLenOrInd
-			sizeof(binaryValue)/sizeof(SQLCHAR), // paramSize
-			true);  // isFixedType
+		const vector<SQLCHAR> BinaryValue1 = { 0x00, 0x01, 0xe2, 0x40 };
 
-		// Test null binary(4) value
+		// Test binary(6) - actual value less than size but padded with 0x00.
 		//
-		TestBinaryParameter(
-			nullptr, // paramValue
-			-1,      // strLenOrInd
-			4,       // paramSize
-			true);   // isFixedType
-
-		// Test binary(5) value with length less than size - should be padded.
-		//
-		TestBinaryParameter(
-			binaryValue,
-			5,       // strLenOrInd
-			5,       // paramSize
-			true);   // isFixedType
+		const vector<SQLCHAR> BinaryValue2 = { 0x61, 0x62, 0x63, 0x64, 0x00, 0x00 };
 
 		// Test simple varbinary(4) value
 		//
-		TestBinaryParameter(
-			binaryValue,
-			sizeof(binaryValue)/sizeof(SQLCHAR), // strLenOrInd
-			sizeof(binaryValue)/sizeof(SQLCHAR), // paramSize
-			false);  // isFixedType
+		const vector<SQLCHAR> BinaryValue3 = { 0x00, 0x01, 0xe2, 0x40 };
 
-		// Test null varbinary(5) value
+		// Test varbinary(5) value with length less than size - no padding
 		//
-		TestBinaryParameter(
-			nullptr, // paramValue
-			-1,      // strLenOrInd
-			4,       // paramSize
-			false);  // isFixedType
+		const vector<SQLCHAR> BinaryValue4 = { 0x61, 0x62, 0x63, 0x64 };
 
-		// Test varbinary(5) value with length less than size.
-		//
-		TestBinaryParameter(
-			binaryValue,
-			sizeof(binaryValue)/sizeof(SQLCHAR), // strLenOrInd
-			5,       // paramSize
-			false);  // isFixedType
+		vector<SQLCHAR*> expectedParamValues = {
+			const_cast<SQLCHAR*>(BinaryValue1.data()),
+			// Test null binary(4) value
+			//
+			nullptr,
+			const_cast<SQLCHAR*>(BinaryValue2.data()),
+			const_cast<SQLCHAR*>(BinaryValue3.data()),
+			// Test null varbinary(5) value
+			//
+			nullptr,
+			const_cast<SQLCHAR*>(BinaryValue4.data()) };
+
+		vector<SQLINTEGER> strLenOrInd = {
+			static_cast<SQLINTEGER>(BinaryValue1.size())/m_BinarySize,
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(BinaryValue2.size())/m_BinarySize,
+			static_cast<SQLINTEGER>(BinaryValue3.size())/m_BinarySize,
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(BinaryValue4.size())/m_BinarySize };
+
+		vector<SQLULEN> paramSizes = { 4, 4, 6, 4, 4, 6 };
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
+
+		InitRawParam(
+			expectedParamValues,
+			strLenOrInd,
+			paramSizes,
+			inputOutputTypes);
 	}
 
-	// Name: TestParameter
+	// Name: InitParam
 	//
 	// Description:
-	// Templatized function to call InitParam for the given paramValue and dataType.
+	// Templatized function to call InitParam for the given paramValues and dataType.
 	// Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
+	// When inRange is false and paramValue is 0, it tests a nullptr paramValue given to InitParam.
 	//
-	template<class SQLType, class RType, SQLSMALLINT dataType>
-	void RExtensionApiTest::TestParameter(
-		SQLType paramValue,
-		bool inRange)
+	template<class SQLType, class RType, SQLSMALLINT DataType>
+	void RExtensionApiTest::InitParam(
+		vector<shared_ptr<SQLType>> expectedParamValues,
+		vector<SQLINTEGER>          strLenOrInd,
+		vector<SQLSMALLINT>         inputOutputTypes,
+		bool                        validate)
 	{
-		unique_ptr<SQLType> pParamValue = nullptr;
-
-		// Generate pParamValue if the value is in range OR if its a non-zero out of range value.
-		// inRange is with respect to the type in R and not with respect to the Cpp type range.
-		//
-		if (inRange || paramValue != 0)
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
-			pParamValue = make_unique<SQLType>(paramValue);
-		}
+			string paramNameString = string("@param" + to_string(paramNumber + 1));
+			SQLCHAR *paramName = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
 
-		SQLRETURN result = SQL_ERROR;
-		result = (*m_initParamFuncPtr)(
-				*m_sessionId,
-				m_taskId,
-				0,                // paramNumber
-				m_paramName,
-				m_paramNameString.length(),
-				dataType,
-				sizeof(SQLType),  // paramSize
-				0,                // decimalDigits
-				pParamValue != nullptr ? pParamValue.get() : nullptr, // paramValue
-				pParamValue != nullptr ? 0 : -1, // strLenOrInd
-				1);               // inputOutputType
-		EXPECT_EQ(result, SQL_SUCCESS);
+			SQLRETURN result = SQL_ERROR;
+			result = (*m_initParamFuncPtr)(
+					*m_sessionId,
+					m_taskId,
+					paramNumber,
+					paramName,
+					paramNameString.length(),
+					DataType,
+					sizeof(SQLType),  // paramSize
+					0,                // decimalDigits
+					expectedParamValues[paramNumber] != nullptr
+						? expectedParamValues[paramNumber].get() : nullptr, // paramValue
+					strLenOrInd[paramNumber],
+					inputOutputTypes[paramNumber]);
+			ASSERT_EQ(result, SQL_SUCCESS);
 
-		// Do + 1 to skip the @ from the paramName
-		//
-		RType param = m_globalEnvironment[m_paramNameString.c_str() + 1];
-		if (inRange)
-		{
-			if (dataType == SQL_C_BIT)
+			if (validate)
 			{
-				EXPECT_EQ(param[0], paramValue != '0' ? true : false);
+				// Do + 1 to skip the @ from the paramName
+				//
+				RType param = m_globalEnvironment[paramNameString.c_str() + 1];
+				if (strLenOrInd[paramNumber] != SQL_NULL_DATA)
+				{
+					if (DataType == SQL_C_BIT)
+					{
+						EXPECT_EQ(param[0],
+							*expectedParamValues[paramNumber] != '0' ? true : false);
+					}
+					else
+					{
+						EXPECT_EQ(param[0], *expectedParamValues[paramNumber]);
+					}
+				}
+				else
+				{
+					EXPECT_TRUE(RType::is_na(param[0]));
+				}
 			}
-			else
-			{
-				EXPECT_EQ(param[0], paramValue);
-			}
-		}
-		else
-		{
-			EXPECT_TRUE(RType::is_na(param[0]));
 		}
 	}
 
-	// Name: TestCharParameter
+	// Name: InitCharParam
 	//
 	// Description:
 	// Testing if InitParam is implemented correctly for the char/varchar dataType.
 	//
-	void RExtensionApiTest::TestCharParameter(
-		const char *paramValue,
-		SQLULEN     paramSize,
-		bool        isFixedType)
+	void RExtensionApiTest::InitCharParam(
+		vector<const char*> expectedParamValues,
+		vector<SQLULEN>     paramSizes,
+		vector<bool>        isFixedType,
+		vector<SQLSMALLINT> inputOutputTypes,
+		bool                validate)
 	{
-		char fixedParamValue[paramSize+1] = {0};
-		SQLINTEGER strLenOrInd = 0;
-		char *expectedParamValue = nullptr;
-
-		if (paramValue != nullptr)
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
-			SQLINTEGER paramLength = strlen(paramValue);
-			if (isFixedType)
+			string paramNameString = string("@param" + to_string(paramNumber + 1));
+			SQLCHAR *paramName = static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
+			vector<char> fixedParamValue(paramSizes[paramNumber] + 1, 0);
+			SQLINTEGER strLenOrInd = 0;
+			char *expectedParamValue = nullptr;
+
+			if (expectedParamValues[paramNumber] != nullptr)
 			{
-				memcpy(fixedParamValue, paramValue, paramLength);
-				strLenOrInd = static_cast<SQLINTEGER>(paramSize);
+				SQLINTEGER paramLength = strlen(expectedParamValues[paramNumber]);
 
-				// pad the rest of the array
-				//
-				for (SQLINTEGER index = paramLength; index < strLenOrInd; ++index)
+				if (isFixedType[paramNumber])
 				{
-					fixedParamValue[index] = ' ';
-				}
+					string paramValue(expectedParamValues[paramNumber], paramLength);
+					fixedParamValue.insert(
+						fixedParamValue.begin(),
+						paramValue.begin(),
+						paramValue.end());
+					strLenOrInd = static_cast<SQLINTEGER>(paramSizes[paramNumber]);
 
-				expectedParamValue = fixedParamValue;
+					// pad the rest of the vector
+					//
+					for (SQLINTEGER index = paramLength; index < strLenOrInd; ++index)
+					{
+						fixedParamValue[index] = ' ';
+					}
+
+					expectedParamValue = fixedParamValue.data();
+				}
+				else
+				{
+					expectedParamValue = const_cast<char*>(expectedParamValues[paramNumber]);
+					strLenOrInd = paramLength;
+				}
 			}
 			else
 			{
-				expectedParamValue = const_cast<char*>(paramValue);
-				strLenOrInd = paramLength;
+				strLenOrInd = -1;
 			}
-		}
-		else
-		{
-			strLenOrInd = -1;
-		}
 
-		SQLRETURN result = SQL_ERROR;
+			SQLRETURN result = SQL_ERROR;
 
-		// Even though paramSize doesnt include the null terminator,
-		// we create a CharacterVector parameter with a null terminator string
-		//
-		result = (*m_initParamFuncPtr)(
-				*m_sessionId,
-				m_taskId,
-				0,                // paramNumber
-				m_paramName,
-				m_paramNameString.length(),
-				SQL_C_CHAR,
-				paramSize,
-				0,               // decimalDigits
-				expectedParamValue,
-				strLenOrInd,
-				1);              // inputOutputType
+			// Even though paramSize doesn't include the null terminator,
+			// we create a CharacterVector parameter with a null terminator string
+			//
+			result = (*m_initParamFuncPtr)(
+					*m_sessionId,
+					m_taskId,
+					paramNumber,
+					paramName,
+					paramNameString.length(),
+					SQL_C_CHAR,
+					paramSizes[paramNumber],
+					0,               // decimalDigits
+					expectedParamValue,
+					strLenOrInd,
+					inputOutputTypes[paramNumber]);
 
-		EXPECT_EQ(result, SQL_SUCCESS);
+			ASSERT_EQ(result, SQL_SUCCESS);
 
-		// Do + 1 to skip the @ from the paramName
-		//
-		Rcpp::CharacterVector param = m_globalEnvironment[m_paramNameString.c_str() + 1];
-		if (paramValue != nullptr)
-		{
-			EXPECT_EQ(param[0], const_cast<const char*>(expectedParamValue));
-		}
-		else
-		{
-			EXPECT_EQ(param[0], NA_STRING);
+			if (validate)
+			{
+				// Do + 1 to skip the @ from the paramName
+				//
+				Rcpp::CharacterVector param = m_globalEnvironment[paramNameString.c_str() + 1];
+				if (expectedParamValues[paramNumber] != nullptr)
+				{
+					EXPECT_EQ(param[0], const_cast<const char*>(expectedParamValue));
+				}
+				else
+				{
+					EXPECT_EQ(param[0], NA_STRING);
+				}
+			}
 		}
 	}
 
-	// Name: TestBinaryParameter
+	// Name: InitRawParam
 	//
 	// Description:
 	// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 	//
-	void RExtensionApiTest::TestBinaryParameter(
-		const SQLCHAR  paramValue[],
-		SQLINTEGER     strLenOrInd,
-		SQLULEN        paramSize,
-		bool           isFixedType)
+	void RExtensionApiTest::InitRawParam(
+		vector<SQLCHAR*>    expectedParamValues,
+		vector<SQLINTEGER>  strLenOrInd,
+		vector<SQLULEN>     paramSizes,
+		vector<SQLSMALLINT> inputOutputTypes,
+		bool                validate)
 	{
-		SQLCHAR fixedParamValue[paramSize] = {0};
-		SQLCHAR *expectedParamValue = nullptr;
-
-		if (paramValue != nullptr)
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
-			if (isFixedType)
-			{
-				memcpy(fixedParamValue, paramValue, strLenOrInd);
-				expectedParamValue = fixedParamValue;
-			}
-			else
-			{
-				expectedParamValue = const_cast<SQLCHAR*>(paramValue);
-			}
-		}
+			string paramNameString = string("@param" + to_string(paramNumber + 1));
+			SQLCHAR *paramName = static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
+			SQLCHAR *expectedParamValue = expectedParamValues[paramNumber];
 
-		SQLRETURN result = SQL_ERROR;
-		result = (*m_initParamFuncPtr)(
-				*m_sessionId,
-				m_taskId,
-				0,                // paramNumber
-				m_paramName,
-				m_paramNameString.length(),
-				SQL_C_BINARY,
-				paramSize,
-				0,                  // decimalDigits
-				expectedParamValue,
-				strLenOrInd,
-				1);                 // inputOutputType
-		EXPECT_EQ(result, SQL_SUCCESS);
+			SQLRETURN result = SQL_ERROR;
+			result = (*m_initParamFuncPtr)(
+					*m_sessionId,
+					m_taskId,
+					paramNumber,
+					paramName,
+					paramNameString.length(),
+					SQL_C_BINARY,
+					paramSizes[paramNumber],
+					0, // decimalDigits
+					expectedParamValue,
+					strLenOrInd[paramNumber],
+					inputOutputTypes[paramNumber]);
+			ASSERT_EQ(result, SQL_SUCCESS);
 
-		// Do + 1 to skip the @ from the paramName
-		//
-		Rcpp::RawVector param = m_globalEnvironment[m_paramNameString.c_str() + 1];
-
-		if (paramValue != nullptr)
-		{
-			// Always compare using strLenOrInd because
-			// we copy only those many bytes into the raw parameter
-			//
-			for (SQLINTEGER i = 0; i < strLenOrInd; ++i)
+			if (validate)
 			{
-				EXPECT_EQ(param[i], expectedParamValue[i]);
+				// Do + 1 to skip the @ from the paramName
+				//
+				Rcpp::RawVector param = m_globalEnvironment[paramNameString.c_str() + 1];
+
+				if (expectedParamValue != nullptr)
+				{
+					// Always compare using strLenOrInd because
+					// we copy only those many bytes into the raw parameter
+					//
+					for (SQLINTEGER i = 0; i < strLenOrInd[paramNumber]; ++i)
+					{
+						EXPECT_EQ(param[i], expectedParamValue[i]);
+					}
+				}
+				else
+				{
+					EXPECT_EQ(param[0], 0);
+				}
 			}
-		}
-		else
-		{
-			EXPECT_EQ(param[0], 0);
 		}
 	}
 }
