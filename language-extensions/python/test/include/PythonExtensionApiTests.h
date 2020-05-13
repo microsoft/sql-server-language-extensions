@@ -119,19 +119,10 @@ namespace ExtensionApiTest
 			std::vector<std::string> columnNames,
 			bool                     validate = true);
 
-		// Template function to compare the given integer column and data for equality.
+		// Template function to compare the given integer/float column for equality.
 		//
 		template<class SQLType>
-		void CheckIntColumnEquality(
-			SQLULEN             expectedRowsNumber,
-			boost::python::dict columnToTest,
-			void                *expectedColumn,
-			SQLINTEGER          *strLen_or_Ind);
-
-		// Template function to compare the given float/double column and data for equality.
-		//
-		template<class SQLType>
-		void CheckFloatColumnEquality(
+		void CheckColumnEquality(
 			SQLULEN             expectedRowsNumber,
 			boost::python::dict columnToTest,
 			void                *expectedColumn,
@@ -173,7 +164,7 @@ namespace ExtensionApiTest
 		// Test GetResults to verify the expected results are obtained.
 		// For numeric, boolean and integer types.
 		//
-		template<class SQLType, SQLSMALLINT dataType>
+		template<class SQLType, class InputCType, SQLSMALLINT dataType>
 		void TestGetResults(
 			SQLULEN                  expectedRowsNumber,
 			SQLPOINTER               *expectedData,
@@ -204,6 +195,14 @@ namespace ExtensionApiTest
 			SQLULEN    rowsNumber,
 			SQLType    *expectedColumnData,
 			SQLType    *columnData,
+			SQLINTEGER *expectedColumnStrLenOrInd,
+			SQLINTEGER *columnStrLenOrInd);
+
+		template<class SQLType, class DefaultType>
+		void CheckColumnDataEqualityForNullable(
+			SQLULEN    rowsNumber,
+			SQLType    *expectedColumnData,
+			void       *pColumnData,
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 
@@ -248,6 +247,46 @@ namespace ExtensionApiTest
 		SQLSMALLINT m_outputDataNameLength;
 
 		const std::string m_printMessage = "Hello PythonExtension!";
+
+		// A value of 2'147'483'648
+		//
+		const SQLINTEGER m_MaxInt = (std::numeric_limits<SQLINTEGER>::max)();
+
+		// A value of -2'147'483'648
+		//
+		const SQLINTEGER m_MinInt = (std::numeric_limits<SQLINTEGER>::min)();
+
+		// A value of 9'223'372'036'854'775'807LL
+		//
+		const SQLBIGINT m_MaxBigInt = (std::numeric_limits<SQLBIGINT>::max)();
+
+		// A value of -9'223'372'036'854'775'808LL
+		//
+		const SQLBIGINT m_MinBigInt = (std::numeric_limits<SQLBIGINT>::min)();
+
+		// A value of 32'767
+		//
+		const SQLSMALLINT m_MaxSmallInt = (std::numeric_limits<SQLSMALLINT>::max)();
+
+		// A value of -32'768
+		//
+		const SQLSMALLINT m_MinSmallInt = (std::numeric_limits<SQLSMALLINT>::min)();
+
+		// A value of 255
+		//
+		const SQLCHAR m_MaxTinyInt = (std::numeric_limits<SQLCHAR>::max)();
+
+		// A value of 0
+		//
+		const SQLCHAR m_MinTinyInt = (std::numeric_limits<SQLCHAR>::min)();
+
+		// For floating types, not using numeric_limits because they can't be
+		// used for equality comparisons.
+		//
+		const SQLREAL m_MaxReal = 3.4e38F;;
+		const SQLREAL m_MinReal = -3.4e38F;;
+		const SQLDOUBLE m_MaxDouble = 1.79e308;
+		const SQLDOUBLE m_MinDouble = -1.79e308;
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_booleanInfo = nullptr;

@@ -42,11 +42,13 @@ namespace ExtensionApiTest
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
 
+		// Returns most generic int type because NULLs change the column to object
+		//
 		TestGetResultColumn(1,  // columnNumber
-			SQL_C_SLONG,        // dataType
-			sizeof(SQLINTEGER), // columnSize
+			SQL_C_SBIGINT,      // dataType
+			sizeof(SQLBIGINT),  // columnSize
 			0,                  // decimalDigits
-			SQL_NO_NULLS);      // nullable - int columns will never have nulls, they are set to 0
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetBooleanResultColumnsTest
@@ -82,7 +84,7 @@ namespace ExtensionApiTest
 			SQL_C_BIT,         // dataType
 			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable - bool columns will never have nulls, they are set to false
+			SQL_NULLABLE);     // nullable
 	}
 
 	// Name: GetRealResultColumnsTest
@@ -114,9 +116,11 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
+		// Returns most generic float type because NULLs change the column to object
+		//
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_FLOAT,       // dataType
-			sizeof(SQLREAL),   // columnSize
+			SQL_C_DOUBLE,      // dataType
+			sizeof(SQLDOUBLE), // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -190,7 +194,7 @@ namespace ExtensionApiTest
 			SQL_C_SBIGINT,     // dataType
 			sizeof(SQLBIGINT), // columnSize
 			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable - int columns will never have nulls, they are set to 0
+			SQL_NULLABLE);     // nullable
 	}
 
 	// Name: GetSmallIntResultColumnsTest
@@ -222,11 +226,13 @@ namespace ExtensionApiTest
 			0,                   // decimalDigits
 			SQL_NO_NULLS);       // nullable
 
-		TestGetResultColumn(1,   // columnNumber
-			SQL_C_SSHORT,        // dataType
-			sizeof(SQLSMALLINT), // columnSize
-			0,                   // decimalDigits
-			SQL_NO_NULLS);       // nullable - int columns will never have nulls, they are set to 0
+		// Returns most generic int type because NULLs change the column to object
+		//
+		TestGetResultColumn(1, // columnNumber
+			SQL_C_SBIGINT,     // dataType
+			sizeof(SQLBIGINT), // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
 	}
 
 	// Name: GetTinyIntResultColumnsTest
@@ -258,11 +264,13 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
+		// Returns most generic int type because NULLs change the column to object
+		//
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_UTINYINT,    // dataType
-			sizeof(SQLCHAR),   // columnSize
+			SQL_C_SBIGINT,     // dataType
+			sizeof(SQLBIGINT), // columnSize
 			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable - int columns will never have nulls, they are set to 0
+			SQL_NULLABLE);     // nullable
 	}
 
 	// Name: GetStringResultColumnsTest
@@ -473,8 +481,8 @@ namespace ExtensionApiTest
 		string stringColumnName = "StringColumn";
 		InitializeColumn(2, stringColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
 
-		vector<SQLINTEGER> intColData{ 2'147'483'647, -2'147'483'647, 0, 1320, -1 };
-		vector<SQLDOUBLE> doubleColData{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 };
+		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, 0, 1320, -1 };
+		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
 		vector<const char*> stringCol{ "Hello", "test", "data", "World", "-123" };
 
 		const SQLINTEGER intSize = sizeof(SQLINTEGER);
@@ -504,11 +512,11 @@ namespace ExtensionApiTest
 			&outputschemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		TestGetResultColumn(0,  // columnNumber
-			SQL_C_SLONG,        // dataType
-			sizeof(SQLINTEGER), // columnSize
-			0,                  // decimalDigits
-			SQL_NO_NULLS);      // nullable - int columns will never have nulls, they are set to 0
+		TestGetResultColumn(0, // columnNumber
+			SQL_C_SBIGINT,     // dataType
+			sizeof(SQLBIGINT), // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
 
 		TestGetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType

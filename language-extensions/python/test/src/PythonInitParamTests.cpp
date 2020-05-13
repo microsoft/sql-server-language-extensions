@@ -143,12 +143,12 @@ namespace ExtensionApiTest
 		// Test max FLOAT(24) i.e. REAL value
 		//
 		TestParameter<SQLREAL, SQL_C_FLOAT>(
-			3.4e38F);
+			m_MaxReal);
 
 		// Test min FLOAT(24) i.e. REAL value
 		//
 		TestParameter<SQLREAL, SQL_C_FLOAT>(
-			-3.4e38F);
+			m_MinReal);
 
 		// Test a normal FLOAT(24) value
 		//
@@ -171,12 +171,12 @@ namespace ExtensionApiTest
 		// Test max FLOAT(53) i.e. DOUBLE PRECISION value
 		//
 		TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
-			1.79e308);
+			m_MaxDouble);
 
 		// Test min FLOAT(53) i.e. DOUBLE PRECISION value
 		//
 		TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
-			-1.79e308);
+			m_MinDouble);
 
 		// Test normal FLOAT(53) i.e. DOUBLE PRECISION value
 		//
@@ -227,12 +227,12 @@ namespace ExtensionApiTest
 		// Test max TINYINT value
 		//
 		TestParameter<SQLCHAR, SQL_C_UTINYINT>(
-			255);
+			m_MaxTinyInt);
 
 		// Test min TINYINT value
 		//
 		TestParameter<SQLCHAR, SQL_C_UTINYINT>(
-			0);
+			m_MinTinyInt);
 
 		// Test normal TINYINT value
 		//
@@ -245,7 +245,7 @@ namespace ExtensionApiTest
 			0,
 			true); // isNull
 
-		// Test -1 TINYINT value converted to 255
+		// Test -1 TINYINT value underflows to m_MaxTinyInt
 		//
 		TestParameter<SQLCHAR, SQL_C_UTINYINT>(
 			-1);

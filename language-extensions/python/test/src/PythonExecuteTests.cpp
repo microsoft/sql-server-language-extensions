@@ -349,8 +349,8 @@ namespace ExtensionApiTest
 		string stringColumnName = "StringColumn";
 		InitializeColumn(2, stringColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
 
-		vector<SQLINTEGER> intColData{ 2'147'483'647, -2'147'483'647, 0, 1320, -1 };
-		vector<SQLDOUBLE> doubleColData{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 };
+		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, 0, 1320, -1 };
+		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
 		vector<const char*> stringCol{ "Hello", "test", "data", "World", "-123" };
 
 		SQLINTEGER strLenOrIndCol1[] = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
@@ -396,14 +396,14 @@ namespace ExtensionApiTest
 			for(py::dict ds : {inputDataSet, outputDataSet})
 			{
 				py::dict intColumn = py::extract<py::dict>(ds.get(integerColumnName));
-				CheckIntColumnEquality<SQLINTEGER>(
+				CheckColumnEquality<SQLINTEGER>(
 					rowsNumber,
 					intColumn,
 					dataSet[0],
 					strLen_or_Ind[0]);
 
 				py::dict numericColumn = py::extract<py::dict>(ds.get(doubleColumnName));
-				CheckFloatColumnEquality<SQLDOUBLE>(
+				CheckColumnEquality<SQLDOUBLE>(
 					rowsNumber,
 					numericColumn,
 					dataSet[1],

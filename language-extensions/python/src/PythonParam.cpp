@@ -116,6 +116,8 @@ PythonParamTemplate<SQLType>::PythonParamTemplate(
 	}
 	else
 	{
+		// Use None object for NULLs
+		//
 		m_pyObject = py::object();
 	}
 }
@@ -154,6 +156,8 @@ PythonBooleanParam::PythonBooleanParam(
 	}
 	else
 	{
+		// Use None object for NULLs
+		//
 		m_pyObject = py::object();
 	}
 }
@@ -194,6 +198,8 @@ PythonStringParam::PythonStringParam(
 	}
 	else
 	{
+		// Use None object for NULLs
+		//
 		m_pyObject = py::object();
 	}
 }
@@ -239,6 +245,8 @@ PythonRawParam::PythonRawParam(
 	}
 	else
 	{
+		// Use None object for NULLs
+		//
 		m_pyObject = py::object();
 	}
 }

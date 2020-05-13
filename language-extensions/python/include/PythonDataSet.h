@@ -36,6 +36,12 @@ public:
 		SQLUSMALLINT          schemaColumnsNumber,
 		boost::python::object mainNamespace);
 
+	// Check whether there are any SQL_NULL_DATA in the strLen_or_Ind
+	//
+	bool HasNulls(
+		SQLULEN    rowsNumber,
+		SQLINTEGER *strLen_or_Ind) const;
+
 	// Returns the number of columns in the PythonDataSet from the vector of PythonColumns
 	// at the time this is called.
 	// Note: Once Init() resizes the vector to schemaColumnsNumber, its size
@@ -143,8 +149,16 @@ private:
 	// Adds a column of values into the python dictionary
 	// Valid for integer, simple numeric, and boolean dataTypes.
 	//
-	template<class SQLType, class NullType>
+	template<class SQLType>
 	void AddColumnToDictionary(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER  *strLen_or_Ind);
+
+	// Adds a column of boolean values into the python dictionary
+	//
+	void AddBooleanColumnToDictionary(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data,

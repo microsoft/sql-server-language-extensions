@@ -34,6 +34,11 @@ const unordered_map<string, SQLSMALLINT> PythonDataSet::m_pythonToOdbcTypeMap =
 	{"float64", SQL_C_DOUBLE},
 	{"str", SQL_C_CHAR},
 	{"bytes", SQL_C_BINARY},
+
+	// Default types for when the array dtype is "object"
+	//
+	{"int", SQL_C_SBIGINT},
+	{"float", SQL_C_DOUBLE},
 	{"NoneType", SQL_C_CHAR}
 };
 
@@ -43,19 +48,19 @@ const unordered_map<string, SQLSMALLINT> PythonDataSet::m_pythonToOdbcTypeMap =
 const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::m_fnAddColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR, bool>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddBooleanColumnToDictionary)},
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLINTEGER, int>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLINTEGER>)},
 	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLDOUBLE, float>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLDOUBLE>)},
 	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLREAL, float>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLREAL>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLSMALLINT, int>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLSMALLINT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR, int>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLCHAR>)},
 	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLBIGINT, int>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLBIGINT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddStringColumnToDictionary)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
@@ -151,6 +156,37 @@ void PythonDataSet::Init(
 	//
 	m_columns.resize(schemaColumnsNumber);
 	m_columnNullMap.resize(schemaColumnsNumber);
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonDataSet::HasNulls
+//
+// Description:
+//  Check whether there are any SQL_NULL_DATA in the strLen_or_Ind
+//
+bool PythonDataSet::HasNulls(
+	SQLULEN    rowsNumber,
+	SQLINTEGER *strLen_or_Ind) const
+{
+	LOG("PythonDataSet::HasNulls");
+
+	bool hasNulls = false;
+
+	// For basic types, if strLen_or_Ind is nullptr we take that to mean there are no NULL values.
+	//
+	if(strLen_or_Ind != nullptr)
+	{
+		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		{
+			if (strLen_or_Ind[i] == SQL_NULL_DATA)
+			{
+				hasNulls = true;
+				break;
+			}
+		}
+	}
+
+	return hasNulls;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -262,7 +298,7 @@ void PythonInputDataSet::AddColumnsToDictionary(
 //  Adds a column to the python dictionary that will be the DataFrame.
 //  Works for simple types like numbers and boolean
 //
-template<class SQLType, class NullType>
+template<class SQLType>
 void PythonInputDataSet::AddColumnToDictionary(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -272,9 +308,7 @@ void PythonInputDataSet::AddColumnToDictionary(
 	LOG("PythonInputDataSet::AddColumnToDictionary");
 
 	string name = m_columns[columnNumber].get()->Name();
-	SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
-	NullType valueForNull =
-		*(static_cast<const NullType*>(PythonExtensionUtils::m_DataTypeToNullMap.at(dataType)));
+	SQLType* dataArray = static_cast<SQLType *>(data);
 
 	// Properties of the numpy array that will be populated in from_data below.
 	// dt     - Numpy DataType
@@ -287,39 +321,128 @@ void PythonInputDataSet::AddColumnToDictionary(
 	py::tuple shape = py::make_tuple(rowsNumber);
 	py::object own;
 
-	// We need to specify the type is boolean not SQL_CHAR for bools so python knows
+	// Check if there are actually any nulls in this nullable column
 	//
-	if (dataType == SQL_C_BIT)
+	bool hasNulls = false;
+	if (m_columns[columnNumber].get()->Nullable() == SQL_NULLABLE)
 	{
-		dt = np::dtype::get_builtin<bool>();
-		stride = py::make_tuple(sizeof(bool));
+		hasNulls = HasNulls(rowsNumber, strLen_or_Ind);
 	}
 
-	SQLType* dataArray = static_cast<SQLType *>(data);
-
-	// We modify the data array that is passed in by ExtHost in place so that
-	// numpy can use that memory location for its data and not need to copy it out.
+	// If there are no NULLs in the input data, then we can use a more memory efficient way
+	// of constructing the numpy array.
+	// If there ARE NULLs, then we need to create python objects for each value
+	// and use None for the NULLs
 	//
-	for (SQLULEN i = 0; i < rowsNumber; ++i)
+	if(!hasNulls)
 	{
-		// We need to specify the type is boolean not SQL_CHAR for bools so python knows
+		// Create a numpy array that points directly to the C++ data array.
+		// This DOES NOT copy the data, so numpy will directly point to the data location.
 		//
-		if (dataType == SQL_C_BIT)
+		np::ndarray npDataArray = np::from_data(dataArray, dt, shape, stride, own);
+		m_dataDict[name] = npDataArray;
+	}
+	else
+	{
+		np::ndarray nArray = np::empty(shape, m_ObjType);
+
+		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		{
+			if (strLen_or_Ind[i] == SQL_NULL_DATA)
+			{
+				// Use None object for NULLs
+				//
+				nArray[i] = py::object();
+			}
+			else
+			{
+				nArray[i] = dataArray[i];
+			}
+		}
+
+		m_dataDict[name] = nArray;
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonInputDataSet::AddBooleanColumnToDictionary
+//
+// Description:
+//  Adds a boolean column to the python dictionary that will be the DataFrame.
+//
+void PythonInputDataSet::AddBooleanColumnToDictionary(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data,
+	SQLINTEGER  *strLen_or_Ind)
+{
+	LOG("PythonInputDataSet::AddBooleanColumnToDictionary");
+
+	string name = m_columns[columnNumber].get()->Name();
+
+	// Properties of the numpy array that will be populated in from_data below.
+	// dt     - Numpy DataType
+	// stride - size of each element of the array, so numpy knows how to separate elements
+	// shape  - shape of the array as a tuple of sizes of each dimension (we only have 1 dimension)
+	// own    - python object to hold a reference until it is transferred to the namespace
+	//
+	np::dtype dt = np::dtype::get_builtin<bool>();
+	py::tuple stride = py::make_tuple(sizeof(bool));
+	py::tuple shape = py::make_tuple(rowsNumber);
+	py::object own;
+
+	// Check if there are actually any nulls in this nullable column
+	//
+	bool hasNulls = false;
+	if (m_columns[columnNumber].get()->Nullable() == SQL_NULLABLE)
+	{
+		hasNulls = HasNulls(rowsNumber, strLen_or_Ind);
+	}
+
+	SQLCHAR* dataArray = static_cast<SQLCHAR *>(data);
+
+	// If there are no NULLs in the input data, then we can use a more memory efficient way
+	// of constructing the numpy array.
+	// If there ARE NULLs, then we need to create python objects for each value
+	// and use None for the NULLs
+	//
+	if (!hasNulls)
+	{
+		// We modify the data array that is passed in by ExtHost in place so that
+		// numpy can use that memory location for its data and not need to copy it out.
+		//
+		for (SQLULEN i = 0; i < rowsNumber; ++i)
 		{
 			dataArray[i] = dataArray[i] != '0';
 		}
 
-		if (strLen_or_Ind != nullptr && strLen_or_Ind[i] == SQL_NULL_DATA)
-		{
-			dataArray[i] = valueForNull;
-		}
+		// Create a numpy array that points directly to the C++ data array.
+		// This DOES NOT copy the data, so numpy will directly point to the data location.
+		//
+		np::ndarray npDataArray = np::from_data(dataArray, dt, shape, stride, own);
+		m_dataDict[name] = npDataArray;
 	}
+	else
+	{
+		np::ndarray nArray = np::empty(shape, m_ObjType);
 
-	// Create a numpy array that points directly to the C++ data array.
-	// This DOES NOT copy the data, so numpy will directly point to the data location.
-	//
-	np::ndarray npDataArray = np::from_data(dataArray, dt, shape, stride, own);
-	m_dataDict[name] = npDataArray;
+		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		{
+			if (strLen_or_Ind[i] == SQL_NULL_DATA)
+			{
+				// Use None object for NULLs
+				//
+				nArray[i] = py::object();
+			}
+			else
+			{
+				dataArray[i] = dataArray[i] != '0';
+				nArray[i] = bool(dataArray[i]);
+			}
+		}
+
+		m_dataDict[name] = nArray;
+	}
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -348,8 +471,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 
 	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
-		if ((strLen_or_Ind == nullptr) ||
-			(strLen_or_Ind != nullptr && strLen_or_Ind[i] == SQL_NULL_DATA))
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[i] == SQL_NULL_DATA)
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
@@ -406,8 +528,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 
 	for (SQLULEN i = 0; i < rowsNumber; ++i)
 	{
-		if ((strLen_or_Ind == nullptr) ||
-			(strLen_or_Ind != nullptr && strLen_or_Ind[i] == SQL_NULL_DATA))
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[i] == SQL_NULL_DATA)
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
@@ -601,6 +722,7 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 
 	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
 	{
+		bool isNull = true;
 		py::object pyObj = column[i];
 
 		// Make sure the object is not pointing at Python None, or else it will crash on extract
@@ -617,28 +739,20 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 			{
 				SQLType data = extractedData;
 
-				if (is_same<NullType, float>::value && isnan(data))
-				{
-					nullMap[i] = SQL_NULL_DATA;
-					nullable = SQL_NULLABLE;
-					columnData[i] = valueForNull;
-				}
-				else
+				// If the data is not NAN or INF, we set it to the extracted data.
+				//
+				if(!(is_same<NullType, float>::value && (isnan(data) || isinf(data))))
 				{
 					columnData[i] = data;
 					nullMap[i] = sizeof(SQLType);
+					isNull = false;
 				}
 			}
-			else
-			{
-				// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
-				//
-				nullMap[i] = SQL_NULL_DATA;
-				nullable = SQL_NULLABLE;
-				columnData[i] = valueForNull;
-			}
 		}
-		else
+
+		// If data is None, NAN, INF, or a bad type, we set it to NULL_DATA.
+		//
+		if(isNull)
 		{
 			// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
 			//

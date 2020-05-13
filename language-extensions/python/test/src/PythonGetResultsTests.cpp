@@ -40,16 +40,10 @@ namespace ExtensionApiTest
 			(*m_integerInfo).m_columnNames,
 			false);  // validate
 
-		vector<SQLINTEGER> defaultStrLen_Or_Ind =
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, sizeof(SQLINTEGER));
-
-		SQLINTEGER *expectedStrLen_or_Ind[] =
-		{ defaultStrLen_Or_Ind.data(), defaultStrLen_Or_Ind.data() };
-
-		TestGetResults<SQLINTEGER, SQL_C_SLONG>(
+		TestGetResults<SQLINTEGER, int, SQL_C_SLONG>(
 			ColumnInfo<SQLINTEGER>::m_rowsNumber,
 			(*m_integerInfo).m_dataSet.data(),
-			expectedStrLen_or_Ind, // int columns strLen_or_Ind should be 0, there are no nulls
+			(*m_integerInfo).m_strLen_or_Ind.data(),
 			(*m_integerInfo).m_columnNames);
 	}
 
@@ -76,16 +70,10 @@ namespace ExtensionApiTest
 			(*m_booleanInfo).m_columnNames,
 			false);  // validate
 
-		vector<SQLINTEGER> defaultStrLen_Or_Ind =
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, sizeof(SQLCHAR));
-
-		SQLINTEGER *expectedStrLen_or_Ind[] =
-		{ defaultStrLen_Or_Ind.data(), defaultStrLen_Or_Ind.data() };
-
-		TestGetResults<SQLCHAR, SQL_C_BIT>(
+		TestGetResults<SQLCHAR, bool, SQL_C_BIT>(
 			ColumnInfo<SQLCHAR>::m_rowsNumber,
 			(*m_booleanInfo).m_dataSet.data(),
-			expectedStrLen_or_Ind, // boolean columns strLen_or_Ind should be 0, there are no nulls
+			(*m_booleanInfo).m_strLen_or_Ind.data(),
 			(*m_booleanInfo).m_columnNames);
 	}
 
@@ -112,7 +100,7 @@ namespace ExtensionApiTest
 			(*m_realInfo).m_columnNames,
 			false);  // validate
 
-		TestGetResults<SQLREAL, SQL_C_FLOAT>(
+		TestGetResults<SQLREAL, double, SQL_C_FLOAT>(
 			ColumnInfo<SQLREAL>::m_rowsNumber,
 			(*m_realInfo).m_dataSet.data(),
 			(*m_realInfo).m_strLen_or_Ind.data(),
@@ -142,7 +130,7 @@ namespace ExtensionApiTest
 			(*m_doubleInfo).m_columnNames,
 			false);  // validate
 
-		TestGetResults<SQLDOUBLE, SQL_C_DOUBLE>(
+		TestGetResults<SQLDOUBLE, double, SQL_C_DOUBLE>(
 			ColumnInfo<SQLDOUBLE>::m_rowsNumber,
 			(*m_doubleInfo).m_dataSet.data(),
 			(*m_doubleInfo).m_strLen_or_Ind.data(),
@@ -172,16 +160,10 @@ namespace ExtensionApiTest
 			(*m_bigIntInfo).m_columnNames,
 			false); // validate
 
-		vector<SQLINTEGER> defaultStrLen_Or_Ind =
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, sizeof(SQLBIGINT));
-
-		SQLINTEGER *expectedStrLen_or_Ind[] =
-		{ defaultStrLen_Or_Ind.data(), defaultStrLen_Or_Ind.data() };
-
-		TestGetResults<SQLBIGINT, SQL_C_SBIGINT>(
+		TestGetResults<SQLBIGINT, int, SQL_C_SBIGINT>(
 			ColumnInfo<SQLBIGINT>::m_rowsNumber,
 			(*m_bigIntInfo).m_dataSet.data(),
-			expectedStrLen_or_Ind, // int columns strLen_or_Ind should be 0, there are no nulls
+			(*m_bigIntInfo).m_strLen_or_Ind.data(),
 			(*m_bigIntInfo).m_columnNames);
 	}
 
@@ -208,16 +190,10 @@ namespace ExtensionApiTest
 			(*m_smallIntInfo).m_columnNames,
 			false);  // validate
 
-		vector<SQLINTEGER> defaultStrLen_Or_Ind =
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, sizeof(SQLSMALLINT));
-
-		SQLINTEGER *expectedStrLen_or_Ind[] =
-		{ defaultStrLen_Or_Ind.data(), defaultStrLen_Or_Ind.data() };
-
-		TestGetResults<SQLSMALLINT, SQL_C_SSHORT>(
+		TestGetResults<SQLSMALLINT, int, SQL_C_SSHORT>(
 			ColumnInfo<SQLSMALLINT>::m_rowsNumber,
 			(*m_smallIntInfo).m_dataSet.data(),
-			expectedStrLen_or_Ind, // int columns strLen_or_Ind should be 0, there are no nulls
+			(*m_smallIntInfo).m_strLen_or_Ind.data(),
 			(*m_smallIntInfo).m_columnNames);
 	}
 
@@ -244,16 +220,10 @@ namespace ExtensionApiTest
 			(*m_tinyIntInfo).m_columnNames,
 			false);  // validate
 
-		vector<SQLINTEGER> defaultStrLen_Or_Ind =
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, sizeof(SQLCHAR));
-
-		SQLINTEGER *expectedStrLen_or_Ind[] =
-		{ defaultStrLen_Or_Ind.data(), defaultStrLen_Or_Ind.data() };
-
-		TestGetResults<SQLCHAR, SQL_C_UTINYINT>(
+		TestGetResults<SQLCHAR, int, SQL_C_UTINYINT>(
 			ColumnInfo<SQLCHAR>::m_rowsNumber,
 			(*m_tinyIntInfo).m_dataSet.data(),
-			expectedStrLen_or_Ind, // int columns strLen_or_Ind should be 0, there are no nulls
+			(*m_tinyIntInfo).m_strLen_or_Ind.data(),
 			(*m_tinyIntInfo).m_columnNames);
 	}
 
@@ -413,12 +383,12 @@ namespace ExtensionApiTest
 			columnNames);
 	}
 
-	// Name: GetDifferentColumnResultsTest
+	// Name: GetDifferentResultsTest
 	//
 	// Description:
 	//  Test GetResults with default script using an OutputDataSet of different column types.
 	//
-	TEST_F(PythonExtensionApiTests, GetDifferentColumnResultsTest)
+	TEST_F(PythonExtensionApiTests, GetDifferentResultsTest)
 	{
 		// Initialize with a default Session that prints Hello PythonExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -440,8 +410,8 @@ namespace ExtensionApiTest
 		InitializeColumn(2, stringColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
 
 		SQLULEN expectedRowsNumber = 5;
-		vector<SQLINTEGER> intColData{ 2'147'483'647, -2'147'483'647, 0, 0, -1 };
-		vector<SQLDOUBLE> doubleColData{ -1.79e301, INFINITY, -INFINITY, 72.45, 1.79e30 };
+		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, 0, 0, -1 };
+		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
 		vector<const char*> stringCol{ "Hello", "test", "data", "World", "-123" };
 
 		vector<SQLINTEGER> strLenOrIndCol1 = { intSize, intSize, SQL_NULL_DATA,
@@ -459,11 +429,6 @@ namespace ExtensionApiTest
 		vector<char> stringColData = GenerateContiguousData( stringCol, strLenOrIndCol3.data());
 
 		vector<void *> expectedData{ intColData.data(), doubleColData.data(), stringColData.data() };
-
-		// int column strLen will always be sizeof(SQLINTEGER), can't be null
-		//
-		vector<SQLINTEGER> expected_Int_StrLen_or_Ind =
-			vector<SQLINTEGER>(strLenOrIndCol1.size(), sizeof(SQLINTEGER));
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = Execute(
@@ -490,11 +455,11 @@ namespace ExtensionApiTest
 
 		// Test the data returned.
 		//
-		CheckColumnDataEquality<SQLINTEGER>(
+		CheckColumnDataEqualityForNullable<SQLINTEGER, SQLBIGINT>(
 			rowsNumber,
 			static_cast<SQLINTEGER*>(expectedData[0]),
 			static_cast<SQLINTEGER*>(data[0]),
-			expected_Int_StrLen_or_Ind.data(),
+			expectedStrLen_or_Ind[0],
 			strLen_or_Ind[0]);
 
 		CheckColumnDataEquality<SQLDOUBLE>(
@@ -520,14 +485,14 @@ namespace ExtensionApiTest
 		EXPECT_EQ(outputschemaColumnsNumber, py::len(outputDataSet.keys()));
 
 		py::dict intColumn = py::extract<py::dict>(outputDataSet[integerColumnName]);
-		CheckIntColumnEquality<SQLINTEGER>(
+		CheckColumnEquality<SQLBIGINT>(
 			rowsNumber,
 			intColumn,
 			data[0],
-			expected_Int_StrLen_or_Ind.data());
+			strLen_or_Ind[0]);
 
 		py::dict doubleColumn = py::extract<py::dict>(outputDataSet[doubleColumnName]);
-		CheckFloatColumnEquality<SQLDOUBLE>(
+		CheckColumnEquality<SQLDOUBLE>(
 			rowsNumber,
 			doubleColumn,
 			data[1],
@@ -574,7 +539,7 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
-		TestGetResults<SQLINTEGER, SQL_C_SLONG>(
+		TestGetResults<SQLINTEGER, int, SQL_C_SLONG>(
 			0, // expected rowsNumber
 			vector<void*>{nullptr}.data(),
 			vector<SQLINTEGER*>{nullptr}.data(),
@@ -587,7 +552,7 @@ namespace ExtensionApiTest
 	//  Test GetResults to verify the expected results are obtained.
 	//  For numeric, boolean and integer types.
 	//
-	template<class SQLType, SQLSMALLINT dataType>
+	template<class SQLType, class InputCType, SQLSMALLINT DataType>
 	void PythonExtensionApiTests::TestGetResults(
 		SQLULEN        expectedRowsNumber,
 		SQLPOINTER     *expectedData,
@@ -615,34 +580,80 @@ namespace ExtensionApiTest
 
 		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
-			SQLType *expectedColumnData = static_cast<SQLType *>(expectedData[columnNumber]);
-			SQLType *columnData = static_cast<SQLType *>(data[columnNumber]);
+			py::dict column = py::extract<py::dict>(outputDataSet[columnNames[columnNumber]]);
 
 			SQLINTEGER *expectedColumnStrLenOrInd = expectedStrLen_or_Ind[columnNumber];
 			SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
 
-			CheckColumnDataEquality<SQLType>(
-				rowsNumber,
-				expectedColumnData,
-				columnData,
-				expectedColumnStrLenOrInd,
-				columnStrLenOrInd);
-
-			py::dict column = py::extract<py::dict>(outputDataSet[columnNames[columnNumber]]);
-
-			CheckColumnEqualityFnMap::const_iterator it = m_fnCheckColumnEqualityMap.find(dataType);
-
-			if (it == m_fnCheckColumnEqualityMap.end())
+			bool hasNulls = false;
+			for (SQLULEN i=0; i<rowsNumber; ++i)
 			{
-				throw runtime_error("Unsupported column type " + to_string(dataType) +
-					" encountered when testing column equality");
+				if(expectedColumnStrLenOrInd[i] == SQL_NULL_DATA)
+				{
+					hasNulls = true;
+					break;
+				}
 			}
 
-			(this->*it->second)(
-				rowsNumber,
-				column,
-				columnData,
-				columnStrLenOrInd);
+			SQLType *expectedColumnData = static_cast<SQLType *>(expectedData[columnNumber]);
+			SQLType *columnData = static_cast<SQLType *>(data[columnNumber]);
+
+			if(!(hasNulls) || is_same<InputCType, bool>::value)
+			{
+				CheckColumnDataEquality<SQLType>(
+					rowsNumber,
+					expectedColumnData,
+					columnData,
+					expectedColumnStrLenOrInd,
+					columnStrLenOrInd);
+
+				CheckColumnEqualityFnMap::const_iterator it = m_fnCheckColumnEqualityMap.find(DataType);
+
+				if (it == m_fnCheckColumnEqualityMap.end())
+				{
+					throw runtime_error("Unsupported column type " + to_string(DataType) +
+						" encountered when testing column equality");
+				}
+
+				(this->*it->second)(
+					rowsNumber,
+					column,
+					columnData,
+					columnStrLenOrInd);
+			}
+			else
+			{
+				if (is_same<InputCType, int>::value)
+				{
+					CheckColumnDataEqualityForNullable<SQLType, SQLBIGINT>(
+						rowsNumber,
+						expectedColumnData,
+						columnData,
+						expectedColumnStrLenOrInd,
+						columnStrLenOrInd);
+
+					CheckColumnEquality<SQLBIGINT>(
+						rowsNumber,
+						column,
+						columnData,
+						columnStrLenOrInd);
+				}
+				else
+				{
+					CheckColumnDataEqualityForNullable<SQLType, SQLDOUBLE>(
+						rowsNumber,
+						expectedColumnData,
+						columnData,
+						expectedColumnStrLenOrInd,
+						columnStrLenOrInd);
+
+					CheckColumnEquality<SQLDOUBLE>(
+						rowsNumber,
+						column,
+						columnData,
+						columnStrLenOrInd);
+				}
+			}
 		}
 	}
 
@@ -670,20 +681,54 @@ namespace ExtensionApiTest
 		{
 			EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
 
-			if (columnStrLenOrInd[index] == SQL_NULL_DATA)
+			EXPECT_EQ(columnData[index], expectedColumnData[index]);
+		}
+	}
+
+	// Name: CheckColumnDataEqualityForNullable
+	//
+	// Description:
+	//  Template function to compare the given column data
+	//  and nullMap with rowsNumber for equality.
+	//
+	template<class SQLType, class DefaultType>
+	void PythonExtensionApiTests::CheckColumnDataEqualityForNullable(
+		SQLULEN    rowsNumber,
+		SQLType    *expectedColumnData,
+		void       *pColumnData,
+		SQLINTEGER *expectedColumnStrLenOrInd,
+		SQLINTEGER *columnStrLenOrInd)
+	{
+		DefaultType *columnData = static_cast<DefaultType*>(pColumnData);
+		if (rowsNumber == 0 || columnStrLenOrInd == nullptr)
+		{
+			EXPECT_EQ(columnData, nullptr);
+			EXPECT_EQ(columnStrLenOrInd, nullptr);
+		}
+
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
+		{
+			SQLINTEGER strLen = expectedColumnStrLenOrInd[index];
+			if (strLen != SQL_NULL_DATA)
 			{
-				if (is_same<SQLType, float>::value || is_same<SQLType, double>::value)
+				strLen = sizeof(DefaultType);
+				EXPECT_EQ(columnStrLenOrInd[index], strLen);
+
+				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
 				{
-					EXPECT_TRUE(isnan(static_cast<double>(columnData[index])));
+					EXPECT_EQ(columnData[index], static_cast<DefaultType>(expectedColumnData[index]));
+				}
+				else if(is_same<DefaultType, SQLDOUBLE>::value)
+				{
+					// Double NULLs will be NAN.
+					//
+					EXPECT_TRUE(isnan(static_cast<SQLDOUBLE>(columnData[index])));
 				}
 				else
 				{
+					// Int NANs are defined as 0.
 					EXPECT_EQ(columnData[index], 0);
 				}
-			}
-			else
-			{
-				EXPECT_EQ(columnData[index], expectedColumnData[index]);
 			}
 		}
 	}
