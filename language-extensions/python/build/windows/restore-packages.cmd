@@ -12,6 +12,12 @@ for /D %%d in (*External-Boost*) do (
 	copy %%d\Windows\lib-debug\* %%d\Windows\lib\ >> extract.txt
 )
 
+REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
+REM
+if NOT "%BUILD_BUILDID%"=="" (
+	setx PYTHONHOME %ENL_ROOT%\packages\python
+)
+
 del extract.txt
 
 popd
