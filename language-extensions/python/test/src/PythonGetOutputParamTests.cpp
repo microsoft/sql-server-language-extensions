@@ -1,0 +1,854 @@
+//*************************************************************************************************
+// Copyright (C) Microsoft Corporation.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+// https://www.boost.org/LICENSE_1_0.txt)
+//
+// @File: PythonGetOutputParamTests.cpp
+//
+// Purpose:
+//  Tests the Python Extension's implementation of the external language GetOutputParam API.
+//
+//*************************************************************************************************
+#include "PythonExtensionApiTests.h"
+
+using namespace std;
+
+namespace ExtensionApiTest
+{
+	// Name: GetIntegerOutputParamTest
+	//
+	// Description:
+	// Test multiple SQLINTEGER values
+	//
+	TEST_F(PythonExtensionApiTests, GetIntegerOutputParamTest)
+	{
+		SQLINTEGER p0 = m_MaxInt;
+		SQLINTEGER p1 = m_MinInt;
+		SQLINTEGER p2 = 4;
+		SQLINTEGER p3 = 0;
+
+		string scriptString =
+			"param0 = " + to_string(p0) + ";"
+			"param1 = " + to_string(p1) + ";"
+			"param2 = " + to_string(p2) + ";"
+			"param3 = " + to_string(p3) + ";"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for(int i=0; i<paramsNumber; ++i)
+		{
+			TestParameter<SQLINTEGER, SQL_C_SLONG>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQLINTEGER*> paramValues = { &p0, &p1, &p2, &p3, nullptr};
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_IntSize,
+			m_IntSize,
+			m_IntSize,
+			m_IntSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLINTEGER>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+
+	// Name: GetBitOutputParamTest
+	//
+	// Description:
+	// Test multiple bit values
+	//
+	TEST_F(PythonExtensionApiTests, GetBitOutputParamTest)
+	{
+		SQLCHAR p0 = '\x1';
+		SQLCHAR p1 = '\0';
+		SQLCHAR p2 = '\x1';
+
+		string scriptString =
+			"param0 = True;"
+			"param1 = False;"
+			"param2 = 3;"
+			"param3 = None;";
+
+		int paramsNumber = 4;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestParameter<SQLCHAR, SQL_C_BIT>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQLCHAR*> paramValues = { &p0, &p1, &p2, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_BooleanSize,
+			m_BooleanSize,
+			m_BooleanSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLCHAR>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetRealOutputParamTest
+	//
+	// Description:
+	// Test multiple real values
+	//
+	TEST_F(PythonExtensionApiTests, GetRealOutputParamTest)
+	{
+		SQLREAL p0 = m_MaxReal;
+		SQLREAL p1 = m_MinReal;
+		SQLREAL p2 = 2.3e4;
+		SQLREAL p3 = 0;
+
+		string scriptString =
+			"param0 = " + to_string(p0) + ";"
+			"param1 = " + to_string(p1) + ";"
+			"param2 = " + to_string(p2) + ";"
+			"param3 = " + to_string(p3) + ";"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestParameter<SQLREAL, SQL_C_FLOAT>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQLREAL*> paramValues = { &p0, &p1, &p2, &p3, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_RealSize,
+			m_RealSize,
+			m_RealSize,
+			m_RealSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLREAL>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetDoubleOutputParamTest
+	//
+	// Description:
+	// Test multiple double values
+	//
+	TEST_F(PythonExtensionApiTests, GetDoubleOutputParamTest)
+	{
+		SQLDOUBLE p0 = m_MaxDouble;
+		SQLDOUBLE p1 = m_MinDouble;
+		SQLDOUBLE p2 = 1.45e38;
+		SQLDOUBLE p3 = 0;
+
+		string scriptString =
+			"param0 = " + to_string(p0) + ";"
+			"param1 = " + to_string(p1) + ";"
+			"param2 = " + to_string(p2) + ";"
+			"param3 = " + to_string(p3) + ";"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQLDOUBLE*> paramValues = { &p0, &p1, &p2, &p3, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_DoubleSize,
+			m_DoubleSize,
+			m_DoubleSize,
+			m_DoubleSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLDOUBLE>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetBigIntOutputParamTest
+	//
+	// Description:
+	// Test multiple big int values
+	//
+	TEST_F(PythonExtensionApiTests, GetBigIntOutputParamTest)
+	{
+		SQLBIGINT p0 = m_MaxBigInt;
+		SQLBIGINT p1 = m_MinBigInt;
+		SQLBIGINT p2 = 9372036854775;
+		SQLBIGINT p3 = 0;
+
+		string scriptString =
+			"param0 = " + to_string(p0) + ";"
+			"param1 = " + to_string(p1) + ";"
+			"param2 = " + to_string(p2) + ";"
+			"param3 = " + to_string(p3) + ";"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestParameter<SQLBIGINT, SQL_C_SBIGINT>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQLBIGINT*> paramValues = { &p0, &p1, &p2, &p3, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_BigIntSize,
+			m_BigIntSize,
+			m_BigIntSize,
+			m_BigIntSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLBIGINT>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetSmallIntOutputParamTest
+	//
+	// Description:
+	// Test multiple small int values
+	//
+	TEST_F(PythonExtensionApiTests, GetSmallIntOutputParamTest)
+	{
+		SQLSMALLINT p0 = m_MaxSmallInt;
+		SQLSMALLINT p1 = m_MinSmallInt;
+		SQLSMALLINT p2 = 3007;
+		SQLSMALLINT p3 = 0;
+
+		string scriptString =
+			"param0 = " + to_string(p0) + ";"
+			"param1 = " + to_string(p1) + ";"
+			"param2 = " + to_string(p2) + ";"
+			"param3 = " + to_string(p3) + ";"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestParameter<SQLSMALLINT, SQL_C_SSHORT>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQLSMALLINT*> paramValues = { &p0, &p1, &p2, &p3, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_SmallIntSize,
+			m_SmallIntSize,
+			m_SmallIntSize,
+			m_SmallIntSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLSMALLINT>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetTinyIntOutputParamTest
+	//
+	// Description:
+	// Test multiple tiny int values
+	//
+	TEST_F(PythonExtensionApiTests, GetTinyIntOutputParamTest)
+	{
+		SQLCHAR p0 = m_MaxTinyInt;
+		SQLCHAR p1 = m_MinTinyInt;
+		SQLCHAR p2 = 123;
+		SQLCHAR p3 = -1;
+
+		string scriptString =
+			"param0 = " + to_string(p0) + ";"
+			"param1 = " + to_string(p1) + ";"
+			"param2 = " + to_string(p2) + ";"
+			"param3 = " + to_string(p3) + ";"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestParameter<SQLCHAR, SQL_C_UTINYINT>(
+				i,         // paramNumber
+				0,         // paramValue
+				SQL_PARAM_INPUT_OUTPUT,
+				false,     // isNull
+				false);    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		// p3 is -1, which is expected to underflow into max value (which is p0)
+		//
+		vector<SQLCHAR*> paramValues = { &p0, &p1, &p2, &p0, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			m_TinyIntSize,
+			m_TinyIntSize,
+			m_TinyIntSize,
+			m_TinyIntSize,
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetOutputParam<SQLCHAR>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetStringOutputParamTest
+	//
+	// Description:
+	// Test multiple string values
+	//
+	TEST_F(PythonExtensionApiTests, GetStringOutputParamTest)
+	{
+		string scriptString = "param0 = 'HELLO';"
+			"param1 = 'PyExtension';"
+			"param2 = 'WORLD';"
+			"param3 = None;"
+			"param4 = None;"
+			"param5 = ''";
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			6,   // parametersNumber
+			0,   // inputSchemaColumnsNumber
+			scriptString);
+
+		// Note: The behavior of fixed and varying character types is same when it comes to output
+		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
+		//
+		vector<bool> isFixedType = { true, false, true, false, true, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
+
+		for(SQLULEN paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+		{
+			TestStringParameter(
+				paramNumber,
+				"",             // paramValue
+				paramSizes[paramNumber],
+				isFixedType[paramNumber],
+				SQL_PARAM_INPUT_OUTPUT,
+				false); // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		const vector<string> ExpectedParamValueStrings = {
+			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
+			//
+			"HELLO",
+			// Test VARCHAR(6) value with string length more than the type allows - expected truncation.
+			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
+			//
+			"PyExte",
+			// Test CHAR(10) value with string length less than the type allows.
+			//
+			"WORLD",
+			// Test a 0 length string
+			//
+			"" };
+
+		vector<SQLCHAR*> expectedParamValues = {
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[0].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[1].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
+			// Test None returned in a VARCHAR(5) parameter.
+			//
+			nullptr,
+			// Test None CHAR(5) value.
+			//
+			nullptr,
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))) };
+
+		vector<SQLINTEGER> expectedStrLenOrInd = {
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
+			SQL_NULL_DATA,
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()) };
+
+		TestGetStringOutputParam(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
+	// Name: GetRawOutputParamTest
+	//
+	// Description:
+	// Test multiple raw binary/bytes values
+	//
+	TEST_F(PythonExtensionApiTests, GetRawOutputParamTest)
+	{
+		string scriptString = "param0 = b'HELLO';"
+			"param1 = b'PyExtension';"
+			"param2 = b'WORLD';"
+			"param3 = None;"
+			"param4 = None;"
+			"param5 = b''";
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			6,   // parametersNumber
+			0,   // inputSchemaColumnsNumber
+			scriptString);
+
+		// Note: The behavior of fixed and varying character types is same when it comes to output
+		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
+		//
+		vector<bool> isFixedType = { true, false, true, false, true, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
+
+		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
+		{
+			vector<SQLCHAR> dummy = { 0x00 };
+
+			TestRawParameter(
+				paramNumber,
+				dummy.data(),              // paramValue
+				paramSizes[paramNumber],
+				isFixedType[paramNumber],
+				SQL_PARAM_INPUT_OUTPUT,
+				false);                    // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		const vector<string> ExpectedParamValueStrings = {
+			// Test simple BINARY(5) value with exact string length as the type allows i.e. here 5.
+			//
+			"HELLO",
+			// Test VARBINARY(6) value with string length more than the type allows - expected truncation.
+			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
+			//
+			"PyExte",
+			// Test BINARY(10) value with string length less than the type allows.
+			//
+			"WORLD",
+			// Test a 0 length string
+			//
+			"" };
+
+		vector<SQLCHAR*> expectedParamValues = {
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[0].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[1].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
+			// Test None returned in a VARCHAR(5) parameter.
+			//
+			nullptr,
+			// Test None CHAR(5) value.
+			//
+			nullptr,
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))) };
+
+		vector<SQLINTEGER> expectedStrLenOrInd = {
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
+			SQL_NULL_DATA,
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()) };
+
+		TestGetRawOutputParam(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
+	// Name: GetInvalidOutputParamTest
+	//
+	// Description:
+	// Negative tests.
+	//
+	TEST_F(PythonExtensionApiTests, GetInvalidOutputParamTest)
+	{
+		InitializeSession(
+			2,   // parametersNumber
+			0,   // inputSchemaColumnsNumber
+			""); // scriptString
+
+		TestParameter<SQLINTEGER, SQL_C_SLONG>(
+			0,       // paramNumber
+			0,       // paramValue
+			SQL_PARAM_INPUT,
+			false,   // isNull
+			false);  // validate
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		SQLPOINTER paramValue = nullptr;
+		SQLINTEGER strLen_or_Ind = 0;
+		result = SQL_SUCCESS;
+
+		// Test input parameter requested as output.
+		//
+		result = GetOutputParam(
+			*m_sessionId,
+			m_taskId,
+			0, // paramNumber
+			&paramValue,
+			&strLen_or_Ind);
+
+		ASSERT_EQ(result, SQL_ERROR);
+
+		// Test uninitialized parameter.
+		//
+		result = SQL_SUCCESS;
+		result = GetOutputParam(
+			*m_sessionId,
+			m_taskId,
+			1, // paramNumber
+			&paramValue,
+			&strLen_or_Ind);
+
+		ASSERT_EQ(result, SQL_ERROR);
+	}
+
+	// Name: TestGetOutputParam
+	//
+	// Description:
+	// Templatized function to test output param value and strLenOrInd is as expected.
+	//
+	template<class SQLType>
+	void PythonExtensionApiTests::TestGetOutputParam(
+		vector<SQLType*>   expectedParamValueVector,
+		vector<SQLINTEGER> expectedStrLenOrIndVector)
+	{
+		ASSERT_EQ(expectedParamValueVector.size(), expectedStrLenOrIndVector.size());
+
+		for(SQLULEN i=0; i< expectedParamValueVector.size(); ++i)
+		{
+			SQLType *expectedParamValue = expectedParamValueVector[i];
+			SQLINTEGER expectedStrLenOrInd = expectedStrLenOrIndVector[i];
+
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+
+			SQLRETURN result = SQL_ERROR;
+			result = GetOutputParam(
+					*m_sessionId,
+					m_taskId,
+					i,  // paramNumber
+					&paramValue,
+					&strLen_or_Ind);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd);
+
+			if (expectedParamValue != nullptr)
+			{
+				EXPECT_EQ(*(static_cast<SQLType*>(paramValue)), *expectedParamValue);
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	// Name: GetStringOutputParam
+	//
+	// Description:
+	// Test string output param value and strLenOrInd is as expected.
+	//
+	void PythonExtensionApiTests::TestGetStringOutputParam(
+		vector<SQLCHAR*>   expectedParamValues,
+		vector<SQLINTEGER> expectedStrLenOrInd)
+	{
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+			SQLRETURN result = SQL_ERROR;
+
+			result = GetOutputParam(
+				*m_sessionId,
+				m_taskId,
+				paramNumber,
+				&paramValue,
+				&strLen_or_Ind);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+			if (expectedParamValues[paramNumber] != nullptr)
+			{
+				string paramValueString(static_cast<char*>(paramValue),
+					strLen_or_Ind);
+				string expectedParamValueString(static_cast<char*>(
+					static_cast<void*>(expectedParamValues[paramNumber])),
+					expectedStrLenOrInd[paramNumber]);
+				EXPECT_EQ(paramValueString, expectedParamValueString);
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	// Name: GetBinaryOutputParam
+	//
+	// Description:
+	// Test Binary (binary) output param value and strLenOrInd is as expected.
+	//
+	void PythonExtensionApiTests::TestGetRawOutputParam(
+		vector<SQLCHAR*>   expectedParamValues,
+		vector<SQLINTEGER> expectedStrLenOrInd)
+	{
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+
+			SQLRETURN result = SQL_ERROR;
+			result = GetOutputParam(
+				*m_sessionId,
+				m_taskId,
+				paramNumber,
+				&paramValue,
+				&strLen_or_Ind);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+			if (expectedParamValues[paramNumber] != nullptr)
+			{
+				for (SQLINTEGER i = 0; i < strLen_or_Ind; ++i)
+				{
+					EXPECT_EQ(*(static_cast<SQLCHAR*>(paramValue) + i),
+						*(expectedParamValues[paramNumber] + i));
+				}
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+}

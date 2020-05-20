@@ -61,9 +61,9 @@ void PythonParamContainer::Init(SQLSMALLINT paramsNumber)
 // Name: AddParamToNamespace
 //
 // Description:
-// Creates a PythonParam object and adds it to the boost:python namespace.
-// Eventually, adds the PythonParam to m_params for future use.
-// Creation is done by finding the appropriate function from the function map.
+//  Creates a PythonParam object and adds it to the boost:python namespace.
+//  Eventually, adds the PythonParam to m_params for future use.
+//  Creation is done by finding the appropriate function from the function map.
 //
 void PythonParamContainer::AddParamToNamespace(
 	py::object    nameSpace,
@@ -104,7 +104,7 @@ void PythonParamContainer::AddParamToNamespace(
 // Name: CreateParam
 //
 // Description:
-// Template to create a parameter and add it to the python namespace
+//  Template to create a parameter and add it to the python namespace
 //
 template<class ParamType>
 void PythonParamContainer::CreateParam(
@@ -119,9 +119,6 @@ void PythonParamContainer::CreateParam(
 	SQLINTEGER    strLen_or_Ind,
 	SQLSMALLINT   inputOutputType)
 {
-	// Remove "@" from the front of the name and the length
-	//
-
 	unique_ptr<PythonParam> paramToBeAdded = make_unique<ParamType>(
 		paramNumber,
 		paramName,
@@ -135,6 +132,43 @@ void PythonParamContainer::CreateParam(
 		);
 
 	string name = paramToBeAdded.get()->Name();
-	nameSpace[name] = paramToBeAdded.get()->PythonValue();
+	nameSpace[name] = paramToBeAdded.get()->PythonObject();
 	m_params[paramNumber] = std::move(paramToBeAdded);
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonParamContainer::GetParamValueAndStrLenInd
+//
+// Description:
+//  For the given paramNumber, call RetriveValueAndStrLenOrInd() to retrieve the value from python
+//  and return it via paramValue. Return the strLenOrInd as well.
+//  Note the value returned is allocated on the heap and will be cleaned up when param is destructed.
+//
+void PythonParamContainer::GetParamValueAndStrLenInd(
+	py::object   mainNamespace,
+	SQLUSMALLINT paramNumber,
+	SQLPOINTER   *paramValue,
+	SQLINTEGER   *strLen_or_Ind)
+{
+	LOG("PythonParamContainer::GetParamValueAndStrLenInd");
+
+	if (m_params[paramNumber] == nullptr)
+	{
+		throw runtime_error("InitParam not called for paramNumber " + to_string(paramNumber));
+	}
+
+	PythonParam *param = m_params[paramNumber].get();
+
+	if (param->InputOutputType() <= SQL_PARAM_INPUT)
+	{
+		throw runtime_error("Requested param #" + to_string(paramNumber) +
+			" is not initialized as an output parameter");
+	}
+
+	// Retrieve the value from Python namespace
+	//
+	param->RetrieveValueAndStrLenInd(mainNamespace);
+
+	*paramValue = param->Value();
+	*strLen_or_Ind = param->StrLenOrInd();
 }

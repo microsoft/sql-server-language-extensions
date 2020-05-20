@@ -180,11 +180,14 @@ namespace ExtensionApiTest
 	// Tests InitSession API
 	//
 	void PythonExtensionApiTests::InitializeSession(
+		SQLUSMALLINT parametersNumber,
 		SQLUSMALLINT inputSchemaColumnsNumber,
-		SQLCHAR      *script,
-		SQLULEN      scriptStringLength)
+		string       scriptString)
 	{
 		SQLRETURN result = SQL_ERROR;
+
+		SQLCHAR *script = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
 		result = Init(
 			nullptr, // Extension Params
@@ -203,9 +206,9 @@ namespace ExtensionApiTest
 			m_taskId,
 			m_numTasks,
 			script,
-			scriptStringLength,
+			scriptString.length(),
 			inputSchemaColumnsNumber,
-			m_parametersNumber,
+			parametersNumber,
 			m_inputDataName,
 			m_inputDataNameLength,
 			m_outputDataName,

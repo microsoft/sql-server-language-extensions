@@ -302,7 +302,27 @@ void PythonSession::GetOutputParam(
 	SQLPOINTER   *paramValue,
 	SQLINTEGER   *strLen_or_Ind)
 {
-	LOG("PythonSession::GetOutputParam");
+	LOG("PythonSession::GetOutputParam - initializing output parameter #"
+		+ to_string(paramNumber));
+
+	if (paramValue == nullptr || strLen_or_Ind == nullptr)
+	{
+		throw invalid_argument("Null arguments supplied to GetOutputParam().");
+	}
+
+	if (paramNumber < m_paramContainer.GetSize())
+	{
+		m_paramContainer.GetParamValueAndStrLenInd(
+			m_mainNamespace,
+			paramNumber,
+			paramValue,
+			strLen_or_Ind);
+	}
+	else
+	{
+		throw invalid_argument("Invalid output parameter id supplied to GetOutputParam(): " +
+			to_string(paramNumber));
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -315,5 +335,8 @@ void PythonSession::Cleanup()
 {
 	LOG("PythonSession::Cleanup");
 
+	m_inputDataSet.Cleanup();
+
 	m_outputDataSet.CleanupColumns();
+	m_outputDataSet.Cleanup();
 }

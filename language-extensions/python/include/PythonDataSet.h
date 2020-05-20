@@ -42,6 +42,10 @@ public:
 		SQLULEN    rowsNumber,
 		SQLINTEGER *strLen_or_Ind) const;
 
+	// Clean up the dataset from the namespace
+	//
+	void Cleanup();
+
 	// Returns the number of columns in the PythonDataSet from the vector of PythonColumns
 	// at the time this is called.
 	// Note: Once Init() resizes the vector to schemaColumnsNumber, its size

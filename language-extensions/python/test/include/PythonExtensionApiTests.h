@@ -40,9 +40,9 @@ namespace ExtensionApiTest
 		// Initialize a valid session.
 		//
 		void InitializeSession(
+			SQLUSMALLINT parametersNumber = 0,
 			SQLUSMALLINT inputSchemaColumnsNumber = 0,
-			SQLCHAR      *script = static_cast<SQLCHAR*>(static_cast<void *>(const_cast<char*>(""))),
-			SQLULEN      scriptStringLength = 0);
+			std::string  scriptString = "");
 
 		// Initialize a column
 		//
@@ -81,23 +81,31 @@ namespace ExtensionApiTest
 		//
 		template<class SQLType, SQLSMALLINT dataType>
 		void TestParameter(
-			SQLType paramValue,
-			bool isNull = false);
+			int         paramNumber,
+			SQLType     paramValue,
+			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+			bool        isNull = false,
+			bool        validate = true);
 
 		// Test a string parameter
 		//
 		void TestStringParameter(
-			const char *paramValue,
-			SQLULEN    paramSize,
-			bool       isFixedType);
+			int         paramNumber,
+			const char  *paramValue,
+			SQLULEN     paramSize,
+			bool        isFixedType,
+			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+			bool        validate = true);
 
 		// Test a binary parameter
 		//
 		void TestRawParameter(
-			const SQLCHAR paramValue[],
-			SQLINTEGER    strLenOrInd,
+			int           paramNumber,
+			const SQLCHAR *paramValue,
 			SQLULEN       paramSize,
-			bool          isFixedType);
+			bool          isFixedType,
+			SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+			bool          validate = true);
 
 		// Fill a contiguous array columnData with members from the given columnVector
 		// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
@@ -224,6 +232,25 @@ namespace ExtensionApiTest
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 
+		// Template function to test output param value and strLenOrInd is as expected.
+		//
+		template<class SQLType>
+		void TestGetOutputParam(
+			std::vector<SQLType*>   expectedParamValueVector,
+			std::vector<SQLINTEGER> expectedStrLenOrIndVector);
+
+		// Test output string param value and strLenOrInd is as expected.
+		//
+		void TestGetStringOutputParam(
+			std::vector<SQLCHAR*>   expectedParamValueVector,
+			std::vector<SQLINTEGER> expectedStrLenOrIndVector);
+
+		// Test output raw param value and strLenOrInd is as expected.
+		//
+		void TestGetRawOutputParam(
+			std::vector<SQLCHAR*>   expectedParamValueVector,
+			std::vector<SQLINTEGER> expectedStrLenOrIndVector);
+
 		// Objects declared here can be used by all tests in the test suite.
 		//
 		SQLGUID *m_sessionId;
@@ -283,10 +310,20 @@ namespace ExtensionApiTest
 		// For floating types, not using numeric_limits because they can't be
 		// used for equality comparisons.
 		//
-		const SQLREAL m_MaxReal = 3.4e38F;;
-		const SQLREAL m_MinReal = -3.4e38F;;
+		const SQLREAL m_MaxReal = 3.4e38F;
+		const SQLREAL m_MinReal = -3.4e38F;
 		const SQLDOUBLE m_MaxDouble = 1.79e308;
 		const SQLDOUBLE m_MinDouble = -1.79e308;
+
+		const SQLINTEGER m_IntSize = sizeof(SQLINTEGER);
+		const SQLINTEGER m_BooleanSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_RealSize = sizeof(SQLREAL);
+		const SQLINTEGER m_DoubleSize = sizeof(SQLDOUBLE);
+		const SQLINTEGER m_BigIntSize = sizeof(SQLBIGINT);
+		const SQLINTEGER m_SmallIntSize = sizeof(SQLSMALLINT);
+		const SQLINTEGER m_TinyIntSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_booleanInfo = nullptr;

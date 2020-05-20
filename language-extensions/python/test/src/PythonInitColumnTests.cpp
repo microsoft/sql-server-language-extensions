@@ -19,7 +19,8 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitColumnTest)
 	{
-		InitializeSession(1);
+		InitializeSession(0, // paramsNumber
+			1); // inputSchemaColumns
 
 		SQLCHAR * columnName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>("Column1")));
@@ -31,7 +32,7 @@ namespace ExtensionApiTest
 			columnName,
 			columnNameLength,
 			SQL_C_SLONG,      // Data Type
-			sizeof(int),      // Column Size
+			m_IntSize,        // Column Size
 			0,                // Decimal Digits
 			1,                // Nullable
 			-1,               // PartitionByNumber
@@ -45,7 +46,8 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitInvalidColumnTest)
 	{
-		InitializeSession(1);
+		InitializeSession(0, // paramsNumber
+			1); // inputSchemaColumns
 
 		SQLRETURN result = InitColumn(
 			*m_sessionId,
@@ -54,7 +56,7 @@ namespace ExtensionApiTest
 			nullptr,     // Column Name
 			0,           // Column Name Length
 			SQL_C_SLONG, // Data Type
-			sizeof(int), // Column Size
+			m_IntSize,   // Column Size
 			0,           // Decimal Digits
 			1,           // Nullable
 			-1,          // PartitionByNumber
@@ -77,15 +79,15 @@ namespace ExtensionApiTest
 		SQLRETURN result = InitColumn(
 			*m_sessionId,
 			m_taskId,
-			2,                              // column number greater than initialized columns
+			2,                // column number greater than initialized columns
 			columnName,
 			columnNameLength,
-			SQL_C_SLONG,                    // Data Type
-			sizeof(int),                    // Column Size
-			0,                              // Decimal Digits
-			1,                              // Nullable
-			-1,                             // PartitionByNumber
-			-1                              // OrderByNumber
+			SQL_C_SLONG,      // Data Type
+			m_IntSize,        // Column Size
+			0,                // Decimal Digits
+			1,                // Nullable
+			-1,               // PartitionByNumber
+			-1                // OrderByNumber
 		);
 		EXPECT_EQ(result, SQL_ERROR);
 	}

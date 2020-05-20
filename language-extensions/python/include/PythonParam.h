@@ -32,10 +32,33 @@ public:
 
 	// Get m_pyObject
 	//
-	const boost::python::object& PythonValue() const
+	const boost::python::object& PythonObject() const
 	{
 		return m_pyObject;
 	}
+
+	// Get m_strLenOrInd
+	//
+	SQLINTEGER StrLenOrInd() const
+	{
+		return m_strLenOrInd;
+	}
+
+	// Get m_inputOutputType
+	//
+	SQLSMALLINT InputOutputType() const
+	{
+		return m_inputOutputType;
+	}
+
+	// Get m_value
+	//
+	virtual SQLPOINTER Value() const = 0;
+
+	// Retrieve data from python namespace, fill it in m_value
+	// and set m_strLenOrInd accordingly.
+	//
+	virtual void RetrieveValueAndStrLenInd(boost::python::object mainNamespace) = 0;
 
 protected:
 	// Protected constructor to initialize the members.
@@ -55,6 +78,12 @@ protected:
 	//
 	template<class T>
 	void CheckParamSize();
+
+	// Value of the parameter as retrieved from python namespace,
+	// holding the contents before sending them back to ExtHost
+	// Only useful for output parameter types.
+	//
+	SQLPOINTER m_value = nullptr;
 
 	// The boost::python object with the value to be placed in the nameSpace
 	//
@@ -127,6 +156,34 @@ public:
 		SQLPOINTER    paramValue,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
+
+	// Retrieve data from python namespace, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd(boost::python::object mainNamespace) override;
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLType*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+
+	// Vector holding the value of the parameter as retrieved from python namespace,
+	// holding the contents before sending them back to ExtHost
+	// Only useful for output parameter types.
+	//
+	std::vector<SQLType> m_value;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -152,6 +209,32 @@ public:
 		SQLPOINTER    paramValue,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
+
+	// Retrieve data from python namespace, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd(boost::python::object mainNamespace) override;
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLCHAR*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+	// Character vector holding the contents before sending them back to ExtHost.
+	// Useful for output parameter types.
+	//
+	std::vector<SQLCHAR> m_value;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -177,6 +260,32 @@ public:
 		SQLPOINTER    paramValue,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
+
+	// Retrieve data from python namespace, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd(boost::python::object mainNamespace) override;
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLCHAR*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+	// Character vector holding the contents before sending them back to ExtHost.
+	// Useful for output parameter types.
+	//
+	std::vector<SQLCHAR> m_value;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -202,4 +311,30 @@ public:
 		SQLPOINTER    paramValue,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
+
+	// Retrieve data from python namespace, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd(boost::python::object mainNamespace) override;
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLCHAR*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+	// Character vector holding the contents before sending them back to ExtHost.
+	// Useful for output parameter types.
+	//
+	std::vector<SQLCHAR> m_value;
 };

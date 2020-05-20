@@ -190,6 +190,26 @@ bool PythonDataSet::HasNulls(
 }
 
 //-------------------------------------------------------------------------------------------------
+// Name: PythonDataSet::Cleanup
+//
+// Description:
+//  Cleanup the dataset in python namespace.
+//
+void PythonDataSet::Cleanup()
+{
+	LOG("PythonDataSet::Cleanup");
+
+	if (m_name.length() > 0)
+	{
+		string cleanupScript = "if '" + m_name + "' in globals(): del " + m_name;
+
+		// Execute the cleanup script to reset the dataset variable to None.
+		//
+		py::exec(cleanupScript.c_str(), m_mainNamespace);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::InitColumn
 //
 // Description:

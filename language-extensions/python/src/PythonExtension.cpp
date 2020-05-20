@@ -73,6 +73,13 @@ SQLRETURN Init(
 		// This allows us to start using Python API and boost functions.
 		//
 		Py_Initialize();
+
+		if (!Py_IsInitialized()) 
+		{
+			throw runtime_error("Python did not initialize properly, "
+				"check paths and dependencies.");
+		}
+
 		py::numpy::initialize();
 	}
 	catch (const exception &ex)

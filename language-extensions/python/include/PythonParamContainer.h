@@ -54,6 +54,14 @@ public:
 		return static_cast<SQLUSMALLINT>(m_params.size());
 	}
 
+	// For the given paramNumber, retrieve and return paramValue and strLen_or_Ind.
+	//
+	void GetParamValueAndStrLenInd(
+		boost::python::object mainNamespace,
+		SQLUSMALLINT          paramNumber,
+		SQLPOINTER            *paramValue,
+		SQLINTEGER            *strLen_or_Ind);
+
 private:
 
 	// Template to create a parameter and add it to the python namespace

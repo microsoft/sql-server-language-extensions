@@ -100,13 +100,13 @@ PythonParamTemplate<SQLType>::PythonParamTemplate(
 	SQLINTEGER    strLen_or_Ind,
 	SQLSMALLINT   inputOutputType)
 	: PythonParam(id,
-				paramName,
-				paramNameLength,
-				type,
-				paramSize,
-				decimalDigits,
-				strLen_or_Ind,
-				inputOutputType)
+		paramName,
+		paramNameLength,
+		type,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	CheckParamSize<SQLType>();
 
@@ -119,6 +119,36 @@ PythonParamTemplate<SQLType>::PythonParamTemplate(
 		// Use None object for NULLs
 		//
 		m_pyObject = py::object();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonParamTemplate::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves the value from the namespace and populates m_value and m_strLenOrInd.
+//  Template for int/float types.
+//
+template<class SQLType>
+void PythonParamTemplate<SQLType>::RetrieveValueAndStrLenInd(py::object mainNamespace)
+{
+	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+
+	m_strLenOrInd = SQL_NULL_DATA;
+
+	if (dictNamespace.has_key(m_name))
+	{
+		py::object tempObj = mainNamespace[m_name];
+
+		if(!tempObj.is_none())
+		{
+			py::extract<SQLType> extractedObj(tempObj);
+			if(extractedObj.check())
+			{
+				m_value.push_back(SQLType(extractedObj));
+				m_strLenOrInd = sizeof(SQLType);
+			}
+		}
 	}
 }
 
@@ -159,6 +189,33 @@ PythonBooleanParam::PythonBooleanParam(
 		// Use None object for NULLs
 		//
 		m_pyObject = py::object();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonBooleanParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
+//
+void PythonBooleanParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
+{
+	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	if (dictNamespace.has_key(m_name))
+	{
+		py::object tempObj = mainNamespace[m_name];
+
+		m_strLenOrInd = SQL_NULL_DATA;
+
+		if (!tempObj.is_none())
+		{
+			py::extract<bool> extractedObj(tempObj);
+			if (extractedObj.check())
+			{
+				m_value.push_back(static_cast<SQLCHAR>(bool(extractedObj)));
+				m_strLenOrInd = sizeof(bool);
+			}
+		}
 	}
 }
 
@@ -205,6 +262,46 @@ PythonStringParam::PythonStringParam(
 }
 
 //-------------------------------------------------------------------------------------------------
+// Name: PythonStringParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
+//
+void PythonStringParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
+{
+	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	if (dictNamespace.has_key(m_name))
+	{
+		py::object tempObj = mainNamespace[m_name];
+
+		m_strLenOrInd = SQL_NULL_DATA;
+
+		if (!tempObj.is_none())
+		{
+			py::extract<string> extractedObj(tempObj);
+
+			if (extractedObj.check())
+			{
+				// Extract and copy the string characters into the vector.
+				//
+				string value = extractedObj;
+				m_value = vector<SQLCHAR>(value.begin(), value.end());
+
+				// Truncate the return data to only be the size specified when creating
+				//
+				if (m_value.size() > m_size)
+				{
+					m_value.resize(m_size);
+					m_value.shrink_to_fit();
+				}
+
+				m_strLenOrInd = m_value.size();
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 // Name: PythonRawParam
 //
 // Description:
@@ -241,13 +338,51 @@ PythonRawParam::PythonRawParam(
 			PyBytes_FromObject(PyMemoryView_FromMemory(
 				static_cast<char*>(paramValue), strlen, PyBUF_READ
 			))
-			));
+		));
 	}
 	else
 	{
 		// Use None object for NULLs
 		//
 		m_pyObject = py::object();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonRawParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
+//
+void PythonRawParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
+{
+	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	if (dictNamespace.has_key(m_name))
+	{
+		py::object tempObj = mainNamespace[m_name];
+
+		m_strLenOrInd = SQL_NULL_DATA;
+
+		if (!tempObj.is_none())
+		{
+			// The uninitialized iterator is equivalent to the end of the iterable
+			//
+			py::stl_input_iterator<SQLCHAR> begin(tempObj), end;
+
+			// Copy the py_buffer into a local buffer.
+			//
+			m_value = vector<SQLCHAR> (begin, end);
+
+			// Truncate the return data to only be the size specified when creating
+			//
+			if (m_value.size() > m_size)
+			{
+				m_value.resize(m_size);
+				m_value.shrink_to_fit();
+			}
+
+			m_strLenOrInd = m_value.size();
+		}
 	}
 }
 
