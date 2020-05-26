@@ -1,9 +1,9 @@
 
-# Microsoft SQL Server Language Extensions (preview)
+# Microsoft SQL Server Language Extensions
 
 Welcome to the SQL Server Language Extensions project!
 
-Starting in SQL Server 2019 (preview), we have added support for language extensibility, which means that you can now execute code in various languages like Java from SQL Server.
+Starting in SQL Server 2019, we have added support for language extensibility, which means that you can now execute code in various languages like Java from SQL Server.
 
 We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
@@ -11,18 +11,18 @@ We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
 ## Announcements
 
-* In SQL Server 2019 CTP 3.0, we are open sourcing the SDK for our Java language extension: [**Microsoft Extensibility SDK for Java for Microsoft SQL Server​**](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/sdk)
+* In SQL Server 2019, we are open sourcing the SDK for our Java language extension: [**Microsoft Extensibility SDK for Java for Microsoft SQL Server​**](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/sdk)
 
 ## Things to Know
 
 * The Java components in this project are built on Java 8
-* The SDK is also installed as part of SQL Server 2019 preview on both Windows as Linux
-  * In CTP 3.0, default installation path on Windows: [instance installation home directory]\MSSQL\Binn\mssql-java-lang-extension.jar
-  * In CTP 3.0, default installation path on Linux: /opt/mssql/lib/mssql-java-lang-extension.jar 
+* The SDK is also installed as part of SQL Server 2019 on both Windows as Linux
+  * Default installation path on Windows: [instance installation home directory]\MSSQL\Binn\mssql-java-lang-extension.jar
+  * Default installation path on Linux: /opt/mssql/lib/mssql-java-lang-extension.jar 
 
 ## Documentation
 
-You can read more about how to use language extensions in SQL Server 2019 (preview) in the Microsoft [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sqlallproducts-allversions).
+You can read more about how to use language extensions in SQL Server 2019 in the Microsoft [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sqlallproducts-allversions).
 
 ## Get Started
 
