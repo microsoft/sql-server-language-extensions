@@ -28,7 +28,6 @@
 #include "Common.h"
 #include <iostream>
 
-#include "Logger.h"
 #include "RTypeUtils.h"
 
 #include "Rcpp.h"

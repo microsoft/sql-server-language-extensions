@@ -30,7 +30,25 @@
 class Utilities
 {
 public:
+	// Converts a SQLGUID to a string
+	//
 	static std::string ConvertGuidToString(const SQLGUID * guid);
+
+	// Splits the given character string using the delimiter and
+	// adds the tokens to the input vector.
+	//
 	static void Tokenize(char *input, const char* delimiter, std::vector<char*> *tokens);
-	static std::unique_ptr<char> GenerateUniquePtr(const std::string &input);
+
+	// Given a constant string input, generate a unique pointer
+	// pointing to a char array containing the same contents as that of the input
+	//
+	static std::unique_ptr<char[]> GenerateUniquePtr(const std::string &input);
+
+	// Gets the value of the given environment variable name.
+	//
+	static std::string GetEnvVariable(const std::string &envVarName);
+
+	//  Sets the environment variable name to the specified value
+	//
+	static int SetEnvVariable(const std::string &envVarName, const std::string &value);
 };

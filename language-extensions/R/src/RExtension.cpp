@@ -33,7 +33,6 @@
 #include <sqlext.h>
 #include <stdexcept>
 
-#include "Logger.h"
 #include "RColumn.h"
 #include "RDataSet.h"
 #include "RParam.h"
@@ -41,7 +40,6 @@
 #include "RPathSettings.h"
 #include "RSession.h"
 #include "sqlexternallanguage.h"
-#include "Utilities.h"
 
 #ifndef _WIN64
 #include <linux/limits.h>
@@ -113,6 +111,8 @@ SQLRETURN Init(
 	SQLULEN privateLibraryPathLength
 )
 {
+	LOG("RExtension::Init");
+
 	SQLRETURN result = SQL_ERROR;
 
 	try
@@ -123,12 +123,14 @@ SQLRETURN Init(
 			publicLibraryPath,
 			privateLibraryPath);
 
+		RPathSettings::CheckAndSetRHome();
+
 		// Setting up the parameters to be passed to the R runtime.
 		//
 		vector<char*> argsForR;
-		unique_ptr<char> dummyInputScriptPtr = Utilities::GenerateUniquePtr("dummyInputScript");
-		unique_ptr<char> noSaveOptionPtr = Utilities::GenerateUniquePtr("--no-save");
-		unique_ptr<char> extensionParamsPtr = Utilities::GenerateUniquePtr(RPathSettings::GetParams());
+		unique_ptr<char[]> dummyInputScriptPtr = Utilities::GenerateUniquePtr("dummyInputScript");
+		unique_ptr<char[]> noSaveOptionPtr = Utilities::GenerateUniquePtr("--no-save");
+		unique_ptr<char[]> extensionParamsPtr = Utilities::GenerateUniquePtr(RPathSettings::Params());
 
 		if (extensionParamsLength > 0)
 		{
@@ -164,7 +166,7 @@ SQLRETURN Init(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -237,7 +239,7 @@ SQLRETURN InitSession(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -274,8 +276,7 @@ SQLRETURN InitColumn(
 	SQLSMALLINT  orderByNumber
 )
 {
-	string msg = "RExtension::InitColumn";
-	LOG(msg);
+	LOG("RExtension::InitColumn");
 
 	SQLRETURN result = SQL_SUCCESS;
 
@@ -298,7 +299,7 @@ SQLRETURN InitColumn(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -333,8 +334,7 @@ SQLRETURN InitParam(
 	SQLSMALLINT  inputOutputType
 )
 {
-	string msg = "RExtension::InitParam";
-	LOG(msg);
+	LOG("RExtension::InitParam");
 
 	SQLRETURN result = SQL_SUCCESS;
 
@@ -357,7 +357,7 @@ SQLRETURN InitParam(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -389,8 +389,7 @@ SQLRETURN Execute(
 	SQLUSMALLINT *outputSchemaColumnsNumber
 )
 {
-	string msg = "RExtension::Execute";
-	LOG(msg);
+	LOG("RExtension::Execute");
 
 	SQLRETURN result = SQL_SUCCESS;
 	*outputSchemaColumnsNumber = 0;
@@ -409,7 +408,7 @@ SQLRETURN Execute(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -459,7 +458,7 @@ SQLRETURN GetResultColumn(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -505,7 +504,7 @@ SQLRETURN GetResults(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
@@ -550,7 +549,7 @@ SQLRETURN GetOutputParam(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{

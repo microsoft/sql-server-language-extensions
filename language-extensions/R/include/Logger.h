@@ -30,7 +30,6 @@
 #define LOG(msg) Logger::Log(msg)
 #define LOG_ERROR(msg) Logger::LogError(msg)
 #define LOG_EXCEPTION(e) Logger::LogException(e)
-#define LOG_R_EXCEPTION(msg) Logger::LogRException(msg)
 
 class Logger
 {
@@ -43,10 +42,6 @@ public:
 	//
 	static void LogException(const std::exception &e);
 
-	// Log an R exception to stderr
-	//
-	static void LogRException(const std::string &errorMsg);
-
 	// Log a message to stdout
 	//
 	static void Log(const std::string &errorMsg);
@@ -56,6 +51,11 @@ public:
 	static void LogRVariable(const std::string &name);
 
 private:
+
+	// Log the message to stderr
+	//
+	static void LogToStdErr(const std::string &errorMsgWithTimestamp);
+
 	// Get a string of the current timestamp in the same format
 	// of SQL format
 	//

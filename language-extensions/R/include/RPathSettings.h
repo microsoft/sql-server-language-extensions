@@ -41,23 +41,28 @@ public:
 
 	// Get the private library path sent by SQL Server
 	//
-	static const std::string& GetPrivateLibraryPath() {return m_privateLibraryPath; }
+	static const std::string& PrivateLibraryPath() {return m_privateLibraryPath; }
 
 	// Get the public library path sent by SQL Server
 	//
-	static const std::string& GetPublicLibraryPath() {return m_publicLibraryPath; }
+	static const std::string& PublicLibraryPath() {return m_publicLibraryPath; }
 
 	// Get the extension root folder
 	//
-	static const std::string& GetRootPath() {return m_languagePath; }
+	static const std::string& RootPath() {return m_languagePath; }
 
 	// Get the language parameters sent by SQL Server
 	//
-	static const std::string& GetParams() {return m_languageParams; }
+	static const std::string& Params() {return m_languageParams; }
+
+	// Checks if R_HOME is set, and sets it to be the language path if not already set.
+	//
+	static void CheckAndSetRHome();
 
 private:
 	static std::string m_languagePath;
 	static std::string m_languageParams;
 	static std::string m_privateLibraryPath;
 	static std::string m_publicLibraryPath;
+	static std::string m_RHomePath;
 };

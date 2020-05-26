@@ -29,7 +29,6 @@
 #include <sqlext.h>
 #include <string>
 
-#include "Logger.h"
 #include "RParam.h"
 #include "RParamContainer.h"
 

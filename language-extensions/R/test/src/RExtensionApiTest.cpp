@@ -68,13 +68,17 @@ namespace ExtensionApiTest
 	FN_getOutputParam *RExtensionApiTest::m_getOutputParamFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
+#ifdef _WIN64
+	const string RExtensionApiTest::m_RHomePath = "";
+#else
+	const string RExtensionApiTest::m_RHomePath = "/opt/microsoft/ropen/3.5.2/lib64/R";
+#endif
 
 	// Per-test-suite set-up.
 	// Called before the first test in this test suite.
 	//
 	void RExtensionApiTest::SetUpTestSuite()
 	{
-		CheckAndSetRHome();
 		ASSERT_NO_THROW(GetHandles());
 		DoInit();
 	}
@@ -103,27 +107,6 @@ namespace ExtensionApiTest
 	{
 		CleanupVariables();
 		CleanupSession();
-	}
-
-	// Name: CheckAndSetRHome()
-	//
-	// Description:
-	// Check R_HOME and set it if not defined.
-	//
-	void RExtensionApiTest::CheckAndSetRHome()
-	{
-		std::cout << "Checking and setting R_HOME.\n";
-		char *RHome = getenv("R_HOME");
-
-		// If RHome is not defined it could be passed as the first argument to the test executable
-		// In terms of gtest, the first argument is the name of the test executable
-		// and RHome then becomes the second argument.
-		//
-		if (RHome == nullptr && g_argc >= 2)
-		{
-			RHome = const_cast<char *>(g_argv[1]);
-			putenv(RHome);
-		}
 	}
 
 	// Name: GetHandles
@@ -211,13 +194,15 @@ namespace ExtensionApiTest
 		SQLRETURN result = SQL_ERROR;
 		const string cmdLine = "dummyInputScript --no-save";
 		int paramsLength = strlen(cmdLine.c_str());
-		unique_ptr<SQLCHAR> extensionParams(new SQLCHAR[paramsLength]);
+		unique_ptr<SQLCHAR[]> extensionParams = make_unique<SQLCHAR[]>(paramsLength);
 		memcpy(extensionParams.get(), cmdLine.c_str(), paramsLength);
+		SQLCHAR *extensionPath = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_RHomePath.c_str())));
 		result = (*m_initFuncPtr)(
 			extensionParams.get(),
 			paramsLength,
-			nullptr,
-			0,
+			extensionPath,
+			m_RHomePath.length(),
 			nullptr,
 			0,
 			nullptr,

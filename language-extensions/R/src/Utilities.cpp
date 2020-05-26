@@ -26,11 +26,10 @@
 //*************************************************************************************************
 
 #include <memory>
+#include <stdlib.h>
 #include <string.h>
 #include <vector>
 #include "Common.h"
-#include "Utilities.h"
-#include "Logger.h"
 
 using namespace std;
 
@@ -39,13 +38,13 @@ const char* GuidFormat="%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 // Given a constant string input, generate a unique pointer
 // pointing to a char array containing the same contents as that of the input
 //
-unique_ptr<char> Utilities::GenerateUniquePtr(const string &inputStr)
+unique_ptr<char[]> Utilities::GenerateUniquePtr(const string &inputStr)
 {
 	int inputStrLen = inputStr.length();
 
 	// Reserve additional space for null terminating character.
 	//
-	unique_ptr<char> outPtr(new char[inputStrLen + 1]);
+	unique_ptr<char[]> outPtr = make_unique<char[]>(inputStrLen + 1);
 	memcpy(outPtr.get(), inputStr.c_str(), inputStrLen);
 	*(outPtr.get() + inputStrLen) = '\0';
 	return outPtr;

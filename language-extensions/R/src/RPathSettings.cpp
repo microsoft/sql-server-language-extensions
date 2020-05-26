@@ -32,11 +32,17 @@
 
 using namespace std;
 
-//----------------------------------------------------------------------------
+string RPathSettings::m_languagePath;
+string RPathSettings::m_languageParams;
+string RPathSettings::m_privateLibraryPath;
+string RPathSettings::m_publicLibraryPath;
+string RPathSettings::m_RHomePath;
+
+//-------------------------------------------------------------------------------------------------
 // Name: RPathSettings::Init
 //
 // Description:
-//	Initialize the class
+//  Initialize the class
 //
 void
 RPathSettings::Init(
@@ -45,6 +51,8 @@ RPathSettings::Init(
 	const SQLCHAR *publicLibraryPath,
 	const SQLCHAR *privateLibraryPath)
 {
+	LOG("RPathSettings::Init");
+
 	// nullptrs are mapped to empty strings - has the same effect when
 	// the paths are used and avoids an additional flag.
 	//
@@ -65,7 +73,38 @@ RPathSettings::Init(
 			static_cast<const void*>(privateLibraryPath));
 }
 
-string RPathSettings::m_languagePath;
-string RPathSettings::m_languageParams;
-string RPathSettings::m_privateLibraryPath;
-string RPathSettings::m_publicLibraryPath;
+//-------------------------------------------------------------------------------------------------
+// Name: RPathSettings::CheckAndSetRHome
+//
+// Description:
+//  Checks if R_HOME is set, and sets it to be the language path if not already set.
+//  Throws and exception if there is an error setting it.
+//
+void
+RPathSettings::CheckAndSetRHome()
+{
+	LOG("RPathSettings::CheckAndSetRHome");
+
+	m_RHomePath = Utilities::GetEnvVariable("R_HOME");
+	if (m_RHomePath == "")
+	{
+#ifdef _WIN64
+		throw runtime_error("On Windows, R_HOME needs to be defined in CREATE EXTERNAL LANGUAGE.");
+#else
+		int result = Utilities::SetEnvVariable("R_HOME", m_languagePath);
+		if (result != 0)
+		{
+			throw runtime_error("Error setting R_HOME");
+		}
+		else
+		{
+			m_RHomePath = m_languagePath;
+			LOG("R_HOME set to be the extensionPath: " + m_RHomePath);
+		}
+#endif
+	}
+	else
+	{
+		LOG("R_HOME is set as: " + m_RHomePath);
+	}
+}

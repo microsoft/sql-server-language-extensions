@@ -29,7 +29,6 @@
 
 #include <sqlext.h>
 #include "string.h"
-#include "Logger.h"
 #include "RParam.h"
 #include "RTypeUtils.h"
 

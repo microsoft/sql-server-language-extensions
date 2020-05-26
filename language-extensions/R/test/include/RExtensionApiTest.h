@@ -360,6 +360,7 @@ namespace ExtensionApiTest
 
 		// Objects declared here can be used by all tests in the test suite.
 		//
+		static const std::string m_RHomePath;
 		SQLGUID *m_sessionId;
 		SQLUSMALLINT m_taskId;
 		SQLUSMALLINT m_numTasks;

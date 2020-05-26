@@ -31,7 +31,6 @@
 
 #include "RColumn.h"
 #include "RDataSet.h"
-#include "Logger.h"
 #include "RParam.h"
 #include "RParamContainer.h"
 #include "RSession.h"

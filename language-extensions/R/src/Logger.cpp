@@ -31,7 +31,6 @@
 #include <string>
 
 #include "Common.h"
-#include "Logger.h"
 
 #include <R_ext/Error.h>
 #include <R_ext/Print.h>
@@ -43,7 +42,7 @@ using namespace std;
 
 char Logger::timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: LogError
 //
 // Description:
@@ -52,10 +51,10 @@ char Logger::timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 void Logger::LogError(const string &errorMsg)
 {
 	string errorMsgWithTimestamp = string(GetCurrentTimestamp()) + "Error: " + errorMsg + "\n";
-	REprintf(errorMsgWithTimestamp.c_str());
+	LogToStdErr(errorMsgWithTimestamp);
 }
 
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: LogException
 //
 // Description:
@@ -64,24 +63,12 @@ void Logger::LogError(const string &errorMsg)
 //
 void Logger::LogException(const exception &e)
 {
-	string exceptionMsgWithTimestamp = string(GetCurrentTimestamp()) + "Exception occurred: " + e.what() + "\n";
-	REprintf(exceptionMsgWithTimestamp.c_str());
+	string exceptionMsgWithTimestamp = string(GetCurrentTimestamp()) + "Exception occurred: "
+		+ e.what() + "\n";
+	LogToStdErr(exceptionMsgWithTimestamp);
 }
 
-//---------------------------------------------------------------------
-// Name: LogRException
-//
-// Description:
-//  Log an R exception to stderr with format "TIMESTAMP Exception
-//  thrown in R: <message>".
-//
-void Logger::LogRException(const string &exceptionMsg)
-{
-	string exceptionMsgWithTimestamp = string(GetCurrentTimestamp()) + "Exception occurred in R: " + exceptionMsg + "\n";
-	REprintf(exceptionMsgWithTimestamp.c_str());
-}
-
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: Log
 //
 // Description:
@@ -91,11 +78,18 @@ void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
-	Rprintf(msgWithTimestamp.c_str());
+	if (g_embeddedRPtr != nullptr)
+	{
+		Rprintf(msgWithTimestamp.c_str());
+	}
+	else
+	{
+		cout << msgWithTimestamp;
+	}
 #endif
 }
 
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: LogRVariable
 //
 // Description:
@@ -115,7 +109,7 @@ void Logger::LogRVariable(const string &name)
 #endif
 }
 
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: GetCurrentTimestamp
 //
 // Description:
@@ -147,4 +141,23 @@ const char* Logger::GetCurrentTimestamp()
 	sprintf(timestampBuffer, "%s.%02li\t", buffer, ms);
 
 	return timestampBuffer;
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: LogToStdErr
+//
+// Description:
+//  Logs the given message to stderr; if R is initialized uses its error printing function,
+//  else uses std::cerr.
+//
+void Logger::LogToStdErr(const string &errorMsgWithTimestamp)
+{
+	if (g_embeddedRPtr != nullptr)
+	{
+		REprintf(errorMsgWithTimestamp.c_str());
+	}
+	else
+	{
+		cerr << errorMsgWithTimestamp;
+	}
 }
