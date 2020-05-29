@@ -45,7 +45,7 @@ const unordered_map<string, SQLSMALLINT> PythonDataSet::m_pythonToOdbcTypeMap =
 // Function map - maps a SQL data type to the appropriate function that
 // adds a column to the dictionary
 //
-const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::m_fnAddColumnMap =
+const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::sm_FnAddColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddBooleanColumnToDictionary)},
@@ -70,7 +70,7 @@ const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::m_fnAddColumnMap =
 // Function map - maps a SQL data type to the appropriate function that
 // adds a column to the dictionary
 //
-const PythonOutputDataSet::GetColumnFnMap PythonOutputDataSet::m_fnRetrieveColumnMap =
+const PythonOutputDataSet::GetColumnFnMap PythonOutputDataSet::sm_FnRetrieveColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame)},
@@ -94,7 +94,7 @@ const PythonOutputDataSet::GetColumnFnMap PythonOutputDataSet::m_fnRetrieveColum
 
 // Map of function pointers for cleaning up output data buffers and null map.
 //
-const PythonOutputDataSet::CleanupColumnFnMap PythonOutputDataSet::m_fnCleanupColumnMap =
+const PythonOutputDataSet::CleanupColumnFnMap PythonOutputDataSet::sm_FnCleanupColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)},
@@ -235,9 +235,9 @@ void PythonInputDataSet::InitColumn(
 		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
 	}
 
-	AddColumnFnMap::const_iterator it = m_fnAddColumnMap.find(dataType);
+	AddColumnFnMap::const_iterator it = sm_FnAddColumnMap.find(dataType);
 
-	if (it == m_fnAddColumnMap.end())
+	if (it == sm_FnAddColumnMap.end())
 	{
 		throw invalid_argument("Unsupported data type " + to_string(dataType) + " encountered for "
 			"column id " + to_string(columnNumber) + " in input data.");
@@ -296,9 +296,9 @@ void PythonInputDataSet::AddColumnsToDictionary(
 		}
 
 		SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
-		AddColumnFnMap::const_iterator it = m_fnAddColumnMap.find(dataType);
+		AddColumnFnMap::const_iterator it = sm_FnAddColumnMap.find(dataType);
 
-		if (it == m_fnAddColumnMap.end())
+		if (it == sm_FnAddColumnMap.end())
 		{
 			throw runtime_error("Unsupported column type encountered when adding column #" + to_string(columnNumber));
 		}
@@ -675,9 +675,9 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 
 		// Gets the column information, add data to m_data and nullmap to m_columnNullMap
 		//
-		GetColumnFnMap::const_iterator it = m_fnRetrieveColumnMap.find(dataType);
+		GetColumnFnMap::const_iterator it = sm_FnRetrieveColumnMap.find(dataType);
 
-		if (it == m_fnRetrieveColumnMap.end())
+		if (it == sm_FnRetrieveColumnMap.end())
 		{
 			throw invalid_argument("Unsupported data type "
 				+ to_string(dataType) + " in output data for column # " + to_string(columnNumber));
@@ -1134,9 +1134,9 @@ void PythonOutputDataSet::CleanupColumns()
 	{
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
 
-		CleanupColumnFnMap::const_iterator it = m_fnCleanupColumnMap.find(dataType);
+		CleanupColumnFnMap::const_iterator it = sm_FnCleanupColumnMap.find(dataType);
 
-		if (it == m_fnCleanupColumnMap.end())
+		if (it == sm_FnCleanupColumnMap.end())
 		{
 			throw invalid_argument("In cleanup, unsupported data type "
 				+ to_string(dataType) + " in output data for column # "

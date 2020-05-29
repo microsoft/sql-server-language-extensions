@@ -20,7 +20,7 @@ namespace ExtensionApiTest
 	// Function map - maps a SQL data type to the appropriate function that
 	// adds a column to the dictionary
 	//
-	const PythonExtensionApiTests::CheckColumnEqualityFnMap PythonExtensionApiTests::m_fnCheckColumnEqualityMap =
+	const PythonExtensionApiTests::CheckColumnEqualityFnMap PythonExtensionApiTests::sm_FnCheckColumnEqualityMap =
 	{
 		{static_cast<SQLSMALLINT>(SQL_C_BIT),
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckBooleanColumnEquality)},
@@ -69,10 +69,6 @@ namespace ExtensionApiTest
 		m_sessionId = new SQLGUID();
 		m_taskId = 0;
 		m_numTasks = 1;
-		m_parametersNumber = 1;
-
-		m_paramName = "param1";
-		m_paramNameLength = m_paramName.length();
 
 		m_scriptString = "print('" + m_printMessage + "');"
 			"OutputDataSet = InputDataSet;"

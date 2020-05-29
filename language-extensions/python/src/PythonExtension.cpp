@@ -24,7 +24,6 @@
 using namespace std;
 namespace py = boost::python;
 
-static void *g_pyDLL = nullptr;
 static unordered_map<string, PythonSession *> g_pySessionMap;
 
 //--------------------------------------------------------------------------------------------------
@@ -557,28 +556,6 @@ SQLRETURN Cleanup()
 {
 	LOG("Cleanup");
 	SQLRETURN result = SQL_SUCCESS;
-	try
-	{
-		PythonExtensionUtils::FreeDLL(g_pyDLL);
-	}
-	catch (const exception &ex)
-	{
-		result = SQL_ERROR;
-
-		LOG_ERROR(ex.what());
-	}
-	catch (const py::error_already_set&)
-	{
-		result = SQL_ERROR;
-
-		LOG_ERROR("Python error: " + PythonExtensionUtils::ParsePythonException());
-	}
-	catch (...)
-	{
-		result = SQL_ERROR;
-
-		LOG_ERROR("Unexpected exception occurred in function Cleanup()");
-	}
 
 	return result;
 }

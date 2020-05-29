@@ -475,9 +475,9 @@ namespace ExtensionApiTest
 
 					for (py::dict column : { inputColumnToTest, outputColumnToTest })
 					{
-						CheckColumnEqualityFnMap::const_iterator it = m_fnCheckColumnEqualityMap.find(dataType);
+						CheckColumnEqualityFnMap::const_iterator it = sm_FnCheckColumnEqualityMap.find(dataType);
 
-						if (it == m_fnCheckColumnEqualityMap.end())
+						if (it == sm_FnCheckColumnEqualityMap.end())
 						{
 							throw runtime_error("Unsupported column type encountered when testing column equality");
 						}

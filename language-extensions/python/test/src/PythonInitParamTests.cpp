@@ -26,7 +26,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitNullNameParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		SQLCHAR *paramName = nullptr;
 		SQLSMALLINT paramNameLength = 0;
@@ -53,27 +53,28 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitInvalidParamNumberTest)
 	{
-		InitializeSession(1);
+		int parametersNumber = 1;
+		InitializeSession(parametersNumber);
 
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + m_paramName).c_str())));
+			static_cast<void *>(const_cast<char *>("@param1")));
 
-		SQLSMALLINT paramNameLength = m_paramNameLength + 1;
+			SQLSMALLINT paramNameLength = 7;
 
 		SQLINTEGER paramValue = 123;
 
 		SQLRETURN result = InitParam(
 			*m_sessionId,
 			m_taskId,
-			m_parametersNumber + 1, // paramNumber outside of range
-			unsignedParamName,      // paramName
+			parametersNumber + 1,  // paramNumber outside of range
+			unsignedParamName, // paramName
 			paramNameLength,
 			SQL_C_SLONG,
-			m_IntSize,              // argSize
-			0,                      // decimalDigits
-			&paramValue,            // argValue
-			SQL_NULL_DATA,          // strLenOrInd
-			1);                     // inputOutputType
+			m_IntSize,         // argSize
+			0,                 // decimalDigits
+			&paramValue,       // argValue
+			SQL_NULL_DATA,     // strLenOrInd
+			1);                // inputOutputType
 
 		EXPECT_EQ(result, SQL_ERROR);
 	}
@@ -82,7 +83,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitIntegerParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test max INT value
 		//
@@ -110,7 +111,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitBitParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test '1' BIT value
 		//
@@ -138,7 +139,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitFloatParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test max FLOAT(24) i.e. REAL value
 		//
@@ -166,7 +167,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitDoubleParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test max FLOAT(53) i.e. DOUBLE PRECISION value
 		//
@@ -194,7 +195,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitBigIntParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test max BIGINT value
 		//
@@ -222,7 +223,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitTinyIntParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test max TINYINT value
 		//
@@ -255,7 +256,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitSmallIntParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test max SMALLINT value
 		//
@@ -283,7 +284,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitStringParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test simple CHAR(5) value
 		//
@@ -354,7 +355,7 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, InitBinaryParamTest)
 	{
-		InitializeSession(1);
+		InitializeSession(1); //parametersNumber
 
 		// Test simple binary(4)
 		//
@@ -441,7 +442,7 @@ namespace ExtensionApiTest
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
 
-		int paramNameLength = m_paramNameLength + 1;
+		int paramNameLength = paramName.length() + 1;
 
 		SQLType *pParamValue = nullptr;
 
@@ -599,7 +600,7 @@ namespace ExtensionApiTest
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
 
-		int paramNameLength = m_paramNameLength + 1;
+		int paramNameLength = paramName.length() + 1;
 
 		vector<SQLCHAR> fixedParamValue(paramSize);
 		SQLCHAR *expectedParamValue = nullptr;

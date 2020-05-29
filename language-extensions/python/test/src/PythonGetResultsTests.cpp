@@ -603,9 +603,9 @@ namespace ExtensionApiTest
 					expectedColumnStrLenOrInd,
 					columnStrLenOrInd);
 
-				CheckColumnEqualityFnMap::const_iterator it = m_fnCheckColumnEqualityMap.find(DataType);
+				CheckColumnEqualityFnMap::const_iterator it = sm_FnCheckColumnEqualityMap.find(DataType);
 
-				if (it == m_fnCheckColumnEqualityMap.end())
+				if (it == sm_FnCheckColumnEqualityMap.end())
 				{
 					throw runtime_error("Unsupported column type " + to_string(DataType) +
 						" encountered when testing column equality");

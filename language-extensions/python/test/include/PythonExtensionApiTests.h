@@ -256,10 +256,6 @@ namespace ExtensionApiTest
 		SQLGUID *m_sessionId;
 		SQLUSMALLINT m_taskId;
 		SQLUSMALLINT m_numTasks;
-		SQLUSMALLINT m_parametersNumber;
-
-		std::string m_paramName;
-		SQLSMALLINT m_paramNameLength;
 
 		SQLCHAR *m_script;
 		std::string m_scriptString;
@@ -357,7 +353,7 @@ namespace ExtensionApiTest
 
 		// Function map to add columns to the data frame and its typedef
 		//
-		static const std::unordered_map<SQLSMALLINT, fnCheckColumnEquality> m_fnCheckColumnEqualityMap;
+		static const std::unordered_map<SQLSMALLINT, fnCheckColumnEquality> sm_FnCheckColumnEqualityMap;
 		typedef std::unordered_map<SQLSMALLINT, fnCheckColumnEquality> CheckColumnEqualityFnMap;
 	};
 

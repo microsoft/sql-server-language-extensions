@@ -22,7 +22,7 @@ namespace py = boost::python;
 
 // Function map - maps a SQL data type to the appropriate param creator
 //
-unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamContainer::m_fnCreateParamMap =
+unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamContainer::sm_FnCreateParamMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonBooleanParam>)},
@@ -79,9 +79,9 @@ void PythonParamContainer::AddParamToNamespace(
 {
 	LOG("PythonParamContainer::AddParamToNamespace");
 
-	CreateParamFnMap::const_iterator it = m_fnCreateParamMap.find(dataType);
+	CreateParamFnMap::const_iterator it = sm_FnCreateParamMap.find(dataType);
 
-	if (it == m_fnCreateParamMap.end())
+	if (it == sm_FnCreateParamMap.end())
 	{
 		throw runtime_error("Unsupported parameter type encountered when creating param #" + to_string(paramNumber));
 	}

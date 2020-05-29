@@ -99,6 +99,6 @@ private:
 
 	// Function map to add parameters to the namespace and its typedef
 	//
-	static std::unordered_map<SQLSMALLINT, fnCreateParam> m_fnCreateParamMap;
+	static std::unordered_map<SQLSMALLINT, fnCreateParam> sm_FnCreateParamMap;
 	typedef std::unordered_map<SQLSMALLINT, fnCreateParam> CreateParamFnMap;
 };

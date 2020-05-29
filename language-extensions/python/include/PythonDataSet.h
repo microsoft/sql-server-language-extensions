@@ -194,7 +194,7 @@ private:
 
 	// Function map to add columns to the data frame and its typedef
 	//
-	static const std::unordered_map<SQLSMALLINT, fnAddColumn> m_fnAddColumnMap;
+	static const std::unordered_map<SQLSMALLINT, fnAddColumn> sm_FnAddColumnMap;
 	typedef std::unordered_map<SQLSMALLINT, fnAddColumn> AddColumnFnMap;
 
 	// The underlying boost::python dictionary.
@@ -315,11 +315,11 @@ private:
 
 	// Function map for getting column from DataSet
 	//
-	static const std::unordered_map<SQLSMALLINT, fnRetrieveColumn> m_fnRetrieveColumnMap;
+	static const std::unordered_map<SQLSMALLINT, fnRetrieveColumn> sm_FnRetrieveColumnMap;
 
 	// Function map for Cleanup
 	//
-	static const std::unordered_map<SQLSMALLINT, fnCleanupColumn> m_fnCleanupColumnMap;
+	static const std::unordered_map<SQLSMALLINT, fnCleanupColumn> sm_FnCleanupColumnMap;
 
 	// Function map typedefs.
 	//
