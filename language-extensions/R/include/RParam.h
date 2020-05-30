@@ -36,15 +36,14 @@ class RParam
 {
 public:
 
-	// Verifies if the input paramSize is equal to the size of the template type T.
-	//
-	template<class T>
-	void CheckParamSize();
-
 	// Retrieve data from m_RcppVector, fill it in m_value
 	// and set m_strLenOrInd accordingly.
 	//
 	virtual void RetrieveValueAndStrLenInd() = 0;
+
+	// Get m_value
+	//
+	virtual SQLPOINTER Value() const = 0;
 
 	// Get m_name
 	//
@@ -52,10 +51,6 @@ public:
 	{
 		return m_name;
 	}
-
-	// Get m_value
-	//
-	virtual SQLPOINTER Value() const = 0;
 
 	// Get m_strLenOrInd
 	//
@@ -85,6 +80,11 @@ protected:
 		SQLSMALLINT   decimalDigits,
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
+
+	// Verifies if the input paramSize is equal to the size of the template type T.
+	//
+	template<class T>
+	void CheckParamSize();
 
 	// Id of the parameter.
 	//

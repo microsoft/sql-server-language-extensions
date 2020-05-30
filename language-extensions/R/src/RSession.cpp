@@ -75,6 +75,11 @@ void RSession::Init(
 	m_script = string(static_cast<const char*>(
 		static_cast<const void *>(script)), scriptLength);
 
+	// Remove any carriage returns from the script.
+	// RInside's script evaluation function cannot handle carriage returns - only new lines.
+	//
+	m_script.erase(remove(m_script.begin(), m_script.end(), 0x0D), m_script.end());
+
 	// Initialize the InputDataSet
 	//
 	m_inputDataSet.Init(inputDataName, inputDataNameLength, inputSchemaColumnsNumber);
@@ -205,7 +210,7 @@ void RSession::ExecuteWorkflow(
 	if (*outputSchemaColumnsNumber > 0)
 	{
 		m_outputDataSet.GetColumnsDataType();
-		m_outputDataSet.PopulateNumberOfRows();
+		m_outputDataSet.PopulateRowsNumber();
 		m_outputDataSet.GetColumnsFromDataFrame();
 	}
 }
@@ -223,7 +228,7 @@ void RSession::GetResultColumn(
 	SQLSMALLINT  *decimalDigits,
 	SQLSMALLINT  *nullable)
 {
-	LOG("RSession::GetResultColumn for column # " + to_string(columnNumber));
+	LOG("RSession::GetResultColumn for column #" + to_string(columnNumber));
 
 	*dataType = SQL_UNKNOWN_TYPE;
 	*columnSize = 0;
@@ -233,7 +238,7 @@ void RSession::GetResultColumn(
 	if (columnNumber >= m_outputDataSet.GetVectorColumnsNumber())
 	{
 		throw invalid_argument("Invalid column #" + to_string(columnNumber)
-			+ "provided to GetResultColumn().");
+			+ " provided to GetResultColumn().");
 	}
 
 	const vector<unique_ptr<RColumn>>& resultColumns = m_outputDataSet.Columns();
@@ -290,7 +295,7 @@ void RSession::GetOutputParam(
 	SQLPOINTER   *paramValue,
 	SQLINTEGER   *strLen_or_Ind)
 {
-	LOG("Initializing output parameter #" + to_string(paramNumber));
+	LOG("Initializing output param #" + to_string(paramNumber));
 
 	if (paramValue == nullptr || strLen_or_Ind == nullptr)
 	{

@@ -487,7 +487,7 @@ namespace ExtensionApiTest
 		SQLINTEGER          *strLenOrInd)
 	{
 		SQLINTEGER baseIndex = 0;
-		for (SQLULEN index = 0 ; index < columnVector.size(); index++)
+		for (SQLULEN index = 0 ; index < columnVector.size(); ++index)
 		{
 			if (strLenOrInd[index] != SQL_NULL_DATA)
 			{
@@ -508,7 +508,7 @@ namespace ExtensionApiTest
 		SQLINTEGER *maxLen)
 	{
 		SQLINTEGER sumOfLengths = 0;
-		for(SQLULEN index = 0 ; index < rowsNumber; index++)
+		for(SQLULEN index = 0 ; index < rowsNumber; ++index)
 		{
 			if(strLenOrInd[index] != SQL_NULL_DATA)
 			{
@@ -540,7 +540,7 @@ namespace ExtensionApiTest
 		SQLINTEGER *strLen_or_Ind)
 	{
 		ASSERT_EQ(static_cast<size_t>(vectorToTest.size()), expectedRowsNumber);
-		for(SQLULEN index = 0 ; index < expectedRowsNumber; index++)
+		for(SQLULEN index = 0 ; index < expectedRowsNumber; ++index)
 		{
 			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
@@ -615,7 +615,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(static_cast<size_t>(vectorToTest.size()), expectedRowsNumber);
 		SQLINTEGER cumulativeLength = 0 ;
-		for(SQLULEN index = 0 ; index < expectedRowsNumber; index++)
+		for(SQLULEN index = 0 ; index < expectedRowsNumber; ++index)
 		{
 			if (strLen_or_Ind == nullptr ||
 			  (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))

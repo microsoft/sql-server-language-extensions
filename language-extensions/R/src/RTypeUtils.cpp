@@ -130,8 +130,7 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 
 	for (SQLULEN j = 0; j < rowsNumber; ++j)
 	{
-		if ((strLen_or_Ind == nullptr) ||
-			(strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA))
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[j] == SQL_NULL_DATA)
 		{
 			charVector[j] = NA_STRING;
 		}
@@ -171,8 +170,7 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 
 	for (SQLULEN j = 0; j < rowsNumber; ++j)
 	{
-		if ((strLen_or_Ind == nullptr) ||
-			(strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA))
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[j] == SQL_NULL_DATA)
 		{
 			// For raw, 0 (the nul byte) represents NA.
 			// https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/raw

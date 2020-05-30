@@ -30,7 +30,6 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
-#include <sqlext.h>
 #include <stdexcept>
 
 #include "RColumn.h"

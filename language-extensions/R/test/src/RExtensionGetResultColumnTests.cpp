@@ -61,16 +61,16 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_SLONG,       // dataType
-			sizeof(SQLINTEGER),// columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_SLONG,       // dataType
-			sizeof(SQLINTEGER),// columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetLogicalResultColumnsTest
@@ -97,16 +97,16 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_BIT,         // dataType
-			sizeof(SQLCHAR),   // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_BIT,     // dataType
+			m_LogicalSize, // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_BIT,         // dataType
-			sizeof(SQLCHAR),   // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_BIT,     // dataType
+			m_LogicalSize, // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetRealResultColumnsTest
@@ -133,16 +133,16 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetDoubleResultColumnsTest
@@ -169,16 +169,16 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetBigIntResultColumnsTest
@@ -205,16 +205,16 @@ namespace ExtensionApiTest
 			false); // validate
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetSmallIntResultColumnsTest
@@ -240,17 +240,17 @@ namespace ExtensionApiTest
 			(*m_smallIntInfo).m_columnNames,
 			false);  // validate
 
-		GetResultColumn(0,  // columnNumber
-			SQL_C_SLONG,        // dataType
-			sizeof(SQLINTEGER), // columnSize
-			0,                  // decimalDigits
-			SQL_NO_NULLS);      // nullable
+		GetResultColumn(0, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
-		GetResultColumn(1,   // columnNumber
-			SQL_C_SLONG,         // dataType
-			sizeof(SQLINTEGER),  // columnSize
-			0,                   // decimalDigits
-			SQL_NO_NULLS);       // nullable
+		GetResultColumn(1, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 	}
 
 	// Name: GetTinyIntResultColumnsTest
@@ -277,16 +277,16 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_SLONG,       // dataType
-			sizeof(SQLINTEGER),// columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_SLONG,       // dataType
-			sizeof(SQLINTEGER),// columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetCharResultColumnsTest
@@ -306,13 +306,13 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string charColumn1Name = "CharColumn1";
-		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, m_CharSize);
 
 		string charColumn2Name = "CharColumn2";
-		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, m_CharSize);
 
 		string charColumn3Name = "CharColumn3";
-		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, m_CharSize);
 
 		SQLULEN rowsNumber = 5;
 		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
@@ -453,13 +453,13 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string integerColumnName = "IntegerColumn";
-		InitializeColumn(0, integerColumnName, SQL_C_SLONG, sizeof(SQLINTEGER));
+		InitializeColumn(0, integerColumnName, SQL_C_SLONG, m_IntSize);
 
 		string doubleColumnName = "DoubleColumn";
-		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, sizeof(SQLDOUBLE));
+		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, m_DoubleSize);
 
 		string charColumnName = "CharColumn";
-		InitializeColumn(2, charColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(2, charColumnName, SQL_C_CHAR, m_CharSize);
 
 		SQLULEN rowsNumber = 5;
 		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 };
@@ -493,16 +493,16 @@ namespace ExtensionApiTest
 		ASSERT_EQ(result, SQL_SUCCESS);
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_SLONG,       // dataType
-			sizeof(SQLINTEGER),// columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			sizeof(SQLDOUBLE), // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_DOUBLE,  // dataType
+			m_DoubleSize,  // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType
@@ -541,11 +541,11 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
-		GetResultColumn(0,  // columnNumber
-			SQL_C_SLONG,        // dataType
-			sizeof(SQLINTEGER), // columnSize
-			0,                  // decimalDigits
-			SQL_NO_NULLS);       // nullable
+		GetResultColumn(0, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 	}
 
 	// Name: GetResultColumn

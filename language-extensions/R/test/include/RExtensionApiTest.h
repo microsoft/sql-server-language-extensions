@@ -433,6 +433,7 @@ namespace ExtensionApiTest
 		const SQLINTEGER m_BigIntSize = sizeof(SQLBIGINT);
 		const SQLINTEGER m_SmallIntSize = sizeof(SQLSMALLINT);
 		const SQLINTEGER m_TinyIntSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
 		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;

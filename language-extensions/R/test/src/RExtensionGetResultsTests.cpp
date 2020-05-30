@@ -264,13 +264,13 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string charColumn1Name = "CharColumn1";
-		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, m_CharSize);
 
 		string charColumn2Name = "CharColumn2";
-		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, m_CharSize);
 
 		string charColumn3Name = "CharColumn3";
-		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, m_CharSize);
 
 		SQLULEN rowsNumber = 5;
 		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
@@ -368,7 +368,7 @@ namespace ExtensionApiTest
 
 		SQLCHAR *rawData = static_cast<SQLCHAR*>(data[0]);
 		for(SQLINTEGER index = 0; index <
-				static_cast<SQLINTEGER>(expectedData.size()); index++)
+				static_cast<SQLINTEGER>(expectedData.size()); ++index)
 		{
 			EXPECT_EQ(rawData[index], expectedData[index]);
 		}
@@ -428,26 +428,23 @@ namespace ExtensionApiTest
 			3,               // inputSchemaColumnsNumber
 			m_scriptString);
 
-		const SQLINTEGER intSize = sizeof(SQLINTEGER);
-		const SQLINTEGER doubleSize = sizeof(SQLDOUBLE);
-
 		string integerColumnName = "IntegerColumn";
-		InitializeColumn(0, integerColumnName, SQL_C_SLONG, intSize);
+		InitializeColumn(0, integerColumnName, SQL_C_SLONG, m_IntSize);
 
 		string doubleColumnName = "DoubleColumn";
-		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, doubleSize);
+		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, m_DoubleSize);
 
 		string charColumnName = "CharColumn";
-		InitializeColumn(2, charColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(2, charColumnName, SQL_C_CHAR, m_CharSize);
 
 		SQLULEN expectedRowsNumber = 5;
 		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 };
 		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
 		vector<const char*> charCol{ "Hello", "test", "data", "RExtension", "-123" };
 
-		vector<SQLINTEGER> strLenOrIndCol1 = { intSize, intSize, SQL_NULL_DATA,
-			SQL_NULL_DATA, intSize };
-		vector<SQLINTEGER> strLenOrIndCol2(expectedRowsNumber, doubleSize);
+		vector<SQLINTEGER> strLenOrIndCol1 = { m_IntSize, m_IntSize, SQL_NULL_DATA,
+			SQL_NULL_DATA, m_IntSize };
+		vector<SQLINTEGER> strLenOrIndCol2(expectedRowsNumber, m_DoubleSize);
 		vector<SQLINTEGER> strLenOrIndCol3 =
 			{ static_cast<SQLINTEGER>(strlen(charCol[0])),
 			  static_cast<SQLINTEGER>(strlen(charCol[1])),
@@ -604,7 +601,7 @@ namespace ExtensionApiTest
 		//
 		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); columnNumber++)
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			InputSQLType *expectedColumnData = static_cast<InputSQLType *>(expectedData[columnNumber]);
 			OutputSQLType *columnData = static_cast<OutputSQLType *>(data[columnNumber]);
@@ -648,7 +645,7 @@ namespace ExtensionApiTest
 			EXPECT_EQ(columnStrLenOrInd, nullptr);
 		}
 
-		for (SQLULEN index = 0; index < rowsNumber; index ++)
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
 		{
 			EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
 			if (columnStrLenOrInd[index] == SQL_NULL_DATA)
@@ -714,7 +711,7 @@ namespace ExtensionApiTest
 		//
 		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); columnNumber++)
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			char *expectedColumnData = static_cast<char *>(expectedData[columnNumber]);
 			char *columnData = static_cast<char *>(data[columnNumber]);

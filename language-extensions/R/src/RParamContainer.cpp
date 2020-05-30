@@ -39,7 +39,7 @@ using namespace std;
 //-------------------------------------------------------------------------------------------------
 // Function map - maps a ODBC C data type to the appropriate param creator
 //
-const RParamContainer::CreateParamFnMap RParamContainer::m_fnCreateParamMap =
+const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam
@@ -104,9 +104,9 @@ void RParamContainer::AddParamToEmbeddedR(
 {
 	LOG("RParamContainer::AddParamToEmbeddedR");
 
-	CreateParamFnMap::const_iterator it = m_fnCreateParamMap.find(dataType);
+	CreateParamFnMap::const_iterator it = sm_FnCreateParamMap.find(dataType);
 
-	if (it == m_fnCreateParamMap.end())
+	if (it == sm_FnCreateParamMap.end())
 	{
 		throw runtime_error("Unsupported parameter type encountered when creating param #"
 			+ to_string(paramNumber));
@@ -170,7 +170,6 @@ void RParamContainer::CreateParam(
 // Description:
 //  For the given paramNumber, call RetriveValueAndStrLenOrInd() to retrieve the value from R and
 //  return it via paramValue. Return the strLenOrInd as well.
-//  Note the value returned is allocated on the heap and will be cleaned up when param is destructed.
 //
 void RParamContainer::GetParamValueAndStrLenInd(
 	SQLUSMALLINT paramNumber,
@@ -181,7 +180,7 @@ void RParamContainer::GetParamValueAndStrLenInd(
 
 	if (m_params[paramNumber] == nullptr)
 	{
-		throw runtime_error("InitParam not called for paramNumber " + to_string(paramNumber));
+		throw runtime_error("InitParam not called for param #" + to_string(paramNumber));
 	}
 
 	RParam *param = m_params[paramNumber].get();

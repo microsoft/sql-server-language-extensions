@@ -561,7 +561,7 @@ namespace ExtensionApiTest
 			//
 			"HELLO",
 			// Test VARCHAR(6) value with string length more than the type allows - expected truncation.
-			// Above R script sets the parameter to "RExtension!" but we only expect "RExten".
+			// Above R script sets the parameter to "RExtension" but we only expect "RExten".
 			//
 			"RExten",
 			// Test CHAR(10) value with string length less than the type allows.

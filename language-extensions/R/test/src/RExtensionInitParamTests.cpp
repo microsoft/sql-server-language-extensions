@@ -372,6 +372,68 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	// Negative test
+	// Test InitParam() API with null parameter name
+	//
+	TEST_F(RExtensionApiTest, InitNullNameParamTest)
+	{
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			1); // parametersNumber
+
+		SQLCHAR *paramName = nullptr;
+		SQLSMALLINT paramNameLength = 0;
+		SQLINTEGER paramValue = 123;
+
+		SQLRETURN result = (*m_initParamFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,                // paramNumber
+			paramName,
+			paramNameLength,
+			SQL_C_SLONG,
+			m_IntSize,        // paramSize
+			0,                // decimalDigits
+			&paramValue,      // paramValue
+			SQL_NULL_DATA,    // strLenOrInd
+			SQL_PARAM_INPUT); // inputOutputType
+
+		EXPECT_EQ(result, SQL_ERROR);
+	}
+
+	// Negative test
+	// Test InitParam() API with bad param numbers (too big)
+	//
+	TEST_F(RExtensionApiTest, InitInvalidParamNumberTest)
+	{
+		SQLUSMALLINT parametersNumber = 1;
+		InitializeSession(
+			0,                 // inputSchemaColumnsNumber
+			"",                // scriptString
+			parametersNumber); // parametersNumber
+
+		string paramNameString = "@param";
+		SQLCHAR *paramName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(paramNameString.c_str())));
+		SQLINTEGER paramValue = 123;
+
+		SQLRETURN result = (*m_initParamFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			parametersNumber + 1, // paramNumber outside of range
+			paramName,
+			paramNameString.length(),
+			SQL_C_SLONG,
+			m_IntSize,            // paramSize
+			0,                    // decimalDigits
+			&paramValue,          // argValue
+			0,                    // strLenOrInd
+			SQL_PARAM_INPUT);     // inputOutputType
+
+		EXPECT_EQ(result, SQL_ERROR);
+	}
+
 	// Name: InitParam
 	//
 	// Description:
@@ -484,7 +546,7 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				strLenOrInd = -1;
+				strLenOrInd = SQL_NULL_DATA;
 			}
 
 			SQLRETURN result = SQL_ERROR;

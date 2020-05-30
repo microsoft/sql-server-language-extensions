@@ -65,9 +65,9 @@ public:
 	// so the size returned here does not change even after adding parameters to
 	// embedded R.
 	//
-	SQLSMALLINT GetSize()
+	SQLUSMALLINT GetSize()
 	{
-		return m_params.size();
+		return static_cast<SQLUSMALLINT>(m_params.size());
 	}
 
 private:
@@ -104,7 +104,7 @@ private:
 
 	// Function map for adding parameter.
 	//
-	static const std::unordered_map<SQLSMALLINT, fnCreateParam> m_fnCreateParamMap;
+	static const std::unordered_map<SQLSMALLINT, fnCreateParam> sm_FnCreateParamMap;
 
 	// Function map typedef.
 	//

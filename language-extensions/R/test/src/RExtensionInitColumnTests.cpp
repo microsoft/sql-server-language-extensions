@@ -51,7 +51,7 @@ namespace ExtensionApiTest
 				m_columnName,
 				m_columnNameString.length(),
 				SQL_C_SLONG,   // dataType
-				sizeof(int),   // columnSize
+				m_IntSize,     // columnSize
 				0,             // decimalDigits
 				1,             // nullable
 				-1,            // partitionByNumber
@@ -65,7 +65,7 @@ namespace ExtensionApiTest
 			m_columnName,
 			m_columnNameString.length(),
 			SQL_C_SLONG,   // dataType
-			sizeof(int),   // columnSize
+			m_IntSize,     // columnSize
 			0,             // decimalDigits
 			1,             // nullable
 			-1,            // partitionByNumber
@@ -88,7 +88,7 @@ namespace ExtensionApiTest
 			nullptr,     // NULL name
 			0,           // columnNameLength
 			SQL_C_SLONG, // dataType
-			sizeof(int), // columnSize
+			m_IntSize,   // columnSize
 			0,           // decimalDigits
 			1,           // nullable
 			-1,          // partitionByNumber
@@ -112,7 +112,7 @@ namespace ExtensionApiTest
 				m_columnName,
 				m_columnNameString.length(),
 				SQL_C_SLONG,   // dataType
-				sizeof(int),   // columnSize
+				m_IntSize,     // columnSize
 				0,             // decimalDigits
 				1,             // nullable
 				-1,            // partitionByNumber
@@ -135,7 +135,7 @@ namespace ExtensionApiTest
 				m_columnName,
 				m_columnNameString.length(),
 				SQL_C_BINARY,   // Unsupported dataType
-				sizeof(SQLCHAR),// columnSize
+				m_CharSize,     // columnSize
 				0,              // decimalDigits
 				1,              // nullable
 				-1,             // partitionByNumber

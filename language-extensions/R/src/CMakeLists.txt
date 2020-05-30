@@ -61,7 +61,6 @@ if (${PLATFORM} STREQUAL linux)
 	# Define base paths
 	#
 	file(TO_CMAKE_PATH ${R_HOME}/lib R_LIB_DIR)
-	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension/linux REXTENSION_WORKING_DIR)
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/libRInside.a RINSIDE_LIB)
 
@@ -76,11 +75,11 @@ elseif(${PLATFORM} STREQUAL windows)
 	# Define base paths
 	#
 	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/RLib.3.5.0 R_LIB_DIR)
-	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension/windows REXTENSION_WORKING_DIR)
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/x64/libRInside.a RINSIDE_LIB)
 endif()
 
+file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension/${PLATFORM} REXTENSION_WORKING_DIR)
 file(TO_CMAKE_PATH ${R_HOME}/library/Rcpp/include RCPP_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${R_HOME}/include R_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${RINSIDE_HOME}/include RINSIDE_INCLUDE_DIR)

@@ -41,7 +41,7 @@ using namespace std;
 //-------------------------------------------------------------------------------------------------
 // Function map - maps a ODBC C data type to the function for adding a column
 //
-const RInputDataSet::AddColumnFnMap RInputDataSet::m_fnAddColumnMap =
+const RInputDataSet::AddColumnFnMap RInputDataSet::sm_FnAddColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_SLONG),                           // INT
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
@@ -70,7 +70,7 @@ const RInputDataSet::AddColumnFnMap RInputDataSet::m_fnAddColumnMap =
 
 // Map of function pointers for getting a column information.
 //
-const ROutputDataSet::GetColumnFnMap ROutputDataSet::m_fnGetColumnMap =
+const ROutputDataSet::GetColumnFnMap ROutputDataSet::sm_FnGetColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnGetColumn>(
@@ -91,7 +91,7 @@ const ROutputDataSet::GetColumnFnMap ROutputDataSet::m_fnGetColumnMap =
 
 // Map of function pointers for cleaning up output data buffers and null map.
 //
-const ROutputDataSet::CleanupColumnFnMap ROutputDataSet::m_fnCleanupColumnMap =
+const ROutputDataSet::CleanupColumnFnMap ROutputDataSet::sm_FnCleanupColumnMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnCleanupColumn>(
@@ -131,14 +131,10 @@ void RDataSet::Init(
 	const char *name = static_cast<const char*>(
 			static_cast<const void*>(dataName));
 
-	// dataNameLength does not include the null terminator.
+	// We don't want to include null terminator in the length.
+	// Taking this min, in case dataNameLength has null terminator.
 	//
-#if defined(_DEBUG)
-	if (static_cast<size_t>(dataNameLength) != strlen(name))
-	{
-		throw invalid_argument("Invalid DataSet name length, it doesn't match string length.");
-	}
-#endif
+	dataNameLength = min(static_cast<size_t>(dataNameLength), strlen(name));
 
 	m_name = string(name, dataNameLength);
 
@@ -212,7 +208,7 @@ void RInputDataSet::InitColumn(
 		throw invalid_argument("Invalid input column id supplied: " + to_string(columnNumber));
 	}
 
-	if (m_fnAddColumnMap.find(dataType) == m_fnAddColumnMap.end())
+	if (sm_FnAddColumnMap.find(dataType) == sm_FnAddColumnMap.end())
 	{
 		throw invalid_argument("Unsupported data type " + to_string(dataType) + " encountered for "
 			"column id " + to_string(columnNumber) + " in input data.");
@@ -249,7 +245,7 @@ void RInputDataSet::AddColumnsToDataFrame(
 	LOG("RInputDataSet::AddColumnsToDataFrame");
 
 	SQLUSMALLINT numberOfCols = GetVectorColumnsNumber();
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; columnNumber++)
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
 	{
 		SQLPOINTER colData = nullptr;
 
@@ -264,9 +260,9 @@ void RInputDataSet::AddColumnsToDataFrame(
 		}
 
 		SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
-		AddColumnFnMap::const_iterator it = m_fnAddColumnMap.find(dataType);
+		AddColumnFnMap::const_iterator it = sm_FnAddColumnMap.find(dataType);
 
-		if (it == m_fnAddColumnMap.end())
+		if (it == sm_FnAddColumnMap.end())
 		{
 			throw runtime_error("Unsupported input column type encountered when adding column #"
 				+ to_string(columnNumber));
@@ -387,7 +383,7 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 	SQLUSMALLINT numberOfCols = GetDataFrameColumnsNumber();
 
 	Rcpp::CharacterVector columnNames = m_dataFrame.names();
-	for(SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; columnNumber++)
+	for(SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
 	{
 		const char *columnName = columnNames[columnNumber];
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
@@ -397,11 +393,11 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 
 		// Look up the GetColumn function
 		//
-		GetColumnFnMap::const_iterator it = m_fnGetColumnMap.find(dataType);
-		if (it == m_fnGetColumnMap.end())
+		GetColumnFnMap::const_iterator it = sm_FnGetColumnMap.find(dataType);
+		if (it == sm_FnGetColumnMap.end())
 		{
 			throw invalid_argument("Unsupported data type "
-				+ to_string(dataType) + "in output data for column # " + to_string(columnNumber));
+				+ to_string(dataType) + "in output data for column #" + to_string(columnNumber));
 		}
 
 		// Gets the column information, adds data to m_data and nullmap to m_columnNullMap
@@ -451,14 +447,14 @@ void ROutputDataSet::GetColumnFromDataFrame(
 	vector<SQLType> *columnData = nullptr;
 	SQLINTEGER *strLenOrInd = nullptr;
 
-	if(m_numberOfRows > 0)
+	if(m_rowsNumber > 0)
 	{
 		columnData = new vector<SQLType>();
-		strLenOrInd = new SQLINTEGER[m_numberOfRows];
+		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RType column = m_dataFrame[columnNumber];
 		RTypeUtils::FillDataFromRVector<SQLType, RType, DataType>(
-			m_numberOfRows,
+			m_rowsNumber,
 			column,
 			columnData,
 			strLenOrInd,
@@ -495,14 +491,14 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 	SQLINTEGER *strLenOrInd = nullptr;
 	SQLULEN maxLen = 0;
 
-	if(m_numberOfRows > 0)
+	if(m_rowsNumber > 0)
 	{
 		columnData = new vector<SQLCHAR>();
-		strLenOrInd = new SQLINTEGER[m_numberOfRows];
+		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		Rcpp::CharacterVector column = m_dataFrame[columnNumber];
 		RTypeUtils::FillDataFromCharacterVector(
-			m_numberOfRows,
+			m_rowsNumber,
 			column,
 			numeric_limits<SQLULEN>::max(),
 			columnData,
@@ -545,14 +541,14 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 	Rcpp::RawVector column = m_dataFrame[columnNumber];
 	columnSize = column.size();
 
-	if (m_numberOfRows > 0)
+	if (m_rowsNumber > 0)
 	{
 		// If there are rows in the DataFrame, they are all grouped together in
-		// a single row for raw column i.e. m_numberOfRows = 1.
-		// And if m_numberOfRows > 0, it means columnSize > 0
+		// a single row for raw column i.e. m_rowsNumber = 1.
+		// And if m_rowsNumber > 0, it means columnSize > 0
 		//
 		columnData = new vector<SQLCHAR>();
-		strLenOrInd = new SQLINTEGER[m_numberOfRows];
+		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RTypeUtils::FillDataFromRawVector(
 			column,
@@ -585,13 +581,13 @@ void ROutputDataSet::GetColumnsDataType()
 
 	SQLUSMALLINT numberOfCols = GetDataFrameColumnsNumber();
 
-	for(SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; columnNumber++)
+	for(SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
 	{
 		SQLSMALLINT dataType = GetColumnDataType(columnNumber);
 
 		if (dataType == SQL_C_BINARY && numberOfCols > 1)
 		{
-			throw invalid_argument("Binary data type for column # "
+			throw invalid_argument("Binary data type for column #"
 				+ to_string(columnNumber) + " not supported when "
 				" output data has more than 1 column.");
 		}
@@ -634,25 +630,25 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 
 	if (it == RTypeUtils::m_classInRToOdbcTypeMap.end())
 	{
-		throw invalid_argument("Unsupported data type in output data for column # "
+		throw invalid_argument("Unsupported data type in output data for column #"
 			+ to_string(columnNumber) + ".");
 	}
 
-	SQLSMALLINT dataType = (*it).second;
+	SQLSMALLINT dataType = it->second;
 	return dataType;
 }
 
 //--------------------------------------------------------------------------------------------------
-// Name: ROutputDataSet::PopulateNumberOfRows
+// Name: ROutputDataSet::PopulateRowsNumber
 //
 // Description:
 //  Set the number of rows from the underlying DataFrame.
-//  If there is a binary column, number of rows is set to 1 even if the underlying DataFrame has more
+//  If there is a binary raw column, number of rows is set to 1 even if the underlying DataFrame has more
 //  rows since all the bytes are returned in a single row.
 //
-void ROutputDataSet::PopulateNumberOfRows()
+void ROutputDataSet::PopulateRowsNumber()
 {
-	LOG("ROutputDataSet::PopulateNumberOfRows");
+	LOG("ROutputDataSet::PopulateRowsNumber");
 
 	vector<SQLSMALLINT>::const_iterator it =
 		find(m_columnsDataType.begin(),m_columnsDataType.end(), SQL_C_BINARY);
@@ -661,14 +657,14 @@ void ROutputDataSet::PopulateNumberOfRows()
 	{
 		// No binary column found; set the DataFrame rows as the number of rows for ROutputDataSet.
 		//
-		m_numberOfRows = GetDataFrameRowsNumber();
+		m_rowsNumber = GetDataFrameRowsNumber();
 	}
 	else if(GetDataFrameRowsNumber() > 0)
 	{
-		// Binary column found; set number of rows of ROutputDatSet = 1
+		// Raw binary column found; set number of rows of ROutputDatSet = 1
 		// only if DataFrame has at least 1 row.
 		//
-		m_numberOfRows = 1;
+		m_rowsNumber = 1;
 	}
 }
 
@@ -683,13 +679,13 @@ void ROutputDataSet::CleanupColumns()
 {
 	LOG("ROutputDataSet::CleanupColumns");
 
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < m_data.size(); columnNumber++)
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < m_data.size(); ++columnNumber)
 	{
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
 
-		CleanupColumnFnMap::const_iterator it = m_fnCleanupColumnMap.find(dataType);
+		CleanupColumnFnMap::const_iterator it = sm_FnCleanupColumnMap.find(dataType);
 
-		if (it == m_fnCleanupColumnMap.end())
+		if (it == sm_FnCleanupColumnMap.end())
 		{
 			throw invalid_argument("In cleanup, unsupported data type "
 				+ to_string(dataType) + " in output data for column # "

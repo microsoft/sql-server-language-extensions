@@ -213,13 +213,13 @@ namespace ExtensionApiTest
 		InitializeSession(inputSchemaColumnsNumber, m_scriptString);
 
 		string charColumn1Name = "CharColumn1";
-		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, m_CharSize);
 
 		string charColumn2Name = "CharColumn2";
-		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, m_CharSize);
 
 		string charColumn3Name = "CharColumn3";
-		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, m_CharSize);
 
 		SQLULEN rowsNumber = 5;
 		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
@@ -271,13 +271,13 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string integerColumnName = "IntegerColumn";
-		InitializeColumn(0, integerColumnName, SQL_C_SLONG, sizeof(SQLINTEGER));
+		InitializeColumn(0, integerColumnName, SQL_C_SLONG, m_IntSize);
 
 		string doubleColumnName = "DoubleColumn";
-		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, sizeof(SQLDOUBLE));
+		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, m_DoubleSize);
 
 		string charColumnName = "CharColumn";
-		InitializeColumn(2, charColumnName, SQL_C_CHAR, sizeof(SQLCHAR));
+		InitializeColumn(2, charColumnName, SQL_C_CHAR, m_CharSize);
 
 		SQLULEN rowsNumber = 5;
 		vector<SQLINTEGER> intColData{ 2'147'483'647, -2'147'483'647, 0, -2'147'483'648, -1 };
@@ -395,7 +395,7 @@ namespace ExtensionApiTest
 			//
 			Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
 
-			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); columnNumber++)
+			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 			{
 				RType column = inputDataSet[columnNames[columnNumber].c_str()];
 				CheckVectorEquality<SQLType, RType, dataType>(
@@ -456,7 +456,7 @@ namespace ExtensionApiTest
 			//
 			Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
 
-			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); columnNumber++)
+			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 			{
 				Rcpp::CharacterVector column = inputDataSet[columnNames[columnNumber].c_str()];
 				CheckCharacterVectorEquality(
@@ -488,7 +488,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(vectorToTest.size(), expectedVector.size());
 		SQLULEN expectedRowsNumber = expectedVector.size();
-		for(SQLULEN index = 0 ; index < expectedRowsNumber; index++)
+		for(SQLULEN index = 0 ; index < expectedRowsNumber; ++index)
 		{
 			if (RType::is_na(expectedVector[index]))
 			{
@@ -513,7 +513,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(dataFrameToTest.size(), expectedDataFrame.size());
 		SQLUSMALLINT expectedColumns = dataFrameToTest.size();
-		for(SQLUSMALLINT index = 0 ; index < expectedColumns; index++)
+		for(SQLUSMALLINT index = 0 ; index < expectedColumns; ++index)
 		{
 			CheckVectorEquality<RType>(
 				dataFrameToTest[index],
