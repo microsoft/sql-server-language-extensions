@@ -12,9 +12,8 @@ apt-get update
 
 apt-get install -y python3.7-dev libboost-all-dev python3-pip
 
-python3 -m pip install numpy
-/usr/bin/python3.7 -m pip install numpy
-/usr/bin/python3.7 -m pip install pandas
+/usr/bin/python3.7 -m pip install numpy -t /usr/lib/python3.7/dist-packages
+/usr/bin/python3.7 -m pip install pandas -t /usr/lib/python3.7/dist-packages
 
 wget -O boost_1_69_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.69.0/boost_1_69_0.tar.gz/download
 tar xzvf boost_1_69_0.tar.gz -C /usr/lib/
@@ -24,7 +23,7 @@ pushd /usr/lib/boost_1_69_0
 #
 ./bootstrap.sh --without-icu --with-python=/usr/bin/python3.7 --with-python-version=3.7 --with-python-root=/usr/lib/python3.7
 
-echo "using python : 3.7 : /usr/bin/python3 : /usr/include/python3.7m : /usr/lib ;" >> project-config.jam
+echo "using python : 3.7 : /usr/bin/python3.7 : /usr/include/python3.7m : /usr/lib ;" >> project-config.jam
 
 # Change cxx flags to force boost to compile with -fPIC compilation, otherwise will fail linking when building libPythonExtension.so
 #

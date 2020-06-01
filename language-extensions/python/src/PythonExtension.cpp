@@ -24,6 +24,11 @@
 using namespace std;
 namespace py = boost::python;
 
+#ifndef _WIN64
+#include <dlfcn.h>
+const string x_PythonSoFile = "libpython3.7m.so.1.0";
+#endif
+
 static unordered_map<string, PythonSession *> g_pySessionMap;
 
 //--------------------------------------------------------------------------------------------------
@@ -68,6 +73,14 @@ SQLRETURN Init(
 
 	try
 	{
+
+#ifndef _WIN64
+		// Preload the python so in Linux so that numpy knows about it.
+		// Without this line, the numpy .so cannot find python and will fail to load.
+		//
+		dlopen(x_PythonSoFile.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+#endif
+
 		// Initialize Python using the Python/C API.
 		// This allows us to start using Python API and boost functions.
 		//
