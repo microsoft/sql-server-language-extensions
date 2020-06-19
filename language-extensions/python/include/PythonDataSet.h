@@ -170,6 +170,7 @@ private:
 
 	// Adds a column of string values into the python dictionary
 	//
+	template<class CharType>
 	void AddStringColumnToDictionary(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,

@@ -42,3 +42,4 @@ PythonColumn::PythonColumn(
 	//
 	m_name = string(name, columnNameLength);
 }
+

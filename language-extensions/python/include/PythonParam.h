@@ -244,6 +244,7 @@ private:
 // Class representing a string parameter.
 // Corresponds to ODBC C type SQL_C_CHAR.
 //
+template<class CharType>
 class PythonStringParam : public PythonParam
 {
 public:

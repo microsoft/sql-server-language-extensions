@@ -1,4 +1,4 @@
-//*************************************************************************************************
+﻿//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -351,6 +351,94 @@ namespace ExtensionApiTest
 			false);  // isFixedType
 	}
 
+
+	// Test multiple NCHAR and NVARCHAR values
+	//
+	TEST_F(PythonExtensionApiTests, InitWStringParamTest)
+	{
+		InitializeSession(1); // parametersNumber
+
+		// Test simple NCHAR(5) value
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			L"HELLO",
+			5,       // paramSize
+			true);   // isFixedType
+
+		// Test simple NCHAR(6) value with parameter length less than size - should be padded.
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			L"WORLD",
+			6,       // paramSize
+			true);   // isFixedType
+
+		// Test NCHAR(6) value with parameter length more than size - should be truncated.
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			L"PYEXTENSION",
+			6,       // paramSize
+			true);   // isFixedType
+
+		// Test null NCHAR(5) value
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			nullptr, // paramValue
+			5,       // paramSize
+			true);   // isFixedType
+
+		// Test simple NVARCHAR(6) value
+		//
+		TestWStringParameter(
+			0,        // paramNumber
+			L"WORLD!",
+			6,        // paramSize
+			false);   // isFixedType
+
+		// Test simple NVARCHAR(8) value with parameter length less than size - NO padding.
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			L"WORLD",
+			8,       // paramSize
+			false);  // isFixedType
+
+		// Test NVARCHAR(6) value with parameter length more than size - should be truncated.
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			L"PYEXTENSION",
+			6,       // paramSize
+			false);  // isFixedType
+
+		// Test null NVARCHAR(5) value
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			nullptr, // paramValue
+			5,       // paramSize
+			false);  // isFixedType
+
+		// Test Unicode NCHAR(2) value
+		//
+		TestWStringParameter(
+			0,        // paramNumber
+			L"你好",
+			2,        // paramSize
+			true);   // isFixedType
+
+		// Test Unicode NVARCHAR(6) value
+		//
+		TestWStringParameter(
+			0,        // paramNumber
+			L"你好",
+			6,        // paramSize
+			false);   // isFixedType
+	}
+
 	// Test multiple BINARY and VARBINARY values
 	//
 	TEST_F(PythonExtensionApiTests, InitBinaryParamTest)
@@ -564,7 +652,7 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 
-		if(validate)
+		if (validate)
 		{
 			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
 
@@ -575,6 +663,108 @@ namespace ExtensionApiTest
 				char *param = py::extract<char *>(obj);
 
 				EXPECT_STREQ(param, expectedParamValue);
+			}
+			else
+			{
+				ASSERT_TRUE(obj.is_none());
+			}
+		}
+	}
+
+	// Name: TestStringParameter
+	//
+	// Description:
+	// Testing if InitParam is implemented correctly for the nchar/nvarchar dataType.
+	//
+	void PythonExtensionApiTests::TestWStringParameter(
+		int           paramNumber,
+		const wchar_t *paramValue,
+		const SQLULEN paramSize,
+		bool          isFixedType,
+		SQLSMALLINT   inputOutputType,
+		bool          validate)
+	{
+		string paramName = "param" + to_string(paramNumber);
+		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+
+		// +1 to accomodate "@"
+		//
+		int paramNameLength = paramName.length() + 1;
+
+		vector<wchar_t> fixedParamValue(paramSize + 1);
+		SQLINTEGER strLenOrInd = 0;
+		wchar_t *expectedParamValue = nullptr;
+
+		if (paramValue != nullptr)
+		{
+			SQLULEN paramLength = wcslen(paramValue);
+
+			copy(paramValue, paramValue + min(paramLength, paramSize), fixedParamValue.begin());
+
+			if (isFixedType)
+			{
+				strLenOrInd = paramSize;
+
+				// pad the rest of the array
+				//
+				for (SQLULEN index = paramLength; index < paramSize; ++index)
+				{
+					fixedParamValue[index] = ' ';
+				}
+			}
+			else
+			{
+				strLenOrInd = min(paramLength, paramSize);
+			}
+
+			strLenOrInd *= sizeof(wchar_t);
+			expectedParamValue = fixedParamValue.data();
+		}
+		else
+		{
+			strLenOrInd = SQL_NULL_DATA;
+		}
+
+		SQLRETURN result = SQL_ERROR;
+
+		result = InitParam(
+			*m_sessionId,
+			m_taskId,
+			paramNumber,
+			unsignedParamName,
+			paramNameLength,
+			SQL_C_WCHAR,
+			paramSize,
+			0,                  // decimalDigits
+			expectedParamValue,
+			strLenOrInd,
+			inputOutputType);
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		if (validate)
+		{
+			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+
+			if (paramValue != nullptr)
+			{
+				ASSERT_FALSE(obj.is_none());
+
+				SQLINTEGER strlen = strLenOrInd / sizeof(wchar_t);
+
+				// Convert to then extract from python object
+				// because of differences in wchar handling
+				//
+				py::object tempObj = py::object(py::handle<>(
+					PyUnicode_FromKindAndData(sizeof(wchar_t), expectedParamValue, strlen)
+					));
+
+				wstring expected = py::extract<wstring>(tempObj);
+				wstring actual = py::extract<wstring>(obj);
+
+				EXPECT_STREQ(actual.c_str(), expected.c_str());
+
 			}
 			else
 			{

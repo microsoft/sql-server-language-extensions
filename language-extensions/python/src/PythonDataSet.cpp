@@ -62,7 +62,9 @@ const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::sm_FnAddColumnMap =
 	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddColumnToDictionary<SQLBIGINT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddStringColumnToDictionary)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddStringColumnToDictionary<char>)},
+	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddStringColumnToDictionary<wchar_t>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddRawColumnToDictionary)},
 };
@@ -471,6 +473,7 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 // Description:
 //  Adds a string column to the python dictionary that will be the DataFrame
 //
+template<class CharType>
 void PythonInputDataSet::AddStringColumnToDictionary(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -481,7 +484,8 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 
 	string name = m_columns[columnNumber].get()->Name();
 
-	char *strArray = reinterpret_cast<char*>(data);
+	CharType *strArray = reinterpret_cast<CharType*>(data);
+
 	int length = 0;
 
 	// Create an empty numpy array of type python object
@@ -499,15 +503,15 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 		}
 		else
 		{
-			char *str = strArray + length;
-			SQLINTEGER strlen = strLen_or_Ind[i] / sizeof(CHAR);
+			CharType *str = strArray + length;
+			Py_ssize_t strlen = strLen_or_Ind[i] / sizeof(CharType);
 
 			// Create a string PyObject from the str and strLen.
 			// This DOES copy the underlying string into a new buffer and null terminates it.
 			// Then, convert to a boost object so that boost handles ref counting.
 			//
 			py::object strObj = py::object(py::handle<>(
-				PyUnicode_FromStringAndSize(str, strlen)
+				PyUnicode_FromKindAndData(sizeof(CharType), str, strlen)
 			));
 
 			nArray[i] = strObj;

@@ -27,7 +27,7 @@ add_executable(pythonextension-test
 )
 
 if (${PLATFORM} STREQUAL linux)	
-	target_compile_options(pythonextension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++14 -Wno-unused-parameter)
+	target_compile_options(pythonextension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++14 -Wno-unused-parameter -fshort-wchar)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
 	
 	set(USR_LIB_PATH /usr/local/lib)

@@ -97,6 +97,16 @@ namespace ExtensionApiTest
 			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
 			bool        validate = true);
 
+		// Test a wstring parameter
+		//
+		void TestWStringParameter(
+			int           paramNumber,
+			const wchar_t *paramValue,
+			SQLULEN       paramSize,
+			bool          isFixedType,
+			SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+			bool          validate = true);
+
 		// Test a binary parameter
 		//
 		void TestRawParameter(

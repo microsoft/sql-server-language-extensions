@@ -228,7 +228,8 @@ void PythonBooleanParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
 //  the parameter value, in a way that python can use, or py::object which is None.
 //  We use StrLen_or_Ind to calculate how long the string is before creating the python object.
 //
-PythonStringParam::PythonStringParam(
+template<class CharType>
+PythonStringParam<CharType>::PythonStringParam(
 	SQLUSMALLINT  id,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -239,19 +240,25 @@ PythonStringParam::PythonStringParam(
 	SQLINTEGER    strLen_or_Ind,
 	SQLSMALLINT   inputOutputType)
 	: PythonParam(id,
-				paramName,
-				paramNameLength,
-				type,
-				paramSize,
-				decimalDigits,
-				strLen_or_Ind,
-				inputOutputType)
+		paramName,
+		paramNameLength,
+		type,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
-		SQLINTEGER strlen = strLen_or_Ind / sizeof(char);
-		string value(static_cast<char*>(paramValue), strlen);
-		m_pyObject = py::object(value);
+		SQLINTEGER strlen = strLen_or_Ind / sizeof(CharType);
+
+		// Create a string PyObject from the str and strLen.
+		// This DOES copy the underlying string into a new buffer and null terminates it.
+		// Then, convert to a boost object so that boost handles ref counting.
+		//
+		m_pyObject = py::object(py::handle<>(
+			PyUnicode_FromKindAndData(sizeof(CharType), paramValue, strlen)
+		));
 	}
 	else
 	{
@@ -267,7 +274,8 @@ PythonStringParam::PythonStringParam(
 // Description:
 //  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
 //
-void PythonStringParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
+template<class CharType>
+void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(py::object mainNamespace)
 {
 	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
 	if (dictNamespace.has_key(m_name))
@@ -447,6 +455,28 @@ template PythonParamTemplate<SQLSMALLINT>::PythonParamTemplate(
 	SQLSMALLINT);
 
 template PythonParamTemplate<SQLCHAR>::PythonParamTemplate(
+	SQLUSMALLINT,
+	const SQLCHAR *,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template PythonStringParam<char>::PythonStringParam(
+	SQLUSMALLINT,
+	const SQLCHAR *,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template PythonStringParam<wchar_t>::PythonStringParam(
 	SQLUSMALLINT,
 	const SQLCHAR *,
 	SQLSMALLINT,
