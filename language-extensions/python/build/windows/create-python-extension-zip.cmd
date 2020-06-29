@@ -24,7 +24,7 @@ powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -
 
 CALL :CHECK_BUILD_ERROR %ERRORLEVEL% %BUILD_CONFIGURATION%
 
-REM Advance arg passed to create-java-extension.cmd
+REM Advance arg passed to create-python-extension.cmd
 REM
 SHIFT
 

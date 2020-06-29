@@ -18,7 +18,7 @@ function build {
 	# Output directory and output lib name
 	#
 	TARGET=${ENL_ROOT}/build-output/pythonextension/target/${CMAKE_CONFIGURATION}
-	
+
 	# Create the output directories
 	#
 	mkdir -p ${TARGET}
@@ -26,9 +26,9 @@ function build {
 	if ! [[ -d ${PYTHONEXTENSION_WORKING_DIR} ]]; then
 		mkdir -p ${PYTHONEXTENSION_WORKING_DIR}
 	fi
-	
+
 	cd ${PYTHONEXTENSION_WORKING_DIR}
-	
+
 	# Compile
 	#
 	cmake -DPLATFORM=Linux \
@@ -50,7 +50,7 @@ function build {
 	mv libPythonExtension.so* ${CMAKE_CONFIGURATION}/
 
 	cd ${CMAKE_CONFIGURATION}/
-	
+
 	# This will create the python extension package with unsigned binaries, this is used for local development and non-release builds. release
 	# builds will call create-python-extension-zip.sh after the binaries have been signed and this will be included in the zip
 	#
@@ -76,9 +76,9 @@ DEFAULT_BOOST_ROOT=/usr/lib/boost_1_69_0
 
 # Find PYTHONHOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
-# 
+#
 if [ -z "${PYTHONHOME}" ]; then
-	if [ -x "${DEFAULT_PYTHONHOME}" ]; then 
+	if [ -x "${DEFAULT_PYTHONHOME}" ]; then
 		PYTHONHOME=${DEFAULT_PYTHONHOME}
 	else
 		echo "PYTHONHOME is empty but needs to be set to build the python extension"
@@ -88,9 +88,9 @@ fi
 
 # Find BOOST_ROOT from user, or set to default for tests.
 # Error code 1 is generic bash error.
-# 
+#
 if [ -z "${BOOST_ROOT}" ]; then
-	if [ -x "${DEFAULT_BOOST_ROOT}" ]; then 
+	if [ -x "${DEFAULT_BOOST_ROOT}" ]; then
 		BOOST_ROOT=${DEFAULT_BOOST_ROOT}
 	else
 		echo "BOOST_ROOT is empty but needs to be set to build the python extension"
@@ -102,9 +102,9 @@ DEFAULT_BOOST_PYTHON_ROOT=${BOOST_ROOT}/stage/lib
 
 # Find BOOST_PYTHON_ROOT from user, or set to default for tests.
 # Error code 1 is generic bash error.
-# 
+#
 if [ -z "${BOOST_PYTHON_ROOT}" ]; then
-	if [ -x "${DEFAULT_BOOST_PYTHON_ROOT}" ]; then 
+	if [ -x "${DEFAULT_BOOST_PYTHON_ROOT}" ]; then
 		BOOST_PYTHON_ROOT=${DEFAULT_BOOST_PYTHON_ROOT}
 	else
 		echo "BOOST_PYTHON_ROOT is empty but needs to be set to build the python extension"
