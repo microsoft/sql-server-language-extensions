@@ -131,10 +131,14 @@ void RDataSet::Init(
 	const char *name = static_cast<const char*>(
 			static_cast<const void*>(dataName));
 
-	// We don't want to include null terminator in the length.
-	// Taking this min, in case dataNameLength has null terminator.
+	// dataNameLength does not include the null terminator.
 	//
-	dataNameLength = min(static_cast<size_t>(dataNameLength), strlen(name));
+#if defined(_DEBUG)
+	if (static_cast<size_t>(dataNameLength) != strlen(name))
+	{
+		throw invalid_argument("Invalid DataSet name length, it doesn't match string length.");
+	}
+#endif
 
 	m_name = string(name, dataNameLength);
 

@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..
 SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
 SET REXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-3.6.3-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
 REM Find R_HOME and CMAKE_ROOT from user, or set to default.

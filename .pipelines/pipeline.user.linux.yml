@@ -178,6 +178,7 @@ package:
     - !!buildcommand
       name: 'Create RExtension zip'
       command: 'language-extensions/R/build/linux/create-RExtension-zip.sh'
+      arguments:  'debug release'
       artifacts:
         - from: 'build-output\RExtension/windows/debug/packages'
           to: 'out/RExtension/packages/debug'

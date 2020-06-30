@@ -30,6 +30,7 @@ function build {
 		-DENL_ROOT=${ENL_ROOT} \
 		-DPLATFORM=linux \
 		-DR_HOME=${R_HOME} \
+		-DR_INCLUDE_DIR=${R_INCLUDE} \
 		${REXTENSIONTEST_SRC_DIR}
 	cmake --build ${REXTENSIONTEST_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
 
@@ -55,7 +56,8 @@ PACKAGES_ROOT=${ENL_ROOT}/packages
 REXTENSIONTEST_SRC_DIR=${REXTENSIONTEST_HOME}/src
 REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/RExtension-test/linux
 
-DEFAULT_R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+DEFAULT_R_HOME=/usr/lib/R
+DEFAULT_R_INCLUDE=/usr/share/R/include
 
 # Find R_HOME from user, or set to default for testing.
 # Error code 1 is generic bash error.
@@ -65,6 +67,18 @@ if [ -z "${R_HOME}" ]; then
 		export R_HOME=${DEFAULT_R_HOME}
 	else
 		echo "R_HOME is empty"
+		exit 1
+	fi
+fi
+
+# Find R_INCLUDE from user, or set to default for building the test.
+# Error code 1 is generic bash error.
+#
+if [ -z "${R_INCLUDE}" ]; then
+	if [ -d "${DEFAULT_R_INCLUDE}" ]; then
+		export R_INCLUDE=${DEFAULT_R_INCLUDE}
+	else
+		echo "R_INCLUDE is empty"
 		exit 1
 	fi
 fi

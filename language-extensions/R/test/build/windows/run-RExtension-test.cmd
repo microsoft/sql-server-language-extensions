@@ -10,7 +10,7 @@ SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET GTEST_HOME=%PACKAGES_ROOT%\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0
 SET GTEST_LIB_PATH=%GTEST_HOME%\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64
 
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-3.6.3-win
 
 REM Find R_HOME from user, or set to default.
 REM Error code 203 is ENVVAR_NOT_FOUND.

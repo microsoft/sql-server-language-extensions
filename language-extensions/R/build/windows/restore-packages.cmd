@@ -8,22 +8,27 @@ REM
 CALL %ENL_ROOT%\restore-packages.cmd
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore common nuget packages." || EXIT /b %ERRORLEVEL%
 
-REM Get the MRO nuget package
-REM
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 nuget restore %ENL_ROOT%\language-extensions\R\packages.config -PackagesDirectory %PACKAGES_ROOT%
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore nuget packages required for RExtension." || EXIT /b %ERRORLEVEL%
 
-REM Set R_HOME
+REM Set DEFAULT_R_HOME
 REM
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\External-R.MRO-3.5.2.R.3.5.2.229\Windows
+SET R_VERSION=3.6.3
+SET R_INSTALLER=R-%R_VERSION%-win.exe
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-%R_VERSION%-win
 
 IF "%R_HOME%" == "" (
-	IF EXIST %DEFAULT_R_HOME% (
-		SET R_HOME=%DEFAULT_R_HOME%
-	) ELSE (
-		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: R_HOME variable must be set to restore RInside and Rcpp" || EXIT /b %ENVVAR_NOT_FOUND%
-	)
+	REM If R_HOME not defined, download and install R-%R_VERSION%
+	REM
+	SET R_HOME=%DEFAULT_R_HOME%
+	MKDIR %DEFAULT_R_HOME%
+	powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/base/old/%R_VERSION%/%R_INSTALLER%  -OutFile %DEFAULT_R_HOME%\%R_INSTALLER%"
+	CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download R-%R_VERSION%." || EXIT /b %ERRORLEVEL%
+	%DEFAULT_R_HOME%\%R_INSTALLER% /VERYSILENT /DIR=%DEFAULT_R_HOME%
+	CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install R-%R_VERSION%." || EXIT /b %ERRORLEVEL%
+) ELSE (
+	ECHO Using the already defined R_HOME=%R_HOME%
 )
 
 SET R_BIN_PATH=%R_HOME%\bin
@@ -44,7 +49,7 @@ SETLOCAL disabledelayedexpansion
 
 REM Get RTools for mingw32
 REM
-SET RTOOLS_HOME=%ENL_ROOT%\packages\Rtools
+SET RTOOLS_HOME=%PACKAGES_ROOT%\Rtools
 MKDIR %RTOOLS_HOME%
 powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/Rtools35.exe -OutFile %RTOOLS_HOME%\Rtools35.exe"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools." || EXIT /b %ERRORLEVEL%

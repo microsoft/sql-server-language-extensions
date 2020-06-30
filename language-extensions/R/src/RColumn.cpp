@@ -40,10 +40,14 @@ RColumn::RColumn(
 	const char *name = static_cast<const char*>(
 			static_cast<const void*>(columnName));
 
-	// We don't want to include null terminator in the length.
-	// Taking this min, in case columnNameLength has null terminator.
+	// columnNameLength does not include the null terminator.
 	//
-	columnNameLength = min(static_cast<size_t>(columnNameLength), strlen(name));
+#if defined(_DEBUG)
+	if (static_cast<size_t>(columnNameLength) != strlen(name))
+	{
+		throw invalid_argument("Invalid column name length, it doesn't match string length.");
+	}
+#endif
 
 	// Store the information for this column
 	//

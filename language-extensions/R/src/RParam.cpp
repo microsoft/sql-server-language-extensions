@@ -63,10 +63,12 @@ RParam::RParam(
 
 	LOG("RParam::RParam Initializing parameter " + string(name));
 
-	// We don't want to include null terminator in the length.
-	// Taking this min, in case paramNameLength has null terminator.
-	//
-	paramNameLength = min(static_cast<size_t>(paramNameLength), strlen(name));
+#if defined(_DEBUG)
+	if (static_cast<size_t>(paramNameLength) != strlen(name))
+	{
+		throw invalid_argument("Invalid parameter name length, it doesn't match string length.");
+	}
+#endif
 
 	// +1 points to the next character after @ in front of the parameter name.
 	// paramNameLength includes @ so do a -1 to exclude it.

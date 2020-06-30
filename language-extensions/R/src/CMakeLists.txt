@@ -67,6 +67,7 @@ if (${PLATFORM} STREQUAL linux)
 elseif(${PLATFORM} STREQUAL windows)
 	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -std=c++14 -Wno-unused-parameter)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-all-symbols -fopenmp -Wl,-rpath,'${ORIGIN}'")
 
 	# Set the DLLEXPORT variable to export symbols
 	#
@@ -74,14 +75,15 @@ elseif(${PLATFORM} STREQUAL windows)
 
 	# Define base paths
 	#
-	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/RLib.3.5.0 R_LIB_DIR)
+	file(TO_CMAKE_PATH ${R_HOME}/bin/x64 R_LIB_DIR)
+	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension/windows REXTENSION_WORKING_DIR)
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/x64/libRInside.a RINSIDE_LIB)
+	file(TO_CMAKE_PATH ${R_HOME}/include R_INCLUDE_DIR)
 endif()
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension/${PLATFORM} REXTENSION_WORKING_DIR)
 file(TO_CMAKE_PATH ${R_HOME}/library/Rcpp/include RCPP_INCLUDE_DIR)
-file(TO_CMAKE_PATH ${R_HOME}/include R_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${RINSIDE_HOME}/include RINSIDE_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${REXTENSION_HOME}/include REXTENSION_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/extension-host/include EXTENSION_API_INCLUDE_DIR)

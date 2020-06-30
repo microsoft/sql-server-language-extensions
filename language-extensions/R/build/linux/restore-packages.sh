@@ -12,24 +12,20 @@ function check_exit_code {
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get --no-install-recommends -y install curl zip unzip apt-transport-https
+apt-get --no-install-recommends -y install curl zip unzip apt-transport-https libstdc++6
 
-# Add Microsoft repository.
+# Add R CRAN repository.
 #
-curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | tee /etc/apt/sources.list.d/msprod.list
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
 apt-get update
 
 # Install R runtime.
 #
-MS_ROPEN="microsoft-r-open"
-MS_ROPEN_VERSION="3.5.2"
-MS_ROPEN_MRO="${MS_ROPEN}-mro-${MS_ROPEN_VERSION}"
-
-apt-get -q -y install "${MS_ROPEN_MRO}"
+apt-get --no-install-recommends -y install r-base-core
 check_exit_code "Success: Installed R runtime." "Error: Failed to install R runtime."
 
-DEFAULT_R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+DEFAULT_R_HOME=/usr/lib/R
 
 # Find R_HOME from user, or set to default for installing Rcpp and RInside.
 # Error code 1 is generic bash error.

@@ -53,6 +53,7 @@ elseif(${PLATFORM} STREQUAL windows)
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
 	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/RLib.3.5.0 R_LIB_DIR)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/x64/libRInside.a RINSIDE_LIB)
+	file(TO_CMAKE_PATH ${R_HOME}/include R_INCLUDE_DIR)
 endif()
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R/test/include/ REXTENSIONTEST_INCLUDE_DIR)
@@ -63,7 +64,6 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)
 file(TO_CMAKE_PATH ${GTEST_HOME}/googletest-src/googletest/include GTEST_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${GTEST_HOME}/lib/libgtest.a GTEST_LIB)
 
-file(TO_CMAKE_PATH ${R_HOME}/include R_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${R_HOME}/library/Rcpp/include RCPP_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${RINSIDE_HOME}/include RINSIDE_INCLUDE_DIR)
 

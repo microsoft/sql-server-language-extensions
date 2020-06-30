@@ -31,8 +31,9 @@ function build {
 	# Compile
 	#
 	cmake -DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
-		-DR_HOME=${R_HOME} \
 		-DCMAKE_INSTALL_PREFIX:PATH=${REXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION} \
+		-DR_HOME=${R_HOME} \
+		-DR_INCLUDE_DIR=${R_INCLUDE} \
 		-DR_LIB_DIR=${R_LIB_DIR} \
 		-DEXTENSION_API_INCLUDE_DIR=${ENL_ROOT}/extension-host/include \
 		-DREXTENSION_INCLUDE_DIR=${REXTENSION_HOME}/include \
@@ -73,7 +74,8 @@ PACKAGES_ROOT=${ENL_ROOT}/packages
 REXTENSION_SRC_DIR=${REXTENSION_HOME}/src/
 REXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/RExtension/linux/
 
-DEFAULT_R_HOME=/opt/microsoft/ropen/3.5.2/lib64/R
+DEFAULT_R_HOME=/usr/lib/R
+DEFAULT_R_INCLUDE=/usr/share/R/include
 
 # Find R_HOME from user, or set to default for building.
 # Error code 1 is generic bash error.
@@ -86,6 +88,19 @@ if [ -z "${R_HOME}" ]; then
 		exit 1
 	fi
 fi
+
+# Find R_INCLUDE from user, or set to default for building.
+# Error code 1 is generic bash error.
+#
+if [ -z "${R_INCLUDE}" ]; then
+	if [ -d "${DEFAULT_R_INCLUDE}" ]; then
+		export R_INCLUDE=${DEFAULT_R_INCLUDE}
+	else
+		echo "R_INCLUDE is empty"
+		exit 1
+	fi
+fi
+
 R_LIB_DIR=${R_HOME}/lib/
 
 # Build in debug mode if nothing is specified
