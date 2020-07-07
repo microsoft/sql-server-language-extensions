@@ -329,15 +329,15 @@ namespace ExtensionApiTest
 
 		vector<string> columnNames{ stringColumn1Name, stringColumn2Name, stringColumn3Name };
 
-		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
-		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
-
 		TestExecute<SQLCHAR, SQL_C_CHAR>(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
 			columnNames,
 			false); // validate
+
+		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
 
 		TestGetResultColumn(0, // columnNumber
 			SQL_C_CHAR,        // dataType
@@ -363,7 +363,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Test GetResultColumn with a script that returns OutputDataSet with raw columns.
 	//
-	TEST_F(PythonExtensionApiTests, GetRawResultColumnTest)
+	TEST_F(PythonExtensionApiTests, GetRawResultColumnsTest)
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
@@ -498,9 +498,8 @@ namespace ExtensionApiTest
 		int rowsNumber = intColData.size();
 
 		vector<char> stringColData = GenerateContiguousData<char>(stringCol, strLenOrIndCol3);
-		SQLULEN maxLen = GetMaxLength(strLenOrIndCol3, rowsNumber);
 
-		vector<void *> dataSet{ intColData.data(), doubleColData.data(), stringColData.data() };
+		vector<void*> dataSet{ intColData.data(), doubleColData.data(), stringColData.data() };
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = Execute(
@@ -523,6 +522,8 @@ namespace ExtensionApiTest
 			m_DoubleSize,      // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
+
+		SQLULEN maxLen = GetMaxLength(strLenOrIndCol3, rowsNumber);
 
 		TestGetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType

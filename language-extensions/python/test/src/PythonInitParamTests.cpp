@@ -764,7 +764,6 @@ namespace ExtensionApiTest
 				wstring actual = py::extract<wstring>(obj);
 
 				EXPECT_STREQ(actual.c_str(), expected.c_str());
-
 			}
 			else
 			{

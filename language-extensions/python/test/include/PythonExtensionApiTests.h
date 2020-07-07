@@ -252,8 +252,14 @@ namespace ExtensionApiTest
 		// Test output string param value and strLenOrInd is as expected.
 		//
 		void TestGetStringOutputParam(
-			std::vector<SQLCHAR*>   expectedParamValueVector,
-			std::vector<SQLINTEGER> expectedStrLenOrIndVector);
+			std::vector<const char*> expectedParamValueVector,
+			std::vector<SQLINTEGER>  expectedStrLenOrIndVector);
+
+		// Test output string param value and strLenOrInd is as expected.
+		//
+		void TestGetWStringOutputParam(
+			std::vector<const wchar_t*> expectedParamValueVector,
+			std::vector<SQLINTEGER>     expectedStrLenOrIndVector);
 
 		// Test output raw param value and strLenOrInd is as expected.
 		//

@@ -242,7 +242,7 @@ private:
 //
 // Description:
 // Class representing a string parameter.
-// Corresponds to ODBC C type SQL_C_CHAR.
+// Corresponds to ODBC C type SQL_C_CHAR and SQL_C_WCHAR.
 //
 template<class CharType>
 class PythonStringParam : public PythonParam
@@ -274,7 +274,7 @@ public:
 		if (m_value.size() > 0)
 		{
 			return static_cast<SQLPOINTER>(
-				const_cast<SQLCHAR*>(m_value.data()));
+				const_cast<CharType*>(m_value.data()));
 		}
 		else
 		{
@@ -286,7 +286,7 @@ private:
 	// Character vector holding the contents before sending them back to ExtHost.
 	// Useful for output parameter types.
 	//
-	std::vector<SQLCHAR> m_value;
+	std::vector<CharType> m_value;
 };
 
 //-------------------------------------------------------------------------------------------------

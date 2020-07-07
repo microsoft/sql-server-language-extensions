@@ -286,25 +286,49 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(py::object mainNames
 
 		if (!tempObj.is_none())
 		{
-			py::extract<string> extractedObj(tempObj);
-
-			if (extractedObj.check())
+			if (sizeof(CharType) == sizeof(char))
 			{
-				// Extract and copy the string characters into the vector.
+				// Check to make sure the extracted data exists and is of the correct type
 				//
-				string value = extractedObj;
-				m_value = vector<SQLCHAR>(value.begin(), value.end());
+				py::extract<string> extractedObj(tempObj);
 
-				// Truncate the return data to only be the size specified when creating
-				//
-				if (m_value.size() > m_size)
+				if (extractedObj.check())
 				{
-					m_value.resize(m_size);
-					m_value.shrink_to_fit();
+					// Extract and copy the string characters into the vector.
+					//
+					string value = extractedObj;
+					m_value = vector<CharType>(value.begin(), value.end());
 				}
-
-				m_strLenOrInd = m_value.size();
 			}
+			else
+			{
+				// Get length of the unicode object in pyObj
+				//
+				int size = PyUnicode_GET_LENGTH(tempObj.ptr());
+
+				// Get a byte representation of the string as UTF16.
+				// PyUnicode_AsUTF16String adds a BOM to the front of every string.
+				//
+				char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(tempObj.ptr()));
+
+				// Reinterpret the bytes as wchar_t *, which we will return.
+				//
+				CharType *wData = reinterpret_cast<CharType*>(utf16str);
+
+				// Ignore 2 byte BOM at front of wData that was added by PyUnicode_AsUTF16String
+				//
+				m_value = vector<CharType>(wData + 1, wData + 1 + size);
+			}
+
+			// Truncate the return data to only be the size specified when creating
+			//
+			if (m_value.size() > m_size)
+			{
+				m_value.resize(m_size);
+				m_value.shrink_to_fit();
+			}
+
+			m_strLenOrInd = m_value.size() * sizeof(CharType);
 		}
 	}
 }

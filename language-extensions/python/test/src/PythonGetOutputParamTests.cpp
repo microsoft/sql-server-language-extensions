@@ -1,4 +1,4 @@
-//*************************************************************************************************
+﻿//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -544,21 +544,19 @@ namespace ExtensionApiTest
 			//
 			"" };
 
-		vector<SQLCHAR*> expectedParamValues = {
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[0].c_str()))),
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[1].c_str()))),
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
+		vector<const char*> expectedParamValues = {
+			ExpectedParamValueStrings[0].c_str(),
+			ExpectedParamValueStrings[1].c_str(),
+			ExpectedParamValueStrings[2].c_str(),
+
 			// Test None returned in a VARCHAR(5) parameter.
 			//
 			nullptr,
+
 			// Test None CHAR(5) value.
 			//
 			nullptr,
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))) };
+			ExpectedParamValueStrings[3].c_str() };
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length()),
@@ -569,6 +567,98 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()) };
 
 		TestGetStringOutputParam(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
+	// Name: GetWStringOutputParamTest
+	//
+	// Description:
+	// Test multiple wstring values
+	//
+	TEST_F(PythonExtensionApiTests, GetWStringOutputParamTest)
+	{
+		// Construct the values that correspond to 你好
+		//
+		vector<char> chineseString = { -28, -67, -96, -27, -91, -67 };
+		string dummystring = string(chineseString.data(), 6);
+
+		string scriptString = "param0 = 'HELLO';"
+			"param1 = 'PyExtension';"
+			"param2 = 'WORLD';"
+			"param3 = '" + dummystring + "';"
+			"param4 = None;"
+			"param5 = None;"
+			"param6 = '';";
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			7,   // parametersNumber
+			0,   // inputSchemaColumnsNumber
+			scriptString);
+
+		// Note: The behavior of fixed and varying character types is same when it comes to output
+		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
+		//
+		vector<bool> isFixedType = { true, false, true, true, false, true, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 10, 2, 5, 5, 5 };
+
+		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
+		{
+			TestWStringParameter(
+				paramNumber,
+				nullptr,                 // paramValue
+				paramSizes[paramNumber],
+				isFixedType[paramNumber],
+				SQL_PARAM_INPUT_OUTPUT,
+				false);                  // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<const wchar_t*> expectedParamValues = {
+			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
+			//
+			L"HELLO",
+			// Test VARCHAR(6) value with string length more than the type allows - expected truncation.
+			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
+			//
+			L"PyExte",
+			// Test CHAR(10) value with string length less than the type allows.
+			//
+			L"WORLD",
+			// Test a Unicode string
+			//
+			L"你好",
+			nullptr,
+			nullptr,
+			// Test a 0 length string
+			//
+			L"" };
+
+		vector<SQLINTEGER> expectedStrLenOrInd = {
+			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
+			SQL_NULL_DATA,
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(0 * sizeof(wchar_t))
+		};
+
+		TestGetWStringOutputParam(
 			expectedParamValues,
 			expectedStrLenOrInd);
 	}
@@ -771,14 +861,14 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetStringOutputParam
+	// Name: TestGetStringOutputParam
 	//
 	// Description:
 	// Test string output param value and strLenOrInd is as expected.
 	//
 	void PythonExtensionApiTests::TestGetStringOutputParam(
-		vector<SQLCHAR*>   expectedParamValues,
-		vector<SQLINTEGER> expectedStrLenOrInd)
+		vector<const char*> expectedParamValues,
+		vector<SQLINTEGER>  expectedStrLenOrInd)
 	{
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
@@ -800,9 +890,9 @@ namespace ExtensionApiTest
 			{
 				string paramValueString(static_cast<char*>(paramValue),
 					strLen_or_Ind);
-				string expectedParamValueString(static_cast<char*>(
-					static_cast<void*>(expectedParamValues[paramNumber])),
+				string expectedParamValueString(expectedParamValues[paramNumber],
 					expectedStrLenOrInd[paramNumber]);
+
 				EXPECT_EQ(paramValueString, expectedParamValueString);
 			}
 			else
@@ -812,7 +902,57 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetBinaryOutputParam
+	// Name: TestGetWStringOutputParam
+	//
+	// Description:
+	// Test wstring output param value and strLenOrInd is as expected.
+	//
+	void PythonExtensionApiTests::TestGetWStringOutputParam(
+		vector<const wchar_t*> expectedParamValues,
+		vector<SQLINTEGER>     expectedStrLenOrInd)
+	{
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+			SQLRETURN result = SQL_ERROR;
+
+			result = GetOutputParam(
+				*m_sessionId,
+				m_taskId,
+				paramNumber,
+				&paramValue,
+				&strLen_or_Ind);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+			if (expectedParamValues[paramNumber] != nullptr)
+			{
+				wstring paramValueString(static_cast<wchar_t*>(paramValue),
+					strLen_or_Ind / sizeof(wchar_t));
+				wstring expectedParamValueString(expectedParamValues[paramNumber],
+					expectedStrLenOrInd[paramNumber] / sizeof(wchar_t));
+
+				// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
+				// don't work properly for wstrings in Linux with -fshort-wchar
+				//
+				const char *paramBytes = reinterpret_cast<const char*>(paramValueString.c_str());
+				const char *expectedParamBytes = reinterpret_cast<const char*>(expectedParamValueString.c_str());
+
+				for(SQLINTEGER i=0; i<strLen_or_Ind; i++)
+				{
+					EXPECT_EQ(paramBytes[i], expectedParamBytes[i]);
+				}
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	// Name: TestGetRawOutputParam
 	//
 	// Description:
 	// Test Binary (binary) output param value and strLenOrInd is as expected.
