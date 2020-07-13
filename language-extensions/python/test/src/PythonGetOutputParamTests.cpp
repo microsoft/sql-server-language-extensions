@@ -580,13 +580,13 @@ namespace ExtensionApiTest
 	{
 		// Construct the values that correspond to 你好
 		//
-		vector<char> chineseString = { -28, -67, -96, -27, -91, -67 };
-		string dummystring = string(chineseString.data(), 6);
+		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
+		string chineseString = string(chineseBytes.data(), 6);
 
 		string scriptString = "param0 = 'HELLO';"
 			"param1 = 'PyExtension';"
 			"param2 = 'WORLD';"
-			"param3 = '" + dummystring + "';"
+			"param3 = '" + chineseString + "';"
 			"param4 = None;"
 			"param5 = None;"
 			"param6 = '';";
@@ -940,7 +940,7 @@ namespace ExtensionApiTest
 				const char *paramBytes = reinterpret_cast<const char*>(paramValueString.c_str());
 				const char *expectedParamBytes = reinterpret_cast<const char*>(expectedParamValueString.c_str());
 
-				for(SQLINTEGER i=0; i<strLen_or_Ind; i++)
+				for(SQLINTEGER i=0; i<strLen_or_Ind; ++i)
 				{
 					EXPECT_EQ(paramBytes[i], expectedParamBytes[i]);
 				}

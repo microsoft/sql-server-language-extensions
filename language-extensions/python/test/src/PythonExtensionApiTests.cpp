@@ -38,6 +38,8 @@ namespace ExtensionApiTest
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckColumnEquality<SQLBIGINT>)},
 		{static_cast<SQLSMALLINT>(SQL_C_CHAR),
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckStringColumnEquality)},
+		{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckWStringColumnEquality)},
 		{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckRawColumnEquality)},
 	};
@@ -308,11 +310,12 @@ namespace ExtensionApiTest
 	{
 		vector<SQLType> retVal;
 
-		for (SQLULEN index = 0; index < columnVector.size(); index++)
+		for (SQLULEN index = 0; index < columnVector.size(); ++index)
 		{
 			if (strLenOrInd[index] != SQL_NULL_DATA)
 			{
-				vector<char> data(columnVector[index], columnVector[index] + strLenOrInd[index]);
+				SQLINTEGER strLen = strLenOrInd[index] / sizeof(SQLType);
+				vector<SQLType> data(columnVector[index], columnVector[index] + strLen);
 				retVal.insert(retVal.end(), data.begin(), data.end());
 			}
 		}
@@ -326,6 +329,9 @@ namespace ExtensionApiTest
 	template vector<SQLCHAR> PythonExtensionApiTests::GenerateContiguousData(
 		vector<const SQLCHAR*> columnVector,
 		SQLINTEGER             *strLenOrInd);
+	template vector<wchar_t> PythonExtensionApiTests::GenerateContiguousData(
+		vector<const wchar_t*> columnVector,
+		SQLINTEGER             *strLenOrInd);
 
 	// Name: GetMaxLength
 	//
@@ -337,7 +343,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber)
 	{
 		SQLINTEGER maxLen = 0;
-		for (SQLULEN index = 0; index < rowsNumber; index++)
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
 		{
 			if (strLenOrInd[index] != SQL_NULL_DATA && maxLen < strLenOrInd[index])
 			{
@@ -399,7 +405,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
 
-		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
 			py::object val = columnToTest[index];
 
@@ -429,7 +435,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
 
-		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
 			py::object val = columnToTest[index];
 
@@ -463,7 +469,7 @@ namespace ExtensionApiTest
 
 		SQLINTEGER cumulativeLength = 0;
 
-		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
 			py::object val = columnToTest[index];
 			if (strLen_or_Ind == nullptr ||
@@ -479,6 +485,61 @@ namespace ExtensionApiTest
 					strLen_or_Ind[index]);
 
 				EXPECT_EQ(typeVal, expectedString);
+				cumulativeLength += strLen_or_Ind[index];
+			}
+		}
+	}
+
+	// Name: CheckWStringColumnEquality
+	//
+	// Description:
+	//  Compare wstring column with the given data and corresponding strLen_or_Ind.
+	//  The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
+	//  Where strLen_or_Ind == SQL_NULL_DATA, check for None.
+	//  We have to compare byte by byte because EXPECT_EQ/STREQ do not 
+	//  work properly for wstrings in Linux.
+	//
+	void PythonExtensionApiTests::CheckWStringColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		SQLINTEGER cumulativeLength = 0;
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
+		{
+			py::object val = columnToTest[index];
+			if (strLen_or_Ind == nullptr ||
+				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			{
+				EXPECT_TRUE(val.is_none());
+			}
+			else
+			{
+				// Get length of the unicode object in val and make sure it is the size we expect
+				//
+				SQLINTEGER size = PyUnicode_GET_LENGTH(val.ptr());
+				SQLINTEGER strLen = strLen_or_Ind[index] / sizeof(wchar_t);
+
+				EXPECT_EQ(strLen, size);
+
+				// Get a byte representation of the string as UTF16.
+				// PyUnicode_AsUTF16String adds a 2-byte BOM to the front of every string, so we ignore it.
+				//
+				char *paramBytes = PyBytes_AsString(PyUnicode_AsUTF16String(val.ptr())) + 2;
+
+				char *expectedParamBytes = static_cast<char*>(expectedColumn) + cumulativeLength;
+
+				// Compare the two wstrings byte by byte
+				//
+				for (SQLINTEGER i = 0; i < strLen_or_Ind[index]; ++i)
+				{
+					EXPECT_EQ(paramBytes[i], expectedParamBytes[i]);
+				}
+
 				cumulativeLength += strLen_or_Ind[index];
 			}
 		}
@@ -501,7 +562,7 @@ namespace ExtensionApiTest
 
 		SQLINTEGER cumulativeLength = 0;
 
-		for (SQLULEN index = 0; index < expectedRowsNumber; index++)
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
 			py::object val = columnToTest[index];
 
@@ -513,10 +574,11 @@ namespace ExtensionApiTest
 			else
 			{
 				SQLCHAR *expectedValue = static_cast<SQLCHAR*>(expectedColumn) + cumulativeLength;
+				SQLCHAR *bytes = static_cast<SQLCHAR*>(static_cast<void*>(PyBytes_AsString(val.ptr())));
 
 				for (SQLINTEGER i = 0; i < strLen_or_Ind[index]; ++i)
 				{
-					EXPECT_EQ(val[i], expectedValue[i]);
+					EXPECT_EQ(bytes[i], expectedValue[i]);
 				}
 
 				cumulativeLength += strLen_or_Ind[index];

@@ -162,6 +162,14 @@ namespace ExtensionApiTest
 			void                *expectedColumn,
 			SQLINTEGER          *strLen_or_Ind);
 
+		// Compare a given wstring column with another for equality
+		//
+		void CheckWStringColumnEquality(
+			SQLULEN             expectedRowsNumber,
+			boost::python::dict columnToTest,
+			void                *expectedColumn,
+			SQLINTEGER          *strLen_or_Ind);
+
 		// Compare a given binary column with another for equality
 		//
 		void CheckRawColumnEquality(
@@ -335,6 +343,7 @@ namespace ExtensionApiTest
 		const SQLINTEGER m_SmallIntSize = sizeof(SQLSMALLINT);
 		const SQLINTEGER m_TinyIntSize = sizeof(SQLCHAR);
 		const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_WCharSize = sizeof(wchar_t);
 		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;

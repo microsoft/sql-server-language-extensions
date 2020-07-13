@@ -1,4 +1,4 @@
-//*************************************************************************************************
+﻿//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -297,6 +297,122 @@ namespace ExtensionApiTest
 		TestGetStringResults(
 			rowsNumber,
 			dataSet,
+			strLen_or_Ind.data(),
+			columnNames);
+	}
+	
+	// Name: GetWStringResultsTest
+	//
+	// Description:
+	//  Test GetResults with default script expecting an OutputDataSet of NChar columns.
+	//
+	TEST_F(PythonExtensionApiTests, GetWStringResultsTest)
+	{
+		SQLUSMALLINT inputSchemaColumnsNumber = 3;
+		
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			inputSchemaColumnsNumber,
+			m_scriptString);
+
+		string wstringColumn1Name = "WstringColumn1";
+		InitializeColumn(0, wstringColumn1Name, SQL_C_WCHAR, m_CharSize);
+
+		string wstringColumn2Name = "WstringColumn2";
+		InitializeColumn(1, wstringColumn2Name, SQL_C_WCHAR, m_CharSize);
+
+		string wstringColumn3Name = "WstringColumn3";
+		InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
+
+		vector<const wchar_t*> wstringCol1{ L"Hello", L"test", L"data", L"World", L"你好" };
+		vector<const wchar_t*> wstringCol2{ L"", 0, nullptr, L"verify", L"-1" };
+
+		int rowsNumber = wstringCol1.size();
+
+		vector<SQLINTEGER> strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol3(rowsNumber, SQL_NULL_DATA);
+
+		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+		// Coalesce the arrays of each row of each column
+		// into a contiguous array for each column.
+		//
+		vector<wchar_t> wstringCol1Data =
+			GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+
+		vector<wchar_t> wstringCol2Data =
+			GenerateContiguousData<wchar_t>(wstringCol2, strLenOrIndCol2.data());
+
+		void* dataSet[] = { wstringCol1Data.data(),
+							wstringCol2Data.data(),
+							nullptr };
+
+		vector<string> columnNames{ wstringColumn1Name, wstringColumn2Name, wstringColumn3Name };
+
+		TestExecute<wchar_t, SQL_C_WCHAR>(
+			rowsNumber,
+			dataSet,
+			strLen_or_Ind.data(),
+			columnNames,
+			false); // validate
+
+		//
+		// Because Python is a UTF-8 language, we always return UTF-8 for the OutputDataSet.
+		// Here we construct the expected output, which is the same as the input but normal char 
+		// instead of wchar_t.
+		// Since we are retrieving UTF-8 strings, we also need to redo strLenOrInd.
+		//
+
+		// Construct the bytes that correspond to 你好
+		//
+		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
+		string chineseString = string(chineseBytes.data(), 6);
+
+		vector<const char*> stringCol1{ "Hello", "test", "data", "World", chineseString.c_str() };
+		vector<const char*> stringCol2{ "", 0, nullptr, "verify", "-1" };
+
+		strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(strlen(stringCol1[0])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[1])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[2])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[3])),
+		  static_cast<SQLINTEGER>(strlen(stringCol1[4])) };
+		strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(strlen(stringCol2[3])),
+		  static_cast<SQLINTEGER>(strlen(stringCol2[4])) };
+
+		strLen_or_Ind = { strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+		// Coalesce the arrays of each row of each column
+		// into a contiguous array for each column.
+		//
+		vector<char> stringCol1Data =
+			GenerateContiguousData<char>(stringCol1, strLenOrIndCol1.data());
+
+		vector<char> stringCol2Data =
+			GenerateContiguousData<char>(stringCol2, strLenOrIndCol2.data());
+
+		void* expectedDataSet[] = { stringCol1Data.data(),
+									stringCol2Data.data(),
+									nullptr };
+
+		TestGetStringResults(
+			rowsNumber,
+			expectedDataSet,
 			strLen_or_Ind.data(),
 			columnNames);
 	}
