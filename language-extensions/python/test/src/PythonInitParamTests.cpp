@@ -14,7 +14,9 @@
 #include "PythonExtensionApiTests.h"
 
 #include <boost/python/stl_iterator.hpp>
+#include <datetime.h>
 #include <memory>
+
 
 using namespace std;
 namespace py = boost::python;
@@ -498,10 +500,10 @@ namespace ExtensionApiTest
 		// Test varbinary(5) value with value less than size.
 		//
 		TestRawParameter(
-			0,                                  // paramNumber
+			0,             // paramNumber
 			binaryValue,
-			5,                                  // paramSize
-			false);                             // isFixedType
+			5,             // paramSize
+			false);        // isFixedType
 
 		// Test binary(2) value with value greater than size - should be truncated.
 		//
@@ -510,6 +512,84 @@ namespace ExtensionApiTest
 			binaryValue,
 			2,           // paramSize
 			true);       // isFixedType
+	}
+
+	// Test multiple DATETIME values
+	//
+	TEST_F(PythonExtensionApiTests, InitDateTimeParamTest)
+	{
+		InitializeSession(1); //parametersNumber
+
+		// Test max SQL_TIMESTAMP_STRUCT value
+		//
+		SQL_TIMESTAMP_STRUCT paramValue = { 9999,12,31,23,59,59,999999 };
+		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			0,          // paramNumber
+			&paramValue
+		);
+
+		// Test min SQL_TIMESTAMP_STRUCT value
+		//
+		paramValue = { 1,1,1,0,0,0,0 };
+		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			0,          // paramNumber
+			&paramValue
+		);
+
+		// Test normal SQL_TIMESTAMP_STRUCT value
+		//
+		paramValue = { 1470,7,27,17,47,52,123456 };
+		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			0,          // paramNumber
+			&paramValue
+		);
+
+		// Test null SQL_TIMESTAMP_STRUCT value
+		//
+		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			0,       // paramNumber
+			nullptr, // paramValue
+			true     // isNull
+		);
+	}
+
+	// Test multiple DATE values
+	//
+	TEST_F(PythonExtensionApiTests, InitDateParamTest)
+	{
+		InitializeSession(1); //parametersNumber
+
+		// Test max SQL_DATE_STRUCT value
+		//
+		SQL_DATE_STRUCT paramValue = { 9999,12,31 };
+		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			0,          // paramNumber
+			&paramValue 
+		);
+		
+		// Test min SQL_TIMESTAMP_STRUCT value
+		//
+		paramValue = { 1,1,1 };
+		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			0,          // paramNumber
+			&paramValue
+		);
+
+		// Test normal SQL_TIMESTAMP_STRUCT value
+		//
+		paramValue = { 1470,7,27 };
+		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			0,          // paramNumber
+			&paramValue
+		);
+
+		// Test null SQL_TIMESTAMP_STRUCT value
+		//
+		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			0,       // paramNumber
+			nullptr, // paramValue
+			true     // isNull
+			);
 	}
 
 	// Name: TestParameter
@@ -522,8 +602,8 @@ namespace ExtensionApiTest
 	void PythonExtensionApiTests::TestParameter(
 		int         paramNumber,
 		SQLType     paramValue,
-		SQLSMALLINT inputOutputType,
 		bool        isNull,
+		SQLSMALLINT inputOutputType,
 		bool        validate)
 	{
 		string paramName = "param" + to_string(paramNumber);
@@ -865,6 +945,107 @@ namespace ExtensionApiTest
 				for (SQLINTEGER i = 0; i < strLenOrInd; ++i)
 				{
 					EXPECT_EQ(buffer[i], expectedParamValue[i]);
+				}
+			}
+			else
+			{
+				ASSERT_TRUE(obj.is_none());
+			}
+		}
+	}
+
+	// Name: TestDateTimeParameter
+	//
+	// Description:
+	// Testing if InitParam is implemented correctly for the date/datetime dataTypes.
+	//
+	template<class DateTimeStruct, SQLSMALLINT dataType>
+	void PythonExtensionApiTests::TestDateTimeParameter(
+		int         paramNumber,
+		void        *paramValue,
+		bool        isNull,
+		SQLSMALLINT inputOutputType,
+		bool        validate)
+	{
+		string paramName = "param" + to_string(paramNumber);
+		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+
+		int paramNameLength = paramName.length() + 1;
+
+		SQLRETURN result = SQL_ERROR;
+		result = InitParam(
+			*m_sessionId,
+			m_taskId,
+			paramNumber,
+			unsignedParamName,
+			paramNameLength,
+			dataType,
+			sizeof(DateTimeStruct),                    // paramSize
+			0,                                         // decimalDigits
+			paramValue,                                // paramValue
+			paramValue != nullptr ? 0 : SQL_NULL_DATA, // strLenOrInd
+			inputOutputType);                          // inputOutputType
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		if (validate)
+		{
+			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+
+			if (!isNull)
+			{
+				ASSERT_FALSE(obj.is_none());
+				
+				PyObject *dateObject = obj.ptr();
+
+				// Import the PyDateTime API
+				//
+				PyDateTime_IMPORT;
+
+				if (dataType == SQL_C_TYPE_DATE)
+				{
+					ASSERT_TRUE(PyDate_CheckExact(dateObject));
+
+					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+
+					// This is already a SQL_DATE_STRUCT but we need to cast it to access the member variables.
+					//
+					SQL_DATE_STRUCT date = *(static_cast<SQL_DATE_STRUCT *>(paramValue));
+
+					EXPECT_EQ(year, date.year);
+					EXPECT_EQ(month, date.month);
+					EXPECT_EQ(day, date.day);
+
+				}
+				else if (dataType == SQL_C_TYPE_TIMESTAMP)
+				{
+					ASSERT_TRUE(PyDateTime_CheckExact(dateObject));
+
+					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+					SQLUSMALLINT hour = PyDateTime_DATE_GET_HOUR(dateObject);
+					SQLUSMALLINT minute = PyDateTime_DATE_GET_MINUTE(dateObject);
+					SQLUSMALLINT second = PyDateTime_DATE_GET_SECOND(dateObject);
+					SQLUSMALLINT usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
+
+					// This is already a SQL_TIMESTAMP_STRUCT but we need to cast it to access the member variables.
+					//
+					SQL_TIMESTAMP_STRUCT timestamp = *(static_cast<SQL_TIMESTAMP_STRUCT *>(paramValue));
+
+					EXPECT_EQ(year, timestamp.year);
+					EXPECT_EQ(month, timestamp.month);
+					EXPECT_EQ(day, timestamp.day);
+					EXPECT_EQ(hour, timestamp.hour);
+					EXPECT_EQ(minute, timestamp.minute);
+					EXPECT_EQ(second, timestamp.second);
+
+					// Fraction is stored in nanoseconds, Python uses microseconds
+					//
+					EXPECT_EQ(usec, timestamp.fraction / 1000);
 				}
 			}
 			else

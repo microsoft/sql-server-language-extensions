@@ -79,12 +79,6 @@ protected:
 	template<class T>
 	void CheckParamSize();
 
-	// Value of the parameter as retrieved from python namespace,
-	// holding the contents before sending them back to ExtHost
-	// Only useful for output parameter types.
-	//
-	SQLPOINTER m_value = nullptr;
-
 	// The boost::python object with the value to be placed in the nameSpace
 	//
 	boost::python::object m_pyObject;
@@ -325,7 +319,7 @@ public:
 		if (m_value.size() > 0)
 		{
 			return static_cast<SQLPOINTER>(
-				const_cast<SQLCHAR*>(m_value.data()));
+				const_cast<SQLCHAR *>(m_value.data()));
 		}
 		else
 		{
@@ -338,4 +332,56 @@ private:
 	// Useful for output parameter types.
 	//
 	std::vector<SQLCHAR> m_value;
+};
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonDateTimeParam
+//
+// Description:
+//  Class representing a Date/DateTime parameter.
+//  Corresponds to ODBC C type SQL_C_TYPE_DATE and SQL_C_TYPE_TIMESTAMP.
+//
+template<SQLSMALLINT SQLType>
+class PythonDateTimeParam : public PythonParam
+{
+public:
+
+	// Constructor to initialize the members
+	//
+	PythonDateTimeParam(
+		SQLUSMALLINT  id,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   type,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
+
+	// Retrieve data from python namespace, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd(boost::python::object mainNamespace) override;
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQL_TIMESTAMP_STRUCT *>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+	// Character vector holding the contents before sending them back to ExtHost.
+	// Useful for output parameter types.
+	//
+	std::vector<SQL_TIMESTAMP_STRUCT> m_value;
 };

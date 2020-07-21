@@ -83,8 +83,18 @@ namespace ExtensionApiTest
 		void TestParameter(
 			int         paramNumber,
 			SQLType     paramValue,
-			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
 			bool        isNull = false,
+			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+			bool        validate = true);
+
+		// Template to test date/datetime data types
+		//
+		template<class DateTimeStruct, SQLSMALLINT dataType>
+		void TestDateTimeParameter(
+			int         paramNumber,
+			void        *paramValue,
+			bool        isNull = false,
+			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
 			bool        validate = true);
 
 		// Test a string parameter
@@ -256,6 +266,13 @@ namespace ExtensionApiTest
 		void TestGetOutputParam(
 			std::vector<SQLType*>   expectedParamValueVector,
 			std::vector<SQLINTEGER> expectedStrLenOrIndVector);
+
+		// Template function to test date/datetime output param value and strLenOrInd is as expected.
+		//
+		template<class DateTimeStruct>
+		void TestGetDateTimeOutputParam(
+			std::vector<DateTimeStruct *> expectedParamValueVector, 
+			std::vector<SQLINTEGER>       expectedStrLenOrIndVector);
 
 		// Test output string param value and strLenOrInd is as expected.
 		//

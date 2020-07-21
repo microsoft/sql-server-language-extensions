@@ -11,9 +11,12 @@
 //
 //**************************************************************************************************
 
-
 #include "Logger.h"
 #include "PythonParam.h"
+
+// datetime.h includes macros that define the PyDateTime APIs
+//
+#include <datetime.h>
 
 using namespace std;
 namespace py = boost::python;
@@ -352,13 +355,13 @@ PythonRawParam::PythonRawParam(
 	SQLINTEGER    strLen_or_Ind,
 	SQLSMALLINT   inputOutputType)
 	: PythonParam(id,
-				paramName,
-				paramNameLength,
-				type,
-				paramSize,
-				decimalDigits,
-				strLen_or_Ind,
-				inputOutputType)
+		paramName,
+		paramNameLength,
+		type,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
 {
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
@@ -368,9 +371,9 @@ PythonRawParam::PythonRawParam(
 		//
 		m_pyObject = py::object(py::handle<>(
 			PyBytes_FromObject(PyMemoryView_FromMemory(
-				static_cast<char*>(paramValue), strlen, PyBUF_READ
+				static_cast<char *>(paramValue), strlen, PyBUF_READ
 			))
-		));
+			));
 	}
 	else
 	{
@@ -403,7 +406,7 @@ void PythonRawParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
 
 			// Copy the py_buffer into a local buffer.
 			//
-			m_value = vector<SQLCHAR> (begin, end);
+			m_value = vector<SQLCHAR>(begin, end);
 
 			// Truncate the return data to only be the size specified when creating
 			//
@@ -414,6 +417,115 @@ void PythonRawParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
 			}
 
 			m_strLenOrInd = m_value.size();
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonDateTimeParam
+//
+// Description:
+//  Constructor.
+//  Calls the base constructor then populates m_pyObject with a boost::python object that contains
+//  the date/datetime object of the data, in a way that python can use, or py::object which is None.
+//
+template<SQLSMALLINT DataType>
+PythonDateTimeParam<DataType>::PythonDateTimeParam(
+	SQLUSMALLINT  id,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   type,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
+	: PythonParam(id,
+		paramName,
+		paramNameLength,
+		type,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
+{
+	if (strLen_or_Ind != SQL_NULL_DATA)
+	{
+		// Use the PyDateTime_IMPORT macro to get the Python Date/Time APIs
+		//
+		PyDateTime_IMPORT;
+		PyObject *dtObject = Py_None;
+
+		// SQL_C_TYPE_DATE for Date objects in SQL, SQL_C_TYPE_TIMESTAMP for Datetime 
+		//
+		if (DataType == SQL_C_TYPE_DATE)
+		{
+			SQL_DATE_STRUCT dateParam = *(static_cast<SQL_DATE_STRUCT *>(paramValue));
+
+			// Create a Python Date object
+			//
+			dtObject = PyDate_FromDate(dateParam.year, dateParam.month, dateParam.day);
+		} 
+		else if (DataType == SQL_C_TYPE_TIMESTAMP)
+		{
+			SQL_TIMESTAMP_STRUCT timeStampParam = *(static_cast<SQL_TIMESTAMP_STRUCT *>(paramValue));
+			
+			// "fraction" is stored in nanoseconds, we need microseconds.
+			//
+			SQLUINTEGER usec = timeStampParam.fraction / 1000;
+
+			// Create a Python DateTime object
+			//
+			dtObject = PyDateTime_FromDateAndTime(timeStampParam.year, timeStampParam.month, timeStampParam.day,
+				timeStampParam.hour, timeStampParam.minute, timeStampParam.second, usec);
+		}
+
+		m_pyObject = py::object(py::handle<>(dtObject));
+	}
+	else
+	{
+		// Use None object for NULLs
+		//
+		m_pyObject = py::object();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonDateTimeParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
+//
+template<SQLSMALLINT DataType>
+void PythonDateTimeParam<DataType>::RetrieveValueAndStrLenInd(py::object mainNamespace)
+{
+	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	if (dictNamespace.has_key(m_name))
+	{
+		py::object tempObj = mainNamespace[m_name];
+
+		m_strLenOrInd = SQL_NULL_DATA;
+
+		if (!tempObj.is_none())
+		{
+			PyDateTime_IMPORT;
+			PyObject *dateObject = tempObj.ptr();
+
+			SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+			SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+			SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+			SQLUSMALLINT hour = PyDateTime_DATE_GET_HOUR(dateObject);
+			SQLUSMALLINT minute = PyDateTime_DATE_GET_MINUTE(dateObject);
+			SQLUSMALLINT second = PyDateTime_DATE_GET_SECOND(dateObject);
+			SQLUINTEGER usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
+
+			// "fraction" in TIMESTAMP_STRUCT is stored in nanoseconds, we convert from microseconds.
+			//
+			SQL_TIMESTAMP_STRUCT datetime = { year, month, day, hour, minute, second, usec * 1000 };
+
+			m_value.push_back(datetime);
+
+			m_strLenOrInd = sizeof(SQL_TIMESTAMP_STRUCT);
 		}
 	}
 }
@@ -501,6 +613,28 @@ template PythonStringParam<char>::PythonStringParam(
 	SQLSMALLINT);
 
 template PythonStringParam<wchar_t>::PythonStringParam(
+	SQLUSMALLINT,
+	const SQLCHAR *,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template PythonDateTimeParam<SQL_C_TYPE_DATE>::PythonDateTimeParam(
+	SQLUSMALLINT,
+	const SQLCHAR *,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template PythonDateTimeParam<SQL_C_TYPE_TIMESTAMP>::PythonDateTimeParam(
 	SQLUSMALLINT,
 	const SQLCHAR *,
 	SQLSMALLINT,

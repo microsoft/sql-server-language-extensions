@@ -50,8 +50,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLINTEGER, SQL_C_SLONG>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -81,7 +81,6 @@ namespace ExtensionApiTest
 			paramValues,
 			strLenOrIndValues);
 	}
-
 
 	// Name: GetBitOutputParamTest
 	//
@@ -115,8 +114,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLCHAR, SQL_C_BIT>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -180,8 +179,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLREAL, SQL_C_FLOAT>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -246,8 +245,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -312,8 +311,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLBIGINT, SQL_C_SBIGINT>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -378,8 +377,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLSMALLINT, SQL_C_SSHORT>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -444,8 +443,8 @@ namespace ExtensionApiTest
 			TestParameter<SQLCHAR, SQL_C_UTINYINT>(
 				i,         // paramNumber
 				0,         // paramValue
-				SQL_PARAM_INPUT_OUTPUT,
 				false,     // isNull
+				SQL_PARAM_INPUT_OUTPUT,
 				false);    // validate
 		}
 
@@ -760,6 +759,139 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	// Name: GetDateTimeOutputParamTest
+	//
+	// Description:
+	// Test multiple DATETIME values
+	//
+	TEST_F(PythonExtensionApiTests, GetDateTimeOutputParamTest)
+	{
+		string scriptString =
+			"import datetime;import pandas;"
+			"param0 = datetime.datetime(9999,12,31,23,59,59,999999);"
+			"param1 = datetime.datetime(1,1,1,0,0,0,0);"
+			"param2 = datetime.datetime(1470,7,27,17,47,52,123456);"
+			"param3 = pandas.Timestamp(2070,7,27,17,47,52,123456);"
+			"param4 = None;";
+
+		int paramsNumber = 5;
+		SQL_TIMESTAMP_STRUCT p0 = { 9999,12,31,23,59,59,999999000 };
+		SQL_TIMESTAMP_STRUCT p1 = { 1,1,1,0,0,0,0 };
+		SQL_TIMESTAMP_STRUCT p2 = { 1470,7,27,17,47,52,123456000 };
+		SQL_TIMESTAMP_STRUCT p3 = { 2070,7,27,17,47,52,123456000 };
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+				i,                      // paramNumber
+				&p1,                    // paramValue
+				false,                  // isNull
+				SQL_PARAM_INPUT_OUTPUT,
+				false);                 // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQL_TIMESTAMP_STRUCT *> paramValues = { &p0, &p1, &p2, &p3, nullptr };
+		vector<SQLINTEGER> strLenOrIndValues = {
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetDateTimeOutputParam<SQL_TIMESTAMP_STRUCT>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
+	// Name: GetDateOutputParamTest
+	//
+	// Description:
+	// Test multiple DATE values
+	//
+	TEST_F(PythonExtensionApiTests, GetDateOutputParamTest)
+	{
+		string scriptString =
+			"import datetime;"
+			"param0 = datetime.date(9999,12,31);"
+			"param1 = datetime.date(1,1,1);"
+			"param2 = datetime.date(1470,7,27);"
+			"param3 = None;";
+
+		int paramsNumber = 4;
+		SQL_DATE_STRUCT p0 = { 9999,12,31 };
+		SQL_DATE_STRUCT p1 = { 1,1,1 };
+		SQL_DATE_STRUCT p2 = { 1470,7,27 };
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			paramsNumber,   // parametersNumber
+			0,              // inputSchemaColumnsNumber
+			scriptString);
+
+		for (int i = 0; i < paramsNumber; ++i)
+		{
+			TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+				i,                      // paramNumber
+				nullptr,                // paramValue
+				true,                   // isNull
+				SQL_PARAM_INPUT_OUTPUT,
+				false);                 // validate
+		}
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<SQL_DATE_STRUCT *> paramValues = { &p0, &p1, &p2, nullptr };
+
+		// We return a TIMESTAMP_STRUCT because it is more encompassing.
+		// It will just have 0s for hour/minute/sec/usec
+		//
+		vector<SQLINTEGER> strLenOrIndValues = {
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			SQL_NULL_DATA };
+
+		// Verify that the parameters we get back are what we expect
+		//
+		TestGetDateTimeOutputParam<SQL_DATE_STRUCT>(
+			paramValues,
+			strLenOrIndValues);
+	}
+
 	// Name: GetInvalidOutputParamTest
 	//
 	// Description:
@@ -775,8 +907,8 @@ namespace ExtensionApiTest
 		TestParameter<SQLINTEGER, SQL_C_SLONG>(
 			0,       // paramNumber
 			0,       // paramValue
-			SQL_PARAM_INPUT,
 			false,   // isNull
+			SQL_PARAM_INPUT,
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
@@ -983,6 +1115,67 @@ namespace ExtensionApiTest
 				{
 					EXPECT_EQ(*(static_cast<SQLCHAR*>(paramValue) + i),
 						*(expectedParamValues[paramNumber] + i));
+				}
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	// Name: TestGetDateTimeOutputParam
+	//
+	// Description:
+	// Templatized function to test output param value and strLenOrInd is as expected.
+	//
+	template<class DateTimeStruct>
+	void PythonExtensionApiTests::TestGetDateTimeOutputParam(
+		vector<DateTimeStruct *> expectedParamValueVector,
+		vector<SQLINTEGER>       expectedStrLenOrIndVector)
+	{
+		ASSERT_EQ(expectedParamValueVector.size(), expectedStrLenOrIndVector.size());
+
+		for (SQLULEN i = 0; i < expectedParamValueVector.size(); ++i)
+		{
+			void *expectedParamValue = expectedParamValueVector[i];
+			SQLINTEGER expectedStrLenOrInd = expectedStrLenOrIndVector[i];
+
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+
+			SQLRETURN result = SQL_ERROR;
+			result = GetOutputParam(
+				*m_sessionId,
+				m_taskId,
+				i,  // paramNumber
+				&paramValue,
+				&strLen_or_Ind);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd);
+
+			if (expectedParamValue != nullptr)
+			{
+				if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+				{
+					SQL_TIMESTAMP_STRUCT expectedTimestamp = *(static_cast<SQL_TIMESTAMP_STRUCT *>(expectedParamValue));
+					SQL_TIMESTAMP_STRUCT paramTimestamp = *(static_cast<SQL_TIMESTAMP_STRUCT *>(paramValue));
+					EXPECT_EQ(expectedTimestamp.year, paramTimestamp.year);
+					EXPECT_EQ(expectedTimestamp.month, paramTimestamp.month);
+					EXPECT_EQ(expectedTimestamp.day, paramTimestamp.day);
+					EXPECT_EQ(expectedTimestamp.hour, paramTimestamp.hour);
+					EXPECT_EQ(expectedTimestamp.minute, paramTimestamp.minute);
+					EXPECT_EQ(expectedTimestamp.second, paramTimestamp.second);
+					EXPECT_EQ(expectedTimestamp.fraction, paramTimestamp.fraction);
+				}
+				else if (is_same<DateTimeStruct, SQL_DATE_STRUCT>::value)
+				{
+					SQL_DATE_STRUCT expectedDate = *(static_cast<SQL_DATE_STRUCT *>(expectedParamValue));
+					SQL_DATE_STRUCT paramDate = *(static_cast<SQL_DATE_STRUCT *>(paramValue));
+					EXPECT_EQ(expectedDate.year, paramDate.year);
+					EXPECT_EQ(expectedDate.month, paramDate.month);
+					EXPECT_EQ(expectedDate.day, paramDate.day);
 				}
 			}
 			else

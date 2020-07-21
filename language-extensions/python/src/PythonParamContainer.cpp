@@ -44,6 +44,10 @@ unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamConta
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonStringParam<wchar_t>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonRawParam>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonDateTimeParam<SQL_C_TYPE_DATE>>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonDateTimeParam<SQL_C_TYPE_TIMESTAMP>>)},
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -85,7 +89,8 @@ void PythonParamContainer::AddParamToNamespace(
 
 	if (it == sm_FnCreateParamMap.end())
 	{
-		throw runtime_error("Unsupported parameter type encountered when creating param #" + to_string(paramNumber));
+		throw runtime_error("Unsupported parameter type " + to_string(dataType) + 
+			" encountered when creating param #" + to_string(paramNumber));
 	}
 
 	(this->*it->second)(
