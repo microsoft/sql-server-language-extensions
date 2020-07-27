@@ -485,6 +485,52 @@ namespace ExtensionApiTest
 		}
 	}
 
+	// Name: ExecuteDateTimeColumnsTest
+	//
+	// Description:
+	//  Test Execute with default script using an InputDataSet of DateTime columns.
+	//
+	TEST_F(PythonExtensionApiTests, ExecuteDateTimeColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			(*m_dateTimeInfo).GetColumnsNumber(),
+			m_scriptString);
+
+		InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(m_dateTimeInfo.get());
+
+		TestExecute<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames);
+	}
+
+	// Name: ExecuteDateColumnsTest
+	//
+	// Description:
+	//  Test Execute with default script using an InputDataSet of Date columns.
+	//
+	TEST_F(PythonExtensionApiTests, ExecuteDateColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			(*m_dateInfo).GetColumnsNumber(),
+			m_scriptString);
+
+		InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(m_dateInfo.get());
+
+		TestExecute<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames);
+	}
+
 	// Name: TestExecute
 	//
 	// Description:

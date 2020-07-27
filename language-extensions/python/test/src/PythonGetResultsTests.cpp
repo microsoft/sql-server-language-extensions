@@ -499,6 +499,67 @@ namespace ExtensionApiTest
 			columnNames);
 	}
 
+	// Name: GetDateTimeResultsTest
+	//
+	// Description:
+	//  Test GetResults with default script expecting an OutputDataSet of DateTime column data.
+	//
+	TEST_F(PythonExtensionApiTests, GetDateTimeResultsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			(*m_dateTimeInfo).GetColumnsNumber(),
+			m_scriptString);
+
+		InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(m_dateTimeInfo.get());
+
+		TestExecute<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames,
+			false);
+
+		TestGetDateTimeResults<SQL_TIMESTAMP_STRUCT>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames);
+	}
+
+	// Name: GetDateResultsTest
+	//
+	// Description:
+	//  Test GetResults with default script expecting an OutputDataSet of Date column data.
+	//
+	TEST_F(PythonExtensionApiTests, GetDateResultsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			(*m_dateInfo).GetColumnsNumber(),
+			m_scriptString);
+
+		InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(m_dateInfo.get());
+
+		TestExecute<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames,
+			false);
+
+		TestGetDateTimeResults<SQL_DATE_STRUCT>(
+			ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames);
+	}
+
+
 	// Name: GetDifferentResultsTest
 	//
 	// Description:
@@ -674,7 +735,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber = 0;
 		SQLPOINTER *data = nullptr;
 		SQLINTEGER **strLen_or_Ind = nullptr;
-		SQLRETURN result = GetResults(
+		SQLRETURN  result = GetResults(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -802,6 +863,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Template function to compare the given column data
 	//  and nullMap with rowsNumber for equality.
+	//  Nullable columns have complications with NAN and default values.
 	//
 	template<class SQLType, class DefaultType>
 	void PythonExtensionApiTests::CheckColumnDataEqualityForNullable(
@@ -839,12 +901,12 @@ namespace ExtensionApiTest
 				else
 				{
 					// Int NANs are defined as 0.
+					//
 					EXPECT_EQ(columnData[index], 0);
 				}
 			}
 		}
 	}
-
 
 	// Name: TestGetStringResults
 	//
@@ -942,7 +1004,6 @@ namespace ExtensionApiTest
 		}
 	}
 
-
 	// Name: TestGetRawResults
 	//
 	// Description:
@@ -1024,7 +1085,6 @@ namespace ExtensionApiTest
 
 				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
 				{
-
 					SQLCHAR *expectedValue =
 						static_cast<SQLCHAR*>(expectedColumnData) + cumulativeLength;
 					SQLCHAR *actualValue =
@@ -1036,6 +1096,125 @@ namespace ExtensionApiTest
 					}
 
 					cumulativeLength += expectedColumnStrLenOrInd[index];
+				}
+			}
+			else
+			{
+				EXPECT_EQ(columnStrLenOrInd[index], SQL_NULL_DATA);
+			}
+		}
+	}
+
+	// Name: TestGetDateTimeResults
+	//
+	// Description:
+	//  Test GetResults to verify the expected results are obtained for datetime data.
+	//
+	template<class DateTimeStruct>
+	void PythonExtensionApiTests::TestGetDateTimeResults(
+		SQLULEN        expectedRowsNumber,
+		SQLPOINTER     *expectedData,
+		SQLINTEGER     **expectedStrLen_or_Ind,
+		vector<string> columnNames)
+	{
+		SQLULEN    rowsNumber = 0;
+		SQLPOINTER *data = nullptr;
+		SQLINTEGER **strLen_or_Ind = nullptr;
+		SQLRETURN  result = GetResults(
+			*m_sessionId,
+			m_taskId,
+			&rowsNumber,
+			&data,
+			&strLen_or_Ind);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(rowsNumber, expectedRowsNumber);
+
+		// Test data obtained is same as the expectedData and the OutputDataSet in python namespace.
+		//
+		string createDictScript = m_outputDataNameString + ".to_dict()";
+		py::dict outputDataSet = py::extract<py::dict>(
+			py::eval(createDictScript.c_str(), m_mainNamespace));
+
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		{
+			py::dict column = py::extract<py::dict>(outputDataSet[columnNames[columnNumber]]);
+
+			SQLINTEGER *expectedColumnStrLenOrInd = expectedStrLen_or_Ind[columnNumber];
+			SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
+			
+			DateTimeStruct *expectedColumnData = static_cast<DateTimeStruct *>(expectedData[columnNumber]);
+			DateTimeStruct *columnData = static_cast<DateTimeStruct *>(data[columnNumber]);
+
+			CheckDateTimeDataEquality<DateTimeStruct>(
+				rowsNumber,
+				expectedColumnData,
+				columnData,
+				expectedColumnStrLenOrInd,
+				columnStrLenOrInd);
+
+			CheckDateTimeColumnEquality<DateTimeStruct>(
+				rowsNumber,
+				column,
+				columnData,
+				columnStrLenOrInd);
+		}
+	}
+
+	// Name: CheckDateTimeDataEquality
+	//
+	// Description:
+	//  Compare the given datetime data & nullMap for equality.
+	//  We take in void* pointers so we can cast them to the correct type inside the if statements.
+	//
+	template<class DateTimeStruct>
+	void PythonExtensionApiTests::CheckDateTimeDataEquality(
+		SQLULEN    rowsNumber,
+		void       *expectedColumnData,
+		void       *columnData,
+		SQLINTEGER *expectedColumnStrLenOrInd,
+		SQLINTEGER *columnStrLenOrInd)
+	{
+		if (rowsNumber == 0)
+		{
+			EXPECT_EQ(columnData, nullptr);
+			EXPECT_EQ(columnStrLenOrInd, nullptr);
+		}
+
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
+		{
+			if (expectedColumnStrLenOrInd != nullptr)
+			{
+				EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
+
+				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
+				{
+					if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+					{
+						SQL_TIMESTAMP_STRUCT expectedTimestamp = 
+							static_cast<SQL_TIMESTAMP_STRUCT *>(expectedColumnData)[index];
+						SQL_TIMESTAMP_STRUCT paramTimestamp =
+							static_cast<SQL_TIMESTAMP_STRUCT *>(columnData)[index];
+
+						EXPECT_EQ(expectedTimestamp.year, paramTimestamp.year);
+						EXPECT_EQ(expectedTimestamp.month, paramTimestamp.month);
+						EXPECT_EQ(expectedTimestamp.day, paramTimestamp.day);
+						EXPECT_EQ(expectedTimestamp.hour, paramTimestamp.hour);
+						EXPECT_EQ(expectedTimestamp.minute, paramTimestamp.minute);
+						EXPECT_EQ(expectedTimestamp.second, paramTimestamp.second);
+						EXPECT_EQ(expectedTimestamp.fraction, paramTimestamp.fraction);
+					}
+					else if (is_same<DateTimeStruct, SQL_DATE_STRUCT>::value)
+					{
+						SQL_DATE_STRUCT expectedDate =
+							static_cast<SQL_DATE_STRUCT *>(expectedColumnData)[index];
+						SQL_DATE_STRUCT paramTimestamp =
+							static_cast<SQL_DATE_STRUCT *>(columnData)[index];
+
+						EXPECT_EQ(expectedDate.year, paramTimestamp.year);
+						EXPECT_EQ(expectedDate.month, paramTimestamp.month);
+						EXPECT_EQ(expectedDate.day, paramTimestamp.day);
+					}
 				}
 			}
 			else

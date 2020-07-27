@@ -549,6 +549,78 @@ namespace ExtensionApiTest
 			SQL_NULLABLE);     // nullable
 	}
 
+	// Name: GetDateTimeResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script expecting an OutputDataSet of DateTime columns.
+	//
+	TEST_F(PythonExtensionApiTests, GetDateTimeResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			(*m_dateTimeInfo).GetColumnsNumber(),
+			m_scriptString);
+
+		InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(m_dateTimeInfo.get());
+
+		TestExecute<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames,
+			false);
+
+		TestGetResultColumn(0,    // columnNumber
+			SQL_C_TYPE_TIMESTAMP, // dataType
+			m_DateTimeSize,       // columnSize
+			0,                    // decimalDigits
+			SQL_NO_NULLS);        // nullable
+
+		TestGetResultColumn(1,    // columnNumber
+			SQL_C_TYPE_TIMESTAMP, // dataType
+			m_DateTimeSize,       // columnSize
+			0,                    // decimalDigits
+			SQL_NULLABLE);        // nullable
+	}
+
+	// Name: GetDateResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script expecting an OutputDataSet of Date columns.
+	//
+	TEST_F(PythonExtensionApiTests, GetDateResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(0, // parametersNumber
+			(*m_dateInfo).GetColumnsNumber(),
+			m_scriptString);
+
+		InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(m_dateInfo.get());
+
+		TestExecute<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+			ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames,
+			false);
+
+		TestGetResultColumn(0, // columnNumber
+			SQL_C_TYPE_DATE,   // dataType
+			m_DateSize,        // columnSize
+			0,                 // decimalDigits
+			SQL_NO_NULLS);     // nullable
+
+		TestGetResultColumn(1, // columnNumber
+			SQL_C_TYPE_DATE,   // dataType
+			m_DateSize,        // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
+	}
+
 	// Name: GetDifferentResultColumnsTest
 	//
 	// Description:

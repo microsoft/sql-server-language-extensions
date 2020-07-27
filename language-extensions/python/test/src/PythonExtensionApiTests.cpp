@@ -12,6 +12,8 @@
 //*************************************************************************************************
 #include "PythonExtensionApiTests.h"
 
+#include <datetime.h>
+
 using namespace std;
 namespace py = boost::python;
 
@@ -42,6 +44,10 @@ namespace ExtensionApiTest
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckWStringColumnEquality)},
 		{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckRawColumnEquality)},
+		{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckDateTimeColumnEquality<SQL_TIMESTAMP_STRUCT>)},
+		{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckDateTimeColumnEquality<SQL_DATE_STRUCT>)},
 	};
 
 	// Code here will be called immediately after the constructor (right
@@ -89,71 +95,106 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str())));
 		m_outputDataNameLength = m_outputDataNameString.length();
 
-		const SQLINTEGER intSize = sizeof(SQLINTEGER);
 		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
 			"IntegerColumn1",
 			vector<SQLINTEGER>{ 0, 1, 2, 3, 4},
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, intSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, m_IntSize),
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, 0, 0, -1 },
-			vector<SQLINTEGER>{ intSize, intSize, SQL_NULL_DATA, SQL_NULL_DATA, intSize });
+			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize });
 
-		const SQLINTEGER booleanSize = sizeof(SQLCHAR);
 		m_booleanInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"BooleanColumn1",
 			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, booleanSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_BooleanSize),
 			"BooleanColumn2",
 			vector<SQLCHAR>{ '\0', '2', '1', '0', '\0' },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, booleanSize, booleanSize, booleanSize, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, m_BooleanSize, m_BooleanSize, m_BooleanSize, SQL_NULL_DATA });
 
-		const SQLINTEGER realSize = sizeof(SQLREAL);
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
 			vector<SQLREAL>{ 0.34F, 1.33F, m_MaxReal, m_MinReal, 68e10F },
-			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, realSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, m_RealSize),
 			"RealColumn2",
 			vector<SQLREAL>{  0, -1, NAN, NAN, NAN },
-			vector<SQLINTEGER>{ realSize, realSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ m_RealSize, m_RealSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
-		const SQLINTEGER doubleSize = sizeof(SQLDOUBLE);
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
 			vector<SQLDOUBLE>{ -1.79e301, 1.33, m_MaxDouble, m_MinDouble, 1.79e30 },
-			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, doubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, m_DoubleSize),
 			"DoubleColumn2",
 			vector<SQLDOUBLE>{  0, -1, NAN, NAN, NAN },
-			vector<SQLINTEGER>{ doubleSize, doubleSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ m_DoubleSize, m_DoubleSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
-		const SQLINTEGER bigIntSize = sizeof(SQLBIGINT);
 		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
 			"BigIntColumn1",
 			vector<SQLBIGINT>{ m_MaxBigInt, 1, 88883939, m_MinBigInt, -622280108 },
-			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, bigIntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, m_BigIntSize),
 			"BigIntColumn2",
 			vector<SQLBIGINT>{0, 0, 0, 12341512213, -12341512213 },
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
-			SQL_NULL_DATA, bigIntSize, bigIntSize });
+			SQL_NULL_DATA, m_BigIntSize, m_BigIntSize });
 
-		const SQLINTEGER smallIntSize = sizeof(SQLSMALLINT);
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
 			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, smallIntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, m_SmallIntSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ m_MaxSmallInt, m_MinSmallInt, 0, 0, 3'276 },
-			vector<SQLINTEGER>{ smallIntSize, smallIntSize,
-			SQL_NULL_DATA, SQL_NULL_DATA, smallIntSize });
+			vector<SQLINTEGER>{ m_SmallIntSize, m_SmallIntSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, m_SmallIntSize });
 
-		const SQLINTEGER tinyIntSize = sizeof(SQLCHAR);
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
 			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, tinyIntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_TinyIntSize),
 			"TinyIntColumn2",
 			vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 0, 0, 128 },
-			vector<SQLINTEGER>{ tinyIntSize, tinyIntSize,
-			SQL_NULL_DATA, SQL_NULL_DATA, tinyIntSize });
+			vector<SQLINTEGER>{ m_TinyIntSize, m_TinyIntSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, m_TinyIntSize });
+
+		m_dateTimeInfo = make_unique<ColumnInfo<SQL_TIMESTAMP_STRUCT>>(
+			"DateTimeColumn1",
+			vector<SQL_TIMESTAMP_STRUCT>{
+				{ 9518, 8, 25, 19, 11, 40, 528934000 },
+				{ 5712, 3, 9, 2, 24, 32, 770483000 },
+				{ 1470, 7, 27, 17, 47, 52, 123456000 },
+				{ 2020, 4, 16, 15, 5, 12, 169012000 },
+				{ 231, 2, 14, 22, 36, 18, 489102000 },
+			},
+			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber, m_DateTimeSize),
+			"DateTimeColumn2",
+			vector<SQL_TIMESTAMP_STRUCT>{
+				{ 9999, 12, 31, 23, 59, 59, 999999000 },
+				{ 1,1,1,0,0,0,0 }, 
+				{}, 
+				{}, 
+				{} 
+			},
+			vector<SQLINTEGER>{ m_DateTimeSize, m_DateTimeSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+
+		m_dateInfo = make_unique<ColumnInfo<SQL_DATE_STRUCT>>(
+			"DateColumn1",
+			vector<SQL_DATE_STRUCT>{
+				{ 9518, 8, 25 },
+				{ 5712, 3, 9 },
+				{ 1470, 7, 27 },
+				{ 2020, 4, 16 },
+				{ 231, 2, 14, },
+			},
+			vector<SQLINTEGER>(ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber, m_DateSize),
+			"DateColumn2",
+			vector<SQL_DATE_STRUCT>{
+				{ 9999, 12, 31 },
+				{ 1,1,1 }, 
+				{}, 
+				{}, 
+				{} 
+			},
+			vector<SQLINTEGER>{ m_DateSize, m_DateSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
 		try
 		{
@@ -263,6 +304,10 @@ namespace ExtensionApiTest
 		ColumnInfo<SQLSMALLINT> *ColumnInfo);
 	template void PythonExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
 		ColumnInfo<SQLCHAR> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+		ColumnInfo<SQL_TIMESTAMP_STRUCT> *ColumnInfo);
+	template void PythonExtensionApiTests::InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+		ColumnInfo<SQL_DATE_STRUCT> *ColumnInfo);
 
 	// Name: InitializeColumn
 	//
@@ -573,8 +618,8 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				SQLCHAR *expectedValue = static_cast<SQLCHAR*>(expectedColumn) + cumulativeLength;
-				SQLCHAR *bytes = static_cast<SQLCHAR*>(static_cast<void*>(PyBytes_AsString(val.ptr())));
+				SQLCHAR *expectedValue = static_cast<SQLCHAR *>(expectedColumn) + cumulativeLength;
+				SQLCHAR *bytes = static_cast<SQLCHAR *>(static_cast<void *>(PyBytes_AsString(val.ptr())));
 
 				for (SQLINTEGER i = 0; i < strLen_or_Ind[index]; ++i)
 				{
@@ -582,6 +627,77 @@ namespace ExtensionApiTest
 				}
 
 				cumulativeLength += strLen_or_Ind[index];
+			}
+		}
+	}
+
+	// Name: CheckDateTimeColumnEquality
+	//
+	// Description:
+	//  Compare datetime column with the given data and corresponding strLen_or_Ind.
+	//
+	template<class DateTimeStruct>
+	void PythonExtensionApiTests::CheckDateTimeColumnEquality(
+		SQLULEN    expectedRowsNumber,
+		py::dict   columnToTest,
+		void       *expectedColumn,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
+		{
+			py::object val = columnToTest[index];
+
+			if (strLen_or_Ind == nullptr ||
+				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			{
+				EXPECT_TRUE(val.is_none());
+			}
+			else
+			{
+				// Import the PyDateTime API
+				//
+				PyDateTime_IMPORT;
+
+				PyObject *dateObject = val.ptr();
+
+				if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+				{
+					EXPECT_TRUE(PyDateTime_CheckExact(dateObject));
+
+					SQL_TIMESTAMP_STRUCT expectedTimestamp = static_cast<SQL_TIMESTAMP_STRUCT *>(expectedColumn)[index];
+
+					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+					SQLUSMALLINT hour = PyDateTime_DATE_GET_HOUR(dateObject);
+					SQLUSMALLINT minute = PyDateTime_DATE_GET_MINUTE(dateObject);
+					SQLUSMALLINT second = PyDateTime_DATE_GET_SECOND(dateObject);
+					SQLUINTEGER usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
+
+					EXPECT_EQ(expectedTimestamp.year, year);
+					EXPECT_EQ(expectedTimestamp.month, month);
+					EXPECT_EQ(expectedTimestamp.day, day);
+					EXPECT_EQ(expectedTimestamp.hour, hour);
+					EXPECT_EQ(expectedTimestamp.minute, minute);
+					EXPECT_EQ(expectedTimestamp.second, second);
+					EXPECT_EQ(expectedTimestamp.fraction, usec * 1000);
+				}
+				else if (is_same<DateTimeStruct, SQL_DATE_STRUCT>::value)
+				{
+					EXPECT_TRUE(PyDate_CheckExact(dateObject));
+
+					SQL_DATE_STRUCT expectedDate = static_cast<SQL_DATE_STRUCT *>(expectedColumn)[index];
+
+					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+
+					EXPECT_EQ(expectedDate.year, year);
+					EXPECT_EQ(expectedDate.month, month);
+					EXPECT_EQ(expectedDate.day, day);
+				}
 			}
 		}
 	}

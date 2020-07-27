@@ -15,6 +15,9 @@
 #include "PythonDataSet.h"
 #include "Logger.h"
 
+// datetime.h includes macros that define the PyDateTime APIs
+//
+#include <datetime.h>
 #include <sqlext.h>
 
 using namespace std;
@@ -34,6 +37,9 @@ const unordered_map<string, SQLSMALLINT> PythonDataSet::m_pythonToOdbcTypeMap =
 	{"float64", SQL_C_DOUBLE},
 	{"str", SQL_C_CHAR},
 	{"bytes", SQL_C_BINARY},
+	{"datetime64[ns]", SQL_C_TYPE_TIMESTAMP},
+	{"datetime.datetime", SQL_C_TYPE_TIMESTAMP},
+	{"datetime.date", SQL_C_TYPE_DATE},
 
 	// Default types for when the array dtype is "object"
 	//
@@ -67,6 +73,10 @@ const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::sm_FnAddColumnMap =
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddStringColumnToDictionary<wchar_t>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddRawColumnToDictionary)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddDateTimeColumnToDictionary<SQL_C_TYPE_TIMESTAMP>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddDateTimeColumnToDictionary<SQL_C_TYPE_DATE>)},
 };
 
 // Function map - maps a SQL data type to the appropriate function that
@@ -92,6 +102,10 @@ const PythonOutputDataSet::GetColumnFnMap PythonOutputDataSet::sm_FnRetrieveColu
 	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveStringColumnFromDataFrame)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveRawColumnFromDataFrame)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame<SQL_TIMESTAMP_STRUCT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+	 static_cast<fnRetrieveColumn>(&PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame<SQL_DATE_STRUCT>)},
 };
 
 // Map of function pointers for cleaning up output data buffers and null map.
@@ -115,7 +129,11 @@ const PythonOutputDataSet::CleanupColumnFnMap PythonOutputDataSet::sm_FnCleanupC
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
 	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
-	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)}
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQLCHAR>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQL_TIMESTAMP_STRUCT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+	 static_cast<fnCleanupColumn>(&PythonOutputDataSet::CleanupColumn<SQL_DATE_STRUCT>)},
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -178,9 +196,9 @@ bool PythonDataSet::HasNulls(
 	//
 	if(strLen_or_Ind != nullptr)
 	{
-		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
-			if (strLen_or_Ind[i] == SQL_NULL_DATA)
+			if (strLen_or_Ind[row] == SQL_NULL_DATA)
 			{
 				hasNulls = true;
 				break;
@@ -368,17 +386,17 @@ void PythonInputDataSet::AddColumnToDictionary(
 	{
 		np::ndarray nArray = np::empty(shape, m_ObjType);
 
-		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
-			if (strLen_or_Ind[i] == SQL_NULL_DATA)
+			if (strLen_or_Ind[row] == SQL_NULL_DATA)
 			{
 				// Use None object for NULLs
 				//
-				nArray[i] = py::object();
+				nArray[row] = py::object();
 			}
 			else
 			{
-				nArray[i] = dataArray[i];
+				nArray[row] = dataArray[row];
 			}
 		}
 
@@ -433,9 +451,9 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 		// We modify the data array that is passed in by ExtHost in place so that
 		// numpy can use that memory location for its data and not need to copy it out.
 		//
-		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
-			dataArray[i] = dataArray[i] != '0';
+			dataArray[row] = dataArray[row] != '0';
 		}
 
 		// Create a numpy array that points directly to the C++ data array.
@@ -448,18 +466,18 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 	{
 		np::ndarray nArray = np::empty(shape, m_ObjType);
 
-		for (SQLULEN i = 0; i < rowsNumber; ++i)
+		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
-			if (strLen_or_Ind[i] == SQL_NULL_DATA)
+			if (strLen_or_Ind[row] == SQL_NULL_DATA)
 			{
 				// Use None object for NULLs
 				//
-				nArray[i] = py::object();
+				nArray[row] = py::object();
 			}
 			else
 			{
-				dataArray[i] = dataArray[i] != '0';
-				nArray[i] = bool(dataArray[i]);
+				dataArray[row] = dataArray[row] != '0';
+				nArray[row] = bool(dataArray[row]);
 			}
 		}
 
@@ -493,18 +511,18 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 	py::tuple shape = py::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
 
-	for (SQLULEN i = 0; i < rowsNumber; ++i)
+	for (SQLULEN row = 0; row < rowsNumber; ++row)
 	{
-		if (strLen_or_Ind == nullptr || strLen_or_Ind[i] == SQL_NULL_DATA)
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[row] == SQL_NULL_DATA)
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
-			nArray[i] = py::object();
+			nArray[row] = py::object();
 		}
 		else
 		{
 			CharType *str = strArray + length;
-			Py_ssize_t strlen = strLen_or_Ind[i] / sizeof(CharType);
+			Py_ssize_t strlen = strLen_or_Ind[row] / sizeof(CharType);
 
 			// Create a string PyObject from the str and strLen.
 			// This DOES copy the underlying string into a new buffer and null terminates it.
@@ -514,7 +532,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 				PyUnicode_FromKindAndData(sizeof(CharType), str, strlen)
 			));
 
-			nArray[i] = strObj;
+			nArray[row] = strObj;
 			length += strlen;
 		}
 	}
@@ -550,18 +568,18 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 	py::tuple shape = py::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
 
-	for (SQLULEN i = 0; i < rowsNumber; ++i)
+	for (SQLULEN row = 0; row < rowsNumber; ++row)
 	{
-		if (strLen_or_Ind == nullptr || strLen_or_Ind[i] == SQL_NULL_DATA)
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[row] == SQL_NULL_DATA)
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
-			nArray[i] = py::object();
+			nArray[row] = py::object();
 		}
 		else
 		{
 			char *rawVal = rawArray + length;
-			SQLINTEGER strlen = strLen_or_Ind[i] / sizeof(CHAR);
+			SQLINTEGER strlen = strLen_or_Ind[row] / sizeof(CHAR);
 
 			// Create a bytes PyObject from the raw bytes and strLen.
 			// We create a PyMemoryViewObject (which does not copy the underlying data) then
@@ -572,8 +590,78 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 				PyBytes_FromObject(PyMemoryView_FromMemory(rawVal, strlen, PyBUF_READ))
 			));
 
-			nArray[i] = bytesObj;
+			nArray[row] = bytesObj;
 			length += strlen;
+		}
+	}
+
+	// By assigning the boost python objects into the data dictionary, the memory will not be
+	// deallocated because we keep at least one reference to the PyObjects that were created
+	// in the loop above.
+	//
+	m_dataDict[name] = nArray;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonInputDataSet::AddDateTimeColumnToDictionary
+//
+// Description:
+//  Adds a datetime column to the python dictionary that will be the DataFrame
+//
+template<SQLSMALLINT DataType>
+void PythonInputDataSet::AddDateTimeColumnToDictionary(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data,
+	SQLINTEGER  *strLen_or_Ind)
+{
+	LOG("PythonInputDataSet::AddDateTimeColumnToDictionary");
+
+	string name = m_columns[columnNumber].get()->Name();
+
+	// Create an empty numpy array of type python object
+	//
+	py::tuple shape = py::make_tuple(rowsNumber);
+	np::ndarray nArray = np::empty(shape, m_ObjType);
+
+	for (SQLULEN row = 0; row < rowsNumber; ++row)
+	{
+		if (strLen_or_Ind == nullptr || strLen_or_Ind[row] == SQL_NULL_DATA)
+		{
+			// If this string should be NULL, then we set it to the Python None object.
+			//
+			nArray[row] = py::object();
+		}
+		else
+		{
+			// Use the PyDateTime_IMPORT macro to get the Python Date/Time APIs
+			//
+			PyDateTime_IMPORT;
+			PyObject *dtObject = Py_None;
+
+			if (DataType == SQL_C_TYPE_DATE)
+			{
+				SQL_DATE_STRUCT dateParam = *(static_cast<SQL_DATE_STRUCT *>(data) + row);
+
+				// Create a Python Date object
+				//
+				dtObject = PyDate_FromDate(dateParam.year, dateParam.month, dateParam.day);
+			}
+			else if (DataType == SQL_C_TYPE_TIMESTAMP)
+			{
+				SQL_TIMESTAMP_STRUCT timeStampParam = *(static_cast<SQL_TIMESTAMP_STRUCT *>(data) + row);
+
+				// "fraction" is stored in nanoseconds, we need microseconds.
+				//
+				SQLUINTEGER usec = timeStampParam.fraction / 1000;
+
+				// Create a Python DateTime object
+				//
+				dtObject = PyDateTime_FromDateAndTime(timeStampParam.year, timeStampParam.month, timeStampParam.day,
+					timeStampParam.hour, timeStampParam.minute, timeStampParam.second, usec);
+			}
+
+			nArray[row] = py::object(py::handle<>(dtObject));
 		}
 	}
 
@@ -744,10 +832,10 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 	//
 	np::ndarray column = ExtractArrayFromDataFrame(columnName);
 
-	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bool isNull = true;
-		py::object pyObj = column[i];
+		py::object pyObj = column[row];
 
 		// Make sure the object is not pointing at Python None, or else it will crash on extract
 		//
@@ -767,8 +855,8 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 				//
 				if(!(is_same<NullType, float>::value && (isnan(data) || isinf(data))))
 				{
-					columnData[i] = data;
-					nullMap[i] = sizeof(SQLType);
+					columnData[row] = data;
+					nullMap[row] = sizeof(SQLType);
 					isNull = false;
 				}
 			}
@@ -780,9 +868,9 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 		{
 			// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
 			//
-			nullMap[i] = SQL_NULL_DATA;
+			nullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
-			columnData[i] = valueForNull;
+			columnData[row] = valueForNull;
 		}
 	}
 
@@ -822,9 +910,9 @@ void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
 	//
 	np::ndarray column = ExtractArrayFromDataFrame(columnName);
 
-	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[i];
+		py::object pyObj = column[row];
 
 		// Make sure the object is not pointing at Python None, or else it will crash on extract
 		//
@@ -840,22 +928,22 @@ void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
 			{
 				bool data = extractedData;
 
-				columnData[i] = data;
+				columnData[row] = data;
 			}
 			else
 			{
-				columnData[i] = false;
+				columnData[row] = false;
 			}
 
-			nullMap[i] = sizeof(SQLCHAR);
+			nullMap[row] = sizeof(SQLCHAR);
 		}
 		else
 		{
 			// If there are any nulls, nullable is set to SQL_NULLABLE for the whole column
 			//
-			nullMap[i] = SQL_NULL_DATA;
+			nullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
-			columnData[i] = false;
+			columnData[row] = false;
 		}
 	}
 
@@ -871,10 +959,10 @@ void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
 //  adds data to m_data and nullmap to m_columnNullMap.
 //
 void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
-	string       columnName,
-	SQLULEN      &columnSize,
-	SQLSMALLINT  &decimalDigits,
-	SQLSMALLINT  &nullable)
+	string      columnName,
+	SQLULEN     &columnSize,
+	SQLSMALLINT &decimalDigits,
+	SQLSMALLINT &nullable)
 {
 	LOG("PythonOutputDataSet::RetrieveStringColumnFromDataFrame");
 
@@ -894,9 +982,9 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 	// Insert the string column into the columnData vector contiguously.
 	//
 	SQLINTEGER maxLen = 0;
-	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[i];
+		py::object pyObj = column[row];
 
 		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
 		//
@@ -909,7 +997,7 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 			if (extractedData.check())
 			{
 				string data = extractedData;
-				strLenOrNullMap[i] = data.length();
+				strLenOrNullMap[row] = data.length();
 
 				// Concatenate the string data into the full column data
 				//
@@ -917,20 +1005,20 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 
 				// Store the maximum length to find the widest the column needs to be
 				//
-				if (maxLen < strLenOrNullMap[i])
+				if (maxLen < strLenOrNullMap[row])
 				{
-					maxLen = strLenOrNullMap[i];
+					maxLen = strLenOrNullMap[row];
 				}
 			}
 			else
 			{
-				strLenOrNullMap[i] = SQL_NULL_DATA;
+				strLenOrNullMap[row] = SQL_NULL_DATA;
 				nullable = SQL_NULLABLE;
 			}
 		}
 		else
 		{
-			strLenOrNullMap[i] = SQL_NULL_DATA;
+			strLenOrNullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
 		}
 	}
@@ -956,10 +1044,10 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 //  adds data to m_data and nullmap to m_columnNullMap.
 //
 void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
-	string       columnName,
-	SQLULEN      &columnSize,
-	SQLSMALLINT  &decimalDigits,
-	SQLSMALLINT  &nullable)
+	string      columnName,
+	SQLULEN     &columnSize,
+	SQLSMALLINT &decimalDigits,
+	SQLSMALLINT &nullable)
 {
 	LOG("PythonOutputDataSet::RetrieveRawColumnFromDataFrame");
 
@@ -979,9 +1067,9 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 	// Insert the raw column into the columnData vector contiguously.
 	//
 	SQLINTEGER maxLen = 0;
-	for (SQLULEN i = 0; i < m_rowsNumber; ++i)
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[i];
+		py::object pyObj = column[row];
 
 		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
 		//
@@ -994,7 +1082,7 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 			int size = PyBytes_Size(baseObj);
 			SQLCHAR *bytes = static_cast<SQLCHAR*>(static_cast<void*>(PyBytes_AsString(baseObj)));
 
-			strLenOrNullMap[i] = size;
+			strLenOrNullMap[row] = size;
 
 			// Append the bytes data into the full column data
 			//
@@ -1002,14 +1090,14 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 
 			// Store the maximum length to find the widest the column needs to be
 			//
-			if (maxLen < strLenOrNullMap[i])
+			if (maxLen < strLenOrNullMap[row])
 			{
-				maxLen = strLenOrNullMap[i];
+				maxLen = strLenOrNullMap[row];
 			}
 		}
 		else
 		{
-			strLenOrNullMap[i] = SQL_NULL_DATA;
+			strLenOrNullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
 		}
 	}
@@ -1018,6 +1106,88 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 	if (m_rowsNumber > 0)
 	{
 		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+	}
+	else
+	{
+		m_data.push_back(nullptr);
+	}
+
+	m_columnNullMap.push_back(strLenOrNullMap);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame
+//
+// Description:
+//  Gets date and datetime column information from the underlying DataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap. 
+//
+template<class DateTimeStruct>
+void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
+	string      columnName,
+	SQLULEN     &columnSize,
+	SQLSMALLINT &decimalDigits,
+	SQLSMALLINT &nullable)
+{
+	LOG("PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame");
+
+	DateTimeStruct *columnData = nullptr;
+	SQLINTEGER *strLenOrNullMap = nullptr;
+	if (m_rowsNumber > 0)
+	{
+		columnData = new DateTimeStruct[m_rowsNumber];
+		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
+	}
+
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+	
+	// Get the column as a list of Timestamp objects.
+	//
+	string script = "list(" + m_name + "['" + columnName + "'])";
+	py::list column = py::extract<py::list>(py::eval(script.c_str(), m_mainNamespace));
+
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
+	{
+		py::object pyObj = column[row];
+
+		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
+		//
+		if (!pyObj.is_none())
+		{
+			SQL_TIMESTAMP_STRUCT timestamp = ExtractTimestampFromPyObject(pyObj.ptr());
+			
+			if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+			{
+				// Cast columnData pointer to SQL_TIMESTAMP_STRUCT so we can assign a TIMESTAMP_STRUCT to it.
+				// This prevents compile errors where DateTimeStruct is SQL_DATE_STRUCT.
+				//
+				SQL_TIMESTAMP_STRUCT *typedColumnData = reinterpret_cast<SQL_TIMESTAMP_STRUCT *>(columnData);
+
+				// TIMESTAMP_STRUCT stores "fraction" as nanoseconds, we change microseconds to nanosec
+				//
+				typedColumnData[row] = timestamp;
+			}
+			else 
+			{
+				SQL_DATE_STRUCT *typedColumnData = reinterpret_cast<SQL_DATE_STRUCT *>(columnData);
+
+				typedColumnData[row] = { timestamp.year, timestamp.month, timestamp.day };
+			}
+		
+			strLenOrNullMap[row] = sizeof(DateTimeStruct);
+		}
+		else
+		{
+			strLenOrNullMap[row] = SQL_NULL_DATA;
+			nullable = SQL_NULLABLE;
+		}
+	}
+
+	columnSize = sizeof(DateTimeStruct);
+	if (m_rowsNumber > 0)
+	{
+		m_data.push_back(static_cast<SQLPOINTER>(columnData));
 	}
 	else
 	{
@@ -1038,6 +1208,62 @@ np::ndarray PythonOutputDataSet::ExtractArrayFromDataFrame(const string columnNa
 	string getNumpyArrayScript = "np.array(" + m_name + "['" + columnName + "'], copy=False)";
 
 	return py::extract<np::ndarray>(py::eval(getNumpyArrayScript.c_str(), m_mainNamespace));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonOutputDataSet::ExtractTimestampFromPyObject
+//
+// Description:
+//  Extract all the time stamp data from a PyObject and return a TIMESTAMP_STRUCT.
+//  Because TIMESTAMP is the most general, we return TIMESTAMP even for Date objects, with defaults.
+//
+SQL_TIMESTAMP_STRUCT PythonOutputDataSet::ExtractTimestampFromPyObject(const PyObject *dateObject)
+{
+	// Import the PyDateTime API
+	//
+	PyDateTime_IMPORT;
+
+	// Make sure this PyObject is in the PyDateTime family so that we can extract data
+	//
+	if (!PyDate_Check(dateObject) &&
+		!PyDateTime_Check(dateObject))
+	{
+		throw runtime_error("Failed to extract timestamp from python object");
+	}
+
+	// Set default values in case of DATE object
+	//
+	SQLSMALLINT year = 1970;
+	SQLUSMALLINT month = 1;
+	SQLUSMALLINT day = 1;
+	SQLUSMALLINT hour = 0;
+	SQLUSMALLINT minute = 0;
+	SQLUSMALLINT second = 0;
+	SQLUINTEGER usec = 0;
+
+	// If this is a PyDate, we only need year/month/day values.
+	// PyDateTime is also a PyDate so will return true on this check.
+	//
+	if (PyDate_Check(dateObject))
+	{
+		year = PyDateTime_GET_YEAR(dateObject);
+		month = PyDateTime_GET_MONTH(dateObject);
+		day = PyDateTime_GET_DAY(dateObject);
+	}
+	
+	// If dateObject is a Date (not DateTime) then we can't extract the time values.
+	//
+	if (PyDateTime_Check(dateObject))
+	{
+		hour = PyDateTime_DATE_GET_HOUR(dateObject);
+		minute = PyDateTime_DATE_GET_MINUTE(dateObject);
+		second = PyDateTime_DATE_GET_SECOND(dateObject);
+		usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
+	}
+
+	// TIMESTAMP_STRUCT stores "fraction" as nanoseconds, so multiply microseconds by 1000
+	//
+	return { year, month, day, hour, minute, second, usec * 1000 };
 }
 
 //--------------------------------------------------------------------------------------------------

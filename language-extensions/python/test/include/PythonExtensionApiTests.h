@@ -188,6 +188,15 @@ namespace ExtensionApiTest
 			void                *expectedColumn,
 			SQLINTEGER          *strLen_or_Ind);
 
+		// Compare a given datetime column with another for equality
+		//
+		template<class DateTimeStruct>
+		void CheckDateTimeColumnEquality(
+			SQLULEN             expectedRowsNumber,
+			boost::python::dict columnToTest,
+			void                *expectedColumn,
+			SQLINTEGER          *strLen_or_Ind);
+
 		// Test GetResultColumn to verify the expected result column information.
 		//
 		void TestGetResultColumn(
@@ -223,6 +232,15 @@ namespace ExtensionApiTest
 			SQLINTEGER               **expectedStrLen_or_Ind,
 			std::vector<std::string> columnNames);
 
+		// Test GetResults to verify the expected datetime results are obtained.
+		//
+		template<class DateTimeStruct>
+		void TestGetDateTimeResults(
+			SQLULEN                  expectedRowsNumber, 
+			SQLPOINTER               *expectedData, 
+			SQLINTEGER               **expectedStrLen_or_Ind, 
+			std::vector<std::string> columnNames);
+
 		// Template function to compare the given column data and nullMap for equality.
 		// For numeric, boolean and integer types.
 		//
@@ -234,6 +252,10 @@ namespace ExtensionApiTest
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 
+		// Template function to compare the given column data and nullMap for equality.
+		// For numeric, boolean and integer types, WITH NULLS. 
+		// Because NULLS for float types are NAN, there are complications that need to be checked for.
+		//
 		template<class SQLType, class DefaultType>
 		void CheckColumnDataEqualityForNullable(
 			SQLULEN    rowsNumber,
@@ -259,6 +281,16 @@ namespace ExtensionApiTest
 			SQLCHAR    *columnData,
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
+
+		// Compare the given datetime column data and nullMap for equality.
+		//
+		template<class DateTimeStruct>
+		void CheckDateTimeDataEquality(
+			SQLULEN        rowsNumber, 
+			void           *expectedColumnData,
+			void           *columnData,
+			SQLINTEGER     *expectedColumnStrLenOrInd,
+			SQLINTEGER     *columnStrLenOrInd);
 
 		// Template function to test output param value and strLenOrInd is as expected.
 		//
@@ -362,6 +394,8 @@ namespace ExtensionApiTest
 		const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
 		const SQLINTEGER m_WCharSize = sizeof(wchar_t);
 		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
+		const SQLINTEGER m_DateTimeSize = sizeof(SQL_TIMESTAMP_STRUCT);
+		const SQLINTEGER m_DateSize = sizeof(SQL_DATE_STRUCT);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_booleanInfo = nullptr;
@@ -371,6 +405,8 @@ namespace ExtensionApiTest
 		std::unique_ptr<ColumnInfo<SQLSMALLINT>> m_smallIntInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_tinyIntInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_charInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQL_TIMESTAMP_STRUCT>> m_dateTimeInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQL_DATE_STRUCT>> m_dateInfo = nullptr;
 
 		const float m_floatNull = NAN;
 		const int m_intNull = 0;

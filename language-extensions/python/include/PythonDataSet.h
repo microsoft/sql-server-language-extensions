@@ -185,6 +185,15 @@ private:
 		SQLPOINTER  data,
 		SQLINTEGER  *strLen_or_Ind);
 
+	// Adds a column of date/datetime values into the python dictionary
+	//
+	template<SQLSMALLINT DataType>
+	void AddDateTimeColumnToDictionary(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER  *strLen_or_Ind);
+
 	// Add column function pointer definition
 	//
 	using fnAddColumn = void (PythonInputDataSet::*)(
@@ -232,6 +241,10 @@ public:
 	// Get one of the columns from the underlying pandas DataFrame
 	//
 	boost::python::numpy::ndarray ExtractArrayFromDataFrame(const std::string columnName);
+
+	// Extract all the time stamp data from a Date / DateTime PyObject and return a TIMESTAMP_STRUCT.
+	//
+	SQL_TIMESTAMP_STRUCT ExtractTimestampFromPyObject(const PyObject *dateObject);
 
 	// Finds the data type of all columns in the DataFrame.
 	//
@@ -288,6 +301,15 @@ private:
 	// Gets the raw column information, adds data to m_data and nullmap to m_columnNullMap
 	//
 	void RetrieveRawColumnFromDataFrame(
+		std::string columnName,
+		SQLULEN     &columnSize,
+		SQLSMALLINT &decimalDigits,
+		SQLSMALLINT &nullable);
+
+	// Gets the datetime column information, adds data to m_data and nullmap to m_columnNullMap
+	//
+	template<class DateTimeStruct>
+	void RetrieveDateTimeColumnFromDataFrame(
 		std::string columnName,
 		SQLULEN     &columnSize,
 		SQLSMALLINT &decimalDigits,
