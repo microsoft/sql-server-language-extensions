@@ -34,7 +34,7 @@ PythonColumn::PythonColumn(
 #if defined(_DEBUG)
 	if (static_cast<size_t>(columnNameLength) != strlen(name))
 	{
-		throw invalid_argument("Invalid parameter name length, it doesn't match string length.");
+		throw invalid_argument("Invalid column name length, it doesn't match string length.");
 	}
 #endif
 

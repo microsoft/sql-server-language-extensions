@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..\..
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET PYTHONEXTENSION_TEST_WORKING_DIR=%ENL_ROOT%\build-output\pythonextension-test\windows
 SET PYTHONEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\pythonextension\windows
-SET GTEST_HOME=%PACKAGES_ROOT%\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0
+SET GTEST_HOME=%PACKAGES_ROOT%\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.1.3
 SET GTEST_LIB_PATH=%GTEST_HOME%\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64
 
 :LOOP
@@ -24,7 +24,7 @@ IF /I %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=debug) ELSE (SET CMA
 
 pushd %PYTHONEXTENSION_TEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
 copy %PYTHONEXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%\pythonextension.* .
-copy %GTEST_LIB_PATH%\%CMAKE_CONFIGURATION%\gtest.dll .
+copy %GTEST_LIB_PATH%\%CMAKE_CONFIGURATION%\gtest* .
 
 IF "%PYTHONHOME%"=="" (SET PYTHONHOME=%PACKAGES_ROOT%\python)
 

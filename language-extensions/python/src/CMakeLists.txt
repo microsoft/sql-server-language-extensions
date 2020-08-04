@@ -44,7 +44,7 @@ set_target_properties(PythonExtension
 )
 
 if (${PLATFORM} STREQUAL linux)
-	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++14 -Wno-unused-parameter -fshort-wchar)
+	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -fshort-wchar)
 
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
@@ -65,8 +65,8 @@ elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 
 	# Compile option /c to compile only
-#
-	set(COMPILE_OPTIONS /c /std:c++14)
+    #
+	set(COMPILE_OPTIONS /c /std:c++17)
 
 	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)
 

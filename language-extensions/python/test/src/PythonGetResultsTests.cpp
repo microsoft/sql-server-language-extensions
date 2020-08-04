@@ -771,7 +771,7 @@ namespace ExtensionApiTest
 			SQLType *expectedColumnData = static_cast<SQLType *>(expectedData[columnNumber]);
 			SQLType *columnData = static_cast<SQLType *>(data[columnNumber]);
 
-			if(!(hasNulls) || is_same<InputCType, bool>::value)
+			if (!(hasNulls) || is_same_v<InputCType, bool>)
 			{
 				CheckColumnDataEquality<SQLType>(
 					rowsNumber,
@@ -796,7 +796,7 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				if (is_same<InputCType, int>::value)
+				if constexpr (is_same_v<InputCType, int>)
 				{
 					CheckColumnDataEqualityForNullable<SQLType, SQLBIGINT>(
 						rowsNumber,
@@ -863,7 +863,8 @@ namespace ExtensionApiTest
 	// Description:
 	//  Template function to compare the given column data
 	//  and nullMap with rowsNumber for equality.
-	//  Nullable columns have complications with NAN and default values.
+	//  Nullable columns have complications - because the python value is None or NAN,
+	//  the type of the output is not the same as the type of the input; it will be broad types.
 	//
 	template<class SQLType, class DefaultType>
 	void PythonExtensionApiTests::CheckColumnDataEqualityForNullable(
@@ -892,11 +893,11 @@ namespace ExtensionApiTest
 				{
 					EXPECT_EQ(columnData[index], static_cast<DefaultType>(expectedColumnData[index]));
 				}
-				else if(is_same<DefaultType, SQLDOUBLE>::value)
+				else if constexpr (is_same_v<DefaultType, SQLDOUBLE>)
 				{
 					// Double NULLs will be NAN.
 					//
-					EXPECT_TRUE(isnan(static_cast<SQLDOUBLE>(columnData[index])));
+					EXPECT_TRUE(isnan(columnData[index]));
 				}
 				else
 				{
@@ -1169,11 +1170,11 @@ namespace ExtensionApiTest
 	//
 	template<class DateTimeStruct>
 	void PythonExtensionApiTests::CheckDateTimeDataEquality(
-		SQLULEN    rowsNumber,
-		void       *expectedColumnData,
-		void       *columnData,
-		SQLINTEGER *expectedColumnStrLenOrInd,
-		SQLINTEGER *columnStrLenOrInd)
+		SQLULEN        rowsNumber,
+		DateTimeStruct *expectedColumnData,
+		DateTimeStruct *columnData,
+		SQLINTEGER     *expectedColumnStrLenOrInd,
+		SQLINTEGER     *columnStrLenOrInd)
 	{
 		if (rowsNumber == 0)
 		{
@@ -1189,31 +1190,16 @@ namespace ExtensionApiTest
 
 				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
 				{
-					if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
-					{
-						SQL_TIMESTAMP_STRUCT expectedTimestamp = 
-							static_cast<SQL_TIMESTAMP_STRUCT *>(expectedColumnData)[index];
-						SQL_TIMESTAMP_STRUCT paramTimestamp =
-							static_cast<SQL_TIMESTAMP_STRUCT *>(columnData)[index];
+					EXPECT_EQ(expectedColumnData->year, columnData->year);
+					EXPECT_EQ(expectedColumnData->month, columnData->month);
+					EXPECT_EQ(expectedColumnData->day, columnData->day);
 
-						EXPECT_EQ(expectedTimestamp.year, paramTimestamp.year);
-						EXPECT_EQ(expectedTimestamp.month, paramTimestamp.month);
-						EXPECT_EQ(expectedTimestamp.day, paramTimestamp.day);
-						EXPECT_EQ(expectedTimestamp.hour, paramTimestamp.hour);
-						EXPECT_EQ(expectedTimestamp.minute, paramTimestamp.minute);
-						EXPECT_EQ(expectedTimestamp.second, paramTimestamp.second);
-						EXPECT_EQ(expectedTimestamp.fraction, paramTimestamp.fraction);
-					}
-					else if (is_same<DateTimeStruct, SQL_DATE_STRUCT>::value)
+					if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 					{
-						SQL_DATE_STRUCT expectedDate =
-							static_cast<SQL_DATE_STRUCT *>(expectedColumnData)[index];
-						SQL_DATE_STRUCT paramTimestamp =
-							static_cast<SQL_DATE_STRUCT *>(columnData)[index];
-
-						EXPECT_EQ(expectedDate.year, paramTimestamp.year);
-						EXPECT_EQ(expectedDate.month, paramTimestamp.month);
-						EXPECT_EQ(expectedDate.day, paramTimestamp.day);
+						EXPECT_EQ(expectedColumnData->hour, columnData->hour);
+						EXPECT_EQ(expectedColumnData->minute, columnData->minute);
+						EXPECT_EQ(expectedColumnData->second, columnData->second);
+						EXPECT_EQ(expectedColumnData->fraction, columnData->fraction);
 					}
 				}
 			}

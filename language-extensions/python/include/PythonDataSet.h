@@ -187,7 +187,7 @@ private:
 
 	// Adds a column of date/datetime values into the python dictionary
 	//
-	template<SQLSMALLINT DataType>
+	template<class DateTimeStruct>
 	void AddDateTimeColumnToDictionary(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,

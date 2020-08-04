@@ -368,6 +368,14 @@ namespace ExtensionApiTest
 			5,       // paramSize
 			true);   // isFixedType
 
+		// Test empty NCHAR(5) value
+		//
+		TestWStringParameter(
+			0,       // paramNumber
+			L"",
+			5,       // paramSize
+			true);   // isFixedType
+
 		// Test simple NCHAR(6) value with parameter length less than size - should be padded.
 		//
 		TestWStringParameter(
@@ -525,7 +533,7 @@ namespace ExtensionApiTest
 		SQL_TIMESTAMP_STRUCT paramValue = { 9999,12,31,23,59,59,999999 };
 		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 			0,          // paramNumber
-			&paramValue
+			paramValue
 		);
 
 		// Test min SQL_TIMESTAMP_STRUCT value
@@ -533,7 +541,7 @@ namespace ExtensionApiTest
 		paramValue = { 1,1,1,0,0,0,0 };
 		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 			0,          // paramNumber
-			&paramValue
+			paramValue
 		);
 
 		// Test normal SQL_TIMESTAMP_STRUCT value
@@ -541,15 +549,15 @@ namespace ExtensionApiTest
 		paramValue = { 1470,7,27,17,47,52,123456 };
 		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 			0,          // paramNumber
-			&paramValue
+			paramValue
 		);
 
 		// Test null SQL_TIMESTAMP_STRUCT value
 		//
 		TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
-			0,       // paramNumber
-			nullptr, // paramValue
-			true     // isNull
+			0,   // paramNumber
+			{},  // paramValue
+			true // isNull
 		);
 	}
 
@@ -564,7 +572,7 @@ namespace ExtensionApiTest
 		SQL_DATE_STRUCT paramValue = { 9999,12,31 };
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
 			0,          // paramNumber
-			&paramValue 
+			paramValue 
 		);
 		
 		// Test min SQL_TIMESTAMP_STRUCT value
@@ -572,7 +580,7 @@ namespace ExtensionApiTest
 		paramValue = { 1,1,1 };
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
 			0,          // paramNumber
-			&paramValue
+			paramValue
 		);
 
 		// Test normal SQL_TIMESTAMP_STRUCT value
@@ -580,15 +588,15 @@ namespace ExtensionApiTest
 		paramValue = { 1470,7,27 };
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
 			0,          // paramNumber
-			&paramValue
+			paramValue
 		);
 
 		// Test null SQL_TIMESTAMP_STRUCT value
 		//
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
-			0,       // paramNumber
-			nullptr, // paramValue
-			true     // isNull
+			0,   // paramNumber
+			{},  // paramValue
+			true // isNull
 			);
 	}
 
@@ -607,10 +615,11 @@ namespace ExtensionApiTest
 		bool        validate)
 	{
 		string paramName = "param" + to_string(paramNumber);
+		string atParam = "@" + paramName;
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+			static_cast<void *>(const_cast<char *>(atParam.c_str())));
 
-		int paramNameLength = paramName.length() + 1;
+		int paramNameLength = atParam.length();
 
 		SQLType *pParamValue = nullptr;
 
@@ -675,12 +684,11 @@ namespace ExtensionApiTest
 		bool          validate)
 	{
 		string paramName = "param" + to_string(paramNumber);
+		string atParam = "@" + paramName;
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+			static_cast<void *>(const_cast<char *>(atParam.c_str())));
 
-		// +1 to accomodate "@"
-		//
-		int paramNameLength = paramName.length() + 1;
+		int paramNameLength = atParam.length();
 
 		vector<char> fixedParamValue(paramSize + 1);
 		SQLINTEGER strLenOrInd = 0;
@@ -765,33 +773,27 @@ namespace ExtensionApiTest
 		bool          validate)
 	{
 		string paramName = "param" + to_string(paramNumber);
+		string atParam = "@" + paramName;
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+			static_cast<void *>(const_cast<char *>(atParam.c_str())));
 
-		// +1 to accomodate "@"
-		//
-		int paramNameLength = paramName.length() + 1;
+		int paramNameLength = atParam.length();
 
-		vector<wchar_t> fixedParamValue(paramSize + 1);
 		SQLINTEGER strLenOrInd = 0;
 		wchar_t *expectedParamValue = nullptr;
+		vector<wchar_t> fixedParamValue;
 
 		if (paramValue != nullptr)
 		{
-			SQLULEN paramLength = wcslen(paramValue);
+			SQLULEN paramLength = GetWStringLength(paramValue);
 
-			copy(paramValue, paramValue + min(paramLength, paramSize), fixedParamValue.begin());
+			fixedParamValue.assign(paramValue, paramValue + min(paramLength, paramSize));
 
 			if (isFixedType)
 			{
 				strLenOrInd = paramSize;
 
-				// pad the rest of the array
-				//
-				for (SQLULEN index = paramLength; index < paramSize; ++index)
-				{
-					fixedParamValue[index] = ' ';
-				}
+				fixedParamValue.resize(paramSize + 1, ' ');
 			}
 			else
 			{
@@ -830,20 +832,33 @@ namespace ExtensionApiTest
 			if (paramValue != nullptr)
 			{
 				ASSERT_FALSE(obj.is_none());
-
+				
 				SQLINTEGER strlen = strLenOrInd / sizeof(wchar_t);
 
-				// Convert to then extract from python object
-				// because of differences in wchar handling
+				// Get length of the unicode object in pyObj
 				//
-				py::object tempObj = py::object(py::handle<>(
-					PyUnicode_FromKindAndData(sizeof(wchar_t), expectedParamValue, strlen)
-					));
+				int size = PyUnicode_GET_LENGTH(obj.ptr());
 
-				wstring expected = py::extract<wstring>(tempObj);
-				wstring actual = py::extract<wstring>(obj);
+				EXPECT_EQ(strlen, size);
 
-				EXPECT_STREQ(actual.c_str(), expected.c_str());
+				// Get a byte representation of the string as UTF16.
+				// PyUnicode_AsUTF16String adds a BOM to the front of every string.
+				//
+				char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(obj.ptr()));
+
+				// Ignore the 2 byte BOM added above
+				//
+				char *actualBytes = utf16str + 2;
+
+				// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
+				// don't work properly for wstrings in Linux with -fshort-wchar
+				//
+				char *expectedParamBytes = reinterpret_cast<char *>(expectedParamValue);
+
+				for (SQLINTEGER i = 0; i < strLenOrInd; ++i)
+				{
+					EXPECT_EQ(actualBytes[i], expectedParamBytes[i]);
+				}
 			}
 			else
 			{
@@ -866,15 +881,16 @@ namespace ExtensionApiTest
 		bool          validate)
 	{
 		string paramName = "param" + to_string(paramNumber);
+		string atParam = "@" + paramName;
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+			static_cast<void *>(const_cast<char *>(atParam.c_str())));
 
-		int paramNameLength = paramName.length() + 1;
+		int paramNameLength = atParam.length();
 
 		vector<SQLCHAR> fixedParamValue(paramSize);
 		SQLCHAR *expectedParamValue = nullptr;
 
-		SQLINTEGER strLenOrInd = 0;
+		SQLULEN strLenOrInd = 0;
 
 		if (paramValue != nullptr)
 		{
@@ -942,7 +958,7 @@ namespace ExtensionApiTest
 				// Always compare using strLenOrInd because
 				// we copy only those many bytes into the raw parameter
 				//
-				for (SQLINTEGER i = 0; i < strLenOrInd; ++i)
+				for (SQLULEN i = 0; i < strLenOrInd; ++i)
 				{
 					EXPECT_EQ(buffer[i], expectedParamValue[i]);
 				}
@@ -961,17 +977,25 @@ namespace ExtensionApiTest
 	//
 	template<class DateTimeStruct, SQLSMALLINT dataType>
 	void PythonExtensionApiTests::TestDateTimeParameter(
-		int         paramNumber,
-		void        *paramValue,
-		bool        isNull,
-		SQLSMALLINT inputOutputType,
-		bool        validate)
+		int            paramNumber,
+		DateTimeStruct paramValue,
+		bool           isNull,
+		SQLSMALLINT    inputOutputType,
+		bool           validate)
 	{
 		string paramName = "param" + to_string(paramNumber);
+		string atParam = "@" + paramName;
 		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(("@" + paramName).c_str())));
+			static_cast<void *>(const_cast<char *>(atParam.c_str())));
 
-		int paramNameLength = paramName.length() + 1;
+		int paramNameLength = atParam.length();
+
+		SQLINTEGER strLenOrInd = SQL_NULL_DATA;
+
+		if (!isNull)
+		{
+			strLenOrInd = sizeof(DateTimeStruct);
+		}
 
 		SQLRETURN result = SQL_ERROR;
 		result = InitParam(
@@ -981,11 +1005,11 @@ namespace ExtensionApiTest
 			unsignedParamName,
 			paramNameLength,
 			dataType,
-			sizeof(DateTimeStruct),                    // paramSize
-			0,                                         // decimalDigits
-			paramValue,                                // paramValue
-			paramValue != nullptr ? 0 : SQL_NULL_DATA, // strLenOrInd
-			inputOutputType);                          // inputOutputType
+			sizeof(DateTimeStruct), // paramSize
+			0,                      // decimalDigits
+			&paramValue,
+			strLenOrInd,
+			inputOutputType);       // inputOutputType
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 
@@ -1006,46 +1030,32 @@ namespace ExtensionApiTest
 				if (dataType == SQL_C_TYPE_DATE)
 				{
 					ASSERT_TRUE(PyDate_CheckExact(dateObject));
-
-					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
-					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
-					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
-
-					// This is already a SQL_DATE_STRUCT but we need to cast it to access the member variables.
-					//
-					SQL_DATE_STRUCT date = *(static_cast<SQL_DATE_STRUCT *>(paramValue));
-
-					EXPECT_EQ(year, date.year);
-					EXPECT_EQ(month, date.month);
-					EXPECT_EQ(day, date.day);
-
 				}
-				else if (dataType == SQL_C_TYPE_TIMESTAMP)
+
+				SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+				SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+				SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+
+				EXPECT_EQ(year, paramValue.year);
+				EXPECT_EQ(month, paramValue.month);
+				EXPECT_EQ(day, paramValue.day);
+
+				if constexpr (dataType == SQL_C_TYPE_TIMESTAMP)
 				{
 					ASSERT_TRUE(PyDateTime_CheckExact(dateObject));
 
-					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
-					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
-					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
 					SQLUSMALLINT hour = PyDateTime_DATE_GET_HOUR(dateObject);
 					SQLUSMALLINT minute = PyDateTime_DATE_GET_MINUTE(dateObject);
 					SQLUSMALLINT second = PyDateTime_DATE_GET_SECOND(dateObject);
 					SQLUSMALLINT usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
 
-					// This is already a SQL_TIMESTAMP_STRUCT but we need to cast it to access the member variables.
-					//
-					SQL_TIMESTAMP_STRUCT timestamp = *(static_cast<SQL_TIMESTAMP_STRUCT *>(paramValue));
-
-					EXPECT_EQ(year, timestamp.year);
-					EXPECT_EQ(month, timestamp.month);
-					EXPECT_EQ(day, timestamp.day);
-					EXPECT_EQ(hour, timestamp.hour);
-					EXPECT_EQ(minute, timestamp.minute);
-					EXPECT_EQ(second, timestamp.second);
+					EXPECT_EQ(hour, paramValue.hour);
+					EXPECT_EQ(minute, paramValue.minute);
+					EXPECT_EQ(second, paramValue.second);
 
 					// Fraction is stored in nanoseconds, Python uses microseconds
 					//
-					EXPECT_EQ(usec, timestamp.fraction / 1000);
+					EXPECT_EQ(usec, paramValue.fraction / 1000);
 				}
 			}
 			else

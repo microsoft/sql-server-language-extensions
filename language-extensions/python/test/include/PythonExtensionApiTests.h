@@ -56,6 +56,10 @@ namespace ExtensionApiTest
 		//
 		SQLINTEGER GetMaxLength(SQLINTEGER *strLenOrInd, SQLULEN rowsNumber);
 
+		// Get length of a wstring
+		//
+		SQLULEN GetWStringLength(const wchar_t *str);
+
 		template<class SQLType, SQLSMALLINT dataType>
 		void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
 
@@ -91,11 +95,11 @@ namespace ExtensionApiTest
 		//
 		template<class DateTimeStruct, SQLSMALLINT dataType>
 		void TestDateTimeParameter(
-			int         paramNumber,
-			void        *paramValue,
-			bool        isNull = false,
-			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-			bool        validate = true);
+			int            paramNumber,
+			DateTimeStruct paramValue,
+			bool           isNull = false,
+			SQLSMALLINT    inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+			bool           validate = true);
 
 		// Test a string parameter
 		//
@@ -287,8 +291,8 @@ namespace ExtensionApiTest
 		template<class DateTimeStruct>
 		void CheckDateTimeDataEquality(
 			SQLULEN        rowsNumber, 
-			void           *expectedColumnData,
-			void           *columnData,
+			DateTimeStruct *expectedColumnData,
+			DateTimeStruct *columnData,
 			SQLINTEGER     *expectedColumnStrLenOrInd,
 			SQLINTEGER     *columnStrLenOrInd);
 

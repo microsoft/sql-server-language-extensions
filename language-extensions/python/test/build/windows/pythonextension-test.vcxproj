@@ -45,7 +45,7 @@
     <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1020</ExternalBoostRoot>
     <ExternalBoostWindowsRoot>$(ExternalBoostRoot)\Windows</ExternalBoostWindowsRoot>
     <PythonRoot>$(PackageDirectory)\python</PythonRoot>
-    <GtestHome>$(EnlRoot)\packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.0</GtestHome>
+    <GtestHome>$(EnlRoot)\packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.1.3</GtestHome>
     <GtestInclude>$(GtestHome)\build\native\include</GtestInclude>
     <GtestDebugLib>$(GtestHome)\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\Debug</GtestDebugLib>
     <GtestReleaseLib>$(GtestHome)\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\Release</GtestReleaseLib>
@@ -71,7 +71,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>
-      $(GtestDebugLib)\gtest.lib;
+      $(GtestDebugLib)\gtestd.lib;
       $(ExtensionBuildDirectory)\Windows\Debug\pythonextension.lib;
       $(ExternalBoostWindowsRoot)\lib-debug\libboost_python37-vc140-mt-gd-x64-1_69.lib;
       $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy37-vc140-mt-gd-x64-1_69.lib;
@@ -113,6 +113,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <SDLCheck>true</SDLCheck>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -130,7 +131,7 @@
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       copy /Y "$(ExtensionBuildDirectory)\Windows\Debug\pythonextension.dll" "$(TargetDir)";
-      copy /Y "$(GtestDebugLib)\gtest.dll" "$(TargetDir)"
+      copy /Y "$(GtestDebugLib)\gtestd.dll" "$(TargetDir)"
       </Command>
     </PostBuildEvent>
     <PostBuildEvent>

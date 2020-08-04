@@ -289,7 +289,7 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(py::object mainNames
 
 		if (!tempObj.is_none())
 		{
-			if (sizeof(CharType) == sizeof(char))
+			if constexpr (is_same_v<CharType,char>)
 			{
 				// Check to make sure the extracted data exists and is of the correct type
 				//

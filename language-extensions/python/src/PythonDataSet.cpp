@@ -74,9 +74,9 @@ const PythonInputDataSet::AddColumnFnMap PythonInputDataSet::sm_FnAddColumnMap =
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnAddColumn>(&PythonInputDataSet::AddRawColumnToDictionary)},
 	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddDateTimeColumnToDictionary<SQL_C_TYPE_TIMESTAMP>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddDateTimeColumnToDictionary<SQL_TIMESTAMP_STRUCT>)},
 	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
-	 static_cast<fnAddColumn>(&PythonInputDataSet::AddDateTimeColumnToDictionary<SQL_C_TYPE_DATE>)},
+	 static_cast<fnAddColumn>(&PythonInputDataSet::AddDateTimeColumnToDictionary<SQL_DATE_STRUCT>)},
 };
 
 // Function map - maps a SQL data type to the appropriate function that
@@ -608,7 +608,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 // Description:
 //  Adds a datetime column to the python dictionary that will be the DataFrame
 //
-template<SQLSMALLINT DataType>
+template<class DateTimeStruct>
 void PythonInputDataSet::AddDateTimeColumnToDictionary(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -623,6 +623,8 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 	//
 	py::tuple shape = py::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
+
+	DateTimeStruct *dateData = static_cast<DateTimeStruct *>(data);
 
 	for (SQLULEN row = 0; row < rowsNumber; ++row)
 	{
@@ -639,17 +641,17 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 			PyDateTime_IMPORT;
 			PyObject *dtObject = Py_None;
 
-			if (DataType == SQL_C_TYPE_DATE)
+			if constexpr(is_same_v<DateTimeStruct, SQL_DATE_STRUCT>)
 			{
-				SQL_DATE_STRUCT dateParam = *(static_cast<SQL_DATE_STRUCT *>(data) + row);
+				SQL_DATE_STRUCT dateParam = dateData[row];
 
 				// Create a Python Date object
 				//
 				dtObject = PyDate_FromDate(dateParam.year, dateParam.month, dateParam.day);
 			}
-			else if (DataType == SQL_C_TYPE_TIMESTAMP)
+			else if constexpr(is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 			{
-				SQL_TIMESTAMP_STRUCT timeStampParam = *(static_cast<SQL_TIMESTAMP_STRUCT *>(data) + row);
+				SQL_TIMESTAMP_STRUCT timeStampParam = dateData[row];
 
 				// "fraction" is stored in nanoseconds, we need microseconds.
 				//
@@ -853,7 +855,7 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 
 				// If the data is not NAN or INF, we set it to the extracted data.
 				//
-				if(!(is_same<NullType, float>::value && (isnan(data) || isinf(data))))
+				if (!(is_same_v<NullType, float> && (isnan(data) || isinf(data))))
 				{
 					columnData[row] = data;
 					nullMap[row] = sizeof(SQLType);
@@ -1157,22 +1159,13 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 		{
 			SQL_TIMESTAMP_STRUCT timestamp = ExtractTimestampFromPyObject(pyObj.ptr());
 			
-			if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+			if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 			{
-				// Cast columnData pointer to SQL_TIMESTAMP_STRUCT so we can assign a TIMESTAMP_STRUCT to it.
-				// This prevents compile errors where DateTimeStruct is SQL_DATE_STRUCT.
-				//
-				SQL_TIMESTAMP_STRUCT *typedColumnData = reinterpret_cast<SQL_TIMESTAMP_STRUCT *>(columnData);
-
-				// TIMESTAMP_STRUCT stores "fraction" as nanoseconds, we change microseconds to nanosec
-				//
-				typedColumnData[row] = timestamp;
+				columnData[row] = timestamp;
 			}
 			else 
 			{
-				SQL_DATE_STRUCT *typedColumnData = reinterpret_cast<SQL_DATE_STRUCT *>(columnData);
-
-				typedColumnData[row] = { timestamp.year, timestamp.month, timestamp.day };
+				columnData[row] = { timestamp.year, timestamp.month, timestamp.day };
 			}
 		
 			strLenOrNullMap[row] = sizeof(DateTimeStruct);

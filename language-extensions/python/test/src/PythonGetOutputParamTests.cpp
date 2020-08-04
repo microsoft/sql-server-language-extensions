@@ -792,7 +792,7 @@ namespace ExtensionApiTest
 		{
 			TestDateTimeParameter<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 				i,                      // paramNumber
-				&p1,                    // paramValue
+				p1,                     // paramValue
 				false,                  // isNull
 				SQL_PARAM_INPUT_OUTPUT,
 				false);                 // validate
@@ -856,7 +856,7 @@ namespace ExtensionApiTest
 		{
 			TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
 				i,                      // paramNumber
-				nullptr,                // paramValue
+				{},                     // paramValue
 				true,                   // isNull
 				SQL_PARAM_INPUT_OUTPUT,
 				false);                 // validate
@@ -1138,7 +1138,7 @@ namespace ExtensionApiTest
 
 		for (SQLULEN i = 0; i < expectedParamValueVector.size(); ++i)
 		{
-			void *expectedParamValue = expectedParamValueVector[i];
+			DateTimeStruct *expectedParamValue = expectedParamValueVector[i];
 			SQLINTEGER expectedStrLenOrInd = expectedStrLenOrIndVector[i];
 
 			SQLPOINTER paramValue = nullptr;
@@ -1157,25 +1157,24 @@ namespace ExtensionApiTest
 
 			if (expectedParamValue != nullptr)
 			{
-				if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+				DateTimeStruct expectedValue = *expectedParamValue;
+				DateTimeStruct actualValue = *(static_cast<DateTimeStruct *>(paramValue));
+			
+				if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 				{
-					SQL_TIMESTAMP_STRUCT expectedTimestamp = *(static_cast<SQL_TIMESTAMP_STRUCT *>(expectedParamValue));
-					SQL_TIMESTAMP_STRUCT paramTimestamp = *(static_cast<SQL_TIMESTAMP_STRUCT *>(paramValue));
-					EXPECT_EQ(expectedTimestamp.year, paramTimestamp.year);
-					EXPECT_EQ(expectedTimestamp.month, paramTimestamp.month);
-					EXPECT_EQ(expectedTimestamp.day, paramTimestamp.day);
-					EXPECT_EQ(expectedTimestamp.hour, paramTimestamp.hour);
-					EXPECT_EQ(expectedTimestamp.minute, paramTimestamp.minute);
-					EXPECT_EQ(expectedTimestamp.second, paramTimestamp.second);
-					EXPECT_EQ(expectedTimestamp.fraction, paramTimestamp.fraction);
+					EXPECT_EQ(expectedValue.year, actualValue.year);
+					EXPECT_EQ(expectedValue.month, actualValue.month);
+					EXPECT_EQ(expectedValue.day, actualValue.day);
+					EXPECT_EQ(expectedValue.hour, actualValue.hour);
+					EXPECT_EQ(expectedValue.minute, actualValue.minute);
+					EXPECT_EQ(expectedValue.second, actualValue.second);
+					EXPECT_EQ(expectedValue.fraction, actualValue.fraction);
 				}
-				else if (is_same<DateTimeStruct, SQL_DATE_STRUCT>::value)
+				else
 				{
-					SQL_DATE_STRUCT expectedDate = *(static_cast<SQL_DATE_STRUCT *>(expectedParamValue));
-					SQL_DATE_STRUCT paramDate = *(static_cast<SQL_DATE_STRUCT *>(paramValue));
-					EXPECT_EQ(expectedDate.year, paramDate.year);
-					EXPECT_EQ(expectedDate.month, paramDate.month);
-					EXPECT_EQ(expectedDate.day, paramDate.day);
+					EXPECT_EQ(expectedValue.year, actualValue.year);
+					EXPECT_EQ(expectedValue.month, actualValue.month);
+					EXPECT_EQ(expectedValue.day, actualValue.day);
 				}
 			}
 			else

@@ -399,6 +399,34 @@ namespace ExtensionApiTest
 		return maxLen;
 	}
 
+	// Name: GetWStringLength
+	//
+	// Description:
+	//  Utility function to get the length of a wchar_t *.
+	//  wcslen does not work in Linux with -fshort-wchar, so we use this function instead.
+	//
+	SQLULEN PythonExtensionApiTests::GetWStringLength(const wchar_t *wstr)
+	{
+		SQLULEN distance = -1;
+
+		// If nullptr, return
+		//
+		if (wstr)
+		{
+			// Get distance from end of string to beginning
+			//
+			const wchar_t *newstr = wstr;
+			while (*newstr)
+			{
+				++newstr;
+			}
+
+			distance = newstr - wstr;
+		}
+
+		return distance;
+	}
+
 	// Name: ColumnInfo
 	//
 	// Description:
@@ -645,6 +673,8 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
 
+		DateTimeStruct *expectedDateTimeColumn = static_cast<DateTimeStruct *>(expectedColumn);
+
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
 			py::object val = columnToTest[index];
@@ -662,41 +692,35 @@ namespace ExtensionApiTest
 
 				PyObject *dateObject = val.ptr();
 
-				if (is_same<DateTimeStruct, SQL_TIMESTAMP_STRUCT>::value)
+				DateTimeStruct expectedValue = expectedDateTimeColumn[index];
+
+				SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
+				SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
+				SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
+
+				if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 				{
 					EXPECT_TRUE(PyDateTime_CheckExact(dateObject));
-
-					SQL_TIMESTAMP_STRUCT expectedTimestamp = static_cast<SQL_TIMESTAMP_STRUCT *>(expectedColumn)[index];
-
-					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
-					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
-					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
 					SQLUSMALLINT hour = PyDateTime_DATE_GET_HOUR(dateObject);
 					SQLUSMALLINT minute = PyDateTime_DATE_GET_MINUTE(dateObject);
 					SQLUSMALLINT second = PyDateTime_DATE_GET_SECOND(dateObject);
 					SQLUINTEGER usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
 
-					EXPECT_EQ(expectedTimestamp.year, year);
-					EXPECT_EQ(expectedTimestamp.month, month);
-					EXPECT_EQ(expectedTimestamp.day, day);
-					EXPECT_EQ(expectedTimestamp.hour, hour);
-					EXPECT_EQ(expectedTimestamp.minute, minute);
-					EXPECT_EQ(expectedTimestamp.second, second);
-					EXPECT_EQ(expectedTimestamp.fraction, usec * 1000);
+					EXPECT_EQ(expectedValue.year, year);
+					EXPECT_EQ(expectedValue.month, month);
+					EXPECT_EQ(expectedValue.day, day);
+					EXPECT_EQ(expectedValue.hour, hour);
+					EXPECT_EQ(expectedValue.minute, minute);
+					EXPECT_EQ(expectedValue.second, second);
+					EXPECT_EQ(expectedValue.fraction, usec * 1000);
 				}
-				else if (is_same<DateTimeStruct, SQL_DATE_STRUCT>::value)
+				else
 				{
 					EXPECT_TRUE(PyDate_CheckExact(dateObject));
 
-					SQL_DATE_STRUCT expectedDate = static_cast<SQL_DATE_STRUCT *>(expectedColumn)[index];
-
-					SQLSMALLINT year = PyDateTime_GET_YEAR(dateObject);
-					SQLUSMALLINT month = PyDateTime_GET_MONTH(dateObject);
-					SQLUSMALLINT day = PyDateTime_GET_DAY(dateObject);
-
-					EXPECT_EQ(expectedDate.year, year);
-					EXPECT_EQ(expectedDate.month, month);
-					EXPECT_EQ(expectedDate.day, day);
+					EXPECT_EQ(expectedValue.year, year);
+					EXPECT_EQ(expectedValue.month, month);
+					EXPECT_EQ(expectedValue.day, day);
 				}
 			}
 		}
