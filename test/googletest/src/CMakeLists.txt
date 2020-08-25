@@ -5,6 +5,8 @@ cmake_minimum_required (VERSION 3.5)
 
 project(googletest)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Populate the CMakeLists.txt.in with the actual values from build
 #
 configure_file(${PLATFORM}/CMakeLists.txt.in googletest-download/CMakeLists.txt)

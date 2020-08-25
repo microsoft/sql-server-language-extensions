@@ -379,7 +379,7 @@ namespace ExtensionApiTest
 	{
 		string scriptString = "rawChars <- charToRaw(paste(letters[1:26], collapse=''));"
 			"OutputDataSet <- data.frame(rawChars);"
-			"print(OutputDataSet)";
+			"message(OutputDataSet)";
 
 		// Initialize with a Session that executes the above script
 		// that assigns creates an OutputDataSet with a single raw column.
@@ -410,7 +410,7 @@ namespace ExtensionApiTest
 
 		scriptString = "rawChars <- raw(0);"
 			"OutputDataSet <- data.frame(rawChars);"
-			"print(OutputDataSet)";
+			"message(OutputDataSet)";
 
 		// Initialize with a Session that executes the above script
 		// that assigns creates an OutputDataSet with a null raw column.
@@ -520,7 +520,7 @@ namespace ExtensionApiTest
 	{
 		string scriptString = ""
 			"OutputDataSet <- data.frame(intCol = as.integer(c()))\n"
-			"print(OutputDataSet)";
+			"message(OutputDataSet)";
 
 		// Initialize with a Session that executes the above script
 		// that creates an empty row 1 column OutputDataSet.

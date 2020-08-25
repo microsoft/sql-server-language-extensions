@@ -17,11 +17,13 @@ file(TO_CMAKE_PATH ${REXTENSIONTEST_HOME}/src REXTENSIONTEST_SRC_DIR)
 file(GLOB REXTENSIONTEST_SOURCE_FILES ${REXTENSIONTEST_SRC_DIR}/*.cpp ${REXTENSIONTEST_SRC_DIR}/${PLATFORM}/*.cpp)
 
 add_executable(RExtension-test
-  ${REXTENSIONTEST_SOURCE_FILES}
+	${REXTENSIONTEST_SOURCE_FILES}
 )
 
+set(CMAKE_CXX_STANDARD 17)
+
 if(${PLATFORM} STREQUAL linux)
-	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++14 -Wno-unused-parameter)
+	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -Wno-unused-parameter)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
 
 	# Find and add linkage to dl library for dynamic loading
@@ -41,7 +43,7 @@ if(${PLATFORM} STREQUAL linux)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/libRInside.a RINSIDE_LIB)
 
 elseif(${PLATFORM} STREQUAL windows)
-	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -std=c++14 -Wno-unused-parameter)
+	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -Wno-unused-parameter -Wno-cast-function-type)
 
 	# Set the DLLEXPORT variable to export symbols
 	#

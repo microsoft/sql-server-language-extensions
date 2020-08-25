@@ -17,7 +17,7 @@ apt-get --no-install-recommends -y install curl zip unzip apt-transport-https li
 # Add R CRAN repository.
 #
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/'
+add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran40/'
 apt-get update
 
 # Install R runtime.
@@ -39,6 +39,10 @@ if [ -z "${R_HOME}" ]; then
 	fi
 fi
 R_LIBRARY_PATH=${R_HOME}/library
+
+# Remove codetools from default library so it doesn't interfere with Rcpp installation below.
+#
+${R_HOME}/bin/R -e "remove.packages('codetools', lib = '${R_LIBRARY_PATH}')"
 
 # Install Rcpp.
 #

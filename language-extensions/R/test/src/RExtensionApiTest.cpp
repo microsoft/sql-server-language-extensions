@@ -71,7 +71,7 @@ namespace ExtensionApiTest
 #ifdef _WIN64
 	const string RExtensionApiTest::m_RHomePath = "";
 #else
-	const string RExtensionApiTest::m_RHomePath = "/opt/microsoft/ropen/3.5.2/lib64/R";
+	const string RExtensionApiTest::m_RHomePath = "/usr/lib/R";
 #endif
 
 	// Per-test-suite set-up.
@@ -228,10 +228,14 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(m_columnNameString.c_str()))
 			);
 
+#ifdef _WIN64
+		m_scriptString = "message('" + m_printMessage + "');"
+#else
 		m_scriptString = "print('" + m_printMessage + "');"
+#endif
 			"OutputDataSet <- InputDataSet;"
-			"print('InputDataSet:'); print(InputDataSet);"
-			"print('OutputDataSet:'); print(OutputDataSet);";
+			"message('InputDataSet:'); message(InputDataSet);"
+			"message('OutputDataSet:'); message(OutputDataSet);";
 		m_script = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(m_scriptString.c_str()))
 			);

@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..
 SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
 SET REXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-3.6.3-win
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.2-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
 REM Find R_HOME and CMAKE_ROOT from user, or set to default.
@@ -63,10 +63,10 @@ SET BUILD_OUTPUT=%REXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%
 MKDIR %BUILD_OUTPUT%
 PUSHD %BUILD_OUTPUT%
 
-REM Make sure g++ and R.dll is in the PATH.
+REM Make sure g++, mingw32-make and R.dll are in the PATH.
 REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
 REM
-SET PATH=C:\Rtools\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
+SET PATH=C:\rtools40\mingw64\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
 
 REM Call cmake
 REM

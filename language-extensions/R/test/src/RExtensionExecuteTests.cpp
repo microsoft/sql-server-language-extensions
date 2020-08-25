@@ -315,7 +315,7 @@ namespace ExtensionApiTest
 		//
 		string output = testing::internal::GetCapturedStdout();
 		cout << output;
-		ASSERT_TRUE(output.find("[1] \"" + m_printMessage + "\"") != string::npos);
+		ASSERT_TRUE(output.find(m_printMessage) != string::npos);
 
 		// Test InputDataSet
 		//
@@ -389,7 +389,7 @@ namespace ExtensionApiTest
 		{
 			// Test print message was printed correctly
 			//
-			ASSERT_TRUE(output.find("[1] \"" + m_printMessage + "\"") != string::npos);
+			ASSERT_TRUE(output.find(m_printMessage) != string::npos);
 
 			// Test InputDataSet
 			//
@@ -450,7 +450,7 @@ namespace ExtensionApiTest
 		{
 			// Test print message was printed correctly
 			//
-			ASSERT_TRUE(output.find("[1] \"" + m_printMessage + "\"") != string::npos);
+			ASSERT_TRUE(output.find(m_printMessage) != string::npos);
 
 			// Test InputDataSet
 			//

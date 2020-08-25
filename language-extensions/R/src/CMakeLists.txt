@@ -40,8 +40,10 @@ set_target_properties(RExtension
 	SOVERSION ${REXTENSION_VERSION_MAJOR}
 )
 
+set(CMAKE_CXX_STANDARD 17)
+
 if (${PLATFORM} STREQUAL linux)
-	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -fPIC -Werror -std=c++14 -Wno-unused-parameter)
+	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -fPIC -Werror -Wno-unused-parameter)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp -Wl,-rpath,'${ORIGIN}'")
 	set(USR_LIB_PATH "/usr/local/lib")
 
@@ -65,7 +67,7 @@ if (${PLATFORM} STREQUAL linux)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/libRInside.a RINSIDE_LIB)
 
 elseif(${PLATFORM} STREQUAL windows)
-	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -std=c++14 -Wno-unused-parameter)
+	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -Wno-unused-parameter -Wno-cast-function-type)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-all-symbols -fopenmp -Wl,-rpath,'${ORIGIN}'")
 
