@@ -12,6 +12,7 @@ apt-get update
 
 apt-get install -y python3.7-dev libboost-all-dev python3-pip
 
+/usr/bin/python3.7 -m pip install --upgrade pip==18.1
 /usr/bin/python3.7 -m pip install numpy -t /usr/lib/python3.7/dist-packages
 /usr/bin/python3.7 -m pip install pandas -t /usr/lib/python3.7/dist-packages
 

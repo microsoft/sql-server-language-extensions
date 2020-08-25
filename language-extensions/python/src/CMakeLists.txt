@@ -61,11 +61,14 @@ if (${PLATFORM} STREQUAL linux)
 
 	set(ADDITIONAL_INCLUDES ${PYTHON_INCLUDE} ${BOOST_INCLUDE} ${BOOST_PYTHON_INCLUDE})
 
+	target_link_libraries(PythonExtension 
+		stdc++fs
+	)
 elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 
 	# Compile option /c to compile only
-    #
+	#
 	set(COMPILE_OPTIONS /c /std:c++17)
 
 	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)

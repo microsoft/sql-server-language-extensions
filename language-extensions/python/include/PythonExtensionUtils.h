@@ -24,9 +24,18 @@ public:
 	//
 	static std::string ParsePythonException();
 
+	// Extract the string from a boost::python object or PyObject*
+	//
+	static std::string ExtractString(PyObject *pObj);
+	static std::string ExtractString(boost::python::object handle);
+
 	// Get the value of an environment variable
 	//
 	static std::string GetEnvVariable(const std::string &envVarName);
+
+	// Normalize path strings from \ to /
+	//
+	static std::string NormalizePathString(std::string pathString);
 
 	// Converts a SQLGUID to a string
 	//
@@ -36,13 +45,11 @@ public:
 	//
 	static void FreeDLL(void *pDll);
 
+	// Get the path to the python executable
+	//
+	static std::string GetPathToPython();
+
 	// Map to store the ODBC C type to null value mapping
 	//
-	static const std::unordered_map<SQLSMALLINT, const void*> m_DataTypeToNullMap;
-
-private:
-
-	// Extract the string from a boost::python object
-	//
-	static std::string ExtractString(PyObject * pObj);
+	static const std::unordered_map<SQLSMALLINT, const void *> m_DataTypeToNullMap;
 };

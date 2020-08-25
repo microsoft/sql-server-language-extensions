@@ -25,7 +25,7 @@ function build {
 	cp ${PYTHONEXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libPythonExtension.so.1.0 .
 	cp /usr/src/gtest/*.so .
 	
-	./pythonextension-test --gtest_output=xml:${ENL_ROOT}/out/TestReport_PythonExtension-test.xml
+	ENL_ROOT=${ENL_ROOT} ./pythonextension-test --gtest_output=xml:${ENL_ROOT}/out/TestReport_PythonExtension-test.xml
 
 	# Check the exit code of the tests.
 	#

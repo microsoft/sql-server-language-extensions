@@ -12,8 +12,10 @@
 //**************************************************************************************************
 
 #include "Logger.h"
-#include "PythonSession.h"
 #include "PythonExtensionUtils.h"
+#include "PythonNamespace.h"
+#include "PythonPathSettings.h"
+#include "PythonSession.h"
 
 using namespace std;
 namespace py = boost::python;
@@ -40,21 +42,7 @@ void PythonSession::Init(
 {
 	LOG("PythonSession::Init");
 
-	m_mainModule = py::import("__main__");
-	m_mainNamespace = m_mainModule.attr("__dict__");
-
-	// Check that the module and namespace are populated, not None objects
-	//
-	if (m_mainModule == boost::python::object() ||
-		m_mainNamespace == boost::python::object())
-	{
-		throw runtime_error("Main module or namespace was None");
-	}
-
-	// Import pandas DataFrame and numpy for use later
-	//
-	string importScript = "from pandas import DataFrame; import numpy as np";
-	py::exec(importScript.c_str(), m_mainNamespace);
+	m_mainNamespace = PythonNamespace::MainNamespace();
 
 	// Initialize the script
 	//
@@ -79,7 +67,6 @@ void PythonSession::Init(
 	// Initialize the OutputDataSet
 	//
 	m_outputDataSet.Init(outputDataName, outputDataNameLength, 0, m_mainNamespace);
-
 }
 
 //-------------------------------------------------------------------------------------------------

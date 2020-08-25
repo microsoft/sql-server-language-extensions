@@ -167,10 +167,10 @@ namespace ExtensionApiTest
 			"DateTimeColumn2",
 			vector<SQL_TIMESTAMP_STRUCT>{
 				{ 9999, 12, 31, 23, 59, 59, 999999000 },
-				{ 1,1,1,0,0,0,0 }, 
-				{}, 
-				{}, 
-				{} 
+				{ 1,1,1,0,0,0,0 },
+				{},
+				{},
+				{}
 			},
 			vector<SQLINTEGER>{ m_DateTimeSize, m_DateTimeSize,
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
@@ -188,10 +188,10 @@ namespace ExtensionApiTest
 			"DateColumn2",
 			vector<SQL_DATE_STRUCT>{
 				{ 9999, 12, 31 },
-				{ 1,1,1 }, 
-				{}, 
-				{}, 
-				{} 
+				{ 1,1,1 },
+				{},
+				{},
+				{}
 			},
 			vector<SQLINTEGER>{ m_DateSize, m_DateSize,
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
@@ -569,7 +569,7 @@ namespace ExtensionApiTest
 	//  Compare wstring column with the given data and corresponding strLen_or_Ind.
 	//  The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
 	//  Where strLen_or_Ind == SQL_NULL_DATA, check for None.
-	//  We have to compare byte by byte because EXPECT_EQ/STREQ do not 
+	//  We have to compare byte by byte because EXPECT_EQ/STREQ do not
 	//  work properly for wstrings in Linux.
 	//
 	void PythonExtensionApiTests::CheckWStringColumnEquality(
@@ -725,116 +725,4 @@ namespace ExtensionApiTest
 			}
 		}
 	}
-
-	// Parses the value of the active python exception
-	// Type, value, and traceback are in separate pointers
-	//
-	string PythonExtensionApiTests::ParsePythonException()
-	{
-		PyObject *pType = NULL;
-		PyObject *pValue = NULL;
-		PyObject *pTraceback = NULL;
-
-		// Fetch the exception info from the Python C API
-		//
-		PyErr_Fetch(&pType, &pValue, &pTraceback);
-
-		// Fallback error
-		//
-		string ret("Unfetchable Python error");
-
-		// If the fetch got a type pointer, parse the type into the exception string
-		//
-		if (pType != NULL)
-		{
-			string type = ExtractString(pType);
-
-			// If a valid string extraction is available, use it
-			// otherwise use fallback string
-			//
-			if (type.empty())
-			{
-				ret = "Unknown exception type";
-			}
-			else
-			{
-				ret = type;
-			}
-		}
-
-		// Do the same for the exception value (the stringification of the exception)
-		//
-		if (pValue != NULL)
-		{
-			string value = ExtractString(pValue);
-
-			if (value.empty())
-			{
-				ret += string(": Unparseable Python error: ");
-			}
-			else
-			{
-				ret += ": " + value;
-			}
-		}
-
-		// Parse lines from the traceback using the Python traceback module
-		//
-		if (pTraceback != NULL)
-		{
-			py::handle<> handleTrace(pTraceback);
-
-			// Load the traceback module and the format_tb function
-			//
-			py::object traceback(py::import("traceback"));
-			py::object format_tb(traceback.attr("format_tb"));
-
-			// Call format_tb to get a list of traceback strings
-			//
-			py::object traceList(format_tb(handleTrace));
-
-			// Join the traceback strings into a single string
-			//
-			py::object tracePyStr(py::str("\n").join(traceList));
-
-			// Extract the string, check the extraction, and fallback if necessary
-			//
-			string trace = ExtractString(tracePyStr.ptr());
-
-			if (trace.empty())
-			{
-				ret += string(": Unparseable Python traceback");
-			}
-			else
-			{
-				ret += ": " + trace;
-			}
-		}
-
-		return ret;
-	}
-
-	// Extract the string from a boost::python object
-	//
-	string PythonExtensionApiTests::ExtractString(PyObject *pObj)
-	{
-		string ret;
-		py::handle<> handle(pObj);
-		py::str pyStr(handle);
-
-		// Extract the string from the boost::python object
-		//
-		py::extract<string> extracted(pyStr);
-
-		// If a valid string extraction is available, use it
-		// otherwise return empty string
-		//
-		if (extracted.check())
-		{
-			ret = extracted();
-		}
-
-		return ret;
-	}
-
 }

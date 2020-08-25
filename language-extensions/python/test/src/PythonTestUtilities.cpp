@@ -4,43 +4,22 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: PythonExtensionUtils.cpp
+// @File: PythonTestUtilities.cpp
 //
 // Purpose:
-//  Non-platform specific utility functions for PythonExtension
+//  Utility functions for Python Tests
 //
 //**************************************************************************************************
 
-#include "Logger.h"
-#include "PythonExtensionUtils.h"
-#include "PythonPathSettings.h"
+#include "PythonTestUtilities.h"
 
 using namespace std;
 namespace py = boost::python;
 
-// Null values
-//
-const static float m_floatNull = NAN;
-const static int m_intNull = 0;
-const static bool m_boolNull = false;
-
-// Map to store the ODBC C datatype to null value in Python.
-//
-const unordered_map<SQLSMALLINT, const void*> PythonExtensionUtils::m_DataTypeToNullMap =
-{
-	{SQL_C_BIT, static_cast<const void*>(&m_boolNull)},
-	{SQL_C_SLONG, static_cast<const void*>(&m_intNull)},
-	{SQL_C_FLOAT, static_cast<const void*>(&m_floatNull)},
-	{SQL_C_DOUBLE, static_cast<const void*>(&m_floatNull)},
-	{SQL_C_SBIGINT, static_cast<const void*>(&m_intNull)},
-	{SQL_C_SSHORT, static_cast<const void*>(&m_intNull)},
-	{SQL_C_UTINYINT, static_cast<const void*>(&m_intNull)}
-};
-
 // Parses the value of the active python exception
 // Type, value, and traceback are in separate pointers
 //
-string PythonExtensionUtils::ParsePythonException()
+string PythonTestUtilities::ParsePythonException()
 {
 	PyObject *pType = NULL;
 	PyObject *pValue = NULL;
@@ -128,16 +107,16 @@ string PythonExtensionUtils::ParsePythonException()
 // Extract the string from a PyObject, then DECREFS the PyObject.
 // NOTE: This function STEALS the reference and destroys it.
 //
-string PythonExtensionUtils::ExtractString(PyObject *pObj)
+string PythonTestUtilities::ExtractString(PyObject *pObj)
 {
 	py::handle<> handle(pObj);
 
-	return PythonExtensionUtils::ExtractString(py::object(handle));
+	return ExtractString(py::object(handle));
 }
 
 // Extract the string from a boost::python object
 //
-string PythonExtensionUtils::ExtractString(py::object handle)
+string PythonTestUtilities::ExtractString(py::object handle)
 {
 	string ret;
 	py::str pyStr(handle);
@@ -155,12 +134,4 @@ string PythonExtensionUtils::ExtractString(py::object handle)
 	}
 
 	return ret;
-}
-
-// Normalize path strings from \ to /
-//
-string PythonExtensionUtils::NormalizePathString(string pathString)
-{
-	replace(pathString.begin(), pathString.end(), '\\', '/');
-	return pathString;
 }

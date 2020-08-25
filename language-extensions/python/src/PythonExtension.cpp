@@ -14,15 +14,23 @@
 //**************************************************************************************************
 
 #include <boost/python.hpp>
+#include <experimental/filesystem>
+#include <iostream>
+#include <fstream>
+#include <regex>
 #include <unordered_map>
 
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
+#include "PythonNamespace.h"
+#include "PythonPathSettings.h"
 #include "PythonSession.h"
 #include "sqlexternallanguage.h"
+#include "sqlexternallibrary.h"
 
 using namespace std;
 namespace py = boost::python;
+namespace fs = std::experimental::filesystem;
 
 #ifndef _WIN64
 #include <dlfcn.h>
@@ -86,13 +94,21 @@ SQLRETURN Init(
 		//
 		Py_Initialize();
 
-		if (!Py_IsInitialized()) 
+		if (!Py_IsInitialized())
 		{
 			throw runtime_error("Python did not initialize properly, "
 				"check paths and dependencies.");
 		}
 
 		py::numpy::initialize();
+
+		PythonPathSettings::Init(
+			extensionParams,
+			extensionPath,
+			publicLibraryPath,
+			privateLibraryPath);
+
+		PythonNamespace::Init();
 	}
 	catch (const exception &ex)
 	{
@@ -569,6 +585,375 @@ SQLRETURN Cleanup()
 {
 	LOG("Cleanup");
 	SQLRETURN result = SQL_SUCCESS;
+
+	PythonNamespace::Cleanup();
+
+	return result;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// External Library APIs
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+// Name: InstallExternalLibrary
+//
+// Description:
+//	Installs an external library to the specified directory
+//	The library file is expected to be a zip containing the python package inside.
+//	We unzip the file then install the python package inside using a subprocess call to pip.
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN InstallExternalLibrary(
+	SQLGUID    setupSessionId,
+	SQLCHAR    *libraryName,
+	SQLINTEGER libraryNameLength,
+	SQLCHAR    *libraryFile,
+	SQLINTEGER libraryFileLength,
+	SQLCHAR    *libraryInstallDirectory,
+	SQLINTEGER libraryInstallDirectoryLength,
+	SQLCHAR    **libraryError,
+	SQLINTEGER *libraryErrorLength)
+{
+	LOG("InstallExternalLibrary");
+	SQLRETURN result = SQL_ERROR;
+
+	string errorString;
+
+	string libName = string(reinterpret_cast<char *>(libraryName), libraryNameLength);
+
+	string installDir = string(reinterpret_cast<char *>(libraryInstallDirectory), libraryInstallDirectoryLength);
+	installDir = PythonExtensionUtils::NormalizePathString(installDir);
+	string libFilePath = string(reinterpret_cast<char *>(libraryFile), libraryFileLength);
+	libFilePath = PythonExtensionUtils::NormalizePathString(libFilePath);
+
+	string tempFolder = installDir + "/tmp";
+
+	try
+	{
+		py::object mainNamespace = PythonNamespace::MainNamespace();
+
+		string extractScript = "import zipfile\n"
+			"with zipfile.ZipFile('" + libFilePath + "') as zip:\n"
+			"    zip.extractall('" + tempFolder + "')";
+
+		py::exec(extractScript.c_str(), mainNamespace);
+
+		string installPath = "";
+
+		// Find the python package inside the zip to use for installation.
+		//
+		for (const fs::directory_entry &entry : fs::directory_iterator(tempFolder))
+		{
+			string type = entry.path().extension().generic_string();
+
+			if (type.compare(".whl") == 0 ||
+					type.compare(".zip") == 0 ||
+					type.compare(".gz") == 0
+				)
+			{
+				installPath = entry.path().generic_string();
+				break;
+			}
+		}
+		
+		if (installPath.empty()) 
+		{
+			throw runtime_error("Could not find the package inside the zip - "
+				"external library must be a python package inside a zip.");
+		}
+
+		string pathToPython = PythonExtensionUtils::GetPathToPython();
+
+		string installScript = "import subprocess;pipresult = subprocess.run(['" + pathToPython +
+			"', '-m', 'pip', 'install', '" + installPath +
+			"', '--no-deps', '--ignore-installed', '--no-cache-dir', '-t', '" + installDir + "']).returncode";
+
+		py::exec(installScript.c_str(), mainNamespace);
+
+		int pipResult = py::extract<int>(mainNamespace["pipresult"]);
+
+		if (pipResult != 0)
+		{
+			throw runtime_error("Pip failed to install the package with exit code " + to_string(pipResult));
+		}
+
+		result = SQL_SUCCESS;
+	}
+	catch (const exception & ex)
+	{
+		result = SQL_ERROR;
+
+		errorString = string(ex.what());
+		LOG_ERROR(errorString);
+	}
+	catch (const py::error_already_set &)
+	{
+		result = SQL_ERROR;
+
+		errorString = PythonExtensionUtils::ParsePythonException();
+
+		LOG_ERROR("Python error: " + errorString);
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		errorString = "Unexpected exception occurred in function InstallExternalLibrary()";
+
+		LOG_ERROR(errorString);
+	}
+
+	// Clean up the temp installation folder
+	//
+	if (fs::exists(tempFolder))
+	{
+		fs::remove_all(tempFolder);
+	}
+
+	if (!errorString.empty())
+	{
+		*libraryErrorLength = errorString.length();
+
+		string *pError = new string(errorString);
+		SQLCHAR *error = const_cast<SQLCHAR*>(reinterpret_cast<const SQLCHAR *>(pError->c_str()));
+
+		*libraryError = error;
+	}
+
+	return result;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Name: GetTopLevel
+//
+// Description:
+//	Get top level directory/ies for a package
+//
+// Returns:
+//	A vector of directory_entries of the top level artifacts of the package
+//
+vector<fs::directory_entry> GetTopLevel(string libName, string installDir)
+{
+	vector<fs::directory_entry> artifacts;
+	regex_constants::syntax_option_type caseInsensitive = regex_constants::icase;
+
+	// Normalize library names by replacing all dashes and underscores with regex for either
+	//
+	string regexLibName = regex_replace(libName, regex("(-|_)"), "(-|_)");
+
+	for (const fs::directory_entry &entry : fs::directory_iterator(installDir))
+	{
+		string pathFilename = entry.path().filename().string();
+
+		// The top_level.txt file is in the egg-info or dist-info folder
+		//
+		regex egg("^" + regexLibName + "-(.*)egg(.*)", caseInsensitive);
+		regex distinfo("^" + regexLibName + "-(.*)dist-info", caseInsensitive);
+
+		if (regex_match(pathFilename, egg) ||
+			regex_match(pathFilename, distinfo))
+		{
+			artifacts.push_back(entry);
+
+			// The top_level.txt file tells us what items this package put into the installation directory
+			// that we will need to delete to uninstall.
+			//
+			fs::path topLevelPath = entry.path();
+			topLevelPath = topLevelPath.append("top_level.txt");
+
+			if(fs::exists(topLevelPath))
+			{
+				// Read in the top_level file to find what the top_level folders and files are
+				//
+				ifstream topLevelFile(topLevelPath);
+				string str;
+				while (getline(topLevelFile, str))
+				{
+					if (str.size() > 0)
+					{
+						fs::path path(installDir);
+						artifacts.push_back(fs::directory_entry(path.append(str)));
+					}
+				}
+
+				topLevelFile.close();
+				break;
+			}
+
+			break;
+		}
+	}
+
+	return artifacts;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: GetAllArtifacts
+//
+// Description:
+//	Get all the artifacts we can find of a package that are in the path
+//
+// Returns:
+//	A vector of directory_entries of the artifacts
+//
+vector<fs::directory_entry> GetAllArtifacts(string libName, string path)
+{
+	vector<fs::directory_entry> artifacts;
+	regex_constants::syntax_option_type caseInsensitive = regex_constants::icase;
+
+	// Normalize library names by replacing all dashes with underscores
+	//
+	string regexLibName = regex_replace(libName, regex("(-|_)"), "(-|_)");
+
+	if (fs::exists(path))
+	{
+		for (const fs::directory_entry &entry : fs::directory_iterator(path))
+		{
+			string pathFilename = entry.path().filename().string();
+
+			regex pth("^" + regexLibName + "-(.*).pth", caseInsensitive);
+			regex pyFile("^" + regexLibName + ".py", caseInsensitive);
+
+			if (regex_match(pathFilename, pyFile) ||
+				regex_match(pathFilename, pth))
+			{
+				artifacts.push_back(entry);
+			}
+		}
+	}
+
+	return artifacts;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: UninstallExternalLibrary
+//
+// Description:
+//	Uninstalls an external library from the specified directory.
+//	We add the directory to the python path, then call pip uninstall in a subprocess.
+//	If pip fails for some reason, we try to manually uninstall the package by deleting the 
+//	top level package folder as well as any dist/egg/.py files that were left behind.
+//
+// Returns:
+//	SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN UninstallExternalLibrary(
+	SQLGUID    setupSessionId,
+	SQLCHAR    *libraryName,
+	SQLINTEGER libraryNameLength,
+	SQLCHAR    *libraryInstallDirectory,
+	SQLINTEGER libraryInstallDirectoryLength,
+	SQLCHAR    **libraryError,
+	SQLINTEGER *libraryErrorLength)
+{
+	LOG("UninstallExternalLibrary");
+	SQLRETURN result = SQL_ERROR;
+
+	string errorString;
+	vector<fs::directory_entry> artifacts;
+
+	py::object mainNamespace = PythonNamespace::MainNamespace();
+
+	string libName = string(reinterpret_cast<char *>(libraryName), libraryNameLength);
+
+	string installDir = string(reinterpret_cast<char *>(libraryInstallDirectory), libraryInstallDirectoryLength);
+	installDir = PythonExtensionUtils::NormalizePathString(installDir);
+
+	try
+	{
+		// Save the top_level items so we can delete them if the pip uninstall fails.
+		// If pip uninstall succeeds, we won't need this.
+		//
+		artifacts = GetTopLevel(libName, installDir);
+
+		string pathToPython = PythonExtensionUtils::GetPathToPython();
+
+		string uninstallScript = 
+		"newPath = ['" + installDir + "'] + _originalpath\n"
+		"os.environ['PYTHONPATH'] = os.pathsep.join(newPath)\n"
+		"import subprocess\n"
+		"pipresult = subprocess.run(['" + pathToPython +
+			"', '-m', 'pip', 'uninstall', '" + libName + "', '-y']).returncode\n";
+
+		py::exec(uninstallScript.c_str(), mainNamespace);
+
+		int pipResult = py::extract<int>(mainNamespace["pipresult"]);
+
+		if (pipResult != 0)
+		{
+			throw runtime_error("Pip failed to fully uninstall the package with exit code " + to_string(pipResult));
+		}
+
+		result = SQL_SUCCESS;
+	}
+	catch (const exception & ex)
+	{
+		result = SQL_ERROR;
+
+		errorString = string(ex.what());
+	}
+	catch (const py::error_already_set &)
+	{
+		result = SQL_ERROR;
+
+		errorString = PythonExtensionUtils::ParsePythonException();
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+
+		errorString = "Unexpected exception occurred in function UninstallExternalLibrary()";
+	}
+
+	// If pip fails for some reason, we try to manually uninstall the package by deleting the 
+	// top level package folder as well as any dist/egg/.py files that were left behind.
+	//
+	try
+	{
+		if (result != SQL_SUCCESS && fs::exists(installDir))
+		{
+			LOG("Failed to fully uninstall " + libName + " with pip, deleting files manually");
+
+			for (fs::directory_entry entry : artifacts)
+			{
+				fs::remove_all(entry);
+			}
+
+			vector<fs::directory_entry> newArtifacts = GetAllArtifacts(libName, installDir);
+
+			for (fs::directory_entry entry : newArtifacts)
+			{
+				fs::remove_all(entry);
+			}
+		}
+
+		// We have successfully manually deleted the package, so we should remove the error.
+		// 
+		errorString = "";
+		result = SQL_SUCCESS;
+	}
+	catch (...)
+	{
+		result = SQL_ERROR;
+	}
+
+	if (!errorString.empty())
+	{
+		LOG_ERROR(errorString);
+		result = SQL_ERROR;
+
+		*libraryErrorLength = errorString.length();
+
+		string *pError = new string(errorString);
+		SQLCHAR *error = const_cast<SQLCHAR *>(reinterpret_cast<const SQLCHAR *>(pError->c_str()));
+
+		*libraryError = error;
+	}
 
 	return result;
 }

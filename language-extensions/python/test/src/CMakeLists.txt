@@ -50,6 +50,7 @@ if (${PLATFORM} STREQUAL linux)
 	target_link_libraries(pythonextension-test
 		${DL}
 		Threads::Threads
+		stdc++fs
 	)
 
 	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)

@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include "PythonExtensionApiTests.h"
+#include "PythonTestUtilities.h"
 
 using namespace std;
 namespace py = boost::python;
@@ -480,7 +481,7 @@ namespace ExtensionApiTest
 		}
 		catch (py::error_already_set &)
 		{
-			string pyError = ParsePythonException();
+			string pyError = PythonTestUtilities::ParsePythonException();
 			throw runtime_error("Error running python:\n" + pyError);
 		}
 	}
@@ -602,7 +603,7 @@ namespace ExtensionApiTest
 			}
 			catch (py::error_already_set &)
 			{
-				string pyError = ParsePythonException();
+				string pyError = PythonTestUtilities::ParsePythonException();
 				throw runtime_error("Error running python:\n" + pyError);
 			}
 		}

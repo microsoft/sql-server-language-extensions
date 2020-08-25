@@ -56,7 +56,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>_WIN64;_DEBUG;_WINDOWS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WIN64;_DEBUG;_WINDOWS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;BOOST_USE_STATIC_LIBS;BOOST_PYTHON_STATIC_LIB;BOOST_ALL_NO_LIB;BOOST_NUMPY_STATIC_LIB;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>
       $(ExtensionApiIncludeDirectory);
       $(ExtensionIncludeDirectory);
@@ -151,7 +151,11 @@
     <ClCompile Include="$(TestSrcDirectory)\PythonGetResultsTests.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonExtensionApiTests.cpp" />
     <ClCompile Include="$(TestSrcDirectory)\PythonGetOutputParamTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonLibraryTests.cpp" />
+    <ClCompile Include="$(TestSrcDirectory)\PythonTestUtilities.cpp" />
     <ClInclude Include="$(TestIncludeDirectory)\PythonExtensionApiTests.h" />
+    <ClInclude Include="$(TestIncludeDirectory)\PythonLibraryTests.h" />
+    <ClInclude Include="$(TestIncludeDirectory)\PythonTestUtilities.h" />
     <ClInclude Include="$(TestIncludeDirectory)\Common.h" />
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallanguage.h" />
     <ClInclude Include="$(ExtensionApiIncludeDirectory)\sqlexternallibrary.h" />

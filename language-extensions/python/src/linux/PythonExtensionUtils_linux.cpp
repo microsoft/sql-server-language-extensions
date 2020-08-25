@@ -12,8 +12,12 @@
 //*************************************************************************************************
 
 #include <dlfcn.h>
+#include <experimental/filesystem>
+
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
+
+namespace fs = std::experimental::filesystem;
 
 const CHAR *GuidFormat = "%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 
@@ -77,4 +81,19 @@ void PythonExtensionUtils::FreeDLL(void *pDll)
 	{
 		dlclose(pDll);
 	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: PythonExtensionUtils::GetEnvVariable
+//
+// Description:
+//  Get the path to the python executable
+//
+// Returns:
+//  String value of the python executable path
+//
+std::string PythonExtensionUtils::GetPathToPython()
+{
+	fs::path pathToPython = fs::path("python3.7");
+	return pathToPython.string();
 }

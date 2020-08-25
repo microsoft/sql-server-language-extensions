@@ -72,15 +72,6 @@ namespace ExtensionApiTest
 		//
 		void DoCleanup();
 
-		// Get the python exception out of the boost::python namespace
-		// Use only after "error_already_set"
-		//
-		std::string ParsePythonException();
-
-		// Extract the string from a boost::python object
-		//
-		std::string ExtractString(PyObject * pObj);
-
 		// Template to test all input parameter data types
 		//
 		template<class SQLType, SQLSMALLINT dataType>
@@ -240,9 +231,9 @@ namespace ExtensionApiTest
 		//
 		template<class DateTimeStruct>
 		void TestGetDateTimeResults(
-			SQLULEN                  expectedRowsNumber, 
-			SQLPOINTER               *expectedData, 
-			SQLINTEGER               **expectedStrLen_or_Ind, 
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
 			std::vector<std::string> columnNames);
 
 		// Template function to compare the given column data and nullMap for equality.
@@ -257,7 +248,7 @@ namespace ExtensionApiTest
 			SQLINTEGER *columnStrLenOrInd);
 
 		// Template function to compare the given column data and nullMap for equality.
-		// For numeric, boolean and integer types, WITH NULLS. 
+		// For numeric, boolean and integer types, WITH NULLS.
 		// Because NULLS for float types are NAN, there are complications that need to be checked for.
 		//
 		template<class SQLType, class DefaultType>
@@ -290,7 +281,7 @@ namespace ExtensionApiTest
 		//
 		template<class DateTimeStruct>
 		void CheckDateTimeDataEquality(
-			SQLULEN        rowsNumber, 
+			SQLULEN        rowsNumber,
 			DateTimeStruct *expectedColumnData,
 			DateTimeStruct *columnData,
 			SQLINTEGER     *expectedColumnStrLenOrInd,
@@ -307,7 +298,7 @@ namespace ExtensionApiTest
 		//
 		template<class DateTimeStruct>
 		void TestGetDateTimeOutputParam(
-			std::vector<DateTimeStruct *> expectedParamValueVector, 
+			std::vector<DateTimeStruct *> expectedParamValueVector,
 			std::vector<SQLINTEGER>       expectedStrLenOrIndVector);
 
 		// Test output string param value and strLenOrInd is as expected.
