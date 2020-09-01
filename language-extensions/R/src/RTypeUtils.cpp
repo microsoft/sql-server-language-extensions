@@ -29,7 +29,7 @@
 #include <iostream>
 
 #include "RTypeUtils.h"
-
+#include "Unicode.h"
 #include "Rcpp.h"
 
 using namespace std;
@@ -113,10 +113,13 @@ RType RTypeUtils::CreateVector(
 //
 // Description:
 //  Create a character Rcpp vector encapsulating SEXP pointers to the equivalent R character
-//  objects with the given data. rowsNumber indicates the number of elements
+//  objects with the given data. If the given data is wide character utf16, convert it to utf8
+//  first before creating the Rcpp vector since R only accepts utf-8 encoding.
+//  rowsNumber indicates the number of elements
 //  to be added in the vector. Iterate over data to push_back the value to the vector.
 //  If at any index strLen_or_Ind is SQL_NULL_DATA, it fills in the NA_STRING value.
 //
+template<class CharType>
 Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 	SQLULEN    rowsNumber,
 	SQLPOINTER data,
@@ -124,7 +127,7 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 {
 	LOG("RTypeUtils::CreateCharacterVector");
 
-	char *baseCharData = static_cast<char *>(data);
+	CharType *baseCharData = static_cast<CharType *>(data);
 	SQLULEN cumulativeLength = 0;
 	Rcpp::CharacterVector charVector(rowsNumber);
 
@@ -136,9 +139,18 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 		}
 		else
 		{
-			char *str = baseCharData + cumulativeLength;
-			SQLINTEGER strlen = strLen_or_Ind[j] / sizeof(char);
-			string value(str, strlen);
+			CharType *str = baseCharData + cumulativeLength;
+			SQLINTEGER strlen = strLen_or_Ind[j] / sizeof(CharType);
+			string value;
+			if constexpr (is_same_v<CharType, char16_t>)
+			{
+				estd::ToUtf8(str, strlen, value);
+			}
+			else
+			{
+				value = string(str, strlen);
+			}
+
 			charVector[j] = value.c_str();
 			cumulativeLength += strlen;
 		}
@@ -401,3 +413,13 @@ template void RTypeUtils::FillDataFromRVector<SQLCHAR, Rcpp::LogicalVector, SQL_
 	vector<SQLCHAR>     *data,
 	SQLINTEGER          *strLen_or_Ind,
 	SQLSMALLINT         &nullable);
+
+template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char>(
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
+	SQLINTEGER *strLen_or_Ind);
+
+template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char16_t>(
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
+	SQLINTEGER *strLen_or_Ind);

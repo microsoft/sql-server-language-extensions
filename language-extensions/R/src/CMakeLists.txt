@@ -26,7 +26,10 @@ file(TO_CMAKE_PATH ${REXTENSION_HOME}/src REXTENSION_SRC_DIR)
 
 # C++ code; only these files are compiled-in
 #
-file(GLOB REXTENSION_SOURCE_FILES ${REXTENSION_SRC_DIR}/*.cpp ${REXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
+file(GLOB REXTENSION_SOURCE_FILES
+	${REXTENSION_SRC_DIR}/*.cpp
+	${REXTENSION_HOME}/common/src/*.cpp
+	${REXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
 # Create the target library
 #
@@ -40,11 +43,11 @@ set_target_properties(RExtension
 	SOVERSION ${REXTENSION_VERSION_MAJOR}
 )
 
-set(CMAKE_CXX_STANDARD 17)
-
 if (${PLATFORM} STREQUAL linux)
-	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -fPIC -Werror -Wno-unused-parameter)
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp -Wl,-rpath,'${ORIGIN}'")
+	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -fPIC -Werror
+		-std=c++17 -Wno-unused-parameter)
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed \
+		-Wl,--export-dynamic -fopenmp -Wl,-rpath,'${ORIGIN}'")
 	set(USR_LIB_PATH "/usr/local/lib")
 
 	# Find dependent libraries
@@ -67,9 +70,11 @@ if (${PLATFORM} STREQUAL linux)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/libRInside.a RINSIDE_LIB)
 
 elseif(${PLATFORM} STREQUAL windows)
-	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -Wno-unused-parameter -Wno-cast-function-type)
+	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -std=c++17
+		-Wno-unused-parameter -Wno-cast-function-type)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-all-symbols -fopenmp -Wl,-rpath,'${ORIGIN}'")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed \
+		-Wl,--export-all-symbols -fopenmp -Wl,-rpath,'${ORIGIN}'")
 
 	# Set the DLLEXPORT variable to export symbols
 	#
@@ -89,9 +94,12 @@ file(TO_CMAKE_PATH ${R_HOME}/library/Rcpp/include RCPP_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${RINSIDE_HOME}/include RINSIDE_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${REXTENSION_HOME}/include REXTENSION_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/extension-host/include EXTENSION_API_INCLUDE_DIR)
+file(TO_CMAKE_PATH ${REXTENSION_HOME}/common/include REXTENSION_COMMON_INCLUDE)
 
 target_include_directories(RExtension
-	PRIVATE ${REXTENSION_INCLUDE_DIR} ${R_INCLUDE_DIR} ${EXTENSION_API_INCLUDE_DIR} ${RCPP_INCLUDE_DIR} ${RINSIDE_INCLUDE_DIR}
+	PRIVATE ${REXTENSION_INCLUDE_DIR} ${R_INCLUDE_DIR}
+	${EXTENSION_API_INCLUDE_DIR} ${RCPP_INCLUDE_DIR} ${RINSIDE_INCLUDE_DIR}
+	${REXTENSION_COMMON_INCLUDE}
 )
 
 if (${CMAKE_CONFIGURATION} STREQUAL debug)

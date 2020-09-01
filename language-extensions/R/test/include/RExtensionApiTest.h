@@ -211,14 +211,15 @@ namespace ExtensionApiTest
 			std::vector<SQLSMALLINT>              inputOutputTypes,
 			bool                                  validate = true);
 
-		// Testing if InitParam is implemented correctly for the char/varchar dataType.
+		// Testing if InitParam is implemented correctly for the (n)char/(n)varchar dataType.
 		//
+		template<class CharType, SQLSMALLINT DataType>
 		void InitCharParam(
-			std::vector<const char*> expectedParamValues,
-			std::vector<SQLULEN>     paramSizes,
-			std::vector<bool>        isFixedType,
-			std::vector<SQLSMALLINT> inputOutputTypes,
-			bool                     validate = true);
+			std::vector<const CharType*> expectedParamValues,
+			std::vector<SQLULEN>         paramSizes,
+			std::vector<bool>            isFixedType,
+			std::vector<SQLSMALLINT>     inputOutputTypes,
+			bool                         validate = true);
 
 		// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 		//
@@ -242,6 +243,10 @@ namespace ExtensionApiTest
 			SQLINTEGER *strLenOrInd,
 			SQLULEN    rowsNumber,
 			SQLINTEGER *maxLen);
+
+		// Get length of a wstring
+		//
+		SQLULEN GetWStringLength(const wchar_t *wstr);
 
 		// Templatized function to compare the given vector and data for equality.
 		//

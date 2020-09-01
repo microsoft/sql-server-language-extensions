@@ -537,7 +537,7 @@ namespace ExtensionApiTest
 		vector<bool> isFixedType = { true, false, true, false, true, true };
 		vector<SQLSMALLINT> inputOutputTypes(initParamValues.size(), SQL_PARAM_INPUT_OUTPUT);
 
-		InitCharParam(
+		InitCharParam<char, SQL_C_CHAR>(
 			initParamValues,
 			paramSizes,
 			isFixedType,

@@ -36,6 +36,7 @@
 #include "Rcpp.h"
 
 #include "RExtensionApiTest.h"
+#include "Unicode.h"
 
 using namespace std;
 
@@ -274,15 +275,18 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
 			"", // scriptString
-			8); // parametersNumber
+			10); // parametersNumber
 
 		vector<const char*> expectedParamValues = {
 			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
 			//
 			"HELLO",
-			// Test simple CHAR(6) value with parameter length less than size - should be padded.
+			// Test CHAR(6) value with parameter length less than size - should be padded.
 			//
 			"WORLD",
+			// Test CHAR(6) value with parameter length more than size - should be truncated.
+			//
+			"REXTENSION",
 			// Test null CHAR(5) value
 			//
 			nullptr,
@@ -295,6 +299,9 @@ namespace ExtensionApiTest
 			// Test simple VARCHAR(8) value with parameter length less than size - no padding.
 			//
 			"WORLD",
+			// Test VARCHAR(6) value with parameter length more than size - should be truncated.
+			//
+			"REXTENSION",
 			// Test null VARCHAR(5) value
 			//
 			nullptr,
@@ -302,12 +309,74 @@ namespace ExtensionApiTest
 			//
 			""};
 
-		vector<SQLULEN> paramSizes = { 5, 6, 5, 5, 6, 8, 5, 6 };
+		vector<SQLULEN> paramSizes = { 5, 6, 6, 5, 5, 6, 8, 6, 5, 6 };
 
-		vector<bool> isFixedType = { true, true, true, true, false, false, false, false, false };
+		vector<bool> isFixedType = { true, true, true, true, true,
+			false, false, false, false, false };
 		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
-		InitCharParam(
+		InitCharParam<char, SQL_C_CHAR>(
+			expectedParamValues,
+			paramSizes,
+			isFixedType,
+			inputOutputTypes);
+	}
+
+	// Test multiple NCHAR and NVARCHAR values
+	//
+	TEST_F(RExtensionApiTest, InitNCharParamTest)
+	{
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			12); // parametersNumber
+
+		vector<const wchar_t*> expectedParamValues = {
+			// Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
+			//
+			L"HELLO",
+			// Test NCHAR(6) value with parameter length less than size - should be padded.
+			//
+			L"WORLD",
+			// Test NCHAR(6) value with parameter length more than size - should be truncated.
+			//
+			L"REXTENSION",
+			// Test null NCHAR(5) value
+			//
+			nullptr,
+			// Test a 0 length NCHAR(5) value
+			//
+			L"",
+			// Test UNICODE NCHAR(2)
+			//
+			L"你好",
+			// Test simple NVARCHAR(6) value
+			//
+			L"WORLD!",
+			// Test simple NVARCHAR(8) value with parameter length less than size - no padding.
+			//
+			L"WORLD",
+			// Test NVARCHAR(6) value with parameter length more than size - should be truncated.
+			//
+			L"REXTENSION",
+			// Test null NVARCHAR(5) value
+			//
+			nullptr,
+			// Test 0 length NVARCHAR(6) value
+			//
+			L"",
+			// Test Unicode NVARCHAR(6) value
+			//
+			L"你好"
+		};
+
+		vector<SQLULEN> paramSizes = { 5, 6, 6, 5, 5, 2, 6, 8, 6, 5, 6, 6 };
+
+		vector<bool> isFixedType = { true, true, true, true, true, true,
+			false, false, false, false, false, false };
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
+
+		InitCharParam<wchar_t, SQL_C_WCHAR>(
 			expectedParamValues,
 			paramSizes,
 			isFixedType,
@@ -498,51 +567,62 @@ namespace ExtensionApiTest
 	// Name: InitCharParam
 	//
 	// Description:
-	// Testing if InitParam is implemented correctly for the char/varchar dataType.
+	// Templatized function testing if InitParam is implemented correctly for the
+	// (n)char/(n)varchar dataTypes
 	//
+	template<class CharType, SQLSMALLINT DataType>
 	void RExtensionApiTest::InitCharParam(
-		vector<const char*> expectedParamValues,
-		vector<SQLULEN>     paramSizes,
-		vector<bool>        isFixedType,
-		vector<SQLSMALLINT> inputOutputTypes,
-		bool                validate)
+		vector<const CharType*> expectedParamValues,
+		vector<SQLULEN>         paramSizes,
+		vector<bool>            isFixedType,
+		vector<SQLSMALLINT>     inputOutputTypes,
+		bool                    validate)
 	{
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			string paramNameString = string("@param" + to_string(paramNumber + 1));
 			SQLCHAR *paramName = static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
-			vector<char> fixedParamValue(paramSizes[paramNumber] + 1, 0);
-			SQLINTEGER strLenOrInd = 0;
-			char *expectedParamValue = nullptr;
+			vector<CharType> fixedParamValue(paramSizes[paramNumber] + 1, 0);
+			SQLULEN strLenOrInd = 0;
+			CharType *expectedParamValue = nullptr;
+			SQLULEN paramLengthAfterTruncationIfAny = 0;
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
-				SQLINTEGER paramLength = strlen(expectedParamValues[paramNumber]);
-
-				if (isFixedType[paramNumber])
+				SQLULEN paramLength = 0;
+				if constexpr (is_same_v<CharType, wchar_t>)
 				{
-					string paramValue(expectedParamValues[paramNumber], paramLength);
-					fixedParamValue.insert(
-						fixedParamValue.begin(),
-						paramValue.begin(),
-						paramValue.end());
-					strLenOrInd = static_cast<SQLINTEGER>(paramSizes[paramNumber]);
-
-					// pad the rest of the vector
-					//
-					for (SQLINTEGER index = paramLength; index < strLenOrInd; ++index)
-					{
-						fixedParamValue[index] = ' ';
-					}
-
-					expectedParamValue = fixedParamValue.data();
+					paramLength = GetWStringLength(expectedParamValues[paramNumber]);
 				}
 				else
 				{
-					expectedParamValue = const_cast<char*>(expectedParamValues[paramNumber]);
-					strLenOrInd = paramLength;
+					paramLength = strlen(expectedParamValues[paramNumber]);
 				}
+
+				const CharType *paramValue = expectedParamValues[paramNumber];
+				copy(paramValue, paramValue + min(paramLength, paramSizes[paramNumber]),
+					fixedParamValue.begin());
+
+				if (isFixedType[paramNumber])
+				{
+					strLenOrInd = paramSizes[paramNumber];
+
+					// pad the rest of the vector
+					//
+					for (SQLULEN index = paramLength; index < strLenOrInd; ++index)
+					{
+						fixedParamValue[index] = ' ';
+					}
+				}
+				else
+				{
+					strLenOrInd = min(paramLength, paramSizes[paramNumber]);
+				}
+
+				paramLengthAfterTruncationIfAny = strLenOrInd;
+				strLenOrInd *= sizeof(CharType);
+				expectedParamValue = fixedParamValue.data();
 			}
 			else
 			{
@@ -560,7 +640,7 @@ namespace ExtensionApiTest
 					paramNumber,
 					paramName,
 					paramNameString.length(),
-					SQL_C_CHAR,
+					DataType,
 					paramSizes[paramNumber],
 					0,               // decimalDigits
 					expectedParamValue,
@@ -576,7 +656,24 @@ namespace ExtensionApiTest
 				Rcpp::CharacterVector param = m_globalEnvironment[paramNameString.c_str() + 1];
 				if (expectedParamValues[paramNumber] != nullptr)
 				{
-					EXPECT_EQ(param[0], const_cast<const char*>(expectedParamValue));
+					const char *actualParam = param[0];
+					string expectedParamUtf8;
+					if constexpr (is_same_v<CharType, wchar_t>)
+					{
+						estd::ToUtf8(
+							reinterpret_cast<char16_t*>(expectedParamValue),
+							paramLengthAfterTruncationIfAny,
+							expectedParamUtf8);
+					}
+					else
+					{
+						expectedParamUtf8 = string(expectedParamValue, paramLengthAfterTruncationIfAny);
+					}
+
+					for (SQLULEN index = 0; index < paramLengthAfterTruncationIfAny; ++index)
+					{
+						EXPECT_EQ(actualParam[index], expectedParamUtf8[index]);
+					}
 				}
 				else
 				{

@@ -328,7 +328,7 @@ void RInputDataSet::AddCharacterColumnToDataFrame(
 	string name = m_columns[columnNumber].get()->Name();
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
 
-	m_dataFrame[name.c_str()] = RTypeUtils::CreateCharacterVector(
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateCharacterVector<char>(
 		rowsNumber,
 		data,
 		strLen_or_Ind);

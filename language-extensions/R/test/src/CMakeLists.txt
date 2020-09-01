@@ -9,22 +9,26 @@ project(RExtension-test VERSION 1.0 LANGUAGES CXX)
 string(TOLOWER ${PLATFORM} PLATFORM)
 string(TOLOWER ${CMAKE_CONFIGURATION} CMAKE_CONFIGURATION)
 
-file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R/test REXTENSIONTEST_HOME)
+file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R REXTENSION_HOME)
+file(TO_CMAKE_PATH ${REXTENSION_HOME}/test REXTENSIONTEST_HOME)
 file(TO_CMAKE_PATH ${REXTENSIONTEST_HOME}/src REXTENSIONTEST_SRC_DIR)
 
 # C++ unit tests code; only these files are compiled-in
 #
-file(GLOB REXTENSIONTEST_SOURCE_FILES ${REXTENSIONTEST_SRC_DIR}/*.cpp ${REXTENSIONTEST_SRC_DIR}/${PLATFORM}/*.cpp)
+file(GLOB REXTENSIONTEST_SOURCE_FILES
+	${REXTENSIONTEST_SRC_DIR}/*.cpp
+	${REXTENSIONTEST_SRC_DIR}/${PLATFORM}/*.cpp
+	${REXTENSION_HOME}/common/src/*.cpp)
 
 add_executable(RExtension-test
 	${REXTENSIONTEST_SOURCE_FILES}
 )
 
-set(CMAKE_CXX_STANDARD 17)
-
 if(${PLATFORM} STREQUAL linux)
-	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -Wno-unused-parameter)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
+	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -fPIC
+		-std=c++17 -Werror -Wno-unused-parameter -fshort-wchar)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' \
+		-Wl,--no-as-needed -Wl,--export-dynamic")
 
 	# Find and add linkage to dl library for dynamic loading
 	#
@@ -43,7 +47,8 @@ if(${PLATFORM} STREQUAL linux)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/libRInside.a RINSIDE_LIB)
 
 elseif(${PLATFORM} STREQUAL windows)
-	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -Wno-unused-parameter -Wno-cast-function-type)
+	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2
+		-std=c++17 -Wno-unused-parameter -Wno-cast-function-type)
 
 	# Set the DLLEXPORT variable to export symbols
 	#
@@ -61,6 +66,7 @@ endif()
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R/test/include/ REXTENSIONTEST_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension-test/${PLATFORM}/ REXTENSIONTEST_WORKING_DIR)
 file(TO_CMAKE_PATH ${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION} REXTENSIONTEST_INSTALL_DIR)
+file(TO_CMAKE_PATH ${REXTENSION_HOME}/common/include REXTENSION_COMMON_INCLUDE)
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)
 file(TO_CMAKE_PATH ${GTEST_HOME}/googletest-src/googletest/include GTEST_INCLUDE_DIR)
@@ -78,6 +84,7 @@ include_directories(
 	"${R_INCLUDE_DIR}"
 	"${RCPP_INCLUDE_DIR}"
 	"${RINSIDE_INCLUDE_DIR}"
+	"${REXTENSION_COMMON_INCLUDE}"
 )
 
 # The string comparison is case sensitive

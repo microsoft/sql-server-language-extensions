@@ -109,17 +109,30 @@ protected:
 	// Indicates string length or SQL_NULL_DATA for null.
 	// Note about expected m_strLenOrInd, m_size according to type:
 	// For fixed non-char non-binary types,
-	//   value    m_strLenorInd    m_size
-	//   NULL     SQL_NULL_DATA   sizeof<type>
-	//   Non-NULL   0              sizeof<type>
+	//     value   |  m_strLenorInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  sizeof<type>
+	//     Non-NULL|  0                                            |  sizeof<type>
 	// For char(n), binary(n) types,
-	//   value    m_strLenOrInd    m_size
-	//   NULL      SQL_NULL_DATA    n
-	//   Non-NULL   n               n
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  n                                            |  n
 	// For varchar(n), varbinary(n) types,
-	//   value    m_strLenOrInd     m_size
-	//   NULL     SQL_NULL_DATA     n
-	//   Non-NULL  actualNumberOfChars n
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  actualNumberOfBytes(same as length)          |  n
+	// For nchar(n) type,
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  n*sizeof(char16_t))                          |  n
+	// For nvarchar(n) type,
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  actualNumberOfBytes(length*sizeof(char16_t)) |  n
 	//
 	SQLINTEGER m_strLenOrInd;
 
@@ -205,6 +218,7 @@ private:
 // Description:
 //  Class representing a character parameter by storing Rcpp::CharacterVector.
 //
+template<class CharType>
 class RCharacterParam : public RParam
 {
 public :

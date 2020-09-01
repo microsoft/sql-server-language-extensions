@@ -63,7 +63,9 @@ const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam
 		<RParamTemplate<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
-		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam>)},
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char>>)},
+	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char16_t>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RRawParam>)},
 };
@@ -144,7 +146,6 @@ void RParamContainer::CreateParam(
 	SQLSMALLINT   inputOutputType)
 {
 	LOG("RParamContainer::CreateParam");
-
 	unique_ptr<RParam> paramToBeAdded =
 		make_unique<RParamType>(
 			paramNumber,

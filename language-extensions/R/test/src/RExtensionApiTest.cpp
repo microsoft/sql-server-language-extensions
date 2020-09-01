@@ -528,6 +528,34 @@ namespace ExtensionApiTest
 		return sumOfLengths;
 	}
 
+	// Name: GetWStringLength
+	//
+	// Description:
+	//  Utility function to get the length of a wchar_t *.
+	//  wcslen does not work in Linux with -fshort-wchar, so we use this function instead.
+	//
+	SQLULEN RExtensionApiTest::GetWStringLength(const wchar_t *wstr)
+	{
+		SQLULEN distance = -1;
+
+		// If nullptr, return
+		//
+		if (wstr)
+		{
+			// Get distance from end of string to beginning
+			//
+			const wchar_t *newstr = wstr;
+			while (*newstr)
+			{
+				++newstr;
+			}
+
+			distance = newstr - wstr;
+		}
+
+		return distance;
+	}
+
 	// Name: CheckVectorEquality
 	//
 	// Description:

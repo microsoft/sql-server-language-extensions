@@ -40,8 +40,11 @@ public:
 		SQLPOINTER   data,
 		SQLINTEGER   *strLen_or_Ind);
 
-	// Create a character vector in R with the given data.
+	// Create a character vector in R with the data of type CharType.
+	// CharType could be the default char with utf8 encoding,
+	// or char16_t with utf16 encoding.
 	//
+	template<class CharType>
 	static Rcpp::CharacterVector CreateCharacterVector(
 		SQLULEN    rowsNumber,
 		SQLPOINTER data,

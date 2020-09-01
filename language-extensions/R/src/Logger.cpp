@@ -103,7 +103,7 @@ void Logger::LogRVariable(const string &name)
 #if defined(_DEBUG) || defined(_VERBOSE)
 	if (g_embeddedRPtr != nullptr)
 	{
-		string printVariable = "print(" + name + ");";
+		string printVariable = "message(" + name + ");";
 		(*g_embeddedRPtr).parseEval(printVariable);
 	}
 #endif

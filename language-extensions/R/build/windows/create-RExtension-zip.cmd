@@ -24,8 +24,6 @@ powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -
 
 CALL :CHECK_BUILD_ERROR %ERRORLEVEL% %BUILD_CONFIGURATION%
 
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Path %BUILD_OUTPUT%\libRExtension.dll -DestinationPath %BUILD_OUTPUT%\packages\R-lang-extension.zip -Force"
-
 REM Advance arg passed to create-RExtension-zip.cmd
 REM
 SHIFT
