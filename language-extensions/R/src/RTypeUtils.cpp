@@ -252,17 +252,18 @@ void RTypeUtils::FillDataFromRVector(
 // Name: FillDataFromCharacterVector
 //
 // Description:
-//  Given the vectorInR, copy its content into the given std::vector pointed to by charVector.
+//  Given the vectorInR, copy its content into the given std::vector pointed to by data of SQLType.
 //  Copy the content only as far as the rowsNumber indicates.
 //  If the value is NA, set nullable and strLenOrInd to SQL_NULL_DATA.
 //  Also, return the maxLen of character string encountered as all the strings are scanned.
 //  maxLen or the individual strLenOrInd cannot exceed the allowedLen.
 //
+template<class SQLType>
 void RTypeUtils::FillDataFromCharacterVector(
 	SQLULEN               rowsNumber,
 	Rcpp::CharacterVector vectorInR,
 	SQLULEN               allowedLen,
-	vector<SQLCHAR>       *data,
+	vector<SQLType>       *data,
 	SQLINTEGER            *strLenOrInd,
 	SQLSMALLINT           &nullable,
 	SQLULEN               &maxLen)
@@ -275,22 +276,48 @@ void RTypeUtils::FillDataFromCharacterVector(
 	{
 		if (!Rcpp::CharacterVector::is_na(vectorInR[index]))
 		{
-			SQLINTEGER stringLength = strlen(vectorInR[index]);
-
-			// The string length cannot go beyond allowedLen.
+			// This calculates the total number of bytes occupied by the character in R
+			// Since R utilizes utf-8 encoding, there could be characters that occupy
+			// more than 1 byte, so this may not correspond to the string length i.e. the
+			// number of characters.
 			//
-			strLenOrInd[index] =
-				static_cast<SQLULEN>(stringLength) <= allowedLen
-					? stringLength
-					: static_cast<SQLINTEGER>(allowedLen);
+			SQLINTEGER bytesOccupied = strlen(vectorInR[index]);
 
-			if (maxLen < static_cast<SQLULEN>(strLenOrInd[index]))
+			// When generating a string from utf-8 encoded R data, use the bytesOccupied
+			// as the length of string.
+			//
+			string utf8String(vectorInR[index], bytesOccupied);
+
+			SQLINTEGER lengthOfStringToInsert = 0;
+
+			if constexpr (is_same_v<SQLType, SQLWCHAR>)
 			{
-				maxLen = strLenOrInd[index];
+				u16string utf16String;
+				estd::ToUtf16(utf8String.c_str(), bytesOccupied, utf16String);
+				lengthOfStringToInsert = utf16String.length();
+				lengthOfStringToInsert =
+					static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
+					? lengthOfStringToInsert
+					: static_cast<SQLINTEGER>(allowedLen);
+				data->insert(data->end(), utf16String.begin(),
+					utf16String.begin() + lengthOfStringToInsert);
+			}
+			else
+			{
+				lengthOfStringToInsert = bytesOccupied;
+				lengthOfStringToInsert =
+					static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
+					? lengthOfStringToInsert
+					: static_cast<SQLINTEGER>(allowedLen);
+				data->insert(data->end(), utf8String.begin(),
+					utf8String.begin() + lengthOfStringToInsert);
 			}
 
-			string stringToCopy(vectorInR[index], strLenOrInd[index]);
-			data->insert(data->end(), stringToCopy.begin(), stringToCopy.end());
+			strLenOrInd[index] = lengthOfStringToInsert * sizeof(SQLType);
+			if (maxLen < static_cast<SQLULEN>(lengthOfStringToInsert))
+			{
+				maxLen = lengthOfStringToInsert;
+			}
 		}
 		else
 		{
@@ -423,3 +450,21 @@ template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char16_t>(
 	SQLULEN    rowsNumber,
 	SQLPOINTER data,
 	SQLINTEGER *strLen_or_Ind);
+
+template void RTypeUtils::FillDataFromCharacterVector<SQLCHAR>(
+	SQLULEN               rowsNumber,
+	Rcpp::CharacterVector vectorInR,
+	SQLULEN               allowedLen,
+	vector<SQLCHAR>       *data,
+	SQLINTEGER            *strLenOrInd,
+	SQLSMALLINT           &nullable,
+	SQLULEN               &maxLen);
+
+template void RTypeUtils::FillDataFromCharacterVector<SQLWCHAR>(
+	SQLULEN               rowsNumber,
+	Rcpp::CharacterVector vectorInR,
+	SQLULEN               allowedLen,
+	vector<SQLWCHAR>      *data,
+	SQLINTEGER            *strLenOrInd,
+	SQLSMALLINT           &nullable,
+	SQLULEN               &maxLen);

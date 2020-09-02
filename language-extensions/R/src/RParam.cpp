@@ -216,8 +216,8 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd
 // Description:
 //  Constructor.
 //
-template<class CharType>
-RCharacterParam<CharType>::RCharacterParam(
+template<class CharType, class SQLType>
+RCharacterParam<CharType, SQLType>::RCharacterParam(
 	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -247,8 +247,8 @@ RCharacterParam<CharType>::RCharacterParam(
 //  This is a wrapper to CreateCharacterVector with rowsNumber = 1.
 //  For null parameters, a size one vector with member value = NA_STRING is created.
 //
-template<class CharType>
-void RCharacterParam<CharType>::SetRcppVector(SQLPOINTER paramValue)
+template<class CharType, class SQLType>
+void RCharacterParam<CharType, SQLType>::SetRcppVector(SQLPOINTER paramValue)
 {
 	LOG("RCharacterParam::SetRcppVector");
 
@@ -276,8 +276,8 @@ void RCharacterParam<CharType>::SetRcppVector(SQLPOINTER paramValue)
 // Description:
 //  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
-template<class CharType>
-void RCharacterParam<CharType>::RetrieveValueAndStrLenInd()
+template<class CharType, class SQLType>
+void RCharacterParam<CharType, SQLType>::RetrieveValueAndStrLenInd()
 {
 	LOG("RCharacterParam::RetrieveValueAndStrLenInd");
 
@@ -302,10 +302,10 @@ void RCharacterParam<CharType>::RetrieveValueAndStrLenInd()
 			// but fill only the first value as the parameter value.
 			// hence pass in rowsNumber = 1.
 			//
-			RTypeUtils::FillDataFromCharacterVector(
-				1,  // rowsNumber
+			RTypeUtils::FillDataFromCharacterVector<SQLType>(
+				1,      // rowsNumber
 				m_RcppVector,
-				m_size,
+				m_size, // allowedLen
 				&m_value,
 				&m_strLenOrInd,
 				nullable,
@@ -486,7 +486,7 @@ template RParamTemplate<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>::RParamTem
 	SQLINTEGER,
 	SQLSMALLINT);
 
-template RCharacterParam<char>::RCharacterParam(
+template RCharacterParam<char, SQLCHAR>::RCharacterParam(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,
@@ -497,7 +497,7 @@ template RCharacterParam<char>::RCharacterParam(
 	SQLINTEGER,
 	SQLSMALLINT);
 
-template RCharacterParam<char16_t>::RCharacterParam(
+template RCharacterParam<char16_t, SQLWCHAR>::RCharacterParam(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,

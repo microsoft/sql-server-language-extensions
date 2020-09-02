@@ -501,7 +501,7 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		Rcpp::CharacterVector column = m_dataFrame[columnNumber];
-		RTypeUtils::FillDataFromCharacterVector(
+		RTypeUtils::FillDataFromCharacterVector<SQLCHAR>(
 			m_rowsNumber,
 			column,
 			numeric_limits<SQLULEN>::max(),

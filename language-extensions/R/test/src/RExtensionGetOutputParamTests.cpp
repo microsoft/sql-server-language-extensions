@@ -599,6 +599,101 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	// Name: GetNCharOutputParamTest
+	//
+	// Description:
+	// Test multiple nchar/nvarchar values
+	//
+	TEST_F(RExtensionApiTest, GetNCharOutputParamTest)
+	{
+		// Construct the values that correspond to 你好
+		//
+		vector<char> chineseString = { -28, -67, -96, -27, -91, -67 };
+		string dummystring = string(chineseString.data(), 6);
+
+		string scriptString = "param1 <- 'HELLO';"
+			"param2 <- 'RExtension';"
+			"param3 <- 'WORLD';"
+			"param4 <- '" + dummystring + "';"
+			"param5 <- 'Mix " + dummystring + "';"
+			"param6 <- as.character(NA);"
+			"param7 <- as.character();"
+			"param8 <- '';";
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			scriptString,
+			8); // parametersNumber
+
+		// Note: The behavior of fixed and varying character types is same when it comes to output
+		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
+		//
+		vector<bool> isFixedType = { true, false, true, true, true, false, true, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 10, 2, 6, 5, 5, 5 };
+		vector<const wchar_t*> initParamValues(8, L"");
+		vector<SQLSMALLINT> inputOutputTypes(initParamValues.size(), SQL_PARAM_INPUT_OUTPUT);
+
+		InitCharParam<wchar_t, SQL_C_WCHAR>(
+			initParamValues,
+			paramSizes,
+			isFixedType,
+			inputOutputTypes,
+			false);           // validate
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = (*m_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		vector<const wchar_t*> expectedParamValues = {
+			// Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
+			//
+			L"HELLO",
+			// Test NVARCHAR(6) value with string length more than the type allows - expected truncation.
+			// Above python script sets the parameter to "RExtension" but we only expect "RExten".
+			//
+			L"RExten",
+			// Test NCHAR(10) value with string length less than the type allows.
+			//
+			L"WORLD",
+			// Test a Unicode string
+			//
+			L"你好",
+			// Test a mixture of one-byte and multi-byte Unicode string
+			//
+			L"Mix 你好",
+			nullptr,
+			nullptr,
+			// Test a 0 length string
+			//
+			L"" };
+
+		vector<SQLINTEGER> expectedStrLenOrInd = {
+			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+			SQL_NULL_DATA,
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(0 * sizeof(wchar_t))
+		};
+
+		GetNCharOutputParam(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
 	// Name: GetRawOutputParamTest
 	//
 	// Description:
@@ -837,6 +932,57 @@ namespace ExtensionApiTest
 						static_cast<void*>(expectedParamValues[paramNumber])),
 						expectedStrLenOrInd[paramNumber]);
 				EXPECT_EQ(paramValueString, expectedParamValueString);
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	// Name: GetNCharOutputParam
+	//
+	// Description:
+	// Test nchar/nvarchar output param value and strLenOrInd are as expected.
+	//
+	void RExtensionApiTest::GetNCharOutputParam(
+		vector<const wchar_t*> expectedParamValues,
+		vector<SQLINTEGER>     expectedStrLenOrInd)
+	{
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+			SQLRETURN result = SQL_ERROR;
+
+			result = (*m_getOutputParamFuncPtr)(
+				*m_sessionId,
+				m_taskId,
+				paramNumber,
+				&paramValue,
+				&strLen_or_Ind);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+			if (expectedParamValues[paramNumber] != nullptr)
+			{
+				wstring paramValueString(static_cast<wchar_t*>(paramValue),
+					strLen_or_Ind / sizeof(wchar_t));
+				wstring expectedParamValueString(expectedParamValues[paramNumber],
+					expectedStrLenOrInd[paramNumber] / sizeof(wchar_t));
+
+				// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
+				// don't work properly for wstrings in Linux with -fshort-wchar
+				//
+				const char *paramBytes = reinterpret_cast<const char*>(paramValueString.c_str());
+				const char *expectedParamBytes =
+					reinterpret_cast<const char*>(expectedParamValueString.c_str());
+
+				for(SQLINTEGER i=0; i < strLen_or_Ind; i++)
+				{
+					EXPECT_EQ(paramBytes[i], expectedParamBytes[i]);
+				}
 			}
 			else
 			{

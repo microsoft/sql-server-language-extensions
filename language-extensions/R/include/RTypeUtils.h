@@ -69,11 +69,12 @@ public:
 
 	// Given the vectorInR, copy its content into the given std::vector pointed to by charVector.
 	//
+	template<class SQLType>
 	static void FillDataFromCharacterVector(
 		SQLULEN               rowsNumber,
 		Rcpp::CharacterVector vectorInR,
 		SQLULEN               allowedLen,
-		std::vector<SQLCHAR>  *data,
+		std::vector<SQLType>  *data,
 		SQLINTEGER            *strLenOrInd,
 		SQLSMALLINT           &nullable,
 		SQLULEN               &maxLen);

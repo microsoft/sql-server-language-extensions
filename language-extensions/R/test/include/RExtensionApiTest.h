@@ -344,20 +344,26 @@ namespace ExtensionApiTest
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 
-		// Templatized function to test output param value and strLenOrInd is as expected.
+		// Templatized function to test output param value and strLenOrInd are as expected.
 		//
 		template<class SQLType>
 		void GetOutputParam(
 			std::vector<std::shared_ptr<SQLType>> expectedParamValues,
 			std::vector<SQLINTEGER>               expectedStrLenOrInd);
 
-		// Test character output param value and strLenOrInd is as expected.
+		// Test (var)char(n) output param value and strLenOrInd are as expected.
 		//
 		void GetCharOutputParam(
 			std::vector<SQLCHAR*>   expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
 
-		// Test raw(binary) output param value and strLenOrInd is as expected.
+		// Test nchar(n)/nvarchar(n) output param value and strLenOrInd are as expected.
+		//
+		void GetNCharOutputParam(
+			std::vector<const wchar_t*> expectedParamValues,
+			std::vector<SQLINTEGER>	   expectedStrLenOrInd);
+
+		// Test raw(binary) output param value and strLenOrInd are as expected.
 		//
 		void GetRawOutputParam(
 			std::vector<SQLCHAR*>   expectedParamValues,

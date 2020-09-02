@@ -63,9 +63,9 @@ const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam
 		<RParamTemplate<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_CHAR),
-		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char>>)},
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char, SQLCHAR>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),
-		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char16_t>>)},
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char16_t, SQLWCHAR>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RRawParam>)},
 };

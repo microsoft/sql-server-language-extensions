@@ -217,8 +217,9 @@ private:
 //
 // Description:
 //  Class representing a character parameter by storing Rcpp::CharacterVector.
+//  Corresponds to ODBC C type SQL_C_CHAR and SQL_C_WCHAR.
 //
-template<class CharType>
+template<class CharType, class SQLType>
 class RCharacterParam : public RParam
 {
 public :
@@ -255,7 +256,7 @@ public :
 		if (m_value.size() > 0)
 		{
 			return static_cast<SQLPOINTER>(
-				const_cast<SQLCHAR*>(m_value.data()));
+				const_cast<SQLType*>(m_value.data()));
 		}
 		else
 		{
@@ -272,7 +273,7 @@ private:
 	// Character vector holding the contents before sending them back to ExtHost.
 	// Useful for output parameter types.
 	//
-	std::vector<SQLCHAR> m_value;
+	std::vector<SQLType> m_value;
 
 	// The Rcpp::CharacterVector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
