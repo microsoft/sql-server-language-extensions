@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -7,9 +7,9 @@
 // @File: Logger.h
 //
 // Purpose:
-//	 Logging functions for extension
+//  Logging functions for extension
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 #include "Common.h"
@@ -42,5 +42,5 @@ private:
 
 	// Buffer to hold the timestamp string.
 	//
-	static char timestampBuffer[];
+	static char sm_timestampBuffer[];
 };

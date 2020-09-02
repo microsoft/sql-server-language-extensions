@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -10,7 +10,7 @@
 //  PythonExtension input/output parameters wrappers,
 //  along with the container consolidating them.
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 
 #include "Logger.h"
@@ -18,11 +18,12 @@
 #include "PythonParamContainer.h"
 
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 
 // Function map - maps a SQL data type to the appropriate param creator
 //
-unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamContainer::m_FnCreateParamMap =
+unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam>
+PythonParamContainer::sm_FnCreateParamMap =
 {
 	{static_cast<SQLSMALLINT>(SQL_C_BIT),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonBooleanParam>)},
@@ -44,17 +45,17 @@ unordered_map<SQLSMALLINT, PythonParamContainer::fnCreateParam> PythonParamConta
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonStringParam<wchar_t>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonRawParam>)},
-	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
-	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonDateTimeParam<SQL_C_TYPE_DATE>>)},
-	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
-	 static_cast<fnCreateParam>(&PythonParamContainer::CreateParam<PythonDateTimeParam<SQL_C_TYPE_TIMESTAMP>>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE), static_cast<fnCreateParam>(
+		 &PythonParamContainer::CreateParam<PythonDateTimeParam<SQL_C_TYPE_DATE>>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP), static_cast<fnCreateParam>(
+		 &PythonParamContainer::CreateParam<PythonDateTimeParam<SQL_C_TYPE_TIMESTAMP>>)},
 };
 
 //-------------------------------------------------------------------------------------------------
 // Name: Init
 //
 // Description:
-// Initialize this container with the number of parameters.
+//  Initialize this container with the number of parameters.
 //
 void PythonParamContainer::Init(SQLSMALLINT paramsNumber)
 {
@@ -72,7 +73,7 @@ void PythonParamContainer::Init(SQLSMALLINT paramsNumber)
 //  Creation is done by finding the appropriate function from the function map.
 //
 void PythonParamContainer::AddParamToNamespace(
-	py::object    nameSpace,
+	bp::object    nameSpace,
 	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -85,11 +86,11 @@ void PythonParamContainer::AddParamToNamespace(
 {
 	LOG("PythonParamContainer::AddParamToNamespace");
 
-	CreateParamFnMap::const_iterator it = m_FnCreateParamMap.find(dataType);
+	CreateParamFnMap::const_iterator it = sm_FnCreateParamMap.find(dataType);
 
-	if (it == m_FnCreateParamMap.end())
+	if (it == sm_FnCreateParamMap.end())
 	{
-		throw runtime_error("Unsupported parameter type " + to_string(dataType) + 
+		throw runtime_error("Unsupported parameter type " + to_string(dataType) +
 			" encountered when creating param #" + to_string(paramNumber));
 	}
 
@@ -115,7 +116,7 @@ void PythonParamContainer::AddParamToNamespace(
 //
 template<class ParamType>
 void PythonParamContainer::CreateParam(
-	py::object    nameSpace,
+	bp::object    nameSpace,
 	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -149,10 +150,11 @@ void PythonParamContainer::CreateParam(
 // Description:
 //  For the given paramNumber, call RetriveValueAndStrLenOrInd() to retrieve the value from python
 //  and return it via paramValue. Return the strLenOrInd as well.
-//  Note the value returned is allocated on the heap and will be cleaned up when param is destructed.
+//  Note the value returned is allocated on the heap and
+//  will be cleaned up when param is destructed.
 //
 void PythonParamContainer::GetParamValueAndStrLenInd(
-	py::object   mainNamespace,
+	bp::object   mainNamespace,
 	SQLUSMALLINT paramNumber,
 	SQLPOINTER   *paramValue,
 	SQLINTEGER   *strLen_or_Ind)

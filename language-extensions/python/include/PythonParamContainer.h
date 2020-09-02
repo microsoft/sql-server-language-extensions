@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
 // Purpose:
 //  A container that stores the input and output parameters passed to the python script.
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 #include "Common.h"
@@ -99,6 +99,6 @@ private:
 
 	// Function map to add parameters to the namespace and its typedef
 	//
-	static std::unordered_map<SQLSMALLINT, fnCreateParam> m_FnCreateParamMap;
+	static std::unordered_map<SQLSMALLINT, fnCreateParam> sm_FnCreateParamMap;
 	typedef std::unordered_map<SQLSMALLINT, fnCreateParam> CreateParamFnMap;
 };

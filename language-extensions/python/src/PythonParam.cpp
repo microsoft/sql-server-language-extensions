@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
 // Purpose:
 //  Class storing information about the PythonExtension input/output parameter.
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #include "Logger.h"
 #include "PythonParam.h"
@@ -19,13 +19,13 @@
 #include <datetime.h>
 
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 
 //-------------------------------------------------------------------------------------------------
 // Name: PythonParam
 //
 // Description:
-// Constructor.
+//  Constructor.
 //
 PythonParam::PythonParam(
 	SQLUSMALLINT  id,
@@ -66,8 +66,8 @@ PythonParam::PythonParam(
 // Name: CheckParamSize
 //
 // Description:
-// Verifies if m_Size is equal to the size of the template type T.
-// Returns nothing if the check succeeds, throws an exception otherwise.
+//  Verifies if m_Size is equal to the size of the template type T.
+//  Returns nothing if the check succeeds, throws an exception otherwise.
 //
 template<class T>
 void PythonParam::CheckParamSize()
@@ -89,7 +89,7 @@ void PythonParam::CheckParamSize()
 // Description:
 //  Constructor.
 //  Calls the base constructor then populates m_pyObject with a boost::python object that contains
-//  the parameter value, in a way that python can use, or py::object which is None.
+//  the parameter value, in a way that python can use, or bp::object which is None.
 //
 template<class SQLType>
 PythonParamTemplate<SQLType>::PythonParamTemplate(
@@ -115,13 +115,13 @@ PythonParamTemplate<SQLType>::PythonParamTemplate(
 
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
-		m_pyObject = py::object(*static_cast<SQLType*>(paramValue));
+		m_pyObject = bp::object(*static_cast<SQLType*>(paramValue));
 	}
 	else
 	{
 		// Use None object for NULLs
 		//
-		m_pyObject = py::object();
+		m_pyObject = bp::object();
 	}
 }
 
@@ -133,19 +133,19 @@ PythonParamTemplate<SQLType>::PythonParamTemplate(
 //  Template for int/float types.
 //
 template<class SQLType>
-void PythonParamTemplate<SQLType>::RetrieveValueAndStrLenInd(py::object mainNamespace)
+void PythonParamTemplate<SQLType>::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 {
-	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	bp::dict dictNamespace = bp::extract<bp::dict>(mainNamespace);
 
 	m_strLenOrInd = SQL_NULL_DATA;
 
 	if (dictNamespace.has_key(m_name))
 	{
-		py::object tempObj = mainNamespace[m_name];
+		bp::object tempObj = mainNamespace[m_name];
 
 		if(!tempObj.is_none())
 		{
-			py::extract<SQLType> extractedObj(tempObj);
+			bp::extract<SQLType> extractedObj(tempObj);
 			if(extractedObj.check())
 			{
 				m_value.push_back(SQLType(extractedObj));
@@ -161,7 +161,7 @@ void PythonParamTemplate<SQLType>::RetrieveValueAndStrLenInd(py::object mainName
 // Description:
 //  Constructor.
 //  Calls the base constructor then populates m_pyObject with a boost::python object that contains
-//  the parameter value, in a way that python can use, or py::object which is None.
+//  the parameter value, in a way that python can use, or bp::object which is None.
 //
 PythonBooleanParam::PythonBooleanParam(
 	SQLUSMALLINT  id,
@@ -185,13 +185,13 @@ PythonBooleanParam::PythonBooleanParam(
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
 		bool value = *static_cast<SQLCHAR*>(paramValue) != '0' ? true : false;
-		m_pyObject = py::object(value);
+		m_pyObject = bp::object(value);
 	}
 	else
 	{
 		// Use None object for NULLs
 		//
-		m_pyObject = py::object();
+		m_pyObject = bp::object();
 	}
 }
 
@@ -201,18 +201,18 @@ PythonBooleanParam::PythonBooleanParam(
 // Description:
 //  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
 //
-void PythonBooleanParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
+void PythonBooleanParam::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 {
-	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	bp::dict dictNamespace = bp::extract<bp::dict>(mainNamespace);
 	if (dictNamespace.has_key(m_name))
 	{
-		py::object tempObj = mainNamespace[m_name];
+		bp::object tempObj = mainNamespace[m_name];
 
 		m_strLenOrInd = SQL_NULL_DATA;
 
 		if (!tempObj.is_none())
 		{
-			py::extract<bool> extractedObj(tempObj);
+			bp::extract<bool> extractedObj(tempObj);
 			if (extractedObj.check())
 			{
 				m_value.push_back(static_cast<SQLCHAR>(bool(extractedObj)));
@@ -228,7 +228,7 @@ void PythonBooleanParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
 // Description:
 //  Constructor.
 //  Calls the base constructor then populates m_pyObject with a boost::python object that contains
-//  the parameter value, in a way that python can use, or py::object which is None.
+//  the parameter value, in a way that python can use, or bp::object which is None.
 //  We use StrLen_or_Ind to calculate how long the string is before creating the python object.
 //
 template<class CharType>
@@ -259,7 +259,7 @@ PythonStringParam<CharType>::PythonStringParam(
 		// This DOES copy the underlying string into a new buffer and null terminates it.
 		// Then, convert to a boost object so that boost handles ref counting.
 		//
-		m_pyObject = py::object(py::handle<>(
+		m_pyObject = bp::object(bp::handle<>(
 			PyUnicode_FromKindAndData(sizeof(CharType), paramValue, strlen)
 		));
 	}
@@ -267,7 +267,7 @@ PythonStringParam<CharType>::PythonStringParam(
 	{
 		// Use None object for NULLs
 		//
-		m_pyObject = py::object();
+		m_pyObject = bp::object();
 	}
 }
 
@@ -278,12 +278,12 @@ PythonStringParam<CharType>::PythonStringParam(
 //  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
 //
 template<class CharType>
-void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(py::object mainNamespace)
+void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 {
-	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	bp::dict dictNamespace = bp::extract<bp::dict>(mainNamespace);
 	if (dictNamespace.has_key(m_name))
 	{
-		py::object tempObj = mainNamespace[m_name];
+		bp::object tempObj = mainNamespace[m_name];
 
 		m_strLenOrInd = SQL_NULL_DATA;
 
@@ -293,7 +293,7 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(py::object mainNames
 			{
 				// Check to make sure the extracted data exists and is of the correct type
 				//
-				py::extract<string> extractedObj(tempObj);
+				bp::extract<string> extractedObj(tempObj);
 
 				if (extractedObj.check())
 				{
@@ -342,7 +342,7 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(py::object mainNames
 // Description:
 //  Constructor.
 //  Calls the base constructor then populates m_pyObject with a boost::python object that contains
-//  the bytes object of the data, in a way that python can use, or py::object which is None.
+//  the bytes object of the data, in a way that python can use, or bp::object which is None.
 //
 PythonRawParam::PythonRawParam(
 	SQLUSMALLINT  id,
@@ -369,7 +369,7 @@ PythonRawParam::PythonRawParam(
 
 		// Create a Python bytes object from binary
 		//
-		m_pyObject = py::object(py::handle<>(
+		m_pyObject = bp::object(bp::handle<>(
 			PyBytes_FromObject(PyMemoryView_FromMemory(
 				static_cast<char *>(paramValue), strlen, PyBUF_READ
 			))
@@ -379,7 +379,7 @@ PythonRawParam::PythonRawParam(
 	{
 		// Use None object for NULLs
 		//
-		m_pyObject = py::object();
+		m_pyObject = bp::object();
 	}
 }
 
@@ -389,12 +389,12 @@ PythonRawParam::PythonRawParam(
 // Description:
 //  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
 //
-void PythonRawParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
+void PythonRawParam::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 {
-	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	bp::dict dictNamespace = bp::extract<bp::dict>(mainNamespace);
 	if (dictNamespace.has_key(m_name))
 	{
-		py::object tempObj = mainNamespace[m_name];
+		bp::object tempObj = mainNamespace[m_name];
 
 		m_strLenOrInd = SQL_NULL_DATA;
 
@@ -402,7 +402,7 @@ void PythonRawParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
 		{
 			// The uninitialized iterator is equivalent to the end of the iterable
 			//
-			py::stl_input_iterator<SQLCHAR> begin(tempObj), end;
+			bp::stl_input_iterator<SQLCHAR> begin(tempObj), end;
 
 			// Copy the py_buffer into a local buffer.
 			//
@@ -427,7 +427,7 @@ void PythonRawParam::RetrieveValueAndStrLenInd(py::object mainNamespace)
 // Description:
 //  Constructor.
 //  Calls the base constructor then populates m_pyObject with a boost::python object that contains
-//  the date/datetime object of the data, in a way that python can use, or py::object which is None.
+//  the date/datetime object of the data, in a way that python can use, or bp::object which is None.
 //
 template<SQLSMALLINT DataType>
 PythonDateTimeParam<DataType>::PythonDateTimeParam(
@@ -456,7 +456,7 @@ PythonDateTimeParam<DataType>::PythonDateTimeParam(
 		PyDateTime_IMPORT;
 		PyObject *dtObject = Py_None;
 
-		// SQL_C_TYPE_DATE for Date objects in SQL, SQL_C_TYPE_TIMESTAMP for Datetime 
+		// SQL_C_TYPE_DATE for Date objects in SQL, SQL_C_TYPE_TIMESTAMP for Datetime
 		//
 		if (DataType == SQL_C_TYPE_DATE)
 		{
@@ -465,7 +465,7 @@ PythonDateTimeParam<DataType>::PythonDateTimeParam(
 			// Create a Python Date object
 			//
 			dtObject = PyDate_FromDate(dateParam.year, dateParam.month, dateParam.day);
-		} 
+		}
 		else if (DataType == SQL_C_TYPE_TIMESTAMP)
 		{
 			SQL_TIMESTAMP_STRUCT timeStampParam = *(static_cast<SQL_TIMESTAMP_STRUCT *>(paramValue));
@@ -476,17 +476,18 @@ PythonDateTimeParam<DataType>::PythonDateTimeParam(
 
 			// Create a Python DateTime object
 			//
-			dtObject = PyDateTime_FromDateAndTime(timeStampParam.year, timeStampParam.month, timeStampParam.day,
+			dtObject = PyDateTime_FromDateAndTime(
+				timeStampParam.year, timeStampParam.month, timeStampParam.day,
 				timeStampParam.hour, timeStampParam.minute, timeStampParam.second, usec);
 		}
 
-		m_pyObject = py::object(py::handle<>(dtObject));
+		m_pyObject = bp::object(bp::handle<>(dtObject));
 	}
 	else
 	{
 		// Use None object for NULLs
 		//
-		m_pyObject = py::object();
+		m_pyObject = bp::object();
 	}
 }
 
@@ -497,12 +498,12 @@ PythonDateTimeParam<DataType>::PythonDateTimeParam(
 //  Retrieves the value from the namespace and populates m_value and m_strLenOrInd
 //
 template<SQLSMALLINT DataType>
-void PythonDateTimeParam<DataType>::RetrieveValueAndStrLenInd(py::object mainNamespace)
+void PythonDateTimeParam<DataType>::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 {
-	py::dict dictNamespace = py::extract<py::dict>(mainNamespace);
+	bp::dict dictNamespace = bp::extract<bp::dict>(mainNamespace);
 	if (dictNamespace.has_key(m_name))
 	{
-		py::object tempObj = mainNamespace[m_name];
+		bp::object tempObj = mainNamespace[m_name];
 
 		m_strLenOrInd = SQL_NULL_DATA;
 
@@ -530,7 +531,7 @@ void PythonDateTimeParam<DataType>::RetrieveValueAndStrLenInd(py::object mainNam
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
 // Do explicit template instantiations, so that object code is generated for these
 // and the linker is able to find their definitions even after instantiations are in different
 // translation units (i.e. PythonParamTemplate instantiation is in PythonParamContainer.cpp)

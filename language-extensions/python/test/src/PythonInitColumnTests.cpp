@@ -14,8 +14,10 @@
 
 namespace ExtensionApiTest
 {
-	// Positive Test
-	// Test InitColumn() API with valid values
+	// Name: InitColumnTest
+	//
+	// Description:
+	//  Test InitColumn() API with valid values
 	//
 	TEST_F(PythonExtensionApiTests, InitColumnTest)
 	{
@@ -40,9 +42,15 @@ namespace ExtensionApiTest
 		);
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
+	
+	//
+	// Negative Tests
+	//
 
-	// Negative test
-	// Test InitColumn() API with null column name
+	// Name: InitInvalidColumnTest
+	//
+	// Description:
+	//  Test InitColumn() API with null column name
 	//
 	TEST_F(PythonExtensionApiTests, InitInvalidColumnTest)
 	{
@@ -65,8 +73,10 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
-	// Negative test
-	// Test InitColumn() API with bad column numbers (too big)
+	// Name: InitInvalidColumnNumberTest
+	//
+	// Description:
+	//  Test InitColumn() API with bad column numbers (too big)
 	//
 	TEST_F(PythonExtensionApiTests, InitInvalidColumnNumberTest)
 	{

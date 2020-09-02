@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,14 +9,14 @@
 // Purpose:
 //  Global class to keep the global python namespace
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 #include "Common.h"
 
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Description:
-//	Global class storing the python namespace
+//  Global class storing the python namespace
 //
 class PythonNamespace
 {
@@ -29,20 +29,20 @@ public:
 	//
 	static void Cleanup();
 
-	// Get the main python namespace
-	//
-	static boost::python::object& MainNamespace() { return m_mainNamespace; }
-
 	// Get the main python module
 	//
-	static boost::python::object& MainModule() { return m_mainModule; }
+	static boost::python::object &MainModule() { return sm_mainModule; }
+
+	// Get the main python namespace
+	//
+	static boost::python::object& MainNamespace() { return sm_mainNamespace; }
 
 	// Get the original path list
 	//
-	static boost::python::object& OriginalPath() { return m_originalPath; }
+	static boost::python::object& OriginalPath() { return sm_originalPath; }
 
 private:
-	static boost::python::object m_mainNamespace;
-	static boost::python::object m_mainModule;
-	static boost::python::object m_originalPath;
+	static boost::python::object sm_mainModule;    // The boost python module; python will run in this object
+	static boost::python::object sm_mainNamespace; // The boost python namespace; dictionary containing all python variables
+	static boost::python::object sm_originalPath;  // The original system python path
 };

@@ -9,7 +9,7 @@
 // Purpose:
 //  Classes storing information about an PythonExtension input/output parameter.
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 #include "Common.h"
@@ -105,20 +105,36 @@ protected:
 
 	// Indicates string length or SQL_NULL_DATA for null.
 	// Note about expected m_strLenOrInd, m_size according to type:
+	//
 	// For fixed non-char non-binary types,
-	//   value       m_strLenOrInd          m_size
-	//   NULL        SQL_NULL_DATA          sizeof<type>
-	//   Non-NULL    0                      sizeof<type>
+	//     value   |  m_strLenorInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  sizeof<type>
+	//     Non-NULL|  0                                            |  sizeof<type>
 	//
 	// For char(n), binary(n) types,
-	//   value       m_strLenOrInd          m_size
-	//   NULL        SQL_NULL_DATA          n
-	//   Non-NULL    n                      n
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  n                                            |  n
 	//
 	// For varchar(n), varbinary(n) types,
-	//   value       m_strLenOrInd          m_size
-	//   NULL        SQL_NULL_DATA          n
-	//   Non-NULL    actualNumberOfChars    n
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  actualNumberOfBytes(same as length)          |  n
+	//
+	// For nchar(n) type,
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  n*sizeof(char16_t))                          |  n
+	//
+	// For nvarchar(n) type,
+	//     value   |  m_strLenOrInd                                |  m_size
+	//----------------------------------------------------------------------------
+	//     NULL    |  SQL_NULL_DATA                                |  n
+	//     Non-NULL|  actualNumberOfBytes(length*sizeof(char16_t)) |  n
 	//
 	SQLINTEGER m_strLenOrInd;
 
@@ -172,7 +188,6 @@ public:
 	}
 
 private:
-
 	// Vector holding the value of the parameter as retrieved from python namespace,
 	// holding the contents before sending them back to ExtHost
 	// Only useful for output parameter types.
@@ -380,7 +395,7 @@ public:
 	}
 
 private:
-	// Character vector holding the contents before sending them back to ExtHost.
+	// Timestamp vector holding the contents before sending them back to ExtHost.
 	// Useful for output parameter types.
 	//
 	std::vector<SQL_TIMESTAMP_STRUCT> m_value;

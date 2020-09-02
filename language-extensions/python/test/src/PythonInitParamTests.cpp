@@ -17,71 +17,15 @@
 #include <datetime.h>
 #include <memory>
 
-
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 
 namespace ExtensionApiTest
 {
-	// Negative test
-	// Test InitParam() API with null parameter name
+	// Name: InitIntegerParamTest
 	//
-	TEST_F(PythonExtensionApiTests, InitNullNameParamTest)
-	{
-		InitializeSession(1); //parametersNumber
-
-		SQLCHAR *paramName = nullptr;
-		SQLSMALLINT paramNameLength = 0;
-		SQLINTEGER paramValue = 123;
-
-		SQLRETURN result = InitParam(
-			*m_sessionId,
-			m_taskId,
-			0,               // paramNumber
-			paramName,
-			paramNameLength,
-			SQL_C_SLONG,
-			m_IntSize,       // argSize
-			0,               // decimalDigits
-			&paramValue,     // argValue
-			SQL_NULL_DATA,   // strLenOrInd
-			1);              // inputOutputType
-
-		EXPECT_EQ(result, SQL_ERROR);
-	}
-
-	// Negative test
-	// Test InitParam() API with bad param numbers (too big)
-	//
-	TEST_F(PythonExtensionApiTests, InitInvalidParamNumberTest)
-	{
-		int parametersNumber = 1;
-		InitializeSession(parametersNumber);
-
-		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>("@param1")));
-
-			SQLSMALLINT paramNameLength = 7;
-
-		SQLINTEGER paramValue = 123;
-
-		SQLRETURN result = InitParam(
-			*m_sessionId,
-			m_taskId,
-			parametersNumber + 1,  // paramNumber outside of range
-			unsignedParamName, // paramName
-			paramNameLength,
-			SQL_C_SLONG,
-			m_IntSize,         // argSize
-			0,                 // decimalDigits
-			&paramValue,       // argValue
-			SQL_NULL_DATA,     // strLenOrInd
-			1);                // inputOutputType
-
-		EXPECT_EQ(result, SQL_ERROR);
-	}
-
-	// Test multiple SQLINTEGER values
+	// Description:
+	//  Test multiple SQLINTEGER values
 	//
 	TEST_F(PythonExtensionApiTests, InitIntegerParamTest)
 	{
@@ -109,7 +53,10 @@ namespace ExtensionApiTest
 			true); // isNull
 	}
 
-	// Test multiple BIT values
+	// Name: InitBitParamTest
+	//
+	// Description:
+	//  Test multiple BIT values
 	//
 	TEST_F(PythonExtensionApiTests, InitBitParamTest)
 	{
@@ -137,7 +84,10 @@ namespace ExtensionApiTest
 			'2');
 	}
 
-	// Test multiple FLOAT(24) (SQLREAL) values
+	// Name: InitFloatParamTest
+	//
+	// Description:
+	//  Test multiple FLOAT(24) (SQLREAL) values
 	//
 	TEST_F(PythonExtensionApiTests, InitFloatParamTest)
 	{
@@ -165,7 +115,10 @@ namespace ExtensionApiTest
 			true); // isNull
 	}
 
-	// Test multiple FLOAT(53) (DOUBLE) values
+	// Name: InitDoubleParamTest
+	//
+	// Description:
+	//  Test multiple FLOAT(53) (DOUBLE) values
 	//
 	TEST_F(PythonExtensionApiTests, InitDoubleParamTest)
 	{
@@ -193,7 +146,10 @@ namespace ExtensionApiTest
 			true); // isNull
 	}
 
-	// Test multiple SQLBIGINT values
+	// Name: InitBigIntParamTest
+	//
+	// Description:
+	//  Test multiple SQLBIGINT values
 	//
 	TEST_F(PythonExtensionApiTests, InitBigIntParamTest)
 	{
@@ -221,7 +177,10 @@ namespace ExtensionApiTest
 			true); // isNull
 	}
 
-	// Test multiple TINYINT values
+	// Name: InitTinyIntParamTest
+	//
+	// Description:
+	//  Test multiple TINYINT values
 	//
 	TEST_F(PythonExtensionApiTests, InitTinyIntParamTest)
 	{
@@ -254,7 +213,10 @@ namespace ExtensionApiTest
 			-1);
 	}
 
-	// Test multiple SMALLINT values
+	// Name: InitSmallIntParamTest
+	//
+	// Description:
+	//  Test multiple SMALLINT values
 	//
 	TEST_F(PythonExtensionApiTests, InitSmallIntParamTest)
 	{
@@ -282,7 +244,10 @@ namespace ExtensionApiTest
 			true); // isNull
 	}
 
-	// Test multiple CHAR and VARCHAR values
+	// Name: InitStringParamTest
+	//
+	// Description:
+	//  Test multiple CHAR and VARCHAR values
 	//
 	TEST_F(PythonExtensionApiTests, InitStringParamTest)
 	{
@@ -353,8 +318,10 @@ namespace ExtensionApiTest
 			false);  // isFixedType
 	}
 
-
-	// Test multiple NCHAR and NVARCHAR values
+	// Name: InitWStringParamTest
+	//
+	// Description:
+	//  Test multiple NCHAR and NVARCHAR values
 	//
 	TEST_F(PythonExtensionApiTests, InitWStringParamTest)
 	{
@@ -449,7 +416,10 @@ namespace ExtensionApiTest
 			false);   // isFixedType
 	}
 
-	// Test multiple BINARY and VARBINARY values
+	// Name: InitBinaryParamTest
+	//
+	// Description:
+	//  Test multiple BINARY and VARBINARY values
 	//
 	TEST_F(PythonExtensionApiTests, InitBinaryParamTest)
 	{
@@ -522,7 +492,10 @@ namespace ExtensionApiTest
 			true);       // isFixedType
 	}
 
-	// Test multiple DATETIME values
+	// Name: InitDateTimeParamTest
+	//
+	// Description:
+	//  Test multiple DATETIME values
 	//
 	TEST_F(PythonExtensionApiTests, InitDateTimeParamTest)
 	{
@@ -561,7 +534,10 @@ namespace ExtensionApiTest
 		);
 	}
 
-	// Test multiple DATE values
+	// Name: InitDateParamTest
+	//
+	// Description:
+	//  Test multiple DATE values
 	//
 	TEST_F(PythonExtensionApiTests, InitDateParamTest)
 	{
@@ -575,7 +551,7 @@ namespace ExtensionApiTest
 			paramValue 
 		);
 		
-		// Test min SQL_TIMESTAMP_STRUCT value
+		// Test min SQL_DATE_STRUCT value
 		//
 		paramValue = { 1,1,1 };
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
@@ -583,7 +559,7 @@ namespace ExtensionApiTest
 			paramValue
 		);
 
-		// Test normal SQL_TIMESTAMP_STRUCT value
+		// Test normal SQL_DATE_STRUCT value
 		//
 		paramValue = { 1470,7,27 };
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
@@ -591,13 +567,79 @@ namespace ExtensionApiTest
 			paramValue
 		);
 
-		// Test null SQL_TIMESTAMP_STRUCT value
+		// Test null SQL_DATE_STRUCT value
 		//
 		TestDateTimeParameter<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
 			0,   // paramNumber
 			{},  // paramValue
 			true // isNull
 			);
+	}
+
+	//
+	// Negative Tests
+	//
+
+	// Name: InitNullNameParamTest
+	//
+	// Description:
+	//  Test InitParam() API with null parameter name
+	//
+	TEST_F(PythonExtensionApiTests, InitNullNameParamTest)
+	{
+		InitializeSession(1); //parametersNumber
+
+		SQLCHAR *paramName = nullptr;
+		SQLSMALLINT paramNameLength = 0;
+		SQLINTEGER paramValue = 123;
+
+		SQLRETURN result = InitParam(
+			*m_sessionId,
+			m_taskId,
+			0,               // paramNumber
+			paramName,
+			paramNameLength,
+			SQL_C_SLONG,
+			m_IntSize,       // argSize
+			0,               // decimalDigits
+			&paramValue,     // argValue
+			SQL_NULL_DATA,   // strLenOrInd
+			1);              // inputOutputType
+
+		EXPECT_EQ(result, SQL_ERROR);
+	}
+
+	// Name: InitInvalidParamNumberTest
+	//
+	// Description:
+	//  Test InitParam() API with bad param numbers (too big)
+	//
+	TEST_F(PythonExtensionApiTests, InitInvalidParamNumberTest)
+	{
+		int parametersNumber = 1;
+		InitializeSession(parametersNumber);
+
+		SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>("@param1")));
+
+		SQLSMALLINT paramNameLength = 7;
+
+		SQLINTEGER paramValue = 123;
+
+		SQLRETURN result = InitParam(
+			*m_sessionId,
+			m_taskId,
+			parametersNumber + 1,  // paramNumber outside of range
+			unsignedParamName, // paramName
+			paramNameLength,
+			SQL_C_SLONG,
+			m_IntSize,         // argSize
+			0,                 // decimalDigits
+			&paramValue,       // argValue
+			SQL_NULL_DATA,     // strLenOrInd
+			1);                // inputOutputType
+
+		EXPECT_EQ(result, SQL_ERROR);
 	}
 
 	// Name: TestParameter
@@ -646,7 +688,7 @@ namespace ExtensionApiTest
 
 		if (validate)
 		{
-			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
 			if (!isNull)
 			{
@@ -654,12 +696,12 @@ namespace ExtensionApiTest
 
 				if (dataType == SQL_C_BIT)
 				{
-					bool param = py::extract<bool>(obj);
+					bool param = bp::extract<bool>(obj);
 					EXPECT_EQ(param, paramValue != '0' ? true : false);
 				}
 				else
 				{
-					SQLType param = py::extract<SQLType>(obj);
+					SQLType param = bp::extract<SQLType>(obj);
 					EXPECT_EQ(param, paramValue);
 				}
 			}
@@ -742,13 +784,13 @@ namespace ExtensionApiTest
 
 		if (validate)
 		{
-			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
 			if (paramValue != nullptr)
 			{
 				ASSERT_FALSE(obj.is_none());
 
-				char *param = py::extract<char *>(obj);
+				char *param = bp::extract<char *>(obj);
 
 				EXPECT_STREQ(param, expectedParamValue);
 			}
@@ -759,7 +801,7 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: TestStringParameter
+	// Name: TestWStringParameter
 	//
 	// Description:
 	// Testing if InitParam is implemented correctly for the nchar/nvarchar dataType.
@@ -827,7 +869,7 @@ namespace ExtensionApiTest
 
 		if (validate)
 		{
-			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
 			if (paramValue != nullptr)
 			{
@@ -941,7 +983,7 @@ namespace ExtensionApiTest
 
 		if(validate)
 		{
-			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
 			if (paramValue != nullptr)
 			{
@@ -949,7 +991,7 @@ namespace ExtensionApiTest
 
 				// The uninitialized iterator is equivalent to the end of the iterable
 				//
-				py::stl_input_iterator<SQLCHAR> begin(obj), end;
+				bp::stl_input_iterator<SQLCHAR> begin(obj), end;
 
 				// Copy the py_buffer into a local buffer with known continguous memory.
 				//
@@ -1015,7 +1057,7 @@ namespace ExtensionApiTest
 
 		if (validate)
 		{
-			py::object obj(py::extract<py::dict>(m_mainNamespace)().get(paramName));
+			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
 			if (!isNull)
 			{

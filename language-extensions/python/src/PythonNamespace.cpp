@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,29 +9,29 @@
 // Purpose:
 //  Global class to keep the global python namespace
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #include "PythonNamespace.h"
 #include "PythonPathSettings.h"
 
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonNamespace::Init
 //
 // Description:
-//	Initialize the class
+//  Initialize the class
 //
 void PythonNamespace::Init()
 {
-	m_mainModule = py::import("__main__");
-	m_mainNamespace = m_mainModule.attr("__dict__");
+	sm_mainModule = bp::import("__main__");
+	sm_mainNamespace = sm_mainModule.attr("__dict__");
 
 	// Check that the module and namespace are populated, not None objects
 	//
-	if (m_mainModule == py::object() ||
-		m_mainNamespace == py::object())
+	if (sm_mainModule == bp::object() ||
+		sm_mainNamespace == bp::object())
 	{
 		throw runtime_error("Main module or namespace was None");
 	}
@@ -53,7 +53,7 @@ void PythonNamespace::Init()
 		"    nulhandle = open(os.devnull, 'w+')\n"
 		"    nulhandle.close()";
 
-	py::exec(setupScript.c_str(), m_mainNamespace);
+	bp::exec(setupScript.c_str(), sm_mainNamespace);
 
 	string privateLibPath = PythonPathSettings::PrivateLibraryPath();
 	string publicLibPath = PythonPathSettings::PublicLibraryPath();
@@ -62,25 +62,25 @@ void PythonNamespace::Init()
 	// so that we can find the external packages that are installed.
 	// We set the private/public paths in front of the sys.path so they are searched first.
 	//
-	m_originalPath = py::extract<py::list>(py::eval("sys.path", m_mainNamespace));
-	py::list newPath(m_originalPath);
-	newPath.insert(0, py::str(publicLibPath));
-	newPath.insert(0, py::str(privateLibPath));
+	sm_originalPath = bp::extract<bp::list>(bp::eval("sys.path", sm_mainNamespace));
+	bp::list newPath(sm_originalPath);
+	newPath.insert(0, bp::str(publicLibPath));
+	newPath.insert(0, bp::str(privateLibPath));
 
 	PySys_SetObject("path", newPath.ptr());
 }
 
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonNamespace::Cleanup
 //
 // Description:
-//	Cleanup, reset the Python syspath
+//  Cleanup, reset the Python syspath
 //
 void PythonNamespace::Cleanup()
 {
-	PySys_SetObject("path", m_originalPath.ptr());
+	PySys_SetObject("path", sm_originalPath.ptr());
 }
 
-py::object PythonNamespace::m_mainNamespace;
-py::object PythonNamespace::m_mainModule;
-py::object PythonNamespace::m_originalPath;
+bp::object PythonNamespace::sm_mainNamespace;
+bp::object PythonNamespace::sm_mainModule;
+bp::object PythonNamespace::sm_originalPath;

@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,14 +9,14 @@
 // Purpose:
 //  Global class to keep language runtime settings
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 #include "Common.h"
 
-//---------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Description:
-//	Global class storing the language runtime paths and parameters
+//  Global class storing the language runtime paths and parameters
 //
 class PythonPathSettings
 {
@@ -31,23 +31,23 @@ public:
 
 	// Get the private library path sent by SQL Server
 	//
-	static const std::string& PrivateLibraryPath() { return m_privateLibraryPath; }
+	static const std::string& PrivateLibraryPath() { return sm_privateLibraryPath; }
 
 	// Get the public library path sent by SQL Server
 	//
-	static const std::string& PublicLibraryPath() { return m_publicLibraryPath; }
+	static const std::string& PublicLibraryPath() { return sm_publicLibraryPath; }
 
 	// Get the extension root folder
 	//
-	static const std::string& RootPath() { return m_languagePath; }
+	static const std::string& RootPath() { return sm_languagePath; }
 
 	// Get the language parameters sent by SQL Server
 	//
-	static const std::string& Params() { return m_languageParams; }
+	static const std::string& Params() { return sm_languageParams; }
 
 private:
-	static std::string m_languagePath;
-	static std::string m_languageParams;
-	static std::string m_privateLibraryPath;
-	static std::string m_publicLibraryPath;
+	static std::string sm_languagePath;
+	static std::string sm_languageParams;
+	static std::string sm_privateLibraryPath;
+	static std::string sm_publicLibraryPath;
 };

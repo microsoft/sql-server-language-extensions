@@ -86,7 +86,7 @@ protected:
 
 	// Maps the ODBC C type to python type
 	//
-	static const std::unordered_map<std::string, SQLSMALLINT> m_pythonToOdbcTypeMap;
+	static const std::unordered_map<std::string, SQLSMALLINT> sm_pythonToOdbcTypeMap;
 	typedef std::unordered_map<std::string, SQLSMALLINT> pythonToOdbcTypeMap;
 
 	// The underlying boost::python namespace.

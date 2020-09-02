@@ -30,7 +30,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
 		TestExecute<SQLINTEGER, SQL_C_SLONG>(
-			ColumnInfo<SQLINTEGER>::m_rowsNumber,
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
 			(*m_integerInfo).m_dataSet.data(),
 			(*m_integerInfo).m_strLen_or_Ind.data(),
 			(*m_integerInfo).m_columnNames,
@@ -68,7 +68,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLCHAR, SQL_C_BIT>(m_booleanInfo.get());
 
 		TestExecute<SQLCHAR, SQL_C_BIT>(
-			ColumnInfo<SQLCHAR>::m_rowsNumber,
+			ColumnInfo<SQLCHAR>::sm_rowsNumber,
 			(*m_booleanInfo).m_dataSet.data(),
 			(*m_booleanInfo).m_strLen_or_Ind.data(),
 			(*m_booleanInfo).m_columnNames,
@@ -104,7 +104,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLREAL, SQL_C_FLOAT>(m_realInfo.get());
 
 		TestExecute<SQLREAL, SQL_C_FLOAT>(
-			ColumnInfo<SQLREAL>::m_rowsNumber,
+			ColumnInfo<SQLREAL>::sm_rowsNumber,
 			(*m_realInfo).m_dataSet.data(),
 			(*m_realInfo).m_strLen_or_Ind.data(),
 			(*m_realInfo).m_columnNames,
@@ -142,7 +142,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(m_doubleInfo.get());
 
 		TestExecute<SQLDOUBLE, SQL_C_DOUBLE>(
-			ColumnInfo<SQLDOUBLE>::m_rowsNumber,
+			ColumnInfo<SQLDOUBLE>::sm_rowsNumber,
 			(*m_doubleInfo).m_dataSet.data(),
 			(*m_doubleInfo).m_strLen_or_Ind.data(),
 			(*m_doubleInfo).m_columnNames,
@@ -178,7 +178,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(m_bigIntInfo.get());
 
 		TestExecute<SQLBIGINT, SQL_C_SBIGINT>(
-			ColumnInfo<SQLBIGINT>::m_rowsNumber,
+			ColumnInfo<SQLBIGINT>::sm_rowsNumber,
 			(*m_bigIntInfo).m_dataSet.data(),
 			(*m_bigIntInfo).m_strLen_or_Ind.data(),
 			(*m_bigIntInfo).m_columnNames,
@@ -214,7 +214,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(m_smallIntInfo.get());
 
 		TestExecute<SQLSMALLINT, SQL_C_SSHORT>(
-			ColumnInfo<SQLSMALLINT>::m_rowsNumber,
+			ColumnInfo<SQLSMALLINT>::sm_rowsNumber,
 			(*m_smallIntInfo).m_dataSet.data(),
 			(*m_smallIntInfo).m_strLen_or_Ind.data(),
 			(*m_smallIntInfo).m_columnNames,
@@ -252,7 +252,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(m_tinyIntInfo.get());
 
 		TestExecute<SQLCHAR, SQL_C_UTINYINT>(
-			ColumnInfo<SQLCHAR>::m_rowsNumber,
+			ColumnInfo<SQLCHAR>::sm_rowsNumber,
 			(*m_tinyIntInfo).m_dataSet.data(),
 			(*m_tinyIntInfo).m_strLen_or_Ind.data(),
 			(*m_tinyIntInfo).m_columnNames,
@@ -566,7 +566,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(m_dateTimeInfo.get());
 
 		TestExecute<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
-			ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber,
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber,
 			(*m_dateTimeInfo).m_dataSet.data(),
 			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
 			(*m_dateTimeInfo).m_columnNames,
@@ -602,7 +602,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(m_dateInfo.get());
 
 		TestExecute<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
-			ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber,
+			ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber,
 			(*m_dateInfo).m_dataSet.data(),
 			(*m_dateInfo).m_strLen_or_Ind.data(),
 			(*m_dateInfo).m_columnNames,

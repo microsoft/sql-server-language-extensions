@@ -15,7 +15,7 @@
 #include <datetime.h>
 
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 
 namespace ExtensionApiTest
 {
@@ -50,8 +50,11 @@ namespace ExtensionApiTest
 		 static_cast<fnCheckColumnEquality>(&PythonExtensionApiTests::CheckDateTimeColumnEquality<SQL_DATE_STRUCT>)},
 	};
 
-	// Code here will be called immediately after the constructor (right
-	// before each test).
+	// Name: SetUp
+	//
+	// Description:
+	//  Code here will be called immediately after the constructor (right
+	//  before each test).
 	//
 	void PythonExtensionApiTests::SetUp()
 	{
@@ -62,15 +65,21 @@ namespace ExtensionApiTest
 		SetupVariables();
 	}
 
-	// Code here will be called immediately after each test (right
-	// before the destructor).
+	// Name: TearDown
+	//
+	// Description:
+	//  Code here will be called immediately after each test 
+	//  (right before the destructor).
 	//
 	void PythonExtensionApiTests::TearDown()
 	{
 		DoCleanup();
 	}
 
-	// Set up default, valid variables for use in tests
+	// Name: SetupVariables
+	//
+	// Description:
+	//  Set up default, valid variables for use in tests
 	//
 	void PythonExtensionApiTests::SetupVariables()
 	{
@@ -98,7 +107,7 @@ namespace ExtensionApiTest
 		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
 			"IntegerColumn1",
 			vector<SQLINTEGER>{ 0, 1, 2, 3, 4},
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, m_IntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::sm_rowsNumber, m_IntSize),
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, 0, 0, -1 },
 			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize });
@@ -106,7 +115,7 @@ namespace ExtensionApiTest
 		m_booleanInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"BooleanColumn1",
 			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_BooleanSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_BooleanSize),
 			"BooleanColumn2",
 			vector<SQLCHAR>{ '\0', '2', '1', '0', '\0' },
 			vector<SQLINTEGER>{ SQL_NULL_DATA, m_BooleanSize, m_BooleanSize, m_BooleanSize, SQL_NULL_DATA });
@@ -114,7 +123,7 @@ namespace ExtensionApiTest
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
 			vector<SQLREAL>{ 0.34F, 1.33F, m_MaxReal, m_MinReal, 68e10F },
-			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, m_RealSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::sm_rowsNumber, m_RealSize),
 			"RealColumn2",
 			vector<SQLREAL>{  0, -1, NAN, NAN, NAN },
 			vector<SQLINTEGER>{ m_RealSize, m_RealSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
@@ -122,7 +131,7 @@ namespace ExtensionApiTest
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
 			vector<SQLDOUBLE>{ -1.79e301, 1.33, m_MaxDouble, m_MinDouble, 1.79e30 },
-			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, m_DoubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::sm_rowsNumber, m_DoubleSize),
 			"DoubleColumn2",
 			vector<SQLDOUBLE>{  0, -1, NAN, NAN, NAN },
 			vector<SQLINTEGER>{ m_DoubleSize, m_DoubleSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
@@ -130,7 +139,7 @@ namespace ExtensionApiTest
 		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
 			"BigIntColumn1",
 			vector<SQLBIGINT>{ m_MaxBigInt, 1, 88883939, m_MinBigInt, -622280108 },
-			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, m_BigIntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::sm_rowsNumber, m_BigIntSize),
 			"BigIntColumn2",
 			vector<SQLBIGINT>{0, 0, 0, 12341512213, -12341512213 },
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
@@ -139,7 +148,7 @@ namespace ExtensionApiTest
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
 			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, m_SmallIntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_SmallIntSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ m_MaxSmallInt, m_MinSmallInt, 0, 0, 3'276 },
 			vector<SQLINTEGER>{ m_SmallIntSize, m_SmallIntSize,
@@ -148,7 +157,7 @@ namespace ExtensionApiTest
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
 			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_TinyIntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_TinyIntSize),
 			"TinyIntColumn2",
 			vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 0, 0, 128 },
 			vector<SQLINTEGER>{ m_TinyIntSize, m_TinyIntSize,
@@ -163,7 +172,7 @@ namespace ExtensionApiTest
 				{ 2020, 4, 16, 15, 5, 12, 169012000 },
 				{ 231, 2, 14, 22, 36, 18, 489102000 },
 			},
-			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::m_rowsNumber, m_DateTimeSize),
+			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber, m_DateTimeSize),
 			"DateTimeColumn2",
 			vector<SQL_TIMESTAMP_STRUCT>{
 				{ 9999, 12, 31, 23, 59, 59, 999999000 },
@@ -184,7 +193,7 @@ namespace ExtensionApiTest
 				{ 2020, 4, 16 },
 				{ 231, 2, 14, },
 			},
-			vector<SQLINTEGER>(ColumnInfo<SQL_DATE_STRUCT>::m_rowsNumber, m_DateSize),
+			vector<SQLINTEGER>(ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber, m_DateSize),
 			"DateColumn2",
 			vector<SQL_DATE_STRUCT>{
 				{ 9999, 12, 31 },
@@ -198,10 +207,10 @@ namespace ExtensionApiTest
 
 		try
 		{
-			m_mainModule = py::import("__main__");
+			m_mainModule = bp::import("__main__");
 			m_mainNamespace = m_mainModule.attr("__dict__");
 		}
-		catch (py::error_already_set&)
+		catch (bp::error_already_set&)
 		{
 			throw runtime_error("Error loading main module and namespace");
 		}
@@ -215,8 +224,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Initialize a valid, default session for non-Init tests
-	// Tests InitSession API
+	// Name: InitializeSession
+	//
+	// Description:
+	//  Initialize a valid, default session for non-Init tests
+	//  Tests InitSession API
 	//
 	void PythonExtensionApiTests::InitializeSession(
 		SQLUSMALLINT parametersNumber,
@@ -256,8 +268,12 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Call Cleanup on the PythonExtension.
-	// Testing if Cleanup is implemented correctly.
+
+	// Name: DoCleanup
+	//
+	// Description:
+	//  Call Cleanup on the PythonExtension.
+	//  Testing if Cleanup is implemented correctly.
 	//
 	void PythonExtensionApiTests::DoCleanup()
 	{
@@ -472,15 +488,15 @@ namespace ExtensionApiTest
 	template<class SQLType>
 	void PythonExtensionApiTests::CheckColumnEquality(
 		SQLULEN    expectedRowsNumber,
-		py::dict   columnToTest,
+		bp::dict   columnToTest,
 		void       *expectedColumn,
 		SQLINTEGER *strLen_or_Ind)
 	{
-		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+		ASSERT_EQ(static_cast<SQLULEN>(bp::len(columnToTest)), expectedRowsNumber);
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			py::object val = columnToTest[index];
+			bp::object val = columnToTest[index];
 
 			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
@@ -488,7 +504,7 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				SQLType typeVal = py::extract<SQLType>(val);
+				SQLType typeVal = bp::extract<SQLType>(val);
 				SQLType expectedValue = static_cast<SQLType*>(expectedColumn)[index];
 				EXPECT_EQ(typeVal, expectedValue);
 			}
@@ -502,15 +518,15 @@ namespace ExtensionApiTest
 	//
 	void PythonExtensionApiTests::CheckBooleanColumnEquality(
 		SQLULEN    expectedRowsNumber,
-		py::dict   columnToTest,
+		bp::dict   columnToTest,
 		void       *expectedColumn,
 		SQLINTEGER *strLen_or_Ind)
 	{
-		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+		ASSERT_EQ(static_cast<SQLULEN>(bp::len(columnToTest)), expectedRowsNumber);
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			py::object val = columnToTest[index];
+			bp::object val = columnToTest[index];
 
 			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
@@ -519,7 +535,7 @@ namespace ExtensionApiTest
 			else
 			{
 				bool expectedValue = static_cast<bool*>(expectedColumn)[index];
-				bool typeVal = py::extract<bool>(val);
+				bool typeVal = bp::extract<bool>(val);
 				EXPECT_EQ(typeVal, expectedValue);
 			}
 		}
@@ -534,17 +550,17 @@ namespace ExtensionApiTest
 	//
 	void PythonExtensionApiTests::CheckStringColumnEquality(
 		SQLULEN    expectedRowsNumber,
-		py::dict   columnToTest,
+		bp::dict   columnToTest,
 		void       *expectedColumn,
 		SQLINTEGER *strLen_or_Ind)
 	{
-		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+		ASSERT_EQ(static_cast<SQLULEN>(bp::len(columnToTest)), expectedRowsNumber);
 
 		SQLINTEGER cumulativeLength = 0;
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			py::object val = columnToTest[index];
+			bp::object val = columnToTest[index];
 			if (strLen_or_Ind == nullptr ||
 				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
 			{
@@ -552,7 +568,7 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				string typeVal = py::extract<string>(val);
+				string typeVal = bp::extract<string>(val);
 				string expectedString = string(
 					static_cast<char*>(expectedColumn) + cumulativeLength,
 					strLen_or_Ind[index]);
@@ -574,17 +590,17 @@ namespace ExtensionApiTest
 	//
 	void PythonExtensionApiTests::CheckWStringColumnEquality(
 		SQLULEN    expectedRowsNumber,
-		py::dict   columnToTest,
+		bp::dict   columnToTest,
 		void       *expectedColumn,
 		SQLINTEGER *strLen_or_Ind)
 	{
-		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+		ASSERT_EQ(static_cast<SQLULEN>(bp::len(columnToTest)), expectedRowsNumber);
 
 		SQLINTEGER cumulativeLength = 0;
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			py::object val = columnToTest[index];
+			bp::object val = columnToTest[index];
 			if (strLen_or_Ind == nullptr ||
 				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
 			{
@@ -627,17 +643,17 @@ namespace ExtensionApiTest
 	//
 	void PythonExtensionApiTests::CheckRawColumnEquality(
 		SQLULEN    expectedRowsNumber,
-		py::dict   columnToTest,
+		bp::dict   columnToTest,
 		void       *expectedColumn,
 		SQLINTEGER *strLen_or_Ind)
 	{
-		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+		ASSERT_EQ(static_cast<SQLULEN>(bp::len(columnToTest)), expectedRowsNumber);
 
 		SQLINTEGER cumulativeLength = 0;
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			py::object val = columnToTest[index];
+			bp::object val = columnToTest[index];
 
 			if (strLen_or_Ind == nullptr ||
 				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
@@ -667,17 +683,17 @@ namespace ExtensionApiTest
 	template<class DateTimeStruct>
 	void PythonExtensionApiTests::CheckDateTimeColumnEquality(
 		SQLULEN    expectedRowsNumber,
-		py::dict   columnToTest,
+		bp::dict   columnToTest,
 		void       *expectedColumn,
 		SQLINTEGER *strLen_or_Ind)
 	{
-		ASSERT_EQ(static_cast<SQLULEN>(py::len(columnToTest)), expectedRowsNumber);
+		ASSERT_EQ(static_cast<SQLULEN>(bp::len(columnToTest)), expectedRowsNumber);
 
 		DateTimeStruct *expectedDateTimeColumn = static_cast<DateTimeStruct *>(expectedColumn);
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			py::object val = columnToTest[index];
+			bp::object val = columnToTest[index];
 
 			if (strLen_or_Ind == nullptr ||
 				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))

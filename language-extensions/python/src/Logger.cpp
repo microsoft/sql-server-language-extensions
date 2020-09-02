@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -7,16 +7,16 @@
 // @File: Logger.cpp
 //
 // Purpose:
-//	 Logging functions for extension
+//  Logging functions for extension
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #include "Logger.h"
 
 #define TIMESTAMP_LENGTH 35
 using namespace std;
 
-char Logger::timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
+char Logger::sm_timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 
 //-------------------------------------------------------------------------------------------------
 // Name: LogError
@@ -68,7 +68,7 @@ const std::string Logger::GetCurrentTimestamp()
 
 	GetLocalTime(&sysTime);
 
-	sprintf_s(timestampBuffer, TIMESTAMP_LENGTH,
+	sprintf_s(sm_timestampBuffer, TIMESTAMP_LENGTH,
 		"%04d-%02d-%02d %02d:%02d:%02d.%02d\t",
 		sysTime.wYear,
 		sysTime.wMonth,
@@ -78,7 +78,7 @@ const std::string Logger::GetCurrentTimestamp()
 		sysTime.wSecond,
 		sysTime.wMilliseconds / 10);
 
-	return timestampBuffer;
+	return sm_timestampBuffer;
 #else
 	time_t now = time(0);
 	struct tm tstruct;

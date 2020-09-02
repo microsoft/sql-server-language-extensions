@@ -449,7 +449,7 @@ namespace ExtensionApiTest
 			return m_columnNames.size();
 		}
 
-		static const SQLULEN m_rowsNumber = 5;
+		static const SQLULEN sm_rowsNumber = 5;
 		std::vector<std::string> m_columnNames;
 		std::vector<SQLType> m_column1;
 		std::vector<SQLType> m_column2;

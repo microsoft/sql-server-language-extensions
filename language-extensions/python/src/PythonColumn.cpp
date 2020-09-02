@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -7,14 +7,20 @@
 // @File: PythonColumn.cpp
 //
 // Purpose:
-//	 Encapsulate data column attributes
+//  Encapsulate data column attributes
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #include "PythonColumn.h"
 
 using namespace std;
 
+//-------------------------------------------------------------------------------------------------
+// Name: PythonColumn::PythonColumn
+//
+// Description:
+//  Initializes the class that encapsulates one column in the Python DataFrame/Dictionary
+//
 PythonColumn::PythonColumn(
 	const SQLCHAR *columnName,
 	SQLSMALLINT   columnNameLength,

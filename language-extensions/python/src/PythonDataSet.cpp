@@ -21,12 +21,12 @@
 #include <sqlext.h>
 
 using namespace std;
-namespace py = boost::python;
-namespace np = py::numpy;
+namespace bp = boost::python;
+namespace np = bp::numpy;
 
 // Maps the ODBC C type to python type
 //
-const unordered_map<string, SQLSMALLINT> PythonDataSet::m_pythonToOdbcTypeMap =
+const unordered_map<string, SQLSMALLINT> PythonDataSet::sm_pythonToOdbcTypeMap =
 {
 	{"bool", SQL_C_BIT},
 	{"uint8", SQL_C_UTINYINT},
@@ -147,7 +147,7 @@ void PythonDataSet::Init(
 	const SQLCHAR  *dataName,
 	SQLUSMALLINT   dataNameLength,
 	SQLUSMALLINT   schemaColumnsNumber,
-	py::object     mainNamespace)
+	bp::object     mainNamespace)
 {
 	LOG("PythonDataSet::Init");
 
@@ -225,7 +225,7 @@ void PythonDataSet::Cleanup()
 
 		// Execute the cleanup script to reset the dataset variable to None.
 		//
-		py::exec(cleanupScript.c_str(), m_mainNamespace);
+		bp::exec(cleanupScript.c_str(), m_mainNamespace);
 	}
 }
 
@@ -312,7 +312,8 @@ void PythonInputDataSet::AddColumnsToDictionary(
 
 		if (m_columns[columnNumber] == nullptr)
 		{
-			throw runtime_error("InitColumn not called for columnNumber " + to_string(columnNumber));
+			throw runtime_error("InitColumn not called for columnNumber "
+				+ to_string(columnNumber));
 		}
 
 		SQLSMALLINT dataType = m_columns[columnNumber].get()->DataType();
@@ -320,7 +321,8 @@ void PythonInputDataSet::AddColumnsToDictionary(
 
 		if (it == sm_FnAddColumnMap.end())
 		{
-			throw runtime_error("Unsupported column type encountered when adding column #" + to_string(columnNumber));
+			throw runtime_error("Unsupported column type encountered when adding column #"
+				+ to_string(columnNumber));
 		}
 
 		(this->*it->second)(
@@ -331,7 +333,7 @@ void PythonInputDataSet::AddColumnsToDictionary(
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::AddColumnToDictionary
 //
 // Description:
@@ -357,9 +359,9 @@ void PythonInputDataSet::AddColumnToDictionary(
 	// own    - python object to hold a reference until it is transferred to the namespace
 	//
 	np::dtype dt = np::dtype::get_builtin<SQLType>();
-	py::tuple stride = py::make_tuple(sizeof(SQLType));
-	py::tuple shape = py::make_tuple(rowsNumber);
-	py::object own;
+	bp::tuple stride = bp::make_tuple(sizeof(SQLType));
+	bp::tuple shape = bp::make_tuple(rowsNumber);
+	bp::object own;
 
 	// Check if there are actually any nulls in this nullable column
 	//
@@ -392,7 +394,7 @@ void PythonInputDataSet::AddColumnToDictionary(
 			{
 				// Use None object for NULLs
 				//
-				nArray[row] = py::object();
+				nArray[row] = bp::object();
 			}
 			else
 			{
@@ -404,7 +406,7 @@ void PythonInputDataSet::AddColumnToDictionary(
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::AddBooleanColumnToDictionary
 //
 // Description:
@@ -427,9 +429,9 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 	// own    - python object to hold a reference until it is transferred to the namespace
 	//
 	np::dtype dt = np::dtype::get_builtin<bool>();
-	py::tuple stride = py::make_tuple(sizeof(bool));
-	py::tuple shape = py::make_tuple(rowsNumber);
-	py::object own;
+	bp::tuple stride = bp::make_tuple(sizeof(bool));
+	bp::tuple shape = bp::make_tuple(rowsNumber);
+	bp::object own;
 
 	// Check if there are actually any nulls in this nullable column
 	//
@@ -472,7 +474,7 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 			{
 				// Use None object for NULLs
 				//
-				nArray[row] = py::object();
+				nArray[row] = bp::object();
 			}
 			else
 			{
@@ -485,7 +487,7 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::AddStringColumnToDictionary
 //
 // Description:
@@ -508,7 +510,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 
 	// Create an empty numpy array of type python object
 	//
-	py::tuple shape = py::make_tuple(rowsNumber);
+	bp::tuple shape = bp::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
 
 	for (SQLULEN row = 0; row < rowsNumber; ++row)
@@ -517,7 +519,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
-			nArray[row] = py::object();
+			nArray[row] = bp::object();
 		}
 		else
 		{
@@ -528,7 +530,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 			// This DOES copy the underlying string into a new buffer and null terminates it.
 			// Then, convert to a boost object so that boost handles ref counting.
 			//
-			py::object strObj = py::object(py::handle<>(
+			bp::object strObj = bp::object(bp::handle<>(
 				PyUnicode_FromKindAndData(sizeof(CharType), str, strlen)
 			));
 
@@ -544,7 +546,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 	m_dataDict[name] = nArray;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::AddRawColumnToDictionary
 //
 // Description:
@@ -565,7 +567,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 
 	// Create an empty numpy array of type python object
 	//
-	py::tuple shape = py::make_tuple(rowsNumber);
+	bp::tuple shape = bp::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
 
 	for (SQLULEN row = 0; row < rowsNumber; ++row)
@@ -574,7 +576,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
-			nArray[row] = py::object();
+			nArray[row] = bp::object();
 		}
 		else
 		{
@@ -586,7 +588,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 			// convert to a Bytes object. This step DOES copy the data.
 			// Then, convert to a boost object so that boost handles ref counting.
 			//
-			py::object bytesObj = py::object(py::handle<>(
+			bp::object bytesObj = bp::object(bp::handle<>(
 				PyBytes_FromObject(PyMemoryView_FromMemory(rawVal, strlen, PyBUF_READ))
 			));
 
@@ -602,7 +604,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 	m_dataDict[name] = nArray;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::AddDateTimeColumnToDictionary
 //
 // Description:
@@ -621,7 +623,7 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 
 	// Create an empty numpy array of type python object
 	//
-	py::tuple shape = py::make_tuple(rowsNumber);
+	bp::tuple shape = bp::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
 
 	DateTimeStruct *dateData = static_cast<DateTimeStruct *>(data);
@@ -632,7 +634,7 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//
-			nArray[row] = py::object();
+			nArray[row] = bp::object();
 		}
 		else
 		{
@@ -659,11 +661,12 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 
 				// Create a Python DateTime object
 				//
-				dtObject = PyDateTime_FromDateAndTime(timeStampParam.year, timeStampParam.month, timeStampParam.day,
+				dtObject = PyDateTime_FromDateAndTime(
+					timeStampParam.year, timeStampParam.month, timeStampParam.day,
 					timeStampParam.hour, timeStampParam.minute, timeStampParam.second, usec);
 			}
 
-			nArray[row] = py::object(py::handle<>(dtObject));
+			nArray[row] = bp::object(bp::handle<>(dtObject));
 		}
 	}
 
@@ -674,7 +677,7 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 	m_dataDict[name] = nArray;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::AddDictionaryToNamespace
 //
 // Description:
@@ -690,10 +693,10 @@ void PythonInputDataSet::AddDictionaryToNamespace()
 
 	string createDataFrameScript = m_name + " = DataFrame(" + m_name + ", copy=False)";
 
-	py::exec(createDataFrameScript.c_str(), m_mainNamespace);
+	bp::exec(createDataFrameScript.c_str(), m_mainNamespace);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::InitializeDataFrameInNamespace
 //
 // Description:
@@ -705,10 +708,10 @@ void PythonOutputDataSet::InitializeDataFrameInNamespace()
 
 	string createDataFrameScript = m_name + " = DataFrame()";
 
-	py::exec(createDataFrameScript.c_str(), m_mainNamespace);
+	bp::exec(createDataFrameScript.c_str(), m_mainNamespace);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::GetDataFrameColumnsNumber
 //
 // Description:
@@ -722,32 +725,34 @@ SQLUSMALLINT PythonOutputDataSet::GetDataFrameColumnsNumber()
 	{
 		string getColumnsNumberScript = "len("+ m_name +".columns)";
 
-		m_columnsNumber = py::extract<SQLUSMALLINT>(py::eval(getColumnsNumberScript.c_str(), m_mainNamespace));
+		m_columnsNumber = bp::extract<SQLUSMALLINT>(
+			bp::eval(getColumnsNumberScript.c_str(), m_mainNamespace));
 	}
 
 	return m_columnsNumber;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::GetColumnNames
 //
 // Description:
 //  Returns the list of names of the columns of the DataFrame
 //
-py::list PythonOutputDataSet::GetColumnNames()
+bp::list PythonOutputDataSet::GetColumnNames()
 {
 	LOG("PythonOutputDataSet::GetColumnNames");
 
-	if(py::len(m_columnNames) == 0)
+	if(bp::len(m_columnNames) == 0)
 	{
 		string getColumnNamesScript = "list(" + m_name + ".columns)";
-		m_columnNames = py::extract<py::list>(py::eval(getColumnNamesScript.c_str(), m_mainNamespace));
+		m_columnNames =
+			bp::extract<bp::list>(bp::eval(getColumnNamesScript.c_str(), m_mainNamespace));
 	}
 
 	return m_columnNames;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::RetrieveColumnsFromDataFrame
 //
 // Description:
@@ -757,11 +762,11 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 {
 	LOG("PythonOutputDataSet::RetrieveColumnsFromDataFrame");
 
-	py::list columnNames = GetColumnNames();
+	bp::list columnNames = GetColumnNames();
 
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < py::len(columnNames); columnNumber++)
+	for (SQLUSMALLINT columnNumber = 0; columnNumber < bp::len(columnNames); columnNumber++)
 	{
-		string columnName = py::extract<string>(columnNames[columnNumber]);
+		string columnName = bp::extract<string>(columnNames[columnNumber]);
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
 		SQLULEN columnSize = 0;
 		SQLSMALLINT decimalDigits = 0;
@@ -774,7 +779,8 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 		if (it == sm_FnRetrieveColumnMap.end())
 		{
 			throw invalid_argument("Unsupported data type "
-				+ to_string(dataType) + " in output data for column # " + to_string(columnNumber));
+				+ to_string(dataType) + " in output data for column # "
+				+ to_string(columnNumber));
 		}
 
 		(this->*it->second)(
@@ -798,7 +804,7 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::RetrieveColumnFromDataFrame
 //
 // Description:
@@ -818,7 +824,7 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 	SQLType *columnData = nullptr;
 	SQLINTEGER *nullMap = nullptr;
 	NullType valueForNull = *(static_cast<const NullType*>(
-		PythonExtensionUtils::m_DataTypeToNullMap.at(DataType)));
+		PythonExtensionUtils::sm_DataTypeToNullMap.at(DataType)));
 
 	if (m_rowsNumber > 0)
 	{
@@ -837,15 +843,16 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bool isNull = true;
-		py::object pyObj = column[row];
+		bp::object pyObj = column[row];
 
-		// Make sure the object is not pointing at Python None, or else it will crash on extract
+		// Make sure the object is not pointing at Python None,
+		// or else it will crash on extract
 		//
 		if (!pyObj.is_none())
 		{
 			// Extract the data value from the iterator
 			//
-			py::extract<SQLType> extractedData(pyObj);
+			bp::extract<SQLType> extractedData(pyObj);
 
 			// Check to make sure the extracted data exists and is of the correct type
 			//
@@ -880,7 +887,7 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 	m_columnNullMap.push_back(nullMap);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame
 //
 // Description:
@@ -914,7 +921,7 @@ void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
 
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[row];
+		bp::object pyObj = column[row];
 
 		// Make sure the object is not pointing at Python None, or else it will crash on extract
 		//
@@ -922,7 +929,7 @@ void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
 		{
 			// Extract the data value from the iterator
 			//
-			py::extract<bool> extractedData(pyObj);
+			bp::extract<bool> extractedData(pyObj);
 
 			// Check to make sure the extracted data exists and is of the correct type
 			//
@@ -953,7 +960,7 @@ void PythonOutputDataSet::RetrieveBooleanColumnFromDataFrame(
 	m_columnNullMap.push_back(nullMap);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::RetrieveStringColumnFromDataFrame
 //
 // Description:
@@ -986,13 +993,13 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 	SQLINTEGER maxLen = 0;
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[row];
+		bp::object pyObj = column[row];
 
 		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
 		//
 		if (!pyObj.is_none())
 		{
-			py::extract<string> extractedData(pyObj);
+			bp::extract<string> extractedData(pyObj);
 
 			// Check to make sure the extracted data exists and is of the correct type
 			//
@@ -1038,7 +1045,7 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 	m_columnNullMap.push_back(strLenOrNullMap);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::RetrieveRawColumnFromDataFrame
 //
 // Description:
@@ -1071,7 +1078,7 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 	SQLINTEGER maxLen = 0;
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[row];
+		bp::object pyObj = column[row];
 
 		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
 		//
@@ -1117,12 +1124,12 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 	m_columnNullMap.push_back(strLenOrNullMap);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame
 //
 // Description:
 //  Gets date and datetime column information from the underlying DataFrame,
-//  adds data to m_data and nullmap to m_columnNullMap. 
+//  adds data to m_data and nullmap to m_columnNullMap.
 //
 template<class DateTimeStruct>
 void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
@@ -1147,11 +1154,11 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 	// Get the column as a list of Timestamp objects.
 	//
 	string script = "list(" + m_name + "['" + columnName + "'])";
-	py::list column = py::extract<py::list>(py::eval(script.c_str(), m_mainNamespace));
+	bp::list column = bp::extract<bp::list>(bp::eval(script.c_str(), m_mainNamespace));
 
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
-		py::object pyObj = column[row];
+		bp::object pyObj = column[row];
 
 		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
 		//
@@ -1163,7 +1170,7 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 			{
 				columnData[row] = timestamp;
 			}
-			else 
+			else
 			{
 				columnData[row] = { timestamp.year, timestamp.month, timestamp.day };
 			}
@@ -1190,7 +1197,7 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 	m_columnNullMap.push_back(strLenOrNullMap);
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::ExtractArrayFromDataFrame
 //
 // Description:
@@ -1200,15 +1207,16 @@ np::ndarray PythonOutputDataSet::ExtractArrayFromDataFrame(const string columnNa
 {
 	string getNumpyArrayScript = "np.array(" + m_name + "['" + columnName + "'], copy=False)";
 
-	return py::extract<np::ndarray>(py::eval(getNumpyArrayScript.c_str(), m_mainNamespace));
+	return bp::extract<np::ndarray>(bp::eval(getNumpyArrayScript.c_str(), m_mainNamespace));
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::ExtractTimestampFromPyObject
 //
 // Description:
 //  Extract all the time stamp data from a PyObject and return a TIMESTAMP_STRUCT.
-//  Because TIMESTAMP is the most general, we return TIMESTAMP even for Date objects, with defaults.
+//  Because TIMESTAMP is the most general, we return TIMESTAMP even for Date objects,
+//  with default values.
 //
 SQL_TIMESTAMP_STRUCT PythonOutputDataSet::ExtractTimestampFromPyObject(const PyObject *dateObject)
 {
@@ -1259,7 +1267,7 @@ SQL_TIMESTAMP_STRUCT PythonOutputDataSet::ExtractTimestampFromPyObject(const PyO
 	return { year, month, day, hour, minute, second, usec * 1000 };
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::PopulateColumnsDataType
 //
 // Description:
@@ -1279,7 +1287,7 @@ void PythonOutputDataSet::PopulateColumnsDataType()
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::PopulateColumnDataType
 //
 // Description:
@@ -1293,21 +1301,22 @@ SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumbe
 	string getColumnString = "np.array(" + m_name + "[" + m_name + ".columns[" +
 		to_string(columnNumber) + "]], copy=False)";
 
-	np::ndarray column = py::extract<np::ndarray>(py::eval(getColumnString.c_str(), m_mainNamespace));
+	np::ndarray column = bp::extract<np::ndarray>(
+		bp::eval(getColumnString.c_str(), m_mainNamespace));
 
 	np::dtype dType = column.get_dtype();
 	string type = "NoneType";
 
 	if(!np::equivalent(dType, m_ObjType))
 	{
-		type = py::extract<string>(py::str(dType));
+		type = bp::extract<string>(bp::str(dType));
 	}
 	else
 	{
 		// Create an iterator over the column values.
 		// The uninitialized "end" iterator is equivalent to the end of the list.
 		//
-		py::stl_input_iterator<py::object> itVal(column), end;
+		bp::stl_input_iterator<bp::object> itVal(column), end;
 		while(type == "NoneType" && itVal != end)
 		{
 			type = itVal->ptr()->ob_type->tp_name;
@@ -1316,9 +1325,9 @@ SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumbe
 	}
 
 	PythonDataSet::pythonToOdbcTypeMap::const_iterator it =
-		PythonDataSet::m_pythonToOdbcTypeMap.find(type);
+		PythonDataSet::sm_pythonToOdbcTypeMap.find(type);
 
-	if (it == PythonDataSet::m_pythonToOdbcTypeMap.end())
+	if (it == PythonDataSet::sm_pythonToOdbcTypeMap.end())
 	{
 		throw invalid_argument("Unsupported data type " + type + " in output data for column # "
 			+ to_string(columnNumber) + ".");
@@ -1329,7 +1338,7 @@ SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumbe
 	return dataType;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::PopulateNumberOfRows
 //
 // Description:
@@ -1339,10 +1348,10 @@ void PythonOutputDataSet::PopulateNumberOfRows()
 {
 	LOG("PythonOutputDataSet::PopulateNumberOfRows");
 	string getNumRowsScript = "len(" + m_name + ".index)";
-	m_rowsNumber = py::extract<int>(py::eval(getNumRowsScript.c_str(), m_mainNamespace));
+	m_rowsNumber = bp::extract<int>(bp::eval(getNumRowsScript.c_str(), m_mainNamespace));
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::CleanupColumns
 //
 // Description:
@@ -1370,7 +1379,7 @@ void PythonOutputDataSet::CleanupColumns()
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::CleanupColumn
 //
 // Description:

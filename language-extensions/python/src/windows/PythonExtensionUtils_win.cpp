@@ -20,7 +20,7 @@ namespace fs = std::experimental::filesystem;
 
 const CHAR *GuidFormat = "%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonExtensionUtils::GetEnvVariable
 //
 // Description:
@@ -79,7 +79,7 @@ std::string PythonExtensionUtils::GetEnvVariable(const std::string &envVarName)
 	return envVarValue;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonExtensionUtils::ConvertGuidToString
 //
 // Description:
@@ -104,7 +104,7 @@ std::string PythonExtensionUtils::ConvertGuidToString(const SQLGUID *guid)
 	return s;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonExtensionUtils::FreeDLL
 //
 // Description:
@@ -118,7 +118,7 @@ void PythonExtensionUtils::FreeDLL(void *pDll)
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Name: PythonExtensionUtils::GetEnvVariable
 //
 // Description:

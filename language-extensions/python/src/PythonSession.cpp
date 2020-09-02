@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
 // Purpose:
 //  Class encapsulating operations performed per session
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
@@ -18,7 +18,7 @@
 #include "PythonSession.h"
 
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 namespace np = boost::python::numpy;
 
 //-------------------------------------------------------------------------------------------------
@@ -183,12 +183,12 @@ void PythonSession::ExecuteWorkflow(
 
 	// Execute script and capture output
 	//
-	py::exec(redirectPyOut.c_str(), m_mainNamespace);
-	py::exec(m_script.c_str(), m_mainNamespace);
-	py::exec(resetPyOut.c_str(), m_mainNamespace);
+	bp::exec(redirectPyOut.c_str(), m_mainNamespace);
+	bp::exec(m_script.c_str(), m_mainNamespace);
+	bp::exec(resetPyOut.c_str(), m_mainNamespace);
 
-	string pyStdOut = py::extract<string>(m_mainNamespace["_temp_out_"]);
-	string pyStdErr = py::extract<string>(m_mainNamespace["_temp_err_"]);
+	string pyStdOut = bp::extract<string>(m_mainNamespace["_temp_out_"]);
+	string pyStdErr = bp::extract<string>(m_mainNamespace["_temp_err_"]);
 
 	cout << pyStdOut << endl;
 	cerr << pyStdErr << endl;
@@ -257,7 +257,7 @@ void PythonSession::GetResultColumn(
 // Name: PythonSession::GetResults
 //
 // Description:
-//	Returns the output data and the null map retrieved from the user program
+//  Returns the output data and the null map retrieved from the user program
 //
 void PythonSession::GetResults(
 	SQLULEN    *rowsNumber,

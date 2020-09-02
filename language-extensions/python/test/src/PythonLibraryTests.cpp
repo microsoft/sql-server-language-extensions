@@ -14,12 +14,15 @@
 #include "PythonTestUtilities.h"
 
 using namespace std;
-namespace py = boost::python;
+namespace bp = boost::python;
 
 namespace LibraryApiTests
 {
-	// Code here will be called immediately after the constructor (right
-	// before each test).
+	// Name: SetUp
+	//
+	// Description:
+	//  Code here will be called immediately after the constructor (right
+	//  before each test).
 	//
 	void ExternalLibraryApiTests::SetUp()
 	{
@@ -36,8 +39,11 @@ namespace LibraryApiTests
 		Initialize();
 	}
 
-	// Code here will be called immediately after each test (right
-	// before the destructor).
+	// Name: TearDown
+	//
+	// Description:
+	//  Code here will be called immediately after each test (right
+	//  before the destructor).
 	//
 	void ExternalLibraryApiTests::TearDown()
 	{
@@ -53,7 +59,10 @@ namespace LibraryApiTests
 		DoCleanup();
 	}
 
-	// Set up default, valid variables for use in tests
+	// Name: SetupVariables
+	//
+	// Description:
+	//  Set up default, valid variables for use in tests
 	//
 	void ExternalLibraryApiTests::SetupVariables()
 	{
@@ -72,7 +81,10 @@ namespace LibraryApiTests
 		m_privateLibraryPath = (libPath / "2").string();
 	}
 
-	// Initialize pythonextension for library management
+	// Name: Initialize
+	//
+	// Description:
+	//  Initialize pythonextension for library management
 	//
 	void ExternalLibraryApiTests::Initialize()
 	{
@@ -91,22 +103,25 @@ namespace LibraryApiTests
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 
-		m_mainModule = py::import("__main__");
-		m_mainNamespace = py::extract<py::dict>(m_mainModule.attr("__dict__"));
+		m_mainModule = bp::import("__main__");
+		m_mainNamespace = bp::extract<bp::dict>(m_mainModule.attr("__dict__"));
 
 		if (!m_mainNamespace.has_key("originalKeys"))
 		{
 			string getKeysScript = "import sys\n"
 				"originalKeys = list(sys.modules.keys())";
-			py::exec(getKeysScript.c_str(), m_mainNamespace);
+			bp::exec(getKeysScript.c_str(), m_mainNamespace);
 		}
 
 		ASSERT_NE(m_mainModule, boost::python::object());
 		ASSERT_NE(m_mainNamespace, boost::python::object());
 	}
 
-	// Call Cleanup on the PythonExtension.
-	// Testing if Cleanup is implemented correctly.
+	// Name: DoCleanup
+	//
+	// Description:
+	//  Call Cleanup on the PythonExtension.
+	//  Testing if Cleanup is implemented correctly.
 	//
 	void ExternalLibraryApiTests::DoCleanup()
 	{
@@ -114,13 +129,15 @@ namespace LibraryApiTests
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Clean sys.modules in python to remove import traces.
-	// This keeps the system clean for the next installation and import test.
+	// Name: CleanModules
+	//
+	// Description:
+	//  Clean sys.modules in python to remove import traces.
+	//  This keeps the system clean for the next installation and import test.
 	//
 	void ExternalLibraryApiTests::CleanModules(
 		string extLibName,
-		string moduleName
-	)
+		string moduleName)
 	{
 		try
 		{
@@ -130,18 +147,21 @@ namespace LibraryApiTests
 				"for k in keys:"
 				"    del sys.modules[k]";
 
-			py::exec(delScript.c_str(), m_mainNamespace);
+			bp::exec(delScript.c_str(), m_mainNamespace);
 		}
-		catch (const py::error_already_set &)
+		catch (const bp::error_already_set &)
 		{
 			string s = PythonTestUtilities::ParsePythonException();
 			cout << s << endl;
 		}
 	}
 
-	// Install a package and test it.
-	// If we expect a successful install, then we check the version and location.
-	// We then try importing the package and check whether it imports as we expect.
+	// Name: InstallAndTest
+	//
+	// Description:
+	//  Install a package and test it.
+	//  If we expect a successful install, then we check the version and location.
+	//  We then try importing the package and check whether it imports as we expect.
 	//
 	void ExternalLibraryApiTests::InstallAndTest(
 		string extLibName,
@@ -151,8 +171,7 @@ namespace LibraryApiTests
 		string expectedVersion,
 		string expectedLocation,
 		bool   successfulInstall,
-		bool   successfulImport
-	)
+		bool   successfulImport)
 	{
 		SQLCHAR *libError = nullptr;
 		SQLINTEGER libErrorLength = 0;
@@ -185,9 +204,9 @@ namespace LibraryApiTests
 					"dist = pkg_resources.get_distribution('" + extLibName + "');\n"
 					"location = dist.location; version = dist.version;";
 
-				py::exec(infoScript.c_str(), m_mainNamespace);
-				string version = py::extract<string>(m_mainNamespace["version"]);
-				string location = py::extract<string>(m_mainNamespace["location"]);
+				bp::exec(infoScript.c_str(), m_mainNamespace);
+				string version = bp::extract<string>(m_mainNamespace["version"]);
+				string location = bp::extract<string>(m_mainNamespace["location"]);
 
 				if (expectedLocation.empty())
 				{
@@ -200,11 +219,11 @@ namespace LibraryApiTests
 				// Import the module then delete it.
 				//
 				string importScript = "import " + moduleName + "; del " + moduleName;
-				py::exec(importScript.c_str(), m_mainNamespace);
+				bp::exec(importScript.c_str(), m_mainNamespace);
 
 				EXPECT_TRUE(successfulImport);
 			}
-			catch (const py::error_already_set &)
+			catch (const bp::error_already_set &)
 			{
 				EXPECT_FALSE(successfulImport);
 				string s = PythonTestUtilities::ParsePythonException();
@@ -219,16 +238,18 @@ namespace LibraryApiTests
 		}
 	}
 
-	// Uninstall and test a package.
-	// If there is a different installation of the same package, then uninstalling won't
-	// fail on import, but the version in our specified dir should be gone.
+	// Name: UninstallAndTest
+	//
+	// Description:
+	//  Uninstall and test a package.
+	//  If there is a different installation of the same package, then uninstalling won't
+	//  fail on import, but the version in our specified dir should be gone.
 	//
 	void ExternalLibraryApiTests::UninstallAndTest(
 		string extLibName,
 		string moduleName,
 		string installDir,
-		bool   otherInstallationExists
-	)
+		bool   otherInstallationExists)
 	{
 		SQLCHAR *libError = nullptr;
 		SQLINTEGER libErrorLength = 0;
@@ -256,10 +277,10 @@ namespace LibraryApiTests
 				"dist = pkg_resources.get_distribution('" + extLibName + "');\n"
 				"location = dist.location; version = dist.version;";
 
-			py::exec(infoScript.c_str(), m_mainNamespace);
+			bp::exec(infoScript.c_str(), m_mainNamespace);
 
-			string version = py::extract<string>(m_mainNamespace["version"]);
-			string location = py::extract<string>(m_mainNamespace["location"]);
+			string version = bp::extract<string>(m_mainNamespace["version"]);
+			string location = bp::extract<string>(m_mainNamespace["location"]);
 
 			// If another installation exists, 
 			// then the uninstall should succeed and import should still work
@@ -281,7 +302,7 @@ namespace LibraryApiTests
 				EXPECT_EQ(result, SQL_ERROR);
 			}
 		}
-		catch (const py::error_already_set &)
+		catch (const bp::error_already_set &)
 		{
 			EXPECT_EQ(result, SQL_SUCCESS);
 			EXPECT_EQ(libError, nullptr);

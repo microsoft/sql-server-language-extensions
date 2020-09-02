@@ -1,4 +1,4 @@
-//**************************************************************************************************
+//*************************************************************************************************
 // Copyright (C) Microsoft Corporation.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
 // Purpose:
 //  Platform specific utility functions for Python Extension
 //
-//**************************************************************************************************
+//*************************************************************************************************
 
 #pragma once
 #include "Common.h"
@@ -51,5 +51,5 @@ public:
 
 	// Map to store the ODBC C type to null value mapping
 	//
-	static const std::unordered_map<SQLSMALLINT, const void *> m_DataTypeToNullMap;
+	static const std::unordered_map<SQLSMALLINT, const void *> sm_DataTypeToNullMap;
 };

@@ -17,13 +17,14 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
-	// Test Init() API with all nullptrs.
-	// This tests the extension initialization, using nullptrs because
-	// param and library paths are optional.
-	// We may need to make this fail later when we implement and
-	// require external params/libraries
+	// Name: TestInitWithNulls
 	//
-	TEST_F(PythonExtensionApiTests, InitWithNullsTest)
+	// Description:
+	//  Test Init() API with all nullptrs.
+	//  This tests the extension initialization, using nullptrs because
+	//  param and library paths are optional.
+	//
+	TEST_F(PythonExtensionApiTests, TestInitWithNulls)
 	{
 		SQLRETURN result = Init(
 			nullptr, // Extension Params
@@ -35,12 +36,16 @@ namespace ExtensionApiTest
 			nullptr, // Private Library Path
 			0        // Private Library Path Length
 		);
+
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Test Init() API with actual values.
+	// Name: TestInitWithValues
 	//
-	TEST_F(PythonExtensionApiTests, InitTest)
+	// Description:
+	//  Test Init() API with actual values.
+	//
+	TEST_F(PythonExtensionApiTests, TestInitWithValues)
 	{
 		SQLCHAR *extensionParams = nullptr;
 		SQLULEN extensionParamsLength = 0;
@@ -65,6 +70,7 @@ namespace ExtensionApiTest
 			privateLibraryPath,
 			privateLibraryPathLength
 		);
+
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 }

@@ -139,6 +139,7 @@
     <ClInclude Include="$(IncludeDirectory)\PythonParamContainer.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonNamespace.h" />
     <ClInclude Include="$(IncludeDirectory)\PythonPathSettings.h" />
+    <ClInclude Include="$(IncludeDirectory)\PythonLibrarySession.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SourceDirectory)\PythonExtension.cpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="$(SourceDirectory)\windows\PythonExtensionUtils_win.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonNamespace.cpp" />
     <ClCompile Include="$(SourceDirectory)\PythonPathSettings.cpp" />
+    <ClCompile Include="$(SourceDirectory)\PythonLibrarySession.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
