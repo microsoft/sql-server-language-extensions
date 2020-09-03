@@ -264,11 +264,11 @@ public :
 		}
 	}
 
+private:
+
 	// Set the RcppVector by creating a character object in R with given value.
 	//
 	void SetRcppVector(SQLPOINTER paramValue);
-
-private:
 
 	// Character vector holding the contents before sending them back to ExtHost.
 	// Useful for output parameter types.
@@ -331,11 +331,11 @@ public:
 		}
 	}
 
+private:
+
 	// Set the RcppVector by creating a raw object in R with given value.
 	//
 	void SetRcppVector(SQLPOINTER paramValue);
-
-private:
 
 	// The Rcpp::RawVector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
@@ -346,4 +346,75 @@ private:
 	// Useful for output parameter types.
 	//
 	std::vector<SQLCHAR> m_value;
+};
+
+//-------------------------------------------------------------------------------------------------
+// Name: RDateTimeParam
+//
+// Description:
+//  Class representing a Date/DateTime parameter.
+//  Corresponds to ODBC C type SQL_C_TYPE_DATE and SQL_C_TYPE_TIMESTAMP.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+class RDateTimeParam : public RParam
+{
+public:
+
+	// Constructor to initialize the members
+	//
+	RDateTimeParam(
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
+
+	// Retrieve data from m_RcppVector, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd() override;
+
+	// Get m_RcppVector
+	//
+	RType& RcppVector()
+	{
+		return m_RcppVector;
+	}
+
+	// Get the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQLType *>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+
+	// Templatized function to set the RcppVector by creating an equivalent R type
+	// for the given SQL type with given value.
+	//
+	void SetRcppVector(SQLPOINTER paramValue);
+
+	// Vector holding the value of the parameter as retrieved from embedded R environment,
+	// holding the contents before sending them back to ExtHost
+	// Only useful for output parameter types.
+	//
+	std::vector<SQLType> m_value;
+
+	// The Rcpp::Vector encapsulating the SEXP pointer
+	// pointing to the R object with the param value.
+	//
+	RType m_RcppVector = RType(1);
 };

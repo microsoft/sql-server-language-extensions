@@ -21,7 +21,7 @@
 // @File: Common.h
 //
 // Purpose:
-//  Common headers for extension
+//  Common headers for RExtension
 //
 //*************************************************************************************************
 
@@ -37,6 +37,13 @@
 #include <string>
 #include <vector>
 
+// Before including Rcpp headers, undefine ERROR if it is defined already since
+// R_ext/RS.h defines ERROR and we want to avoid redefinition warnings.
+//
+#ifdef ERROR
+	#undef ERROR
+#endif
+#include "Rcpp.h"
 #include "RInside.h" // for the embedded R via RInside
 
 #include "Logger.h"

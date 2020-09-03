@@ -33,6 +33,11 @@
 
 using namespace std;
 
+// Represents the max number of digits after the decimal point in the string representation
+// of nanoseconds converted to seconds.
+//
+#define MAXDIGITS_IN_NANOSECONDS 9
+
 const char* GuidFormat="%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 
 // Given a constant string input, generate a unique pointer
@@ -57,9 +62,9 @@ unique_ptr<char[]> Utilities::GenerateUniquePtr(const string &inputStr)
 //  Converts a SQLGUID to a string
 //
 // Returns:
-//	string of the guid
+//  string of the guid
 //
-std::string Utilities::ConvertGuidToString(const SQLGUID *guid)
+string Utilities::ConvertGuidToString(const SQLGUID *guid)
 {
 	// 32 hex chars + 4 hyphens + null terminator, so 37 characters.
 	//
@@ -84,7 +89,7 @@ std::string Utilities::ConvertGuidToString(const SQLGUID *guid)
 //  token will be nullptr and we add nothing to the vector.
 //
 // Returns:
-//	nothing.
+//  nothing.
 //
 void Utilities::Tokenize(
 	char           *input,
@@ -101,4 +106,34 @@ void Utilities::Tokenize(
 		(*tokens).push_back(token);
 		token = strtok_r(nullptr, delimiter, &internalState);
 	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::GetSecondsAfterDecimalPointFromNanoSeconds
+//
+// Description:
+//  From the given nanoSeconds value, generates a string representing seconds
+//  after the decimal point.
+//
+// Returns:
+//  string representing seconds after the decimal point.
+//
+string Utilities::GetSecondsAfterDecimalPointFromNanoSeconds(
+	SQLUINTEGER nanoSeconds)
+{
+	string secondsAfterDecimalPoint = to_string(nanoSeconds);
+	size_t digitsInNanoSeconds = strlen(secondsAfterDecimalPoint.c_str());
+
+	// 1 second = 10^9 nanoseconds = 10^6 microseconds;
+	// 0.100'000'000 second = 10^8 nanoseconds = 10^5 microseconds.
+	// We need to prefix with zeros the string representation of the seconds after decimal point
+	// if digits in nanoseconds are less than 9 to represent the correct seconds value.
+	//
+	if (digitsInNanoSeconds < MAXDIGITS_IN_NANOSECONDS)
+	{
+		size_t numberOfZeros = MAXDIGITS_IN_NANOSECONDS - digitsInNanoSeconds;
+		secondsAfterDecimalPoint = string(numberOfZeros, '0') + secondsAfterDecimalPoint;
+	}
+
+	return secondsAfterDecimalPoint;
 }

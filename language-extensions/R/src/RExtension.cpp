@@ -38,6 +38,13 @@
 #include "RParamContainer.h"
 #include "RPathSettings.h"
 #include "RSession.h"
+
+// ODBCVER is defined in sql.h undefine it to avoid redefinition warnings when it is defined in
+// sqlexternallanguage.h
+//
+#ifdef ODBCVER
+	#undef ODBCVER
+#endif
 #include "sqlexternallanguage.h"
 
 #ifndef _WIN64

@@ -134,6 +134,10 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 
 	CharType *baseCharData = static_cast<CharType *>(data);
 	SQLULEN cumulativeLength = 0;
+
+	// Note: Always preallocate the Rcpp vector with the size instead of using
+	// push_back since Rcpp push_back involves copying to create a new vector in R environment.
+	//
 	Rcpp::CharacterVector charVector(rowsNumber);
 
 	for (SQLULEN j = 0; j < rowsNumber; ++j)
@@ -209,6 +213,73 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 	}
 
 	return rawVector;
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: CreateDateTimeVector
+//
+// Description:
+//  Templatized function to create an Rcpp vector encapsulating SEXP pointers to the equivalent R
+//  objects for the given data types with given data. This is only for date, datetime(2)
+//  SQL data types mapping to Rcpp::DateVector and DateTimeVector respectively.
+//  rowsNumber indicates the number of elements to be added in the vector.
+//  Iterate over data to set the value at each index of the vector.
+//  strLen_or_Ind if non-null is an array, where each cell represents the size of the SQL data type
+//  and null values are indicated by SQL_NULL_DATA.
+//  If at any index strLen_or_Ind is SQL_NULL_DATA, we fill the equivalent R NA value in Rcpp vector.
+//  If strLen_or_Ind is nullptr, there are no null values in the data.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+RType RTypeUtils::CreateDateTimeVector(
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
+	SQLINTEGER *strLen_or_Ind)
+{
+	LOG("RTypeUtils::CreateDateTimeVector");
+
+	// Note: Always preallocate the Rcpp vector with the size instead of using
+	// push_back since Rcpp push_back involves copying to create a new vector in R environment.
+	//
+	RType vectorInR(rowsNumber);
+	for (SQLULEN j = 0; j < rowsNumber; ++j)
+	{
+		if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
+		{
+			vectorInR[j] = DateTimeTypeInR(R_NaReal);
+		}
+		else
+		{
+			SQLType value = static_cast<SQLType *>(data)[j];
+
+			// Rcpp::Date accepts date in "YYYY-mm-dd" and
+			// Rcpp::Datetime accepts datetime in "YYYY-mm-dd HH:MM:SS.MICROSEC"
+			// string formats so generate the date time string.
+			//
+			string dateTimeInStringFormat =
+				to_string(value.year) + "-" +
+				to_string(value.month) + "-" +
+				to_string(value.day);
+
+			if constexpr (is_same_v<DateTimeTypeInR, Rcpp::Datetime>)
+			{
+				// "fraction" is stored in nanoseconds, we need to know the digits after the decimal point.
+				//
+				string secondsAfterDecimalPoint 
+					= Utilities::GetSecondsAfterDecimalPointFromNanoSeconds(value.fraction);
+
+				dateTimeInStringFormat =
+					dateTimeInStringFormat + " " +
+					to_string(value.hour) + ":" +
+					to_string(value.minute) + ":" +
+					to_string(value.second) + "." +
+					secondsAfterDecimalPoint;
+			}
+
+			vectorInR[j] = DateTimeTypeInR(dateTimeInStringFormat);
+		}
+	}
+
+	return vectorInR;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -404,6 +475,28 @@ template Rcpp::LogicalVector RTypeUtils::CreateVector<SQLCHAR, Rcpp::LogicalVect
 	SQLPOINTER data,
 	SQLINTEGER *strLen_or_Ind);
 
+template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char>(
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
+	SQLINTEGER *strLen_or_Ind);
+
+template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char16_t>(
+	SQLULEN    rowsNumber,
+	SQLPOINTER data,
+	SQLINTEGER *strLen_or_Ind);
+
+template Rcpp::DateVector RTypeUtils::CreateDateTimeVector
+	<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
+		SQLULEN    rowsNumber,
+		SQLPOINTER data,
+		SQLINTEGER *strLen_or_Ind);
+
+template Rcpp::DatetimeVector RTypeUtils::CreateDateTimeVector
+	<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
+		SQLULEN    rowsNumber,
+		SQLPOINTER data,
+		SQLINTEGER *strLen_or_Ind);
+
 template void RTypeUtils::FillDataFromRVector<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
 	SQLULEN             rowsNumber,
 	Rcpp::IntegerVector vectorInR,
@@ -452,16 +545,6 @@ template void RTypeUtils::FillDataFromRVector<SQLCHAR, Rcpp::LogicalVector, SQL_
 	vector<SQLCHAR>     *data,
 	SQLINTEGER          *strLen_or_Ind,
 	SQLSMALLINT         &nullable);
-
-template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char>(
-	SQLULEN    rowsNumber,
-	SQLPOINTER data,
-	SQLINTEGER *strLen_or_Ind);
-
-template Rcpp::CharacterVector RTypeUtils::CreateCharacterVector<char16_t>(
-	SQLULEN    rowsNumber,
-	SQLPOINTER data,
-	SQLINTEGER *strLen_or_Ind);
 
 template void RTypeUtils::FillDataFromCharacterVector<SQLCHAR>(
 	SQLULEN               rowsNumber,

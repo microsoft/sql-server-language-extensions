@@ -404,6 +404,80 @@ void RRawParam::RetrieveValueAndStrLenInd()
 	}
 }
 
+//-------------------------------------------------------------------------------------------------
+// Name: RDateTimeParam
+//
+// Description:
+//  Constructor.
+//  Calls the base constructor then calls the function to Set the Rcpp vector with the paramValue.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RDateTimeParam(
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
+	: RParam(paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
+{
+	SetRcppVector(paramValue);
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: RDateTimeParam::SetRcppVector
+//
+// Description:
+//  Set the RcppVector for RDateTimeParam with the given paramValue.
+//  This is a wrapper to CreateDateTimeVector with rowsNumber = 1.
+//  For null parameters, a size one vector with member value = NA is created.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER paramValue)
+{
+	LOG("RDateTimeParam::SetRcppVector");
+
+	SQLINTEGER strLenOrInd = StrLenOrInd();
+	if (strLenOrInd == SQL_NULL_DATA)
+	{
+		SQLINTEGER strLen_or_Ind[1] = { SQL_NULL_DATA };
+		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+			1,         // rowsNumber
+			paramValue,
+			strLen_or_Ind);
+	}
+	else
+	{
+		SQLINTEGER strLen_or_IndArray[1] = { strLenOrInd };
+		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+			1,        //rowsNumber
+			paramValue,
+			strLen_or_IndArray);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: RDateTimeParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RetrieveValueAndStrLenInd()
+{
+	LOG("RDateTimeParam::RetrieveValueAndStrLenInd");
+}
+
 //--------------------------------------------------------------------------------------------------
 // Do explicit template instantiations, so that object code is generated for these
 // and the linker is able to find their definitions even after instantiations are in different
@@ -498,6 +572,28 @@ template RCharacterParam<char, SQLCHAR>::RCharacterParam(
 	SQLSMALLINT);
 
 template RCharacterParam<char16_t, SQLWCHAR>::RCharacterParam(
+	SQLUSMALLINT,
+	const SQLCHAR*,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template RDateTimeParam<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>::RDateTimeParam(
+	SQLUSMALLINT,
+	const SQLCHAR*,
+	SQLSMALLINT,
+	SQLSMALLINT,
+	SQLULEN,
+	SQLSMALLINT,
+	SQLPOINTER,
+	SQLINTEGER,
+	SQLSMALLINT);
+
+template RDateTimeParam<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>::RDateTimeParam(
 	SQLUSMALLINT,
 	const SQLCHAR*,
 	SQLSMALLINT,

@@ -230,6 +230,15 @@ namespace ExtensionApiTest
 			std::vector<SQLSMALLINT> inputOutputTypes,
 			bool                     validate = true);
 
+		// Testing if InitParam is implemented correctly for the date/datetime dataTypes.
+		//
+		template<class SQLType, class RType, class DateTimeTypeInR, SQLSMALLINT DataType>
+		void InitDateTimeParam(
+			std::vector<SQLType>     expectedParamValues,
+			std::vector<SQLINTEGER>  strLenOrInd,
+			std::vector<SQLSMALLINT> inputOutputTypes,
+			bool                     validate = true);
+
 		// Fill a contiguous array columnData with members from the given columnVector
 		// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 		//

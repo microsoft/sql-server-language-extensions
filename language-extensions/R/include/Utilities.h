@@ -48,7 +48,13 @@ public:
 	//
 	static std::string GetEnvVariable(const std::string &envVarName);
 
-	//  Sets the environment variable name to the specified value
+	// Sets the environment variable name to the specified value.
 	//
 	static int SetEnvVariable(const std::string &envVarName, const std::string &value);
+
+	// From the given nanoSeconds value, generates a string
+	// representing seconds after the decimal point.
+	//
+	static std::string GetSecondsAfterDecimalPointFromNanoSeconds(
+		SQLUINTEGER nanoSeconds);
 };

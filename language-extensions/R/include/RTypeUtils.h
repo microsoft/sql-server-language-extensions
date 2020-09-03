@@ -57,6 +57,14 @@ public:
 		SQLPOINTER data,
 		SQLINTEGER *strLen_or_Ind);
 
+	// Create a date/datetime vector in R corresponding to the given data.
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR>
+	static RType CreateDateTimeVector(
+		SQLULEN    rowsNumber,
+		SQLPOINTER data,
+		SQLINTEGER *strLen_or_Ind);
+
 	// Given the vectorInR, copy its content into the given std::vector pointed to by data.
 	//
 	template<class SQLType, class RType, SQLSMALLINT DataType>

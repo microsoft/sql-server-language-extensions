@@ -68,6 +68,12 @@ const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RCharacterParam<char16_t, SQLWCHAR>>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RRawParam>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam
+		<RDateTimeParam<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam
+		<RDateTimeParam<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>>)},
 };
 
 //-------------------------------------------------------------------------------------------------

@@ -32,13 +32,13 @@ const char **g_argv = nullptr;
 
 int main(int argc, const char **argv)
 {
-	// banner
+	// Banner
+	//
 	std::cout << "Running RExtension C++ unit tests.\n";
 
-	/*
-	* first, initiate Google Test framework - this will remove
-	* framework-specific parameters from argc and argv
-	*/
+	// First, initiate Google Test framework - this will remove
+	// framework-specific parameters from argc and argv
+	//
 	::testing::InitGoogleTest(&argc, const_cast<char**>(argv));
 	g_argc = argc;
 	g_argv = argv;

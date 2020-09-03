@@ -430,6 +430,86 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	// Name: InitDateParamTest
+	//
+	// Description:
+	//  Test multiple DATE values
+	//
+	TEST_F(RExtensionApiTest, InitDateParamTest)
+	{
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			4); // parametersNumber
+
+		vector<SQL_DATE_STRUCT> expectedParamValues = {
+			// Test max SQL_DATE_STRUCT value
+			//
+			{ 9999,12,31 },
+			// Test min SQL_DATE_STRUCT value
+			//
+			{ 1,1,1 },
+			// Test normal SQL_DATE_STRUCT value
+			//
+			{ 1470,7,27 },
+			// Test null SQL_DATE_STRUCT value
+			//
+			{}};
+
+		vector<SQLINTEGER> strLenOrInd(expectedParamValues.size(), sizeof(SQL_DATE_STRUCT));
+		strLenOrInd[3] = SQL_NULL_DATA;
+
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
+
+		InitDateTimeParam<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date, SQL_C_TYPE_DATE>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
+	}
+
+	// Name: InitDateTimeParamTest
+	//
+	// Description:
+	//  Test multiple DATETIME values
+	//
+	TEST_F(RExtensionApiTest, InitDateTimeParamTest)
+	{
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			6); // parametersNumber
+
+		vector<SQL_TIMESTAMP_STRUCT> expectedParamValues = {
+			// Test max SQL_TIMESTAMP_STRUCT value
+			//
+			{ 9999,12,31,23,59,59,999 },
+			// Test min SQL_TIMESTAMP_STRUCT value
+			//
+			{ 1,1,1,0,0,0,0 },
+			// Test normal SQL_TIMESTAMP_STRUCT value
+			//
+			{ 1470,7,27,17,47,52,123456 },
+			// Test a value of nanoseconds divisible by 100'000'000
+			//
+			{ 2020,9,01,18,23,58,100'000'000 },
+			// Test a 9 digit value of nanoseconds
+			//
+			{ 1970,10,31,8,30,2,123654489 },
+			// Test null SQL_TIMESTAMP_STRUCT value
+			//
+			{}};
+
+		vector<SQLINTEGER> strLenOrInd(expectedParamValues.size(), sizeof(SQL_TIMESTAMP_STRUCT));
+		strLenOrInd[expectedParamValues.size() - 1] = SQL_NULL_DATA;
+
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
+
+		InitDateTimeParam<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime, SQL_C_TYPE_TIMESTAMP>(
+			expectedParamValues,
+			strLenOrInd,
+			inputOutputTypes);
+	}
+
 	// Negative test
 	// Test InitParam() API with null parameter name
 	//
@@ -725,6 +805,76 @@ namespace ExtensionApiTest
 				else
 				{
 					EXPECT_EQ(param[0], 0);
+				}
+			}
+		}
+	}
+
+	// Name: InitDateTimeParam
+	//
+	// Description:
+	//  Testing if InitParam is implemented correctly for the date/datetime dataTypes.
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR, SQLSMALLINT DataType>
+	void RExtensionApiTest::InitDateTimeParam(
+		vector<SQLType>     expectedParamValues,
+		vector<SQLINTEGER>  strLenOrInd,
+		vector<SQLSMALLINT> inputOutputTypes,
+		bool                validate)
+	{
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			string paramNameString = string("@param" + to_string(paramNumber + 1));
+			SQLCHAR *paramName = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
+
+			SQLType expectedParamValue = expectedParamValues[paramNumber];
+
+			SQLRETURN result = SQL_ERROR;
+			result = (*m_initParamFuncPtr)(
+					*m_sessionId,
+					m_taskId,
+					paramNumber,
+					paramName,
+					paramNameString.length(),
+					DataType,
+					sizeof(SQLType),  // paramSize
+					0,                // decimalDigits
+					&expectedParamValue,
+					strLenOrInd[paramNumber],
+					inputOutputTypes[paramNumber]);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			if (validate)
+			{
+				// Do + 1 to skip the @ from the paramName
+				//
+				RType param = m_globalEnvironment[paramNameString.c_str() + 1];
+				DateTimeTypeInR actualParam = static_cast<DateTimeTypeInR>(param[0]);
+				if (strLenOrInd[paramNumber] != SQL_NULL_DATA)
+				{
+					EXPECT_EQ(actualParam.getYear(), expectedParamValue.year);
+					EXPECT_EQ(actualParam.getMonth(), expectedParamValue.month);
+					EXPECT_EQ(actualParam.getDay(), expectedParamValue.day);
+
+					if constexpr (is_same_v<DateTimeTypeInR, Rcpp::Datetime>)
+					{
+						SQLUINTEGER usec = actualParam.getMicroSeconds();
+						SQLUINTEGER expectedUsec = round(expectedParamValue.fraction / 1000.0);
+
+						EXPECT_EQ(actualParam.getHours(), expectedParamValue.hour);
+						EXPECT_EQ(actualParam.getMinutes(), expectedParamValue.minute);
+						EXPECT_EQ(actualParam.getSeconds(), expectedParamValue.second);
+
+						// Fraction is stored in nanoseconds, R uses microseconds and sometimes even
+						// after rounding it has a margin error of +-1.
+						//
+						EXPECT_TRUE(usec == expectedUsec || usec == expectedUsec + 1 || usec == expectedUsec - 1);
+					}
+				}
+				else
+				{
+					EXPECT_TRUE(actualParam.is_na());
 				}
 			}
 		}
