@@ -25,23 +25,11 @@
 //  the external language initialization and cleanup APIs.
 //
 //*************************************************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
 
-#include <memory>
-#include <sql.h>
-#include <sqltypes.h>
-#include <sqlext.h>
 #include <string.h>
 #include <stdio.h>
-#include "gtest/gtest.h"
 
-#include "Rcpp.h"
-
-#include "RExtensionApiTest.h"
-#include "Utilities.h"
-#include "Unicode.h"
+#include "Common.h"
 
 using namespace std;
 

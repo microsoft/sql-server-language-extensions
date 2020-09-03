@@ -24,9 +24,8 @@
 //  Tests the RExtension's implementation of the external language APIs.
 //
 //*************************************************************************************************
-#include <gtest/gtest.h>
 
-#include "Utilities.h"
+#include "Common.h"
 
 int g_argc = 0;
 const char **g_argv = nullptr;

@@ -24,15 +24,8 @@
 //  Tests the RExtension's implementation of the external language Execute API.
 //
 //*************************************************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <sqlext.h>
-#include <sqltypes.h>
-#include "gtest/gtest.h"
-#include "RInside.h"
-#include "RExtensionApiTest.h"
-#include "Unicode.h"
+
+#include "Common.h"
 
 using namespace std;
 

@@ -24,15 +24,8 @@
 //  Tests the RExtension's implementation of the external language InitSession API.
 //
 //*************************************************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <sqlext.h>
-#include <sqltypes.h>
-#include "gtest/gtest.h"
-#include "Rcpp.h"
 
-#include "RExtensionApiTest.h"
+#include "Common.h"
 
 namespace ExtensionApiTest
 {

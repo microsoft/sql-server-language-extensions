@@ -24,18 +24,8 @@
 //  Tests the RExtension's implementation of the external language GetOutputParam API.
 //
 //*************************************************************************************************
-#ifdef _WIN64
-#include <windows.h>
-#endif
-#include <math.h>
-#include <memory>
-#include <iostream>
-#include <sqlext.h>
-#include <sqltypes.h>
-#include "gtest/gtest.h"
-#include "Rcpp.h"
 
-#include "RExtensionApiTest.h"
+#include "Common.h"
 
 using namespace std;
 
