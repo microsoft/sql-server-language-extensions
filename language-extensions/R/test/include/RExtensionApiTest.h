@@ -231,18 +231,16 @@ namespace ExtensionApiTest
 			bool                     validate = true);
 
 		// Fill a contiguous array columnData with members from the given columnVector
+		// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 		//
-		void GenerateContiguousData(
-			char                     *charCol1Data,
-			std::vector<const char*> charVector,
-			SQLINTEGER               *strLenOrInd);
+		template<class SQLType>
+		std::vector<SQLType> GenerateContiguousData(
+			std::vector<const SQLType*> columnVector,
+			SQLINTEGER                  *strLenOrInd);
 
-		// Get sum of lengths in strLenOrInd skipping SQL_NULL_DATA.
+		// Get max length of all strings from strLenOrInd.
 		//
-		SQLINTEGER GetSumOfLengths(
-			SQLINTEGER *strLenOrInd,
-			SQLULEN    rowsNumber,
-			SQLINTEGER *maxLen);
+		SQLINTEGER GetMaxLength(SQLINTEGER *strLenOrInd, SQLULEN rowsNumber);
 
 		// Get length of a wstring
 		//
@@ -259,6 +257,7 @@ namespace ExtensionApiTest
 
 		// Compare the given character vector and data for equality
 		//
+		template<class CharType>
 		void CheckCharacterVectorEquality(
 			SQLULEN               expectedRowsNumber,
 			Rcpp::CharacterVector vectorToTest,
@@ -291,6 +290,7 @@ namespace ExtensionApiTest
 
 		// Test Execute with default script for Character columns.
 		//
+		template<class CharType>
 		void ExecuteChar(
 			SQLULEN                  rowsNumber,
 			void                     **dataSet,
@@ -445,6 +445,7 @@ namespace ExtensionApiTest
 		const SQLINTEGER m_SmallIntSize = sizeof(SQLSMALLINT);
 		const SQLINTEGER m_TinyIntSize = sizeof(SQLCHAR);
 		const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
+		const SQLINTEGER m_NCharSize = sizeof(SQLWCHAR);
 		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;

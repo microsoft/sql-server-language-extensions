@@ -293,18 +293,13 @@ namespace ExtensionApiTest
 		// Coalesce the arrays of each row of each column
 		// into a contiguous array for each column.
 		//
-		SQLINTEGER maxCol1Len = 0, maxCol2Len = 0;
-		SQLINTEGER charCol1TotalLen = GetSumOfLengths(strLenOrIndCol1.data(), rowsNumber, &maxCol1Len);
-		SQLINTEGER charCol2TotalLen = GetSumOfLengths(strLenOrIndCol2.data(), rowsNumber, &maxCol2Len);
-		char charCol1Data[charCol1TotalLen] = { 0 };
-		char charCol2Data[charCol2TotalLen] = { 0 };
-		GenerateContiguousData(charCol1Data, charCol1, strLenOrIndCol1.data());
-		GenerateContiguousData(charCol2Data, charCol2, strLenOrIndCol2.data());
-		void* dataSet[inputSchemaColumnsNumber] = { charCol1Data, charCol2Data, nullptr};
+		vector<char> charCol1Data = GenerateContiguousData<char>(charCol1, strLenOrIndCol1.data());
+		vector<char> charCol2Data = GenerateContiguousData<char>(charCol2, strLenOrIndCol2.data());
+		void* dataSet[inputSchemaColumnsNumber] = { charCol1Data.data(), charCol2Data.data(), nullptr};
 
 		vector<string> columnNames{charColumn1Name, charColumn2Name, charColumn3Name};
 
-		ExecuteChar(
+		ExecuteChar<char>(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
@@ -314,6 +309,122 @@ namespace ExtensionApiTest
 		GetCharResults(
 			rowsNumber,
 			dataSet,
+			strLen_or_Ind.data(),
+			columnNames);
+	}
+
+	// Name: GetNCharResultsTest
+	//
+	// Description:
+	//  Test GetResults with default script expecting an OutputDataSet of NChar columns.
+	//
+	TEST_F(RExtensionApiTest, GetNCharResultsTest)
+	{
+		SQLUSMALLINT inputSchemaColumnsNumber = 3;
+
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			inputSchemaColumnsNumber,
+			m_scriptString);
+
+		string ncharColumn1Name = "NCharColumn1";
+		InitializeColumn(0, ncharColumn1Name, SQL_C_WCHAR, m_NCharSize);
+
+		string ncharColumn2Name = "NCharColumn2";
+		InitializeColumn(1, ncharColumn2Name, SQL_C_WCHAR, m_NCharSize);
+
+		string ncharColumn3Name = "NCharColumn3";
+		InitializeColumn(2, ncharColumn3Name, SQL_C_WCHAR, m_NCharSize);
+
+		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
+		vector<const wchar_t *> ncharCol2{ L"", 0, nullptr, L"verify", L"-1" };
+
+		int rowsNumber = ncharCol1.size();
+
+		vector<SQLINTEGER> strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(7 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol3(rowsNumber, SQL_NULL_DATA);
+
+		vector<SQLINTEGER *> strLen_or_Ind{ strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+		// Coalesce the arrays of each row of each column
+		// into a contiguous array for each column.
+		//
+		vector<wchar_t> ncharCol1Data =
+			GenerateContiguousData<wchar_t>(ncharCol1, strLenOrIndCol1.data());
+
+		vector<wchar_t> ncharCol2Data =
+			GenerateContiguousData<wchar_t>(ncharCol2, strLenOrIndCol2.data());
+
+		void *dataSet[] = { ncharCol1Data.data(),
+							ncharCol2Data.data(),
+							nullptr };
+
+		vector<string> columnNames{ ncharColumn1Name, ncharColumn2Name, ncharColumn3Name };
+
+		ExecuteChar<wchar_t>(
+			rowsNumber,
+			dataSet,
+			strLen_or_Ind.data(),
+			columnNames,
+			false); // validate
+
+		// Because R is a UTF-8 language, we always return UTF-8 for the OutputDataSet.
+		// Here we construct the expected output, which is the same as the input but normal char
+		// instead of wchar_t.
+		// Since we are retrieving UTF-8 strings, we also need to redo strLenOrInd.
+		//
+
+		// Construct the bytes that correspond to 你好
+		//
+		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
+		string chineseString = string(chineseBytes.data(), 6);
+
+		vector<const char*> charCol1{ "Hello", "test", "data", ("World" + chineseString).c_str(),
+			chineseString.c_str() };
+		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
+
+		strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(strlen(charCol1[0])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[1])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[2])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[3])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[4])) };
+		strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(strlen(charCol2[3])),
+		  static_cast<SQLINTEGER>(strlen(charCol2[4])) };
+
+		strLen_or_Ind = { strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+		// Coalesce the arrays of each row of each column
+		// into a contiguous array for each column.
+		//
+		vector<char> charCol1Data =
+			GenerateContiguousData<char>(charCol1, strLenOrIndCol1.data());
+
+		vector<char> charCol2Data =
+			GenerateContiguousData<char>(charCol2, strLenOrIndCol2.data());
+
+		void* expectedDataSet[] = { charCol1Data.data(),
+									charCol2Data.data(),
+									nullptr };
+
+		GetCharResults(
+			rowsNumber,
+			expectedDataSet,
 			strLen_or_Ind.data(),
 			columnNames);
 	}
@@ -454,12 +565,9 @@ namespace ExtensionApiTest
 		vector<SQLINTEGER*> expectedStrLen_or_Ind{ strLenOrIndCol1.data(),
 			strLenOrIndCol2.data(), strLenOrIndCol3.data()};
 
-		SQLINTEGER maxLen = 0;
-		SQLINTEGER charColTotalLen = GetSumOfLengths(strLenOrIndCol3.data(), expectedRowsNumber, &maxLen);
-		char charColData[charColTotalLen] = { 0 };
-		GenerateContiguousData(charColData, charCol, strLenOrIndCol3.data());
+		vector<char> charColData = GenerateContiguousData<char>(charCol, strLenOrIndCol3.data());
 
-		vector<void *> expectedData { intColData.data(), doubleColData.data(), charColData};
+		vector<void *> expectedData { intColData.data(), doubleColData.data(), charColData.data()};
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = (*m_executeFuncPtr)(
@@ -527,7 +635,7 @@ namespace ExtensionApiTest
 			strLen_or_Ind[1]);
 
 		Rcpp::CharacterVector charColumn = outputDataSet[charColumnName.c_str()];
-		CheckCharacterVectorEquality(
+		CheckCharacterVectorEquality<char>(
 			rowsNumber,
 			charColumn,
 			data[2],
@@ -727,7 +835,7 @@ namespace ExtensionApiTest
 				columnStrLenOrInd);
 
 			Rcpp::CharacterVector column = outputDataSet[columnNames[columnNumber].c_str()];
-			CheckCharacterVectorEquality(
+			CheckCharacterVectorEquality<char>(
 				rowsNumber,
 				column,
 				columnData,

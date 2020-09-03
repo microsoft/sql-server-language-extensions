@@ -168,6 +168,7 @@ private:
 
 	// Adds a single column of character values into the R DataFrame.
 	//
+	template<class CharType>
 	void AddCharacterColumnToDataFrame(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
@@ -243,6 +244,8 @@ private:
 		SQLSMALLINT  &nullable);
 
 	// Gets the character column information, adds data to m_data and nullmap to m_columnNullMap
+	// We always return the character data in utf-8 encoded strings in SQLCHAR character type
+	// since R uses utf-8 by default.
 	//
 	void GetCharacterColumnFromDataFrame(
 		SQLUSMALLINT columnNumber,

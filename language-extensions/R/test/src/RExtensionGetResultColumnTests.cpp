@@ -318,38 +318,36 @@ namespace ExtensionApiTest
 		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
 		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
 
-		SQLINTEGER strLenOrIndCol1[rowsNumber] =
+		vector<SQLINTEGER> strLenOrIndCol1 =
 			{ static_cast<SQLINTEGER>(strlen(charCol1[0])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[1])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[2])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[3])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[4])) };
-		SQLINTEGER strLenOrIndCol2[rowsNumber] =
+		vector<SQLINTEGER> strLenOrIndCol2 =
 			{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
 			  static_cast<SQLINTEGER>(strlen(charCol2[3])),
 			  static_cast<SQLINTEGER>(strlen(charCol2[4])) };
-		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1, strLenOrIndCol2, nullptr };
+		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), strLenOrIndCol2.data(), nullptr };
 
 		// Coalesce the arrays of each row of each column
 		// into a contiguous array for each column.
 		//
-		SQLINTEGER maxCol1Len = 0, maxCol2Len = 0;
-		SQLINTEGER charCol1TotalLen = GetSumOfLengths(strLenOrIndCol1, rowsNumber, &maxCol1Len);
-		SQLINTEGER charCol2TotalLen = GetSumOfLengths(strLenOrIndCol2, rowsNumber, &maxCol2Len);
-		char charCol1Data[charCol1TotalLen] = { 0 };
-		char charCol2Data[charCol2TotalLen] = { 0 };
-		GenerateContiguousData(charCol1Data, charCol1, strLenOrIndCol1);
-		GenerateContiguousData(charCol2Data, charCol2, strLenOrIndCol2);
-		void* dataSet[inputSchemaColumnsNumber] = { charCol1Data, charCol2Data, nullptr};
+		vector<char> charCol1Data = GenerateContiguousData<char>(charCol1, strLenOrIndCol1.data());
+		vector<char> charCol2Data = GenerateContiguousData<char>(charCol2, strLenOrIndCol2.data());
+		void* dataSet[inputSchemaColumnsNumber] = { charCol1Data.data(), charCol2Data.data(), nullptr};
 
 		vector<string> columnNames{charColumn1Name, charColumn2Name, charColumn3Name};
 
-		ExecuteChar(
+		ExecuteChar<char>(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
 			columnNames,
 			false); // validate
+
+		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_CHAR,        // dataType
@@ -368,6 +366,120 @@ namespace ExtensionApiTest
 			0,                 // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
+	}
+
+	// Name: GetNCharResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script using an OutputDataSet of nchar columns.
+	//
+	TEST_F(RExtensionApiTest, GetNCharResultColumnsTest)
+	{
+		SQLUSMALLINT inputSchemaColumnsNumber = 3;
+
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			inputSchemaColumnsNumber,
+			m_scriptString);
+
+		string ncharColumn1Name = "NCharColumn1";
+		InitializeColumn(0, ncharColumn1Name, SQL_C_WCHAR, m_NCharSize);
+
+		string ncharColumn2Name = "NCharColumn2";
+		InitializeColumn(1, ncharColumn2Name, SQL_C_WCHAR, m_NCharSize);
+
+		string ncharColumn3Name = "NCharColumn3";
+		InitializeColumn(2, ncharColumn3Name, SQL_C_WCHAR, m_NCharSize);
+
+		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
+		vector<const wchar_t *> ncharCol2{ L"", 0, nullptr, L"verify", L"-1" };
+
+		int rowsNumber = ncharCol1.size();
+
+		vector<SQLINTEGER> strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(7 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol3(rowsNumber, SQL_NULL_DATA);
+
+		vector<SQLINTEGER *> strLen_or_Ind{ strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+		// Coalesce the arrays of each row of each column
+		// into a contiguous array for each column.
+		//
+		vector<wchar_t> ncharCol1Data =
+			GenerateContiguousData<wchar_t>(ncharCol1, strLenOrIndCol1.data());
+
+		vector<wchar_t> ncharCol2Data =
+			GenerateContiguousData<wchar_t>(ncharCol2, strLenOrIndCol2.data());
+
+		void *dataSet[] = { ncharCol1Data.data(),
+							ncharCol2Data.data(),
+							nullptr };
+
+		vector<string> columnNames{ ncharColumn1Name, ncharColumn2Name, ncharColumn3Name };
+
+		ExecuteChar<wchar_t>(
+			rowsNumber,
+			dataSet,
+			strLen_or_Ind.data(),
+			columnNames,
+			false); // validate
+
+		// Because R has default utf-8 encoding, we always return utf-8 strings.
+		// Thus, we expect output result columns to be utf-8 strings, not wstrings.
+		// Construct the bytes that correspond to 你好
+		//
+		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
+		string chineseString = string(chineseBytes.data(), 6);
+
+		vector<const char*> charCol1{ "Hello", "test", "data", ("World" + chineseString).c_str(),
+			chineseString.c_str() };
+		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
+
+		// We need to recalculate the string length to get the correct max len and that would be the
+		// expected column size.
+		//
+		strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(strlen(charCol1[0])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[1])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[2])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[3])),
+		  static_cast<SQLINTEGER>(strlen(charCol1[4])) };
+		strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(strlen(charCol2[3])),
+		  static_cast<SQLINTEGER>(strlen(charCol2[4])) };
+
+		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_CHAR,    // expectedDataType
+			maxCol1Len,    // expectedColumnSize
+			0,             // expectedDecimalDigits
+			SQL_NO_NULLS); // expectedNullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_CHAR,    // expectedDataType
+			maxCol2Len,    // expectedColumnSize
+			0,             // expectedDecimalDigits
+			SQL_NULLABLE); // expectedNullable
+
+		GetResultColumn(2, // columnNumber
+			SQL_C_CHAR,    // expectedDataType
+			0,             // expectedColumnSize
+			0,             // expectedDecimalDigits
+			SQL_NULLABLE); // expectedNullable
 	}
 
 	// Name: GetRawResultColumnTest
@@ -466,21 +578,18 @@ namespace ExtensionApiTest
 		vector<SQLDOUBLE> doubleColData{ m_MinDouble, 1.33, 83.98, 72.45, m_MaxDouble };
 		vector<const char*> charCol{ "Hello", "test", "data", "RExtension", "-123" };
 
-		SQLINTEGER strLenOrIndCol1[rowsNumber] = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
-		SQLINTEGER strLenOrIndCol3[rowsNumber] =
+		vector<SQLINTEGER> strLenOrIndCol1 = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
+		vector<SQLINTEGER> strLenOrIndCol3 =
 			{ static_cast<SQLINTEGER>(strlen(charCol[0])),
 			  static_cast<SQLINTEGER>(strlen(charCol[1])),
 			  static_cast<SQLINTEGER>(strlen(charCol[2])),
 			  static_cast<SQLINTEGER>(strlen(charCol[3])),
 			  static_cast<SQLINTEGER>(strlen(charCol[4])) };
-		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1, nullptr, strLenOrIndCol3};
+		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), nullptr, strLenOrIndCol3.data()};
 
-		SQLINTEGER maxLen = 0;
-		SQLINTEGER charColTotalLen = GetSumOfLengths(strLenOrIndCol3, rowsNumber, &maxLen);
-		char charColData[charColTotalLen] = { 0 };
-		GenerateContiguousData(charColData, charCol, strLenOrIndCol3);
+		vector<char> charColData = GenerateContiguousData<char>(charCol, strLenOrIndCol3.data());
 
-		vector<void *> dataSet { intColData.data(), doubleColData.data(), charColData};
+		vector<void *> dataSet { intColData.data(), doubleColData.data(), charColData.data()};
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
 		SQLRETURN result = (*m_executeFuncPtr)(
@@ -503,6 +612,8 @@ namespace ExtensionApiTest
 			m_DoubleSize,  // columnSize
 			0,             // decimalDigits
 			SQL_NO_NULLS); // nullable
+
+		SQLULEN maxLen = GetMaxLength(strLenOrIndCol3.data(), rowsNumber);
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType

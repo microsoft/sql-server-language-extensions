@@ -43,29 +43,31 @@ using namespace std;
 //
 const RInputDataSet::AddColumnFnMap RInputDataSet::sm_FnAddColumnMap =
 {
-	{static_cast<SQLSMALLINT>(SQL_C_SLONG),                           // INT
+	{static_cast<SQLSMALLINT>(SQL_C_SLONG),                 // INT
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLINTEGER, Rcpp::IntegerVector, int, SQL_C_SLONG>)},
-	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),                         // BIGINT
+	{static_cast<SQLSMALLINT>(SQL_C_SBIGINT),               // BIGINT
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLBIGINT, Rcpp::NumericVector, double, SQL_C_SBIGINT>)},
-	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),                           // REAL
+	{static_cast<SQLSMALLINT>(SQL_C_FLOAT),                 // REAL
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLREAL, Rcpp::NumericVector, double, SQL_C_FLOAT>)},
-	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),                          // FLOAT (53)
+	{static_cast<SQLSMALLINT>(SQL_C_DOUBLE),                // FLOAT (53)
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLDOUBLE, Rcpp::NumericVector, double, SQL_C_DOUBLE>)},
-	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),                          // SMALLINT
+	{static_cast<SQLSMALLINT>(SQL_C_SSHORT),                // SMALLINT
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLSMALLINT, Rcpp::IntegerVector, int, SQL_C_SSHORT>)},
-	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),                       // TINYINT
+	{static_cast<SQLSMALLINT>(SQL_C_UTINYINT),              // TINYINT
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLCHAR, Rcpp::IntegerVector, int, SQL_C_UTINYINT>)},
-	{static_cast<SQLSMALLINT>(SQL_C_BIT),                            // BIT
+	{static_cast<SQLSMALLINT>(SQL_C_BIT),                   // BIT
 		static_cast<fnAddColumn>(&RInputDataSet::AddColumnToDataFrame
 		<SQLCHAR, Rcpp::LogicalVector, int, SQL_C_BIT>)},
-	{static_cast<SQLSMALLINT>(SQL_C_CHAR),                           // CHAR(n), VARCHAR(n), VARCHAR(max)
-		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame)},
+	{static_cast<SQLSMALLINT>(SQL_C_CHAR),                  // CHAR(n), VARCHAR(n), VARCHAR(max)
+		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame<char>)},
+	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),                 // NCHAR(n), NVARCHAR(n), NVARCHAR(max)
+		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame<char16_t>)},
 };
 
 // Map of function pointers for getting a column information.
@@ -313,6 +315,7 @@ void RInputDataSet::AddColumnToDataFrame(
 // Description:
 //  Adds a single column of character values into the R DataFrame.
 //
+template<class CharType>
 void RInputDataSet::AddCharacterColumnToDataFrame(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -328,7 +331,7 @@ void RInputDataSet::AddCharacterColumnToDataFrame(
 	string name = m_columns[columnNumber].get()->Name();
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
 
-	m_dataFrame[name.c_str()] = RTypeUtils::CreateCharacterVector<char>(
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateCharacterVector<CharType>(
 		rowsNumber,
 		data,
 		strLen_or_Ind);
@@ -501,6 +504,11 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		Rcpp::CharacterVector column = m_dataFrame[columnNumber];
+
+		// We always return the character data from R as utf-8 encoded
+		// strings since that is the default and so we use SQLCHAR
+		// as the character data type.
+		//
 		RTypeUtils::FillDataFromCharacterVector<SQLCHAR>(
 			m_rowsNumber,
 			column,

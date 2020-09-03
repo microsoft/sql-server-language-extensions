@@ -32,6 +32,7 @@
 #include "gtest/gtest.h"
 #include "RInside.h"
 #include "RExtensionApiTest.h"
+#include "Unicode.h"
 
 using namespace std;
 
@@ -225,32 +226,95 @@ namespace ExtensionApiTest
 		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
 		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
 
-		SQLINTEGER strLenOrIndCol1[rowsNumber] =
+		vector<SQLINTEGER> strLenOrIndCol1=
 			{ static_cast<SQLINTEGER>(strlen(charCol1[0])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[1])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[2])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[3])),
 			  static_cast<SQLINTEGER>(strlen(charCol1[4])) };
-		SQLINTEGER strLenOrIndCol2[rowsNumber] =
+		vector<SQLINTEGER> strLenOrIndCol2 =
 			{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
 			  static_cast<SQLINTEGER>(strlen(charCol2[3])),
 			  static_cast<SQLINTEGER>(strlen(charCol2[4])) };
-		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1, strLenOrIndCol2, nullptr };
+		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), strLenOrIndCol2.data(), nullptr };
 
 		// Coalesce the arrays of each row of each column
 		// into a contiguous array for each column.
 		//
-		SQLINTEGER charCol1TotalLen = GetSumOfLengths(strLenOrIndCol1, rowsNumber, nullptr);
-		SQLINTEGER charCol2TotalLen = GetSumOfLengths(strLenOrIndCol2, rowsNumber, nullptr);
-		char charCol1Data[charCol1TotalLen] = { 0 };
-		char charCol2Data[charCol2TotalLen] = { 0 };
-		GenerateContiguousData(charCol1Data, charCol1, strLenOrIndCol1);
-		GenerateContiguousData(charCol2Data, charCol2, strLenOrIndCol2);
-		void* dataSet[inputSchemaColumnsNumber] = { charCol1Data, charCol2Data, nullptr};
+		vector<char> charCol1Data = GenerateContiguousData<char>(charCol1, strLenOrIndCol1.data());
+		vector<char> charCol2Data = GenerateContiguousData<char>(charCol2, strLenOrIndCol2.data());
+		void* dataSet[inputSchemaColumnsNumber] = { charCol1Data.data(), charCol2Data.data(), nullptr};
 
 		vector<string> columnNames{charColumn1Name, charColumn2Name, charColumn3Name};
 
-		ExecuteChar(
+		ExecuteChar<char>(
+			rowsNumber,
+			dataSet,
+			strLen_or_Ind.data(),
+			columnNames);
+	}
+
+	// Name: ExecuteNCharColumnsTest
+	//
+	// Description:
+	// Test Execute with default script using an InputDataSet of NCHAR/NVARCHAR columns.
+	//
+	TEST_F(RExtensionApiTest, ExecuteNCharColumnsTest)
+	{
+		SQLUSMALLINT inputSchemaColumnsNumber = 3;
+
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			inputSchemaColumnsNumber,
+			m_scriptString);
+
+		string ncharColumn1Name = "NCharColumn1";
+		InitializeColumn(0, ncharColumn1Name, SQL_C_WCHAR, m_NCharSize);
+
+		string ncharColumn2Name = "NCharColumn2";
+		InitializeColumn(1, ncharColumn2Name, SQL_C_WCHAR, m_NCharSize);
+
+		string ncharColumn3Name = "NCharColumn3";
+		InitializeColumn(2, ncharColumn3Name, SQL_C_WCHAR, m_NCharSize);
+
+		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
+		vector<const wchar_t *> ncharCol2{ L"", 0, nullptr, L"verify", L"-1" };
+
+		int rowsNumber = ncharCol1.size();
+
+		vector<SQLINTEGER> strLenOrIndCol1 =
+		{ static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(7 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol2 =
+		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
+		  static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		vector<SQLINTEGER> strLenOrIndCol3(rowsNumber, SQL_NULL_DATA);
+
+		vector<SQLINTEGER *> strLen_or_Ind{ strLenOrIndCol1.data(),
+			strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+		// Coalesce the arrays of each row of each column
+		// into a contiguous array for each column.
+		//
+		vector<wchar_t> ncharCol1Data =
+			GenerateContiguousData<wchar_t>(ncharCol1, strLenOrIndCol1.data());
+
+		vector<wchar_t> ncharCol2Data =
+			GenerateContiguousData<wchar_t>(ncharCol2, strLenOrIndCol2.data());
+
+		void *dataSet[] = { ncharCol1Data.data(),
+							ncharCol2Data.data(),
+							nullptr };
+
+		vector<string> columnNames{ ncharColumn1Name, ncharColumn2Name, ncharColumn3Name };
+
+		ExecuteChar<wchar_t>(
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
@@ -284,20 +348,17 @@ namespace ExtensionApiTest
 		vector<SQLDOUBLE> doubleColData{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 };
 		vector<const char*> charCol{ "Hello", "test", "data", "RExtension", "-123" };
 
-		SQLINTEGER strLenOrIndCol1[rowsNumber] = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
-		SQLINTEGER strLenOrIndCol3[rowsNumber] =
+		vector<SQLINTEGER> strLenOrIndCol1 = { 0, 0, SQL_NULL_DATA, SQL_NULL_DATA, 0 };
+		vector<SQLINTEGER> strLenOrIndCol3 =
 			{ static_cast<SQLINTEGER>(strlen(charCol[0])),
 			  static_cast<SQLINTEGER>(strlen(charCol[1])),
 			  static_cast<SQLINTEGER>(strlen(charCol[2])),
 			  static_cast<SQLINTEGER>(strlen(charCol[3])),
 			  static_cast<SQLINTEGER>(strlen(charCol[4])) };
-		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1, nullptr, strLenOrIndCol3};
+		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), nullptr, strLenOrIndCol3.data()};
 
-		SQLINTEGER charColTotalLen = GetSumOfLengths(strLenOrIndCol3, rowsNumber, nullptr);
-		char charColData[charColTotalLen] = { 0 };
-		GenerateContiguousData(charColData, charCol, strLenOrIndCol3);
-
-		vector<void *> dataSet { intColData.data(), doubleColData.data(), charColData};
+		vector<char> charColData = GenerateContiguousData<char>(charCol, strLenOrIndCol3.data());
+		vector<void *> dataSet { intColData.data(), doubleColData.data(), charColData.data()};
 
 		testing::internal::CaptureStdout();
 
@@ -336,7 +397,7 @@ namespace ExtensionApiTest
 			strLen_or_Ind[1]);
 
 		Rcpp::CharacterVector charColumn = inputDataSet[charColumnName.c_str()];
-		CheckCharacterVectorEquality(
+		CheckCharacterVectorEquality<char>(
 			rowsNumber,
 			charColumn,
 			dataSet[2],
@@ -424,6 +485,7 @@ namespace ExtensionApiTest
 	//  2. InputDataSet and
 	//  3. OutputDataSet
 	//
+	template<class CharType>
 	void RExtensionApiTest::ExecuteChar(
 		SQLULEN        rowsNumber,
 		void           **dataSet,
@@ -459,7 +521,7 @@ namespace ExtensionApiTest
 			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 			{
 				Rcpp::CharacterVector column = inputDataSet[columnNames[columnNumber].c_str()];
-				CheckCharacterVectorEquality(
+				CheckCharacterVectorEquality<CharType>(
 					rowsNumber,
 					column,
 					dataSet[columnNumber],
@@ -475,6 +537,22 @@ namespace ExtensionApiTest
 				inputDataSet);
 		}
 	}
+
+	// Template instantiations
+	//
+	template void RExtensionApiTest::ExecuteChar<char>(
+		SQLULEN        rowsNumber,
+		void           **dataSet,
+		SQLINTEGER     **strLen_or_Ind,
+		vector<string> columnNames,
+		bool           validate);
+
+	template void RExtensionApiTest::ExecuteChar<wchar_t>(
+		SQLULEN        rowsNumber,
+		void           **dataSet,
+		SQLINTEGER     **strLen_or_Ind,
+		vector<string> columnNames,
+		bool           validate);
 
 	// Name: CheckVectorEquality
 	//

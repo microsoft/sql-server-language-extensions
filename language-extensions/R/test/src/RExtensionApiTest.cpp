@@ -41,6 +41,7 @@
 
 #include "RExtensionApiTest.h"
 #include "Utilities.h"
+#include "Unicode.h"
 
 using namespace std;
 
@@ -482,50 +483,60 @@ namespace ExtensionApiTest
 	// Name: GenerateContiguousData
 	//
 	// Description:
-	// Fill a contiguous array columnData with members from the given columnVector
-	// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
+	//  Fill a contiguous array columnData with members from the given columnVector
+	//  having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 	//
-	void RExtensionApiTest::GenerateContiguousData(
-		char                *columnData,
-		vector<const char*> columnVector,
-		SQLINTEGER          *strLenOrInd)
+	template<class SQLType>
+	vector<SQLType> RExtensionApiTest::GenerateContiguousData(
+		vector<const SQLType*> columnVector,
+		SQLINTEGER             *strLenOrInd)
 	{
-		SQLINTEGER baseIndex = 0;
-		for (SQLULEN index = 0 ; index < columnVector.size(); ++index)
+		vector<SQLType> retVal;
+
+		for (SQLULEN index = 0; index < columnVector.size(); ++index)
 		{
 			if (strLenOrInd[index] != SQL_NULL_DATA)
 			{
-				memcpy(columnData + baseIndex, columnVector[index], strLenOrInd[index]);
-				baseIndex += strLenOrInd[index];
+				SQLINTEGER strLen = strLenOrInd[index] / sizeof(SQLType);
+				vector<SQLType> data(columnVector[index], columnVector[index] + strLen);
+				retVal.insert(retVal.end(), data.begin(), data.end());
 			}
 		}
+
+		return retVal;
 	}
 
-	// Name: GetSumOfLengths
+	// Template instantiations
+	//
+	template vector<char> RExtensionApiTest::GenerateContiguousData(
+		vector<const char*> columnVector,
+		SQLINTEGER          *strLenOrInd);
+	template vector<SQLCHAR> RExtensionApiTest::GenerateContiguousData(
+		vector<const SQLCHAR*> columnVector,
+		SQLINTEGER             *strLenOrInd);
+	template vector<wchar_t> RExtensionApiTest::GenerateContiguousData(
+		vector<const wchar_t*> columnVector,
+		SQLINTEGER             *strLenOrInd);
+
+	// Name: GetMaxLength
 	//
 	// Description:
-	// Get sum of lengths in strLenOrInd skipping SQL_NULL_DATA.
+	//  Get max length of all strings from strLenOrInd.
 	//
-	SQLINTEGER RExtensionApiTest::GetSumOfLengths(
+	SQLINTEGER RExtensionApiTest::GetMaxLength(
 		SQLINTEGER *strLenOrInd,
-		SQLULEN    rowsNumber,
-		SQLINTEGER *maxLen)
+		SQLULEN    rowsNumber)
 	{
-		SQLINTEGER sumOfLengths = 0;
-		for(SQLULEN index = 0 ; index < rowsNumber; ++index)
+		SQLINTEGER maxLen = 0;
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
 		{
-			if(strLenOrInd[index] != SQL_NULL_DATA)
+			if (strLenOrInd[index] != SQL_NULL_DATA && maxLen < strLenOrInd[index])
 			{
-				sumOfLengths += strLenOrInd[index];
-
-				if (maxLen != nullptr && *maxLen < strLenOrInd[index])
-				{
-					*maxLen = strLenOrInd[index];
-				}
+				maxLen = strLenOrInd[index];
 			}
 		}
 
-		return sumOfLengths;
+		return maxLen;
 	}
 
 	// Name: GetWStringLength
@@ -639,6 +650,7 @@ namespace ExtensionApiTest
 	// The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
 	// Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
 	//
+	template<class CharType>
 	void RExtensionApiTest::CheckCharacterVectorEquality(
 		SQLULEN               expectedRowsNumber,
 		Rcpp::CharacterVector vectorToTest,
@@ -656,14 +668,63 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				string expectedString = string(
-					static_cast<char*>(expectedData) + cumulativeLength,
-					strLen_or_Ind[index]);
-				EXPECT_EQ(vectorToTest[index], expectedString);
-				cumulativeLength += strLen_or_Ind[index];
+				char* actualDataBytes = vectorToTest[index];
+				string expectedDataInUtf8;
+
+				// If expectedData is of wchar_t type with utf-16 encoding, convert it into the utf-8
+				// encoding before comparing with actualDatabytes because those are always in utf-8
+				// on account of R's default being utf-8.
+				//
+				if constexpr (is_same_v<CharType, wchar_t>)
+				{
+					char16_t* expectedDataInUtf16 =
+						static_cast<char16_t*>(expectedData) + cumulativeLength;
+					estd::ToUtf8(
+						expectedDataInUtf16,
+						strLen_or_Ind[index] / sizeof(char16_t),
+						expectedDataInUtf8);
+				}
+				else
+				{
+					expectedDataInUtf8 =
+						string(reinterpret_cast<char*>(expectedData) + cumulativeLength,
+							   strLen_or_Ind[index] / sizeof(char));
+				}
+
+				const char* expectedDataBytes = expectedDataInUtf8.c_str();
+				ASSERT_EQ(strlen(expectedDataBytes), strlen(actualDataBytes));
+
+				// Compare upto the strlen of the utf-8 encoded expectedData since
+				// strLenOrInd represents the total bytes in the utf-16 encoded expectedData
+				// so we cannot use that.
+				//
+				SQLINTEGER bytesToCompare = static_cast<SQLINTEGER>(strlen(expectedDataBytes));
+				for (SQLINTEGER byte = 0; byte < bytesToCompare; ++byte)
+				{
+					EXPECT_EQ(actualDataBytes[byte], expectedDataBytes[byte]);
+				}
+
+				// Advance the length by number of characters, not bytes
+				// hence divide by sizeof(CharType)
+				//
+				cumulativeLength += (strLen_or_Ind[index] / sizeof(CharType));
 			}
 		}
 	}
+
+	// Template instantiations
+	//
+	template void RExtensionApiTest::CheckCharacterVectorEquality<char>(
+		SQLULEN               expectedRowsNumber,
+		Rcpp::CharacterVector vectorToTest,
+		void                  *expectedData,
+		SQLINTEGER            *strLen_or_Ind);
+
+	template void RExtensionApiTest::CheckCharacterVectorEquality<wchar_t>(
+		SQLULEN               expectedRowsNumber,
+		Rcpp::CharacterVector vectorToTest,
+		void                  *expectedData,
+		SQLINTEGER            *strLen_or_Ind);
 
 	// Name: ColumnInfo
 	//
