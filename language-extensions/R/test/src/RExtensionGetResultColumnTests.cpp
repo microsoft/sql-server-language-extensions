@@ -48,7 +48,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
 		Execute<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-			ColumnInfo<SQLINTEGER>::m_rowsNumber,
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
 			(*m_integerInfo).m_dataSet.data(),
 			(*m_integerInfo).m_strLen_or_Ind.data(),
 			(*m_integerInfo).m_columnNames,
@@ -84,7 +84,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLCHAR, SQL_C_BIT>(m_logicalInfo.get());
 
 		Execute<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
-			ColumnInfo<SQLCHAR>::m_rowsNumber,
+			ColumnInfo<SQLCHAR>::sm_rowsNumber,
 			(*m_logicalInfo).m_dataSet.data(),
 			(*m_logicalInfo).m_strLen_or_Ind.data(),
 			(*m_logicalInfo).m_columnNames,
@@ -120,7 +120,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLREAL, SQL_C_FLOAT>(m_realInfo.get());
 
 		Execute<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
-			ColumnInfo<SQLREAL>::m_rowsNumber,
+			ColumnInfo<SQLREAL>::sm_rowsNumber,
 			(*m_realInfo).m_dataSet.data(),
 			(*m_realInfo).m_strLen_or_Ind.data(),
 			(*m_realInfo).m_columnNames,
@@ -156,7 +156,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(m_doubleInfo.get());
 
 		Execute<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
-			ColumnInfo<SQLDOUBLE>::m_rowsNumber,
+			ColumnInfo<SQLDOUBLE>::sm_rowsNumber,
 			(*m_doubleInfo).m_dataSet.data(),
 			(*m_doubleInfo).m_strLen_or_Ind.data(),
 			(*m_doubleInfo).m_columnNames,
@@ -192,7 +192,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(m_bigIntInfo.get());
 
 		Execute<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
-			ColumnInfo<SQLBIGINT>::m_rowsNumber,
+			ColumnInfo<SQLBIGINT>::sm_rowsNumber,
 			(*m_bigIntInfo).m_dataSet.data(),
 			(*m_bigIntInfo).m_strLen_or_Ind.data(),
 			(*m_bigIntInfo).m_columnNames,
@@ -228,7 +228,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(m_smallIntInfo.get());
 
 		Execute<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
-			ColumnInfo<SQLSMALLINT>::m_rowsNumber,
+			ColumnInfo<SQLSMALLINT>::sm_rowsNumber,
 			(*m_smallIntInfo).m_dataSet.data(),
 			(*m_smallIntInfo).m_strLen_or_Ind.data(),
 			(*m_smallIntInfo).m_columnNames,
@@ -264,7 +264,7 @@ namespace ExtensionApiTest
 		InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(m_tinyIntInfo.get());
 
 		Execute<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-			ColumnInfo<SQLCHAR>::m_rowsNumber,
+			ColumnInfo<SQLCHAR>::sm_rowsNumber,
 			(*m_tinyIntInfo).m_dataSet.data(),
 			(*m_tinyIntInfo).m_strLen_or_Ind.data(),
 			(*m_tinyIntInfo).m_columnNames,

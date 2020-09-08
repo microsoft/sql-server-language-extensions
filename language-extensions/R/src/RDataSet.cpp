@@ -68,6 +68,12 @@ const RInputDataSet::AddColumnFnMap RInputDataSet::sm_FnAddColumnMap =
 		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame<char>)},
 	{static_cast<SQLSMALLINT>(SQL_C_WCHAR),                 // NCHAR(n), NVARCHAR(n), NVARCHAR(max)
 		static_cast<fnAddColumn>(&RInputDataSet::AddCharacterColumnToDataFrame<char16_t>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),             // DATE
+		static_cast<fnAddColumn>(&RInputDataSet::AddDateTimeColumnToDataFrame
+		<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),        // DATETIME, DATETIME2
+		static_cast<fnAddColumn>(&RInputDataSet::AddDateTimeColumnToDataFrame
+		<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>)},
 };
 
 // Map of function pointers for getting a column information.
@@ -88,7 +94,15 @@ const ROutputDataSet::GetColumnFnMap ROutputDataSet::sm_FnGetColumnMap =
 		 &ROutputDataSet::GetCharacterColumnFromDataFrame)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnGetColumn>(
-		 &ROutputDataSet::GetRawColumnFromDataFrame)}
+		 &ROutputDataSet::GetRawColumnFromDataFrame)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+	 static_cast<fnGetColumn>(
+		 &ROutputDataSet::GetDateTimeColumnFromDataFrame
+			<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+	 static_cast<fnGetColumn>(
+		 &ROutputDataSet::GetDateTimeColumnFromDataFrame
+			<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>)},
 };
 
 // Map of function pointers for cleaning up output data buffers and null map.
@@ -109,7 +123,13 @@ const ROutputDataSet::CleanupColumnFnMap ROutputDataSet::sm_FnCleanupColumnMap =
 		 &ROutputDataSet::CleanupColumn<SQLCHAR>)},
 	{static_cast<SQLSMALLINT>(SQL_C_BINARY),
 	 static_cast<fnCleanupColumn>(
-		 &ROutputDataSet::CleanupColumn<SQLCHAR>)}
+		 &ROutputDataSet::CleanupColumn<SQLCHAR>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_DATE),
+	 static_cast<fnCleanupColumn>(
+		 &ROutputDataSet::CleanupColumn<SQL_DATE_STRUCT>)},
+	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
+	 static_cast<fnCleanupColumn>(
+		 &ROutputDataSet::CleanupColumn<SQL_TIMESTAMP_STRUCT>)}
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -332,6 +352,34 @@ void RInputDataSet::AddCharacterColumnToDataFrame(
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
 
 	m_dataFrame[name.c_str()] = RTypeUtils::CreateCharacterVector<CharType>(
+		rowsNumber,
+		data,
+		strLen_or_Ind);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: RInputDataSet::AddDateTimeColumnToDataFrame
+//
+// Description:
+//  Adds a single column of date(time) values into the R DataFrame.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+void RInputDataSet::AddDateTimeColumnToDataFrame(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data)
+{
+	LOG("RInputDataSet::AddDateTimeColumnToDataFrame");
+
+	if (m_columns[columnNumber] == nullptr)
+	{
+		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
+	}
+
+	string name = m_columns[columnNumber].get()->Name();
+	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
 		rowsNumber,
 		data,
 		strLen_or_Ind);
@@ -580,6 +628,25 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 }
 
 //--------------------------------------------------------------------------------------------------
+// Name: ROutputDataSet::GetDateTimeColumnFromDataFrame
+//
+// Description:
+//  Templatized function to get the datetime column information from the underlying m_dataFrame,
+//  adds data to m_data and nullmap to m_columnNullMap.
+//  Templated for Date(Rcpp::Date) and POSIXct(Rcpp::Datetime) R class types for
+//  date and datetime SQLTypes respectively.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+void ROutputDataSet::GetDateTimeColumnFromDataFrame(
+	SQLUSMALLINT columnNumber,
+	SQLULEN      &columnSize,
+	SQLSMALLINT  &decimalDigits,
+	SQLSMALLINT  &nullable)
+{
+	LOG("ROutputDataSet::GetDateTimeColumnFromDataFrame");
+}
+
+//--------------------------------------------------------------------------------------------------
 // Name: ROutputDataSet::GetColumnsDataType
 //
 // Description:
@@ -627,8 +694,12 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 	SQLUSMALLINT columnNumberInR = columnNumber + 1;
 
 	// Construct the script to find class in R.
+	// For POSIXct data type, the class is a vector with 2 elements : "POSIXct" "POSIXt"
+	// but we need only the first element hence add the subscript [1].
+	// For other data types, the class is only a one element vector so getting such a subscript
+	// does not affect other data types.
 	//
-	string scriptToFindRClass = "class(" +  m_name + "[1," + to_string(columnNumberInR) + "])";
+	string scriptToFindRClass = "class(" +  m_name + "[1," + to_string(columnNumberInR) + "])[1]";
 
 	// Evaluate the script and store the result in a string
 	//

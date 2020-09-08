@@ -265,6 +265,15 @@ namespace ExtensionApiTest
 			void                  *expectedData,
 			SQLINTEGER            *strLen_or_Ind);
 
+		// Compare the given R Date(time) vector and data for equality
+		//
+		template<class SQLType, class RType, class DateTimeTypeInR>
+		void CheckDateTimeVectorEquality(
+			SQLULEN     expectedRowsNumber,
+			RType       vectorToTest,
+			void        *expectedData,
+			SQLINTEGER  *strLen_or_Ind);
+
 		// Templatized function to compare the given vectors for equality.
 		//
 		template<class RType>
@@ -293,6 +302,16 @@ namespace ExtensionApiTest
 		//
 		template<class CharType>
 		void ExecuteChar(
+			SQLULEN                  rowsNumber,
+			void                     **dataSet,
+			SQLINTEGER               **strLen_or_Ind,
+			std::vector<std::string> columnNames,
+			bool                     validate = true);
+
+		// Test Execute with default script for Date/Datetime columns.
+		//
+		template<class SQLType, class RType, class DateTimeTypeInR>
+		void ExecuteDateTime(
 			SQLULEN                  rowsNumber,
 			void                     **dataSet,
 			SQLINTEGER               **strLen_or_Ind,
@@ -456,6 +475,8 @@ namespace ExtensionApiTest
 		const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
 		const SQLINTEGER m_NCharSize = sizeof(SQLWCHAR);
 		const SQLINTEGER m_BinarySize = sizeof(SQLCHAR);
+		const SQLINTEGER m_DateSize = sizeof(SQL_DATE_STRUCT);
+		const SQLINTEGER m_DateTimeSize = sizeof(SQL_TIMESTAMP_STRUCT);
 
 		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_logicalInfo = nullptr;
@@ -465,6 +486,8 @@ namespace ExtensionApiTest
 		std::unique_ptr<ColumnInfo<SQLSMALLINT>> m_smallIntInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_tinyIntInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQLCHAR>> m_charInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQL_DATE_STRUCT>> m_dateInfo = nullptr;
+		std::unique_ptr<ColumnInfo<SQL_TIMESTAMP_STRUCT>> m_dateTimeInfo = nullptr;
 
 		// R global environment
 		//
@@ -534,7 +557,7 @@ namespace ExtensionApiTest
 			return m_columnNames.size();
 		}
 
-		static const SQLULEN m_rowsNumber = 5;
+		static const SQLULEN sm_rowsNumber = 5;
 		std::vector<std::string> m_columnNames;
 		std::vector<SQLType> m_column1;
 		std::vector<SQLType> m_column2;

@@ -223,8 +223,8 @@ namespace ExtensionApiTest
 		m_scriptString = "print('" + m_printMessage + "');"
 #endif
 			"OutputDataSet <- InputDataSet;"
-			"message('InputDataSet:'); message(InputDataSet);"
-			"message('OutputDataSet:'); message(OutputDataSet);";
+			"print('InputDataSet:'); print(InputDataSet);"
+			"print('OutputDataSet:'); print(OutputDataSet);";
 		m_script = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(m_scriptString.c_str()))
 			);
@@ -242,7 +242,7 @@ namespace ExtensionApiTest
 		m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
 			"IntegerColumn1",
 			vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
-			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::m_rowsNumber, m_IntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::sm_rowsNumber, m_IntSize),
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 },
 			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA,
@@ -251,7 +251,7 @@ namespace ExtensionApiTest
 		m_logicalInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"LogicalColumn1",
 			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_LogicalSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_LogicalSize),
 			"LogicalColumn2",
 			vector<SQLCHAR>{ '\0', '2', '1', '0',
 				'\0' }, // static_cast from NA_LOGICAL to SQLCHAR is '\0'.
@@ -265,7 +265,7 @@ namespace ExtensionApiTest
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
 			vector<SQLREAL>{ 0.34, 1.33, 83.98, 72.45, 68e10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::m_rowsNumber, m_DoubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::sm_rowsNumber, m_DoubleSize),
 			"RealColumn2",
 			vector<SQLREAL>{ m_MaxReal, NAN, m_MinReal, NAN, 0 },
 			vector<SQLINTEGER>{ m_DoubleSize, SQL_NULL_DATA, m_DoubleSize,
@@ -274,7 +274,7 @@ namespace ExtensionApiTest
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
 			vector<SQLDOUBLE>{ -1.79e301, 1.33, 83.98, 72.45, 1.79e30 },
-			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::m_rowsNumber, m_DoubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLDOUBLE>::sm_rowsNumber, m_DoubleSize),
 			"DoubleColumn2",
 			vector<SQLDOUBLE>{ NAN, m_MaxDouble, NAN, m_MinDouble, NAN },
 			vector<SQLINTEGER>{ SQL_NULL_DATA, m_DoubleSize, SQL_NULL_DATA,
@@ -284,9 +284,9 @@ namespace ExtensionApiTest
 			"BigIntColumn1",
 			vector<SQLBIGINT>{ m_MaxBigInt, 1,
 				88883939, m_MinBigInt, -622280108 },
-			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::m_rowsNumber, m_DoubleSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLBIGINT>::sm_rowsNumber, m_DoubleSize),
 			"BigIntColumn2",
-			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::m_rowsNumber, NA_REAL),
+			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::sm_rowsNumber, NA_REAL),
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
 				SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
@@ -297,19 +297,61 @@ namespace ExtensionApiTest
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
 			vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, m_IntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_IntSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ -1, 0, m_MaxSmallInt, m_MinSmallInt, 3'276 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::m_rowsNumber, m_IntSize));
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_IntSize));
 
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
 			vector<SQLCHAR>{ 34, 133, 98, 72, 10 },
-			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::m_rowsNumber, m_IntSize),
+			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_IntSize),
 			"TinyIntColumn2",
 			vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 1, 0, 128 },
 			vector<SQLINTEGER>{ m_IntSize, SQL_NULL_DATA,
 				SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize });
+
+		m_dateInfo = make_unique<ColumnInfo<SQL_DATE_STRUCT>>(
+			"DateColumn1",
+			vector<SQL_DATE_STRUCT>{
+				{ 9518, 8, 25 },
+				{ 5712, 3, 9 },
+				{ 1470, 7, 27 },
+				{ 2020, 4, 16 },
+				{ 231, 2, 14, },
+			},
+			vector<SQLINTEGER>(ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber, m_DateSize),
+			"DateColumn2",
+			vector<SQL_DATE_STRUCT>{
+				{ 9999, 12, 31 },
+				{ 1,1,1 },
+				{},
+				{},
+				{}
+			},
+			vector<SQLINTEGER>{ m_DateSize, m_DateSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+
+		m_dateTimeInfo = make_unique<ColumnInfo<SQL_TIMESTAMP_STRUCT>>(
+			"DateTimeColumn1",
+			vector<SQL_TIMESTAMP_STRUCT>{
+				{ 9518, 8, 25, 19, 11, 40, 528931000 },
+				{ 5712, 3, 9, 2, 24, 32, 770477000 },
+				{ 1470, 7, 27, 17, 47, 52, 123455000 },
+				{ 2020, 4, 16, 15, 5, 12, 169012000 },
+				{ 231, 2, 14, 22, 36, 18, 489105000 },
+			},
+			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber, m_DateTimeSize),
+			"DateTimeColumn2",
+			vector<SQL_TIMESTAMP_STRUCT>{
+				{ 9999, 12, 31, 23, 59, 59, 999 },
+				{ 1,1,1,0,0,0,0 },
+				{},
+				{},
+				{}
+			},
+			vector<SQLINTEGER>{ m_DateTimeSize, m_DateTimeSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
 		// Retrieve the global environment
 		//
@@ -435,6 +477,10 @@ namespace ExtensionApiTest
 		ColumnInfo<SQLSMALLINT> *ColumnInfo);
 	template void RExtensionApiTest::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
 		ColumnInfo<SQLCHAR> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+		ColumnInfo<SQL_DATE_STRUCT> *ColumnInfo);
+	template void RExtensionApiTest::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+		ColumnInfo<SQL_TIMESTAMP_STRUCT> *ColumnInfo);
 
 	// Name: InitializeColumn
 	//
@@ -577,10 +623,10 @@ namespace ExtensionApiTest
 		void                *expectedData,
 		SQLINTEGER          *strLen_or_Ind);
 	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
-		SQLULEN              expectedRowsNumber,
+		SQLULEN             expectedRowsNumber,
 		Rcpp::IntegerVector vectorToTest,
-		void                 *expectedData,
-		SQLINTEGER           *strLen_or_Ind);
+		void                *expectedData,
+		SQLINTEGER          *strLen_or_Ind);
 
 	// Name: CheckCharacterVectorEquality
 	//
@@ -664,6 +710,72 @@ namespace ExtensionApiTest
 		Rcpp::CharacterVector vectorToTest,
 		void                  *expectedData,
 		SQLINTEGER            *strLen_or_Ind);
+
+	// Name: CheckDateTimeVectorEquality
+	//
+	// Description:
+	// Compare the given R Date(time) vector and data for equality
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR>
+	void RExtensionApiTest::CheckDateTimeVectorEquality(
+		SQLULEN    expectedRowsNumber,
+		RType      vectorToTest,
+		void       *expectedData,
+		SQLINTEGER *strLen_or_Ind)
+	{
+		ASSERT_EQ(static_cast<SQLULEN>(vectorToTest.size()), expectedRowsNumber);
+
+		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
+		{
+			DateTimeTypeInR actualValue = static_cast<DateTimeTypeInR>(vectorToTest[index]);
+			if (strLen_or_Ind == nullptr ||
+				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			{
+				EXPECT_TRUE(actualValue.is_na());
+			}
+			else
+			{
+				SQLType expectedValue = static_cast<SQLType *>(expectedData)[index];
+
+				SQLSMALLINT year = actualValue.getYear();
+				SQLUSMALLINT month = actualValue.getMonth();
+				SQLUSMALLINT day = actualValue.getDay();
+
+				EXPECT_EQ(expectedValue.year, year);
+				EXPECT_EQ(expectedValue.month, month);
+				EXPECT_EQ(expectedValue.day, day);
+
+				if constexpr (is_same_v<DateTimeTypeInR, Rcpp::Datetime>)
+				{
+					SQLUSMALLINT hour = actualValue.getHours();
+					SQLUSMALLINT minute = actualValue.getMinutes();
+					SQLUSMALLINT second = actualValue.getSeconds();
+					SQLUINTEGER usec = actualValue.getMicroSeconds();
+
+					EXPECT_EQ(expectedValue.hour, hour);
+					EXPECT_EQ(expectedValue.minute, minute);
+					EXPECT_EQ(expectedValue.second, second);
+					EXPECT_EQ(expectedValue.fraction / 1000, usec);
+				}
+			}
+		}
+	}
+
+	// Template instantiations
+	//
+	template void RExtensionApiTest::CheckDateTimeVectorEquality
+		<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
+			SQLULEN          expectedRowsNumber,
+			Rcpp::DateVector vectorToTest,
+			void             *expectedData,
+			SQLINTEGER       *strLen_or_Ind);
+
+	template void RExtensionApiTest::CheckDateTimeVectorEquality
+		<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
+			SQLULEN              expectedRowsNumber,
+			Rcpp::DatetimeVector vectorToTest,
+			void                 *expectedData,
+			SQLINTEGER           *strLen_or_Ind);
 
 	// Name: ColumnInfo
 	//

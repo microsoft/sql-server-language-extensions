@@ -58,7 +58,9 @@ const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
 	{"integer", SQL_C_SLONG},
 	{"numeric", SQL_C_DOUBLE},
 	{"character", SQL_C_CHAR},
-	{"raw", SQL_C_BINARY}
+	{"raw", SQL_C_BINARY},
+	{"Date", SQL_C_TYPE_DATE},
+	{"POSIXct", SQL_C_TYPE_TIMESTAMP}
 };
 
 //-------------------------------------------------------------------------------------------------

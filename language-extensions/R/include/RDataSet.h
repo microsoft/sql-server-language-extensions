@@ -174,6 +174,14 @@ private:
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data);
 
+	// Adds a single column of date(time) values into the R DataFrame.
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR>
+	void AddDateTimeColumnToDataFrame(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data);
+
 	using fnAddColumn = void (RInputDataSet::*)(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
@@ -256,6 +264,15 @@ private:
 	// Gets the raw column information, adds data to m_data and nullmap to m_columnNullMap
 	//
 	void GetRawColumnFromDataFrame(
+		SQLUSMALLINT columnNumber,
+		SQLULEN      &columnSize,
+		SQLSMALLINT  &decimalDigits,
+		SQLSMALLINT  &nullable);
+
+	// Gets the date(time) column information, adds data to m_data and nullmap to m_columnNullMap
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR>
+	void GetDateTimeColumnFromDataFrame(
 		SQLUSMALLINT columnNumber,
 		SQLULEN      &columnSize,
 		SQLSMALLINT  &decimalDigits,
