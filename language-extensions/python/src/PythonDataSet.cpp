@@ -744,9 +744,17 @@ bp::list PythonOutputDataSet::GetColumnNames()
 
 	if(bp::len(m_columnNames) == 0)
 	{
-		string getColumnNamesScript = "list(" + m_name + ".columns)";
+		// Execute python script to convert column names to strings (in case they are integers) 
+		// so we can extract and index
+		//
+		string columnNamesToStringScript = m_name + ".columns = " + m_name + ".columns.map(str);";
+		bp::exec(columnNamesToStringScript.c_str(), m_mainNamespace);
+		
+		// Extract the column names from the DataFrame
+		//
+		string getColumnScript = "list(" + m_name + ".columns)";
 		m_columnNames =
-			bp::extract<bp::list>(bp::eval(getColumnNamesScript.c_str(), m_mainNamespace));
+			bp::extract<bp::list>(bp::eval(getColumnScript.c_str(), m_mainNamespace));
 	}
 
 	return m_columnNames;
@@ -766,7 +774,7 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 
 	for (SQLUSMALLINT columnNumber = 0; columnNumber < bp::len(columnNames); columnNumber++)
 	{
-		string columnName = bp::extract<string>(columnNames[columnNumber]);
+		string columnName = bp::extract<string>(bp::str(columnNames[columnNumber]));
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
 		SQLULEN columnSize = 0;
 		SQLSMALLINT decimalDigits = 0;

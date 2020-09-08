@@ -57,7 +57,8 @@ public:
 private:
 	SQLGUID m_sessionId{ 0, 0, 0, {0} };
 
-	// The boost python namespace; dictionary containing all python variables
+	// The underlying boost::python namespace, which contains all the python variables.
+	// We execute any python scripts on this namespace.
 	//
 	boost::python::object m_mainNamespace;
 };

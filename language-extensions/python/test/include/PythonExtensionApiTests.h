@@ -406,7 +406,6 @@ namespace ExtensionApiTest
 		const float m_floatNull = NAN;
 		const int m_intNull = 0;
 		const bool m_boolNull = false;
-		const char m_charNull = '0';
 
 		// The boost python module; python will run in this object
 		//

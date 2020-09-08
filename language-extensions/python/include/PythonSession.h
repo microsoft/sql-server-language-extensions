@@ -101,8 +101,12 @@ public:
 	void Cleanup();
 
 private:
-	boost::python::object m_mainModule;    // The boost python module; python will run in this object
-	boost::python::object m_mainNamespace; // The boost python namespace; dictionary containing all python variables
+	boost::python::object m_mainModule; // The boost python module which contains the namespace.
+
+	// The underlying boost::python namespace, which contains all the python variables.
+	// We execute any python scripts on this namespace.
+	//
+	boost::python::object m_mainNamespace;
 
 	SQLGUID m_sessionId{ 0, 0, 0, {0} };
 	SQLUSMALLINT m_taskId = 0;

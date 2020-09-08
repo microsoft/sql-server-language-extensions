@@ -42,7 +42,12 @@ public:
 	static boost::python::object& OriginalPath() { return sm_originalPath; }
 
 private:
-	static boost::python::object sm_mainModule;    // The boost python module; python will run in this object
-	static boost::python::object sm_mainNamespace; // The boost python namespace; dictionary containing all python variables
+	static boost::python::object sm_mainModule; // The boost python module, contains the namespace.
+
+	// The underlying boost::python namespace, which contains all the python variables.
+	// We execute any python scripts on this namespace.
+	//
+	static boost::python::object sm_mainNamespace;
+	
 	static boost::python::object sm_originalPath;  // The original system python path
 };

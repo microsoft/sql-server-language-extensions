@@ -89,7 +89,8 @@ protected:
 	static const std::unordered_map<std::string, SQLSMALLINT> sm_pythonToOdbcTypeMap;
 	typedef std::unordered_map<std::string, SQLSMALLINT> pythonToOdbcTypeMap;
 
-	// The underlying boost::python namespace.
+	// The underlying boost::python namespace, which contains all the python variables.
+	// We execute any python scripts on this namespace.
 	//
 	boost::python::object m_mainNamespace;
 

@@ -712,7 +712,7 @@ namespace ExtensionApiTest
 		// that creates an empty row 1 column OutputDataSet.
 		//
 		InitializeSession(0, // parametersNumber
-			0,               //inputSchemaColumnsNumber
+			0,               // inputSchemaColumnsNumber
 			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
@@ -730,6 +730,54 @@ namespace ExtensionApiTest
 		TestGetResultColumn(0,  // columnNumber
 			SQL_C_SLONG,        // dataType
 			m_IntSize,          // columnSize
+			0,                  // decimalDigits
+			SQL_NO_NULLS);      // nullable
+	}
+
+	// Name: MixedColumnNamesTest
+	//
+	// Description:
+	//  Test GetResultColumn with a script that returns a dataset with mixed type column names
+	//  i.e. integer and string.
+	//  This makes sure that we can access columns with integer column names.
+	//
+	TEST_F(PythonExtensionApiTests, MixedColumnNamesTest)
+	{
+		// With this script, we create a DataFrame with unusual column names.
+		// This tests non-string and mixed type column names.
+		//
+		string scriptString = "from pandas import DataFrame;"
+			"OutputDataSet = DataFrame([['ABC', 123],['DEF', 456]], columns=[3, 'col2']);"
+			"print(OutputDataSet)";
+
+		// Initialize with a Session that executes the above script
+		// that creates an OutputDataSet with mixed column names.
+		//
+		InitializeSession(0, // parametersNumber
+			0,               // inputSchemaColumnsNumber
+			scriptString);
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr,
+			nullptr,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputschemaColumnsNumber, 2);
+		
+		TestGetResultColumn(0,  // columnNumber
+			SQL_C_CHAR,         // dataType
+			3,                  // columnSize
+			0,                  // decimalDigits
+			SQL_NO_NULLS);      // nullable
+
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_SBIGINT,      // dataType
+			m_BigIntSize,       // columnSize
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
 	}

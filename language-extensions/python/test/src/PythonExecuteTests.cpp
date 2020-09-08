@@ -242,8 +242,7 @@ namespace ExtensionApiTest
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
-			columnNames,
-			m_charNull);
+			columnNames);
 	}
 
 	// Name: ExecuteWStringColumnsTest
@@ -306,8 +305,7 @@ namespace ExtensionApiTest
 			rowsNumber,
 			dataSet,
 			strLen_or_Ind.data(),
-			columnNames,
-			m_charNull);
+			columnNames);
 	}
 
 	// Name: ExecuteRawColumnsTest
