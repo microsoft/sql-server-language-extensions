@@ -436,6 +436,58 @@ void RTypeUtils::FillDataFromRawVector(
 	}
 }
 
+//-------------------------------------------------------------------------------------------------
+// Name: FillDataFromDateTimeVector
+//
+// Description:
+//  Given the vectorInR, copy its content into the given std::vector pointed to by data.
+//  Copy the content only as far as the rowsNumber indicates.
+//  The cells in the strLenOrInd array are set to the size of the SQL data type if the
+//  corresponding rows in the vectorInR are not NA.
+//  Otherwise if they are NA, set nullable to true and the corresponding cells in
+//  the array strLenOrInd to SQL_NULL_DATA.
+//
+template<class SQLType, class RType, class DateTimeTypeInR>
+void RTypeUtils::FillDataFromDateTimeVector(
+	SQLULEN         rowsNumber,
+	RType           vectorInR,
+	vector<SQLType> *data,
+	SQLINTEGER      *strLenOrInd,
+	SQLSMALLINT     &nullable)
+{
+	for(SQLULEN index = 0 ; index < rowsNumber; ++index)
+	{
+		DateTimeTypeInR valueInR = static_cast<DateTimeTypeInR>(vectorInR[index]);
+		if (!valueInR.is_na())
+		{
+			SQLType value;
+			value.year = valueInR.getYear();
+			value.month = valueInR.getMonth();
+			value.day = valueInR.getDay();
+
+			if constexpr (is_same_v<RType, Rcpp::DatetimeVector>)
+			{
+				value.hour = valueInR.getHours();
+				value.minute = valueInR.getMinutes();
+				value.second = valueInR.getSeconds();
+
+				// "fraction" in TIMESTAMP_STRUCT is stored in nanoseconds,
+				// we convert from microseconds.
+				//
+				value.fraction = valueInR.getMicroSeconds() * 1000;
+			}
+
+			data->push_back(value);
+			strLenOrInd[index] = sizeof(SQLType);
+		}
+		else
+		{
+			strLenOrInd[index] = SQL_NULL_DATA;
+			nullable = SQL_NULLABLE;
+		}
+	}
+}
+
 // Do explicit template instantiations, so that object code is generated for these
 // and the linker is able to find their definitions even after instantiations are in different
 // translation units (i.e. CreateVector instantiation is in RParam.cpp)
@@ -563,3 +615,19 @@ template void RTypeUtils::FillDataFromCharacterVector<SQLWCHAR>(
 	SQLINTEGER            *strLenOrInd,
 	SQLSMALLINT           &nullable,
 	SQLULEN               &maxLen);
+
+template void RTypeUtils::FillDataFromDateTimeVector
+	<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
+		SQLULEN                 rowsNumber,
+		Rcpp::DateVector        vectorInR,
+		vector<SQL_DATE_STRUCT> *data,
+		SQLINTEGER              *strLenOrInd,
+		SQLSMALLINT             &nullable);
+
+template void RTypeUtils::FillDataFromDateTimeVector
+	<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
+		SQLULEN                      rowsNumber,
+		Rcpp::DatetimeVector         vectorInR,
+		vector<SQL_TIMESTAMP_STRUCT> *data,
+		SQLINTEGER                   *strLenOrInd,
+		SQLSMALLINT                  &nullable);

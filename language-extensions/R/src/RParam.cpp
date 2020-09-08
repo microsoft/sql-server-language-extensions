@@ -476,6 +476,43 @@ template<class SQLType, class RType, class DateTimeTypeInR>
 void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RetrieveValueAndStrLenInd()
 {
 	LOG("RDateTimeParam::RetrieveValueAndStrLenInd");
+
+	Rcpp::Environment globalEnv = Rcpp::Environment::global_env();
+
+	if (globalEnv.exists(m_name.c_str()))
+	{
+		Logger::LogRVariable(m_name);
+
+		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+
+		if (m_RcppVector.size() > 0)
+		{
+			SQLSMALLINT nullable = SQL_NO_NULLS;
+
+			// m_RcppVector could possibly have size > 1,
+			// but fill only the first value as the parameter value.
+			// hence pass in rowsNumber = 1.
+			//
+			RTypeUtils::FillDataFromDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+				1,  // rowsNumber
+				m_RcppVector,
+				&m_value,
+				&m_strLenOrInd,
+				nullable);
+		}
+		else
+		{
+			// This case means the parameter is defined in R as a vector but with no elements in it.
+			//
+			m_strLenOrInd = SQL_NULL_DATA;
+		}
+	}
+	else
+	{
+		// This means the parameter is not defined at all in the R environment.
+		//
+		m_strLenOrInd = SQL_NULL_DATA;
+	}
 }
 
 //--------------------------------------------------------------------------------------------------

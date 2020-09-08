@@ -340,8 +340,8 @@ namespace ExtensionApiTest
 			columnNames,
 			false); // validate
 
-		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
-		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+		SQLULEN maxCol1Len = Utilities::GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+		SQLULEN maxCol2Len = Utilities::GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_CHAR,        // dataType
@@ -454,8 +454,8 @@ namespace ExtensionApiTest
 		  static_cast<SQLINTEGER>(strlen(charCol2[3])),
 		  static_cast<SQLINTEGER>(strlen(charCol2[4])) };
 
-		SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
-		SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+		SQLULEN maxCol1Len = Utilities::GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+		SQLULEN maxCol2Len = Utilities::GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_CHAR,    // expectedDataType
@@ -607,7 +607,7 @@ namespace ExtensionApiTest
 			0,             // decimalDigits
 			SQL_NO_NULLS); // nullable
 
-		SQLULEN maxLen = GetMaxLength(strLenOrIndCol3.data(), rowsNumber);
+		SQLULEN maxLen = Utilities::GetMaxLength(strLenOrIndCol3.data(), rowsNumber);
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType

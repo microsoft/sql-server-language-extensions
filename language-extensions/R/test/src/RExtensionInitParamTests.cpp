@@ -440,7 +440,7 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
 			"", // scriptString
-			4); // parametersNumber
+			6); // parametersNumber
 
 		vector<SQL_DATE_STRUCT> expectedParamValues = {
 			// Test max SQL_DATE_STRUCT value
@@ -452,12 +452,18 @@ namespace ExtensionApiTest
 			// Test normal SQL_DATE_STRUCT value
 			//
 			{ 1470,7,27 },
+			// Test today's Local date
+			//
+			Utilities::GetDate<LOCAL_DATE>(),
+			// Test today's UTC date
+			//
+			Utilities::GetDate<UTC_DATE>(),
 			// Test null SQL_DATE_STRUCT value
 			//
 			{}};
 
 		vector<SQLINTEGER> strLenOrInd(expectedParamValues.size(), sizeof(SQL_DATE_STRUCT));
-		strLenOrInd[3] = SQL_NULL_DATA;
+		strLenOrInd[expectedParamValues.size() - 1] = SQL_NULL_DATA;
 
 		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
@@ -662,7 +668,7 @@ namespace ExtensionApiTest
 				SQLULEN paramLength = 0;
 				if constexpr (is_same_v<CharType, wchar_t>)
 				{
-					paramLength = GetWStringLength(expectedParamValues[paramNumber]);
+					paramLength = Utilities::GetWStringLength(expectedParamValues[paramNumber]);
 				}
 				else
 				{

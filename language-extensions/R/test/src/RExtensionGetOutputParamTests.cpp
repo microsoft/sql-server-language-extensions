@@ -71,7 +71,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -135,7 +135,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -201,7 +201,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -265,7 +265,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -329,7 +329,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -399,7 +399,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -468,7 +468,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -538,7 +538,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -722,7 +722,7 @@ namespace ExtensionApiTest
 		SQLRETURN result = (*m_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
-			0,
+			0,       // rowsNumber
 			nullptr, // dataSet
 			nullptr, // strLen_or_Ind
 			&outputSchemaColumnsNumber);
@@ -764,6 +764,172 @@ namespace ExtensionApiTest
 			SQL_NULL_DATA };
 
 		GetRawOutputParam(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
+	// Name: GetDateOutputParamTest
+	//
+	// Description:
+	// Test multiple DATE values
+	//
+	TEST_F(RExtensionApiTest, GetDateOutputParamTest)
+	{
+		string scriptString =
+			// Max Date value
+			//
+			"param1 <- as.Date('9999/12/31');"
+			// Min Date value
+			//
+			"param2 <- as.Date('1/1/1');"
+			// Normal Date value
+			//
+			"param3 <- as.Date('1470/7/27');"
+			// Today's local date
+			//
+			"param4 <- Sys.Date();"
+			// Today's UTC date
+			//
+			"Sys.setenv(TZ = 'UTC'); param5 <- Sys.Date();"
+			// Explicit NA
+			//
+			"param6 <- as.Date(NA);"
+			// 0 Date is NA
+			//
+			"param7 <- as.Date('0000/00/00', 'YYYY/MM/DD');"
+			// Invalid Date is also NA
+			//
+			"param8 <- as.Date('1000/13/09', 'YYYY/MM/DD');";
+
+		int paramsNumber = 8;
+		int numberOfNAs = 3;
+
+		SQL_DATE_STRUCT date1 = { 9999,12,31 };
+		SQL_DATE_STRUCT date2 = { 1,1,1 };
+		SQL_DATE_STRUCT date3 = { 1470,7,27 };
+		SQL_DATE_STRUCT date4 = Utilities::GetDate<LOCAL_DATE>();
+		SQL_DATE_STRUCT date5 = Utilities::GetDate<UTC_DATE>();
+
+		vector<SQL_DATE_STRUCT> initParamValues(paramsNumber, { 0, 0, 0 });
+		vector<SQL_DATE_STRUCT *> expectedParamValues =
+			{ &date1, &date2, &date3, &date4, &date5, nullptr, nullptr, nullptr };
+		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
+
+		vector<SQLINTEGER> expectedStrLenOrInd(paramsNumber - numberOfNAs, sizeof(SQL_DATE_STRUCT));
+		expectedStrLenOrInd.insert(expectedStrLenOrInd.end(), numberOfNAs, SQL_NULL_DATA);
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString,
+			paramsNumber);
+
+		InitDateTimeParam<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date, SQL_C_TYPE_DATE>(
+			initParamValues,
+			expectedStrLenOrInd,
+			inputOutputTypes,
+			false); // validate
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = (*m_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		// Verify that the parameters we get back are what we expect
+		//
+		GetDateTimeOutputParam<SQL_DATE_STRUCT>(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
+	// Name: GetDateTimeOutputParamTest
+	//
+	// Description:
+	// Test multiple DATETIME values
+	//
+	TEST_F(RExtensionApiTest, GetDateTimeOutputParamTest)
+	{
+		string scriptString =
+			// Max Datetime value
+			//
+			"param1 <- as.POSIXct(strptime('9999/12/31 23:59:59.000092', '%Y/%m/%d %H:%M:%OS'));"
+			// Min Datetime value
+			//
+			"param2 <- as.POSIXct(strptime('1/1/1 0:0:0.0', '%Y/%m/%d %H:%M:%OS'));"
+			// Normal Datetime value
+			//
+			"param3 <- as.POSIXct(strptime('1470/7/27 17:47:52.000123456', '%Y/%m/%d %H:%M:%OS'));"
+			// Nanoseconds are divisible by 10^9
+			//
+			"param4 <- as.POSIXct(strptime('2020/9/01 18:23:58.100000000', '%Y/%m/%d %H:%M:%OS'));"
+			// Nanoseconds are all 9 digits
+			//
+			"param5 <- as.POSIXct(strptime('1970/10/31 8:30:2.123654489', '%Y/%m/%d %H:%M:%OS'));"
+			// Explicti NA value
+			//
+			"param6 <- as.POSIXct(NA);"
+			// 0 Datetime value
+			//
+			"param7 <- as.POSIXct(strptime('0000/00/00 00:00:00.00000', '%Y/%m/%d %H:%M:%OS'));"
+			// Invalid Datetime is also NA
+			//
+			"param8 <- as.POSIXct(strptime('1000/13/09 00:59:00.00000', '%Y/%m/%d %H:%M:%OS'));";
+
+		int paramsNumber = 8;
+		int numberOfNAs = 3;
+
+		SQL_TIMESTAMP_STRUCT dateTime1 = { 9999, 12, 31, 23, 59, 59, 92000 };
+		SQL_TIMESTAMP_STRUCT dateTime2 = { 1, 1, 1, 0, 0, 0, 0 };
+		SQL_TIMESTAMP_STRUCT dateTime3 = { 1470, 7, 27, 17, 47, 52, 124'000 };
+		SQL_TIMESTAMP_STRUCT dateTime4 = { 2020, 9, 01, 18, 23, 58, 100'000'000 };
+		SQL_TIMESTAMP_STRUCT dateTime5 = { 1970, 10, 31, 8, 30, 2, 123'654'000 };
+
+		vector<SQL_TIMESTAMP_STRUCT> initParamValues(paramsNumber, { 0, 0, 0, 0, 0, 0, 0 });
+		vector<SQL_TIMESTAMP_STRUCT *> expectedParamValues 
+			= { &dateTime1, &dateTime2, &dateTime3, &dateTime4, &dateTime5, nullptr, nullptr, nullptr };
+		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
+
+		vector<SQLINTEGER> expectedStrLenOrInd(paramsNumber - numberOfNAs, sizeof(SQL_TIMESTAMP_STRUCT));
+		expectedStrLenOrInd.insert(expectedStrLenOrInd.end(), numberOfNAs, SQL_NULL_DATA);
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			0,              // inputSchemaColumnsNumber
+			scriptString,
+			paramsNumber);
+
+		InitDateTimeParam<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime, SQL_C_TYPE_TIMESTAMP>(
+			initParamValues,
+			expectedStrLenOrInd,
+			inputOutputTypes,
+			false); // validate
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = (*m_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		// Verify that the parameters we get back are what we expect
+		//
+		GetDateTimeOutputParam<SQL_TIMESTAMP_STRUCT>(
 			expectedParamValues,
 			expectedStrLenOrInd);
 	}
@@ -1012,6 +1178,59 @@ namespace ExtensionApiTest
 				{
 					EXPECT_EQ(*(static_cast<SQLCHAR*>(paramValue) + i),
 						*(expectedParamValues[paramNumber] + i));
+				}
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	// Name: GetDateTimeOutputParam
+	//
+	// Description:
+	// Templatized function to test output param value and strLenOrInd is as expected.
+	//
+	template<class SQLType>
+	void RExtensionApiTest::GetDateTimeOutputParam(
+		vector<SQLType *>  expectedParamValues,
+		vector<SQLINTEGER> expectedStrLenOrInd)
+	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
+		for (SQLULEN paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			SQLType *expectedParamValue = expectedParamValues[paramNumber];
+
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+			SQLRETURN result = SQL_ERROR;
+			result = (*m_getOutputParamFuncPtr)(
+				*m_sessionId,
+				m_taskId,
+				paramNumber,
+				&paramValue,
+				&strLen_or_Ind);
+
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+			if (expectedParamValue != nullptr)
+			{
+				SQLType expectedValue = *expectedParamValue;
+				SQLType actualValue = *(static_cast<SQLType *>(paramValue));
+
+				EXPECT_EQ(expectedValue.year, actualValue.year);
+				EXPECT_EQ(expectedValue.month, actualValue.month);
+				EXPECT_EQ(expectedValue.day, actualValue.day);
+				if constexpr (is_same_v<SQLType, SQL_TIMESTAMP_STRUCT>)
+				{
+					EXPECT_EQ(expectedValue.hour, actualValue.hour);
+					EXPECT_EQ(expectedValue.minute, actualValue.minute);
+					EXPECT_EQ(expectedValue.second, actualValue.second);
+					EXPECT_EQ(expectedValue.fraction, actualValue.fraction);
 				}
 			}
 			else

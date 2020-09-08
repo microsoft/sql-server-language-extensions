@@ -506,55 +506,6 @@ namespace ExtensionApiTest
 		vector<const wchar_t*> columnVector,
 		SQLINTEGER             *strLenOrInd);
 
-	// Name: GetMaxLength
-	//
-	// Description:
-	//  Get max length of all strings from strLenOrInd.
-	//
-	SQLINTEGER RExtensionApiTest::GetMaxLength(
-		SQLINTEGER *strLenOrInd,
-		SQLULEN    rowsNumber)
-	{
-		SQLINTEGER maxLen = 0;
-		for (SQLULEN index = 0; index < rowsNumber; ++index)
-		{
-			if (strLenOrInd[index] != SQL_NULL_DATA && maxLen < strLenOrInd[index])
-			{
-				maxLen = strLenOrInd[index];
-			}
-		}
-
-		return maxLen;
-	}
-
-	// Name: GetWStringLength
-	//
-	// Description:
-	//  Utility function to get the length of a wchar_t *.
-	//  wcslen does not work in Linux with -fshort-wchar, so we use this function instead.
-	//
-	SQLULEN RExtensionApiTest::GetWStringLength(const wchar_t *wstr)
-	{
-		SQLULEN distance = -1;
-
-		// If nullptr, return
-		//
-		if (wstr)
-		{
-			// Get distance from end of string to beginning
-			//
-			const wchar_t *newstr = wstr;
-			while (*newstr)
-			{
-				++newstr;
-			}
-
-			distance = newstr - wstr;
-		}
-
-		return distance;
-	}
-
 	// Name: CheckVectorEquality
 	//
 	// Description:

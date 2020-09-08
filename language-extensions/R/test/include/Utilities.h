@@ -23,13 +23,44 @@
 // Purpose:
 //  Utility functions
 //
-//*************************************************************************************************
+//**************************************************************************************************
 #pragma once
+
+# define LOCAL_DATE 1
+# define UTC_DATE 2
 
 class Utilities
 {
 public:
-	static void* CrossPlatLoadLibrary(const char *libPath);
-	static void* CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::string &fnName);
-	static void CrossPlatCloseLibrary(void *libHandle);
+
+	// Gets the handle for the given library path after loading it dynamically
+	//
+	static void* CrossPlatLoadLibrary(
+		const char *libPath);
+
+	// Gets the function pointer for the given function name from the given library handle
+	//
+	static void* CrossPlatGetFunctionFromLibHandle(
+		void *libHandle,
+		const std::string &fnName);
+
+	// Given a valid library handle, closes it.
+	//
+	static void CrossPlatCloseLibrary(
+		void *libHandle);
+
+	// Gets max length from given arrayOfLengths with size = rowsNumber.
+	//
+	static SQLINTEGER GetMaxLength(
+		SQLINTEGER *arrayOfLengths,
+		SQLULEN    rowsNumber);
+
+	// Gets the length of a wchar_t *.
+	//
+	static SQLULEN GetWStringLength(const wchar_t *wstr);
+
+	// Gets the current date based on its type (UTC or local) in the form of a SQL_DATE_STRUCT.
+	//
+	template<SQLSMALLINT DateType>
+	static SQL_DATE_STRUCT GetDate();
 };

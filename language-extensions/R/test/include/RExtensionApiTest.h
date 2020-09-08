@@ -247,14 +247,6 @@ namespace ExtensionApiTest
 			std::vector<const SQLType*> columnVector,
 			SQLINTEGER                  *strLenOrInd);
 
-		// Get max length of all strings from strLenOrInd.
-		//
-		SQLINTEGER GetMaxLength(SQLINTEGER *strLenOrInd, SQLULEN rowsNumber);
-
-		// Get length of a wstring
-		//
-		SQLULEN GetWStringLength(const wchar_t *wstr);
-
 		// Templatized function to compare the given vector and data for equality.
 		//
 		template<class SQLType, class RType, SQLSMALLINT dataType>
@@ -376,6 +368,14 @@ namespace ExtensionApiTest
 		//
 		void GetRawOutputParam(
 			std::vector<SQLCHAR*>   expectedParamValues,
+			std::vector<SQLINTEGER> expectedStrLenOrInd);
+
+
+		// Test date/datetime output param values and strLenOrInd are as expected.
+		//
+		template<class SQLType>
+		void GetDateTimeOutputParam(
+			std::vector<SQLType *>  expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
 
 		// Objects declared here can be used by all tests in the test suite.

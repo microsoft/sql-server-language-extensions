@@ -354,6 +354,8 @@ private:
 // Description:
 //  Class representing a Date/DateTime parameter.
 //  Corresponds to ODBC C type SQL_C_TYPE_DATE and SQL_C_TYPE_TIMESTAMP.
+//  RType is the parameter of type Rcpp vector where each of its elements are of the scalar type
+//  DateTimeTypeInR.
 //
 template<class SQLType, class RType, class DateTimeTypeInR>
 class RDateTimeParam : public RParam

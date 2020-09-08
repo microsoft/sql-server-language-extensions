@@ -95,6 +95,16 @@ public:
 		std::vector<SQLCHAR> *data,
 		SQLINTEGER           *strLenOrInd);
 
+	// Given the vectorInR, copy its content into the given std::vector pointed to by data.
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR>
+	static void FillDataFromDateTimeVector(
+		SQLULEN              rowsNumber,
+		RType                vectorInR,
+		std::vector<SQLType> *data,
+		SQLINTEGER           *strLenOrInd,
+		SQLSMALLINT          &nullable);
+
 	// Map to store the ODBC C type to NA value mapping
 	//
 	static const std::unordered_map<SQLSMALLINT, SQLPOINTER> m_dataTypeToNAMap;

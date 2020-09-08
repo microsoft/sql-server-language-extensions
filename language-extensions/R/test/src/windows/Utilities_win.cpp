@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,26 +23,20 @@
 // Purpose:
 //  Utility functions
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
-#include "windows.h"
-
-#include <iostream>
-#include <stdexcept>
-#include <string>
-
-#include "Utilities.h"
+#include "Common.h"
 
 using namespace std;
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::CrossPlatLoadLibrary
 //
 // Description:
-//	Gets the handle for the given library path after loading it dynamically
+//  Gets the handle for the given library path after loading it dynamically
 //
 // Returns:
-//	On success, returns handle to the library. Otherwise, throws a runtime_error exception.
+//  On success, returns handle to the library. Otherwise, throws a runtime_error exception.
 //
 void* Utilities::CrossPlatLoadLibrary(const char *libPath)
 {
@@ -57,14 +51,14 @@ void* Utilities::CrossPlatLoadLibrary(const char *libPath)
 	return hDLL;
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::CrossPlatGetFunctionFromLibHandle
 //
 // Description:
-//	Get the function pointer for the given function name from the given library handle
+//  Get the function pointer for the given function name from the given library handle
 //
 // Returns:
-//	On success, returns handle to the function. Otherwise, throws a runtime_error exception.
+//  On success, returns handle to the function. Otherwise, throws a runtime_error exception.
 //
 void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::string &fnName)
 {
@@ -92,14 +86,14 @@ void* Utilities::CrossPlatGetFunctionFromLibHandle(void *libHandle, const std::s
 	return pFuncPtr;
 }
 
-//------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::CrossPlatCloseLibrary
 //
 // Description:
-//	Given a valid library handle, close it.
+//  Given a valid library handle, close it.
 //
 // Returns:
-//	On success, returns nothing. Otherwise, throws a runtime_error exception.
+//  On success, returns nothing. Otherwise, throws a runtime_error exception.
 //
 void Utilities::CrossPlatCloseLibrary(void *libHandle)
 {

@@ -26,7 +26,9 @@
 #pragma once
 
 #ifdef _WIN64
-#include <windows.h>
+	#include <windows.h>
+#else
+	#include <dlfcn.h>
 #endif
 
 #include <iostream>
