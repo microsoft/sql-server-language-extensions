@@ -519,6 +519,67 @@ namespace ExtensionApiTest
 		EXPECT_EQ(strLen_or_Ind[0], nullptr);
 	}
 
+	// Name: GetDateResultsTest
+	//
+	// Description:
+	//  Test GetResults with default script expecting an OutputDataSet of Date column data.
+	//
+	TEST_F(RExtensionApiTest, GetDateResultsTest)
+	{
+		// Initialize with a default session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			(*m_dateInfo).GetColumnsNumber(),
+			m_scriptString,
+			0); // parametersNumber
+
+		InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(m_dateInfo.get());
+
+		ExecuteDateTime<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
+			ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames,
+			false);  // validate
+
+		GetDateTimeResults<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
+			ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames);
+	}
+
+	// Name: GetDateTimeResultsTest
+	//
+	// Description:
+	//  Test GetResults with default script expecting an OutputDataSet of DateTime column data.
+	//
+	TEST_F(RExtensionApiTest, GetDateTimeResultsTest)
+	{
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession((*m_dateTimeInfo).GetColumnsNumber(),
+			m_scriptString,
+			0); // parametersNumber
+
+		InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(m_dateTimeInfo.get());
+
+		ExecuteDateTime<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames,
+			false); // validate
+
+		GetDateTimeResults<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames);
+	}
+
 	// Name: GetDifferentColumnResultsTest
 	//
 	// Description:
@@ -867,6 +928,106 @@ namespace ExtensionApiTest
 					columnStrLenOrInd[index]);
 				EXPECT_EQ(testString, expectedString);
 				cumulativeLength += expectedColumnStrLenOrInd[index];
+			}
+		}
+	}
+
+	// Name: GetDateTimeResults
+	//
+	// Description:
+	// Test GetResults to verify the expected results are obtained for date(time) data.
+	//
+	template<class SQLType, class RType, class DateTimeTypeInR>
+	void RExtensionApiTest::GetDateTimeResults(
+		SQLULEN        expectedRowsNumber,
+		SQLPOINTER     *expectedData,
+		SQLINTEGER     **expectedStrLen_or_Ind,
+		vector<string> columnNames)
+	{
+		SQLULEN    rowsNumber = 0;
+		SQLPOINTER *data = nullptr;
+		SQLINTEGER **strLen_or_Ind = nullptr;
+		SQLRETURN result = (*m_getResultsFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			&rowsNumber,
+			&data,
+			&strLen_or_Ind);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(rowsNumber, expectedRowsNumber);
+
+		// Test data obtained is same as the expectedData and the OutputDataSet in R environment.
+		//
+		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
+
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		{
+			SQLType *expectedColumnData = static_cast<SQLType*>(expectedData[columnNumber]);
+			SQLType *columnData = static_cast<SQLType *>(data[columnNumber]);
+
+			SQLINTEGER *expectedColumnStrLenOrInd = expectedStrLen_or_Ind[columnNumber];
+			SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
+
+			CheckDateTimeDataEquality<SQLType>(
+				rowsNumber,
+				expectedColumnData,
+				columnData,
+				expectedColumnStrLenOrInd,
+				columnStrLenOrInd);
+
+			RType column = outputDataSet[columnNames[columnNumber].c_str()];
+			CheckDateTimeVectorEquality<SQLType, RType, DateTimeTypeInR>(
+				rowsNumber,
+				column,
+				columnData,
+				columnStrLenOrInd);
+		}
+	}
+
+	// Name: CheckDateTimeDataEquality
+	//
+	// Description:
+	//  Compare the given datetime data & nullMap for equality.
+	//
+	template<class SQLType>
+	void RExtensionApiTest::CheckDateTimeDataEquality(
+		SQLULEN    rowsNumber,
+		SQLType    *expectedColumnData,
+		SQLType    *columnData,
+		SQLINTEGER *expectedColumnStrLenOrInd,
+		SQLINTEGER *columnStrLenOrInd)
+	{
+		if (rowsNumber == 0)
+		{
+			EXPECT_EQ(columnData, nullptr);
+			EXPECT_EQ(columnStrLenOrInd, nullptr);
+		}
+
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
+		{
+			if (expectedColumnStrLenOrInd != nullptr)
+			{
+				EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
+
+				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
+				{
+					EXPECT_EQ(expectedColumnData->year, columnData->year);
+					EXPECT_EQ(expectedColumnData->month, columnData->month);
+					EXPECT_EQ(expectedColumnData->day, columnData->day);
+
+					if constexpr (is_same_v<SQLType, SQL_TIMESTAMP_STRUCT>)
+					{
+						EXPECT_EQ(expectedColumnData->hour, columnData->hour);
+						EXPECT_EQ(expectedColumnData->minute, columnData->minute);
+						EXPECT_EQ(expectedColumnData->second, columnData->second);
+						EXPECT_EQ(expectedColumnData->fraction, columnData->fraction);
+					}
+				}
+			}
+			else
+			{
+				EXPECT_EQ(columnStrLenOrInd[index], SQL_NULL_DATA);
 			}
 		}
 	}

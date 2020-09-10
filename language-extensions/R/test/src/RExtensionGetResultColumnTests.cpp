@@ -344,22 +344,22 @@ namespace ExtensionApiTest
 		SQLULEN maxCol2Len = Utilities::GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_CHAR,        // dataType
-			maxCol1Len,        // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_CHAR,    // dataType
+			maxCol1Len,    // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		GetResultColumn(1, // columnNumber
-			SQL_C_CHAR,        // dataType
-			maxCol2Len,        // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_CHAR,    // dataType
+			maxCol2Len,    // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 
 		GetResultColumn(2, // columnNumber
-			SQL_C_CHAR,        // dataType
-			0,                 // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_CHAR,    // dataType
+			0,             // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	// Name: GetNCharResultColumnsTest
@@ -507,10 +507,10 @@ namespace ExtensionApiTest
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_BINARY,      // dataType
-			26,                // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_BINARY,  // dataType
+			26,            // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 
 		CleanupSession();
 
@@ -538,10 +538,83 @@ namespace ExtensionApiTest
 		EXPECT_EQ(outputschemaColumnsNumber, 1);
 
 		GetResultColumn(0, // columnNumber
-			SQL_C_BINARY,      // dataType
-			0,                 // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_BINARY,  // dataType
+			0,             // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+	}
+
+	// Name: GetDateResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script expecting an OutputDataSet of Date columns.
+	//
+	TEST_F(RExtensionApiTest, GetDateResultColumnsTest)
+	{
+		// Initialize with a default session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			(*m_dateInfo).GetColumnsNumber(),
+			m_scriptString,
+			0); // parametersNumber
+
+		InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(m_dateInfo.get());
+
+		ExecuteDateTime<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
+			ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber,
+			(*m_dateInfo).m_dataSet.data(),
+			(*m_dateInfo).m_strLen_or_Ind.data(),
+			(*m_dateInfo).m_columnNames,
+			false);  // validate
+
+		GetResultColumn(0,   // columnNumber
+			SQL_C_TYPE_DATE, // dataType
+			m_DateSize,      // columnSize
+			0,               // decimalDigits
+			SQL_NO_NULLS);   // nullable
+
+		GetResultColumn(1,   // columnNumber
+			SQL_C_TYPE_DATE, // dataType
+			m_DateSize,      // columnSize
+			0,               // decimalDigits
+			SQL_NULLABLE);   // nullable
+	}
+
+	// Name: GetDateTimeResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script expecting an OutputDataSet of DateTime columns.
+	//
+	TEST_F(RExtensionApiTest, GetDateTimeResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession((*m_dateTimeInfo).GetColumnsNumber(),
+			m_scriptString,
+			0); // parametersNumber
+
+		InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(m_dateTimeInfo.get());
+
+		ExecuteDateTime<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
+			ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber,
+			(*m_dateTimeInfo).m_dataSet.data(),
+			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
+			(*m_dateTimeInfo).m_columnNames,
+			false); // validate
+
+		GetResultColumn(0,        // columnNumber
+			SQL_C_TYPE_TIMESTAMP, // dataType
+			m_DateTimeSize,       // columnSize
+			0,                    // decimalDigits
+			SQL_NO_NULLS);        // nullable
+
+		GetResultColumn(1,        // columnNumber
+			SQL_C_TYPE_TIMESTAMP, // dataType
+			m_DateTimeSize,       // columnSize
+			0,                    // decimalDigits
+			SQL_NULLABLE);        // nullable
 	}
 
 	// Name: GetDifferentResultColumnsTest
@@ -610,10 +683,10 @@ namespace ExtensionApiTest
 		SQLULEN maxLen = Utilities::GetMaxLength(strLenOrIndCol3.data(), rowsNumber);
 
 		GetResultColumn(2, // columnNumber
-			SQL_C_CHAR,        // dataType
-			maxLen,            // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_CHAR,    // dataType
+			maxLen,        // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
 	}
 
 	// Name: GetEmptyResultColumnTest

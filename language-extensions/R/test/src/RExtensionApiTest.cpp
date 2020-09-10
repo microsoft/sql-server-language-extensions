@@ -344,7 +344,7 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber, m_DateTimeSize),
 			"DateTimeColumn2",
 			vector<SQL_TIMESTAMP_STRUCT>{
-				{ 9999, 12, 31, 23, 59, 59, 999 },
+				{ 9999, 12, 31, 23, 59, 59, 92000 },
 				{ 1,1,1,0,0,0,0 },
 				{},
 				{},

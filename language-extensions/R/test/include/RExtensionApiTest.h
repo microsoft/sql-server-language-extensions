@@ -344,6 +344,15 @@ namespace ExtensionApiTest
 			SQLINTEGER               **expectedStrLen_or_Ind,
 			std::vector<std::string> columnNames);
 
+		// Test GetResults to verify the expected results are obtained for date(time) data.
+		//
+		template<class SQLType, class RType, class DateTimeTypeInR>
+		void GetDateTimeResults(
+			SQLULEN                  expectedRowsNumber,
+			SQLPOINTER               *expectedData,
+			SQLINTEGER               **expectedStrLen_or_Ind,
+			std::vector<std::string> columnNames);
+
 		// Templatized function to compare the given column data
 		// & nullMap with rowsNumber for equality.
 		//
@@ -361,6 +370,16 @@ namespace ExtensionApiTest
 			SQLULEN    rowsNumber,
 			char*      expectedColumnData,
 			char*      columnData,
+			SQLINTEGER *expectedColumnStrLenOrInd,
+			SQLINTEGER *columnStrLenOrInd);
+
+		// Compare the given datetime data & nullMap for equality.
+		//
+		template<class SQLType>
+		void CheckDateTimeDataEquality(
+			SQLULEN    rowsNumber,
+			SQLType    *expectedColumnData,
+			SQLType    *columnData,
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 

@@ -644,6 +644,34 @@ void ROutputDataSet::GetDateTimeColumnFromDataFrame(
 	SQLSMALLINT  &nullable)
 {
 	LOG("ROutputDataSet::GetDateTimeColumnFromDataFrame");
+
+	decimalDigits = 0;
+	nullable = SQL_NO_NULLS;
+	columnSize = sizeof(SQLType);
+
+	vector<SQLType> *columnData = nullptr;
+	SQLINTEGER *strLenOrInd = nullptr;
+
+	if(m_rowsNumber > 0)
+	{
+		columnData = new vector<SQLType>();
+		strLenOrInd = new SQLINTEGER[m_rowsNumber];
+
+		RType column = m_dataFrame[columnNumber];
+		RTypeUtils::FillDataFromDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+			m_rowsNumber,
+			column,
+			columnData,
+			strLenOrInd,
+			nullable);
+		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+	}
+	else
+	{
+		m_data.push_back(nullptr);
+	}
+
+	m_columnNullMap.push_back(strLenOrInd);
 }
 
 //--------------------------------------------------------------------------------------------------
