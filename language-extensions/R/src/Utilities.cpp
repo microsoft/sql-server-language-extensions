@@ -137,3 +137,59 @@ string Utilities::GetSecondsAfterDecimalPointFromNanoSeconds(
 
 	return secondsAfterDecimalPoint;
 }
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::GetTimeZoneInR
+//
+// Description:
+// Find the current time zone defined in R if any
+//
+// Returns:
+//  The time zone environment variable's value as a string if it is set or an empty string if not.
+//
+string Utilities::GetTimeZoneInR()
+{
+	// This script finds the value of the environment variable TZ that defines the time zone if set
+	//
+	string scriptToFindTimeZoneInR = "Sys.getenv('TZ')[1]";
+
+	// Evaluate the script and store the result in a string
+	//
+	Rcpp::CharacterVector timeZoneInRVector(static_cast<SEXP>(
+		(*g_embeddedRPtr).parseEval(scriptToFindTimeZoneInR)));
+
+	string timeZoneInR = "";
+
+	if (timeZoneInRVector.size() > 0)
+	{
+		timeZoneInR = timeZoneInRVector[0];
+	}
+
+	return timeZoneInR;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::SetTimeZoneInR
+//
+// Description:
+// Set the time zone in R to the given value or unset it if the value is empty.
+//
+// Returns:
+// Nothing.
+//
+void Utilities::SetTimeZoneInR(string valueToSet)
+{
+	if (valueToSet.length() > 0)
+	{
+		// Reset the stored time zone using the temporary variable above.
+		//
+		(*g_embeddedRPtr).parseEvalQ("Sys.setenv(TZ = '" + valueToSet + "')");
+	}
+	else
+	{
+		// If time zone was not set, unset it again.
+		// On Windows, it default is UTC while on Linux it is the local time zone.
+		//
+		(*g_embeddedRPtr).parseEvalQ("Sys.unsetenv('TZ')");
+	}
+}

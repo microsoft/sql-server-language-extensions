@@ -413,7 +413,7 @@ namespace ExtensionApiTest
 		//
 		template<class SQLType>
 		void GetDateTimeOutputParam(
-			std::vector<SQLType *>  expectedParamValues,
+			std::vector<SQLType>    expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
 
 		// Objects declared here can be used by all tests in the test suite.

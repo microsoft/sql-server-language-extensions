@@ -57,4 +57,12 @@ public:
 	//
 	static std::string GetSecondsAfterDecimalPointFromNanoSeconds(
 		SQLUINTEGER nanoSeconds);
+
+	// Find the current time zone defined in R if any
+	//
+	static std::string GetTimeZoneInR();
+
+	// Set the time zone in R to the given value or unset it if the value is empty.
+	//
+	static void SetTimeZoneInR(std::string valueToSet);
 };

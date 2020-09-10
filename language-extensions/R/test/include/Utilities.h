@@ -59,8 +59,18 @@ public:
 	//
 	static SQLULEN GetWStringLength(const wchar_t *wstr);
 
+	// Returns the current system clock time in terms of time_t which represents number of seconds
+	// since epoch January 1, 1970 00:00:00.
+	//
+	static time_t GetNow();
+
 	// Gets the current date based on its type (UTC or local) in the form of a SQL_DATE_STRUCT.
 	//
 	template<SQLSMALLINT DateType>
-	static SQL_DATE_STRUCT GetDate();
+	static SQL_DATE_STRUCT GetTodaysDate();
+
+	//  Convert the given SQLDateTimeType into an equivalent UTC SQLDateTimeType
+	//
+	template<class SQLDateTimeType>
+	static SQLDateTimeType ToUtc(SQLDateTimeType givenTimeStamp);
 };

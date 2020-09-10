@@ -454,10 +454,10 @@ namespace ExtensionApiTest
 			{ 1470,7,27 },
 			// Test today's Local date
 			//
-			Utilities::GetDate<LOCAL_DATE>(),
+			Utilities::GetTodaysDate<LOCAL_DATE>(),
 			// Test today's UTC date
 			//
-			Utilities::GetDate<UTC_DATE>(),
+			Utilities::GetTodaysDate<UTC_DATE>(),
 			// Test null SQL_DATE_STRUCT value
 			//
 			{}};
@@ -856,32 +856,11 @@ namespace ExtensionApiTest
 				// Do + 1 to skip the @ from the paramName
 				//
 				RType param = m_globalEnvironment[paramNameString.c_str() + 1];
-				DateTimeTypeInR actualParam = static_cast<DateTimeTypeInR>(param[0]);
-				if (strLenOrInd[paramNumber] != SQL_NULL_DATA)
-				{
-					EXPECT_EQ(actualParam.getYear(), expectedParamValue.year);
-					EXPECT_EQ(actualParam.getMonth(), expectedParamValue.month);
-					EXPECT_EQ(actualParam.getDay(), expectedParamValue.day);
-
-					if constexpr (is_same_v<DateTimeTypeInR, Rcpp::Datetime>)
-					{
-						SQLUINTEGER usec = actualParam.getMicroSeconds();
-						SQLUINTEGER expectedUsec = round(expectedParamValue.fraction / 1000.0);
-
-						EXPECT_EQ(actualParam.getHours(), expectedParamValue.hour);
-						EXPECT_EQ(actualParam.getMinutes(), expectedParamValue.minute);
-						EXPECT_EQ(actualParam.getSeconds(), expectedParamValue.second);
-
-						// Fraction is stored in nanoseconds, R uses microseconds and sometimes even
-						// after rounding it has a margin error of +-1.
-						//
-						EXPECT_TRUE(usec == expectedUsec || usec == expectedUsec + 1 || usec == expectedUsec - 1);
-					}
-				}
-				else
-				{
-					EXPECT_TRUE(actualParam.is_na());
-				}
+				CheckDateTimeVectorEquality<SQLType, RType, DateTimeTypeInR>(
+					1,
+					param,
+					&expectedParamValue,
+					&strLenOrInd[paramNumber]);
 			}
 		}
 	}

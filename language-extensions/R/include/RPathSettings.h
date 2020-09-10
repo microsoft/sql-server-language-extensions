@@ -21,7 +21,7 @@
 // @File: RPathSettings.h
 //
 // Purpose:
-//  Global class to keep language runtime settings.
+//  Global class to keep language runtime path settings.
 //
 //*************************************************************************************************
 #pragma once
@@ -41,28 +41,46 @@ public:
 
 	// Get the private library path sent by SQL Server
 	//
-	static const std::string& PrivateLibraryPath() {return m_privateLibraryPath; }
+	static const std::string& PrivateLibraryPath() {return sm_privateLibraryPath; }
 
 	// Get the public library path sent by SQL Server
 	//
-	static const std::string& PublicLibraryPath() {return m_publicLibraryPath; }
+	static const std::string& PublicLibraryPath() {return sm_publicLibraryPath; }
 
 	// Get the extension root folder
 	//
-	static const std::string& RootPath() {return m_languagePath; }
+	static const std::string& RootPath() {return sm_languagePath; }
 
 	// Get the language parameters sent by SQL Server
 	//
-	static const std::string& Params() {return m_languageParams; }
+	static const std::string& Params() {return sm_languageParams; }
 
 	// Checks if R_HOME is set, and sets it to be the language path if not already set.
 	//
 	static void CheckAndSetRHome();
 
+	// Set the environment variable TZDIR.
+	//
+	static void CheckAndSetTZDir();
+
 private:
-	static std::string m_languagePath;
-	static std::string m_languageParams;
-	static std::string m_privateLibraryPath;
-	static std::string m_publicLibraryPath;
-	static std::string m_RHomePath;
+	// Directory where R language extension library is extracted onto.
+	//
+	static std::string sm_languagePath;
+
+	// Parameters passed to R language extension
+	//
+	static std::string sm_languageParams;
+
+	// Private library path
+	//
+	static std::string sm_privateLibraryPath;
+
+	// Public library path
+	//
+	static std::string sm_publicLibraryPath;
+
+	// R_HOME path
+	//
+	static std::string sm_RHomePath;
 };

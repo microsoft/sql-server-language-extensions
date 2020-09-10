@@ -21,22 +21,21 @@
 // @File: RPathSettings.cpp
 //
 // Purpose:
-//  Global class to keep language runtime settings.
+//  Global class to keep language runtime path settings for both platforms.
 //
 //*************************************************************************************************
-#include "Common.h"
 
-#include <exception>
+#include "Common.h"
 
 #include "RPathSettings.h"
 
 using namespace std;
 
-string RPathSettings::m_languagePath;
-string RPathSettings::m_languageParams;
-string RPathSettings::m_privateLibraryPath;
-string RPathSettings::m_publicLibraryPath;
-string RPathSettings::m_RHomePath;
+string RPathSettings::sm_languagePath;
+string RPathSettings::sm_languageParams;
+string RPathSettings::sm_privateLibraryPath;
+string RPathSettings::sm_publicLibraryPath;
+string RPathSettings::sm_RHomePath;
 
 //-------------------------------------------------------------------------------------------------
 // Name: RPathSettings::Init
@@ -44,8 +43,7 @@ string RPathSettings::m_RHomePath;
 // Description:
 //  Initialize the class
 //
-void
-RPathSettings::Init(
+void RPathSettings::Init(
 	const SQLCHAR *languageParams,
 	const SQLCHAR *languagePath,
 	const SQLCHAR *publicLibraryPath,
@@ -56,55 +54,19 @@ RPathSettings::Init(
 	// nullptrs are mapped to empty strings - has the same effect when
 	// the paths are used and avoids an additional flag.
 	//
-	m_languageParams =
+	sm_languageParams =
 		(languageParams == nullptr) ? "" : static_cast<const char*>(
 			static_cast<const void*>(languageParams));
 
-	m_languagePath =
+	sm_languagePath =
 		(languagePath == nullptr) ? "" : static_cast<const char*>(
 			static_cast<const void*>(languagePath));
 
-	m_publicLibraryPath =
+	sm_publicLibraryPath =
 		(publicLibraryPath == nullptr) ? "" : static_cast<const char*>(
 			static_cast<const void*>(publicLibraryPath));
 
-	m_privateLibraryPath =
+	sm_privateLibraryPath =
 		(privateLibraryPath == nullptr) ? "" : static_cast<const char*>(
 			static_cast<const void*>(privateLibraryPath));
-}
-
-//-------------------------------------------------------------------------------------------------
-// Name: RPathSettings::CheckAndSetRHome
-//
-// Description:
-//  Checks if R_HOME is set, and sets it to be the language path if not already set.
-//  Throws and exception if there is an error setting it.
-//
-void
-RPathSettings::CheckAndSetRHome()
-{
-	LOG("RPathSettings::CheckAndSetRHome");
-
-	m_RHomePath = Utilities::GetEnvVariable("R_HOME");
-	if (m_RHomePath == "")
-	{
-#ifdef _WIN64
-		throw runtime_error("On Windows, R_HOME needs to be defined in CREATE EXTERNAL LANGUAGE.");
-#else
-		int result = Utilities::SetEnvVariable("R_HOME", m_languagePath);
-		if (result != 0)
-		{
-			throw runtime_error("Error setting R_HOME");
-		}
-		else
-		{
-			m_RHomePath = m_languagePath;
-			LOG("R_HOME set to be the extensionPath: " + m_RHomePath);
-		}
-#endif
-	}
-	else
-	{
-		LOG("R_HOME is set as: " + m_RHomePath);
-	}
 }

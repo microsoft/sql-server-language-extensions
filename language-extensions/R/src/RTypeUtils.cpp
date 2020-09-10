@@ -243,43 +243,65 @@ RType RTypeUtils::CreateDateTimeVector(
 	// push_back since Rcpp push_back involves copying to create a new vector in R environment.
 	//
 	RType vectorInR(rowsNumber);
-	for (SQLULEN j = 0; j < rowsNumber; ++j)
+
+	// Get the time zone if any that R is set to and store it in a temporary variable.
+	//
+	string previousTimeZoneInR = "";
+
+	try
 	{
-		if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
-		{
-			vectorInR[j] = DateTimeTypeInR(R_NaReal);
-		}
-		else
-		{
-			SQLType value = static_cast<SQLType *>(data)[j];
+		previousTimeZoneInR = Utilities::GetTimeZoneInR();
+		
+		// Interpret the value sent by Exthost in UTC irrespective of what time zone R had been set to.
+		//
+		(*g_embeddedRPtr).parseEvalQ("Sys.setenv(TZ = 'UTC')");
 
-			// Rcpp::Date accepts date in "YYYY-mm-dd" and
-			// Rcpp::Datetime accepts datetime in "YYYY-mm-dd HH:MM:SS.MICROSEC"
-			// string formats so generate the date time string.
-			//
-			string dateTimeInStringFormat =
-				to_string(value.year) + "-" +
-				to_string(value.month) + "-" +
-				to_string(value.day);
-
-			if constexpr (is_same_v<DateTimeTypeInR, Rcpp::Datetime>)
+		for (SQLULEN j = 0; j < rowsNumber; ++j)
+		{
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[j] == SQL_NULL_DATA)
 			{
-				// "fraction" is stored in nanoseconds, we need to know the digits after the decimal point.
-				//
-				string secondsAfterDecimalPoint 
-					= Utilities::GetSecondsAfterDecimalPointFromNanoSeconds(value.fraction);
-
-				dateTimeInStringFormat =
-					dateTimeInStringFormat + " " +
-					to_string(value.hour) + ":" +
-					to_string(value.minute) + ":" +
-					to_string(value.second) + "." +
-					secondsAfterDecimalPoint;
+				vectorInR[j] = DateTimeTypeInR(R_NaReal);
 			}
+			else
+			{
+				SQLType value = static_cast<SQLType *>(data)[j];
 
-			vectorInR[j] = DateTimeTypeInR(dateTimeInStringFormat);
+				// Rcpp::Date accepts date in "YYYY-mm-dd" and
+				// Rcpp::Datetime accepts datetime in "YYYY-mm-dd HH:MM:SS.MICROSEC"
+				// string formats so generate the date time string.
+				//
+				string dateTimeInStringFormat =
+					to_string(value.year) + "-" +
+					to_string(value.month) + "-" +
+					to_string(value.day);
+
+				if constexpr (is_same_v<DateTimeTypeInR, Rcpp::Datetime>)
+				{
+					// "fraction" is stored in nanoseconds, we need to know the digits after the decimal point.
+					//
+					string secondsAfterDecimalPoint
+						= Utilities::GetSecondsAfterDecimalPointFromNanoSeconds(value.fraction);
+
+					dateTimeInStringFormat =
+						dateTimeInStringFormat + " " +
+						to_string(value.hour) + ":" +
+						to_string(value.minute) + ":" +
+						to_string(value.second) + "." +
+						secondsAfterDecimalPoint;
+				}
+
+				vectorInR[j] = DateTimeTypeInR(dateTimeInStringFormat);
+			}
 		}
 	}
+	catch (...)
+	{
+		Utilities::SetTimeZoneInR(previousTimeZoneInR);
+
+		throw runtime_error("Unable to set UTC time zone and create date(time) vector");
+	}
+
+	Utilities::SetTimeZoneInR(previousTimeZoneInR);
 
 	return vectorInR;
 }
@@ -462,6 +484,9 @@ void RTypeUtils::FillDataFromDateTimeVector(
 		DateTimeTypeInR valueInR = static_cast<DateTimeTypeInR>(vectorInR[index]);
 		if (!valueInR.is_na())
 		{
+			// The valueInR is stored internally in UTC time zone in Rcpp
+			// and is returned back to Exthost in UTC as well.
+			//
 			SQLType value;
 			value.year = valueInR.getYear();
 			value.month = valueInR.getMonth();

@@ -755,7 +755,15 @@ namespace ExtensionApiTest
 					EXPECT_EQ(expectedValue.hour, hour);
 					EXPECT_EQ(expectedValue.minute, minute);
 					EXPECT_EQ(expectedValue.second, second);
-					EXPECT_EQ(expectedValue.fraction / 1000, usec);
+
+					// Fraction is in nanoseconds but R uses microseconds
+					// so convert to microsecond value (by dividing by 1000) to compare.
+					//
+					SQLUINTEGER expectedUsec = round(expectedValue.fraction / 1000.0);
+
+					// Sometimes even after rounding, it has a margin error of +-1.
+					//
+					EXPECT_TRUE(usec == expectedUsec || usec == expectedUsec + 1 || usec == expectedUsec - 1);
 				}
 			}
 		}

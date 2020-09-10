@@ -130,6 +130,7 @@ SQLRETURN Init(
 			privateLibraryPath);
 
 		RPathSettings::CheckAndSetRHome();
+		RPathSettings::CheckAndSetTZDir();
 
 		// Setting up the parameters to be passed to the R runtime.
 		//
