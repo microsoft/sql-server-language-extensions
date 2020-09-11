@@ -31,6 +31,7 @@
 #include <exception>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_map>
 
 #include "RColumn.h"
 #include "RDataSet.h"
@@ -54,43 +55,18 @@
 
 using namespace std;
 
-// A global object to keep track of the input/output data information
+// A global map to keep track of the input/output data information per session.
 //
-static RSession *g_sessionData = nullptr;
-
-// A reference to the embedded R environment via RInside.
-//
-unique_ptr<RInside> g_embeddedRPtr = nullptr;
-
-//--------------------------------------------------------------------------------------------------
-// Name: CheckSessionEnvInitialized
-//
-// Description:
-//	Throws a runtime_error exception of a function is called before the session environment has
-//	been initialized
-//
-void CheckSessionEnvInitialized(string &&FuncName)
-{
-	// R_GlobalEnv is defined in Rinternals.h available for use once Rf_initEmbeddedR has been called
-	//
-	if (R_GlobalEnv == nullptr)
-	{
-		throw runtime_error("Function " + FuncName + " called before extension is initialized");
-	}
-	else if (g_sessionData == nullptr)
-	{
-		throw runtime_error("Function " + FuncName + " called before session is initialized");
-	}
-}
+static unordered_map<string, unique_ptr<RSession>> g_RSessionMap;
 
 //--------------------------------------------------------------------------------------------------
 // Name: GetInterfaceVersion
 //
 // Description:
-//	Returns the API interface version for the extension
+//  Returns the API interface version for the extension
 //
 // Returns:
-//	EXTERNAL_LANGUAGE_EXTENSION_API
+//  EXTERNAL_LANGUAGE_EXTENSION_API
 //
 SQLUSMALLINT GetInterfaceVersion()
 {
@@ -132,37 +108,9 @@ SQLRETURN Init(
 		RPathSettings::CheckAndSetRHome();
 		RPathSettings::CheckAndSetTZDir();
 
-		// Setting up the parameters to be passed to the R runtime.
-		//
-		vector<char*> argsForR;
-		unique_ptr<char[]> dummyInputScriptPtr = Utilities::GenerateUniquePtr("dummyInputScript");
-		unique_ptr<char[]> noSaveOptionPtr = Utilities::GenerateUniquePtr("--no-save");
-		unique_ptr<char[]> extensionParamsPtr = Utilities::GenerateUniquePtr(RPathSettings::Params());
+		REnvironment::Init(extensionParamsLength);
 
-		if (extensionParamsLength > 0)
-		{
-			// Tokenize the command line to find the arguments for R.
-			//
-			Utilities::Tokenize(extensionParamsPtr.get(), " ", &argsForR);
-		}
-		else
-		{
-			// If no command line, pass in a dummy input script
-			// Rf_initEmbeddedR needs an input script parameter as the first argument even if it isn't used.
-			//
-			argsForR.push_back(dummyInputScriptPtr.get());
-		}
-
-		// --no-save is required to indicate that it is a non-interactive session. It can't be the first
-		// argument otherwise it is considered as the script.
-		//
-		argsForR.push_back(noSaveOptionPtr.get());
-
-		// Initialize the R runtime using the parameters set above.
-		//
-		g_embeddedRPtr = make_unique<RInside>(argsForR.size(), argsForR.data());
-
-		if (R_GlobalEnv != nullptr && g_embeddedRPtr != nullptr)
+		if (R_GlobalEnv != nullptr)
 		{
 			result = SQL_SUCCESS;
 		}
@@ -183,6 +131,61 @@ SQLRETURN Init(
 	}
 
 	return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: CheckAndGetSession
+//
+// Description:
+//  Looks up the session map for an RSession pointer corresponding to sessionId after converting
+//  it into a string.
+//  If it is not found, initializes the session only if the funcName is InitSession.
+//  else, throws a runtime_error exception stating that the given funcName is called
+//  before the session environment is initialized.
+//  On the other hand, if it is found, returns the found session only if funcName is NOT InitSession.
+//  else, throws a runtime_error exception stating that session cannot reinitialized before cleanup.
+//
+// Returns:
+//  The RSession pointer for given sessionId and taskId
+//
+RSession* CheckAndGetSession(string &&funcName, SQLGUID sessionId, SQLUSMALLINT taskId)
+{
+	string sessionIdString = Utilities::ConvertGuidToString(&sessionId);
+	unordered_map<string, unique_ptr<RSession>>::const_iterator it = g_RSessionMap.find(sessionIdString);
+	RSession* session = nullptr;
+	bool isInitSession = funcName.compare("InitSession") == 0;
+
+	if (it == g_RSessionMap.end())
+	{
+		if (isInitSession)
+		{
+			string msg = "Starting session: " + sessionIdString + " with task id: " +
+				to_string(taskId) + ".";
+			LOG(msg);
+
+			g_RSessionMap[sessionIdString] = make_unique<RSession>();
+			session = g_RSessionMap[sessionIdString].get();
+		}
+		else
+		{
+			throw runtime_error("Function " + funcName + " called before session id "
+				+ sessionIdString + " is initialized.");
+		}
+	}
+	else
+	{
+		if (!isInitSession)
+		{
+			session = it->second.get();
+		}
+		else
+		{
+			throw runtime_error("Session " + sessionIdString + " cannot be reinitialized"
+				" without cleaning up first.");
+		}
+	}
+
+	return session;
 }
 
 // --------------------------------------------------------------------------------------------------
@@ -211,7 +214,7 @@ SQLRETURN InitSession(
 	string msg = "RExtension::InitSession";
 	LOG(msg);
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
@@ -219,18 +222,12 @@ SQLRETURN InitSession(
 		//
 		if (R_GlobalEnv == nullptr)
 		{
-			throw runtime_error("Function InitSession() called before extension is initialized");
+			throw runtime_error("Function InitSession() called before R environment is initialized.");
 		}
 
-		g_sessionData = new RSession();
-
-		string guidToString = Utilities::ConvertGuidToString(&sessionId);
-
-		msg = "Starting session: " + guidToString + " with task id: " +
-			to_string(taskId) + ".";
-		LOG(msg);
-
-		g_sessionData->Init(sessionId,
+		RSession* session = CheckAndGetSession("InitSession", sessionId, taskId);
+		session->Init(
+			sessionId,
 			taskId,
 			numTasks,
 			script,
@@ -241,17 +238,15 @@ SQLRETURN InitSession(
 			inputDataNameLength,
 			outputDataName,
 			outputDataNameLength);
+
+		result = SQL_SUCCESS;
 	}
 	catch (exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
 		LOG_ERROR("Unexpected exception occurred in function InitSession()");
 	}
 
@@ -285,13 +280,12 @@ SQLRETURN InitColumn(
 {
 	LOG("RExtension::InitColumn");
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
-		CheckSessionEnvInitialized("InitColumn");
-
-		g_sessionData->InitColumn(
+		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		session->InitColumn(
 			columnNumber,
 			columnName,
 			columnNameLength,
@@ -301,17 +295,15 @@ SQLRETURN InitColumn(
 			nullable,
 			partitionByNumber,
 			orderByNumber);
+
+		result = SQL_SUCCESS;
 	}
 	catch (exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
 		LOG_ERROR("Unexpected exception occurred in function InitColumn()");
 	}
 
@@ -343,13 +335,12 @@ SQLRETURN InitParam(
 {
 	LOG("RExtension::InitParam");
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
-		CheckSessionEnvInitialized("InitParam");
-
-		g_sessionData->InitParam(
+		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		session->InitParam(
 			paramNumber,
 			paramName,
 			paramNameLength,
@@ -359,17 +350,15 @@ SQLRETURN InitParam(
 			paramValue,
 			strLen_or_Ind,
 			inputOutputType);
+
+		result = SQL_SUCCESS;
 	}
 	catch (exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
 		LOG_ERROR("Unexpected exception occurred in function InitParam()");
 	}
 
@@ -398,29 +387,26 @@ SQLRETURN Execute(
 {
 	LOG("RExtension::Execute");
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 	*outputSchemaColumnsNumber = 0;
 
 	try
 	{
-		CheckSessionEnvInitialized("Execute");
-
-		g_sessionData->ExecuteWorkflow(
+		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		session->ExecuteWorkflow(
 			rowsNumber,
 			data,
 			strLen_or_Ind,
 			outputSchemaColumnsNumber);
+
+		result = SQL_SUCCESS;
 	}
 	catch (exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
 		LOG_ERROR("Unexpected exception occurred in function Execute()");
 	}
 
@@ -448,29 +434,26 @@ SQLRETURN GetResultColumn(
 {
 	LOG("RExtension::GetResultColumn");
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
-		CheckSessionEnvInitialized("GetResultColumn");
-
-		g_sessionData->GetResultColumn(
+		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		session->GetResultColumn(
 			columnNumber,
 			dataType,
 			columnSize,
 			decimalDigits,
 			nullable);
+
+		result = SQL_SUCCESS;
 	}
 	catch (exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
 		LOG_ERROR("Unexpected exception occurred in function GetResultColumn()");
 	}
 
@@ -496,16 +479,17 @@ SQLRETURN GetResults(
 {
 	LOG("RExtension::GetResults");
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
-		CheckSessionEnvInitialized("GetResults");
-
-		g_sessionData->GetResults(
+		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		session->GetResults(
 			rowsNumber,
 			data,
 			strLen_or_Ind);
+
+		result = SQL_SUCCESS;
 	}
 	catch (exception &ex)
 	{
@@ -541,27 +525,24 @@ SQLRETURN GetOutputParam(
 {
 	LOG("RExtension::GetOutputParam");
 
-	SQLRETURN result = SQL_SUCCESS;
+	SQLRETURN result = SQL_ERROR;
 
 	try
 	{
-		CheckSessionEnvInitialized("GetOutputParam");
-
-		g_sessionData->GetOutputParam(
+		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		session->GetOutputParam(
 			paramNumber,
 			paramValue,
 			strLen_or_Ind);
+
+		result = SQL_SUCCESS;
 	}
 	catch (const exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
 		LOG_ERROR("Unexpected exception occurred in function GetOutputParam()");
 	}
 
@@ -585,17 +566,34 @@ SQLRETURN CleanupSession(
 {
 	LOG("RExtension::CleanupSession");
 
-	// Clean up the session
-	//
-	if (g_sessionData != nullptr)
-	{
-		g_sessionData->Cleanup();
+	SQLRETURN result = SQL_ERROR;
 
-		delete g_sessionData;
-		g_sessionData = nullptr;
+	try
+	{
+		RSession* session = CheckAndGetSession("CleanupSession", sessionId, taskId);
+
+		// Clean up the session
+		//
+		if (session != nullptr)
+		{
+			session->Cleanup();
+
+			string sessionIdString = Utilities::ConvertGuidToString(&sessionId);
+			g_RSessionMap.erase(sessionIdString);
+		}
+
+		result = SQL_SUCCESS;
+	}
+	catch (const exception &ex)
+	{
+		LOG_EXCEPTION(ex);
+	}
+	catch (...)
+	{
+		LOG_ERROR("Unexpected exception occurred in function CleanupSession()");
 	}
 
-	return SQL_SUCCESS;
+	return result;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -611,10 +609,27 @@ SQLRETURN Cleanup()
 {
 	LOG("RExtension::Cleanup");
 
-	// End Embedded R - usually done by calling Rf_endEmbdeddR(0)
-	// However, with RInside, that is not needed here.
-	// When g_embeddedRPtr goes out of scope, its destructor will end embeddedR
-	//
+	SQLRETURN result = SQL_ERROR;
 
-	return SQL_SUCCESS;
+	try
+	{
+		// End Embedded R - usually done by calling Rf_endEmbdeddR(0)
+		// However, with RInside, that is not needed here.
+		// When the use count of REnvironment::sm_embeddedREnvPtr storing counter to RInside reaches 0,
+		// it will be destructed and that will end embeddedR.
+		//
+		REnvironment::Cleanup();
+
+		result = SQL_SUCCESS;
+	}
+	catch (const exception &ex)
+	{
+		LOG_EXCEPTION(ex);
+	}
+	catch (...)
+	{
+		LOG_ERROR("Unexpected exception occurred in function Cleanup().");
+	}
+
+	return result;
 }

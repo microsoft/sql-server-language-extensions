@@ -65,4 +65,8 @@ public:
 	// Set the time zone in R to the given value or unset it if the value is empty.
 	//
 	static void SetTimeZoneInR(std::string valueToSet);
+
+	// Normalize path strings by replacting \ with /
+	//
+	static std::string NormalizePathString(std::string pathString);
 };

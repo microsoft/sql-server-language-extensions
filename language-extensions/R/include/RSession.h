@@ -144,4 +144,10 @@ private:
 	// OutputDataSet
 	//
 	ROutputDataSet m_outputDataSet;
+
+	// A pointer to the embedded R environment via RInside.
+	// We execute all R scripts in this environment and there can only be a single
+	// instance of RInside in the extension.
+	//
+	RInside* m_embeddedREnvPtr;
 };

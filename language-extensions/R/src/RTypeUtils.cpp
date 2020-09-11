@@ -251,10 +251,10 @@ RType RTypeUtils::CreateDateTimeVector(
 	try
 	{
 		previousTimeZoneInR = Utilities::GetTimeZoneInR();
-		
+
 		// Interpret the value sent by Exthost in UTC irrespective of what time zone R had been set to.
 		//
-		(*g_embeddedRPtr).parseEvalQ("Sys.setenv(TZ = 'UTC')");
+		Utilities::SetTimeZoneInR("UTC");
 
 		for (SQLULEN j = 0; j < rowsNumber; ++j)
 		{

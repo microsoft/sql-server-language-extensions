@@ -59,6 +59,7 @@ void RSession::Init(
 {
 	LOG("RSession::Init");
 
+	m_embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 	m_sessionId = sessionId;
 	m_taskId = taskId;
 	m_numTasks = numTasks;
@@ -192,7 +193,7 @@ void RSession::ExecuteWorkflow(
 
 	// Execute the script, any standard output or error is flushed to the console.
 	//
-	(*g_embeddedRPtr).parseEvalQ(m_script.c_str());
+	m_embeddedREnvPtr->parseEvalQ(m_script.c_str());
 
 	// In case of streaming clean up the previous stream batch's output buffers
 	//

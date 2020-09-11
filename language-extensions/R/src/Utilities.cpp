@@ -152,11 +152,12 @@ string Utilities::GetTimeZoneInR()
 	// This script finds the value of the environment variable TZ that defines the time zone if set
 	//
 	string scriptToFindTimeZoneInR = "Sys.getenv('TZ')[1]";
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 
 	// Evaluate the script and store the result in a string
 	//
 	Rcpp::CharacterVector timeZoneInRVector(static_cast<SEXP>(
-		(*g_embeddedRPtr).parseEval(scriptToFindTimeZoneInR)));
+		embeddedREnvPtr->parseEval(scriptToFindTimeZoneInR)));
 
 	string timeZoneInR = "";
 
@@ -179,17 +180,42 @@ string Utilities::GetTimeZoneInR()
 //
 void Utilities::SetTimeZoneInR(string valueToSet)
 {
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+
 	if (valueToSet.length() > 0)
 	{
 		// Reset the stored time zone using the temporary variable above.
 		//
-		(*g_embeddedRPtr).parseEvalQ("Sys.setenv(TZ = '" + valueToSet + "')");
+		embeddedREnvPtr->parseEvalQ("Sys.setenv(TZ = '" + valueToSet + "')");
 	}
 	else
 	{
 		// If time zone was not set, unset it again.
 		// On Windows, it default is UTC while on Linux it is the local time zone.
 		//
-		(*g_embeddedRPtr).parseEvalQ("Sys.unsetenv('TZ')");
+		embeddedREnvPtr->parseEvalQ("Sys.unsetenv('TZ')");
 	}
+}
+
+//-------------------------------------------------------------------------------------------------
+// Name: Utilities::NormalizePathString
+//
+// Description:
+//  Normalize path strings by replacting \ with / and the trailing / with a null terminator.
+//
+// Returns:
+//  The normalized path string
+//
+string Utilities::NormalizePathString(string pathString)
+{
+	replace(pathString.begin(), pathString.end(), '\\', '/');
+
+	// Replace trailing / with \0.
+	//
+	if (pathString.length() > 0 && *(pathString.end() - 1) == '/')
+	{
+		*(pathString.end() - 1) = '\0';
+	}
+
+	return pathString;
 }

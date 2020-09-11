@@ -94,8 +94,8 @@ namespace ExtensionApiTest
 	//
 	void RExtensionApiTest::TearDown()
 	{
-		CleanupVariables();
 		CleanupSession();
+		CleanupVariables();
 	}
 
 	// Name: GetHandles

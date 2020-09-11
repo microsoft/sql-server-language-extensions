@@ -29,7 +29,6 @@
 
 namespace ExtensionApiTest
 {
-	// Positive Test
 	// Test InitSession() API with valid values
 	//
 	TEST_F(RExtensionApiTest, InitSessionTest)
@@ -47,6 +46,57 @@ namespace ExtensionApiTest
 			m_inputDataNameString.length(),
 			m_outputDataName,
 			m_outputDataNameString.length());
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		// Try to reinitialize with the same session Id should fail
+		//
+		result = (*m_initSessionFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			m_numTasks,
+			m_script,
+			m_scriptString.length(),
+			m_inputSchemaColumnsNumber,
+			m_parametersNumber,
+			m_inputDataName,
+			m_inputDataNameString.length(),
+			m_outputDataName,
+			m_outputDataNameString.length());
+		EXPECT_EQ(result, SQL_ERROR);
+
+
+		SQLGUID sessionId = { 0, 0, 1, {1} };
+
+		// Try cleanup without first initializing a different session
+		// This should fail.
+		//
+		result = (*m_cleanupSessionFuncPtr)(
+			sessionId,
+			m_taskId);
+		EXPECT_EQ(result, SQL_ERROR);
+
+		// Initialize the different session; make sure this also inits independently
+		// even though previous session is still in progress.
+		//
+		result = (*m_initSessionFuncPtr)(
+			sessionId,
+			m_taskId,
+			m_numTasks,
+			m_script,
+			m_scriptString.length(),
+			m_inputSchemaColumnsNumber,
+			m_parametersNumber,
+			m_inputDataName,
+			m_inputDataNameString.length(),
+			m_outputDataName,
+			m_outputDataNameString.length());
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		result = (*m_cleanupSessionFuncPtr)(
+			sessionId,
+			m_taskId);
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}

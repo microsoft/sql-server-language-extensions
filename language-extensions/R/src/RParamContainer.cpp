@@ -163,7 +163,9 @@ void RParamContainer::CreateParam(
 			paramValue,
 			strLen_or_Ind,
 			inputOutputType);
-	(*g_embeddedRPtr)[paramToBeAdded.get()->Name().c_str()] =
+
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+	(*embeddedREnvPtr)[paramToBeAdded.get()->Name().c_str()] =
 		static_cast<RParamType*>(
 			paramToBeAdded.get())->RcppVector();
 

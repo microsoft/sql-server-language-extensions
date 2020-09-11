@@ -47,6 +47,6 @@
 #include "RInside.h" // for the embedded R via RInside
 
 #include "Logger.h"
+#include "REnvironment.h"
+#include "RPathSettings.h"
 #include "Utilities.h"
-
-extern std::unique_ptr<RInside> g_embeddedRPtr;

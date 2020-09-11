@@ -794,7 +794,7 @@ namespace ExtensionApiTest
 			"param5 <- Sys.Date();"
 			// Today's UTC date
 			//
-			"Sys.setenv(TZ = 'GMT'); param6 <- Sys.Date(); Sys.unsetenv('TZ');"
+			"Sys.setenv(TZ = 'UTC'); param6 <- Sys.Date(); Sys.unsetenv('TZ');"
 			// Explicit NA
 			//
 			"param7 <- as.Date(NA);"

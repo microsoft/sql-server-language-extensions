@@ -181,8 +181,9 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd
 	if (globalEnv.exists(m_name.c_str()))
 	{
 		Logger::LogRVariable(m_name);
+		RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 
-		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+		m_RcppVector = (*embeddedREnvPtr)[m_name.c_str()];
 
 		if (m_RcppVector.size() == 0)
 		{
@@ -286,8 +287,9 @@ void RCharacterParam<CharType, SQLType>::RetrieveValueAndStrLenInd()
 	if (globalEnv.exists(m_name.c_str()))
 	{
 		Logger::LogRVariable(m_name);
+		RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 
-		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+		m_RcppVector = (*embeddedREnvPtr)[m_name.c_str()];
 
 		if (m_RcppVector.size() == 0)
 		{
@@ -382,8 +384,9 @@ void RRawParam::RetrieveValueAndStrLenInd()
 	if (globalEnv.exists(m_name.c_str()))
 	{
 		Logger::LogRVariable(m_name);
+		RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 
-		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+		m_RcppVector = (*embeddedREnvPtr)[m_name.c_str()];
 
 		if (m_RcppVector.size() == 0)
 		{
@@ -482,8 +485,9 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RetrieveValueAndStrLenInd(
 	if (globalEnv.exists(m_name.c_str()))
 	{
 		Logger::LogRVariable(m_name);
+		RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 
-		m_RcppVector = (*g_embeddedRPtr)[m_name.c_str()];
+		m_RcppVector = (*embeddedREnvPtr)[m_name.c_str()];
 
 		if (m_RcppVector.size() > 0)
 		{

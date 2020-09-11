@@ -116,6 +116,12 @@ protected:
 	// For a column, strLen_or_Ind is specified for each row.
 	//
 	std::vector<SQLINTEGER*> m_columnNullMap;
+
+	// A pointer to the embedded R environment via RInside.
+	// We execute all R scripts in this environment and there can only be a single
+	// instance of RInside in the extension.
+	//
+	RInside* m_embeddedREnvPtr;
 };
 
 //-------------------------------------------------------------------------------------------------

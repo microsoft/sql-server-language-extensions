@@ -162,6 +162,8 @@ void RDataSet::Init(
 	}
 #endif
 
+	m_embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+
 	m_name = string(name, dataNameLength);
 
 	// Set the size of the columns vector to the given schema columns number.
@@ -188,7 +190,7 @@ void RDataSet::Cleanup()
 
 		// Execute the cleanup script to remove the DataFrame from the global R environment.
 		//
-		(*g_embeddedRPtr).parseEvalQ(cleanupScript.c_str());
+		m_embeddedREnvPtr->parseEvalQ(cleanupScript.c_str());
 	}
 }
 
@@ -397,12 +399,12 @@ void RInputDataSet::AddDataFrameToEmbeddedR()
 
 	// Add the "m_name" named variable to embedded R; this gets added as a list.
 	//
-	(*g_embeddedRPtr)[m_name.c_str()] = m_dataFrame;
+	(*m_embeddedREnvPtr)[m_name.c_str()] = m_dataFrame;
 
 	// Cast the list into a DataFrame
 	//
 	string castToDataFrame = m_name + "<- as.data.frame(" + m_name + ", stringsAsFactors = FALSE)";
-	(*g_embeddedRPtr).parseEvalQ(castToDataFrame);
+	m_embeddedREnvPtr->parseEvalQ(castToDataFrame);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -421,7 +423,7 @@ void ROutputDataSet::RetrieveDataFrameFromEmbeddedR()
 	{
 		// Get a binding to the DataFrame created in the R environment.
 		//
-		m_dataFrame = (*g_embeddedRPtr)[m_name.c_str()];
+		m_dataFrame = (*m_embeddedREnvPtr)[m_name.c_str()];
 	}
 }
 
@@ -732,7 +734,7 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 	// Evaluate the script and store the result in a string
 	//
 	Rcpp::CharacterVector classInR(static_cast<SEXP>(
-		(*g_embeddedRPtr).parseEval(scriptToFindRClass)));
+		m_embeddedREnvPtr->parseEval(scriptToFindRClass)));
 
 	// Look up the map with the key classInR.
 	//

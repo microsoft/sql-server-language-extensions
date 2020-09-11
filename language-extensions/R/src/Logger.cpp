@@ -78,7 +78,7 @@ void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
-	if (g_embeddedRPtr != nullptr)
+	if (REnvironment::EmbeddedREnvironment() != nullptr)
 	{
 		Rprintf(msgWithTimestamp.c_str());
 	}
@@ -101,10 +101,11 @@ void Logger::Log(const string &msg)
 void Logger::LogRVariable(const string &name)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
-	if (g_embeddedRPtr != nullptr)
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+	if (embeddedREnvPtr != nullptr)
 	{
 		string printVariable = "message(" + name + ");";
-		(*g_embeddedRPtr).parseEval(printVariable);
+		embeddedREnvPtr->parseEval(printVariable);
 	}
 #endif
 }
@@ -152,7 +153,7 @@ const char* Logger::GetCurrentTimestamp()
 //
 void Logger::LogToStdErr(const string &errorMsgWithTimestamp)
 {
-	if (g_embeddedRPtr != nullptr)
+	if (REnvironment::EmbeddedREnvironment() != nullptr)
 	{
 		REprintf(errorMsgWithTimestamp.c_str());
 	}
