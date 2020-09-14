@@ -626,11 +626,13 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 	bp::tuple shape = bp::make_tuple(rowsNumber);
 	np::ndarray nArray = np::empty(shape, m_ObjType);
 
+	bool nullable = m_columns[columnNumber].get()->Nullable() == SQL_NULLABLE;
+
 	DateTimeStruct *dateData = static_cast<DateTimeStruct *>(data);
 
 	for (SQLULEN row = 0; row < rowsNumber; ++row)
 	{
-		if (strLen_or_Ind == nullptr || strLen_or_Ind[row] == SQL_NULL_DATA)
+		if (nullable && strLen_or_Ind[row] == SQL_NULL_DATA)
 		{
 			// If this string should be NULL, then we set it to the Python None object.
 			//

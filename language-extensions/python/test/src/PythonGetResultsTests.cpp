@@ -1165,7 +1165,6 @@ namespace ExtensionApiTest
 	//
 	// Description:
 	//  Compare the given datetime data & nullMap for equality.
-	//  We take in void* pointers so we can cast them to the correct type inside the if statements.
 	//
 	template<class DateTimeStruct>
 	void PythonExtensionApiTests::CheckDateTimeDataEquality(
