@@ -180,11 +180,11 @@ package:
       command: 'language-extensions/R/build/linux/create-RExtension-zip.sh'
       arguments:  'debug release'
       artifacts:
-        - from: 'build-output\RExtension/windows/debug/packages'
+        - from: 'build-output/RExtension/linux/debug/packages'
           to: 'out/RExtension/packages/debug'
           include:
             - 'R-lang-extension.zip'
-        - from: 'build-output/RExtension/windows/release/packages'
+        - from: 'build-output/RExtension/linux/release/packages'
           to: 'out/RExtension/packages/release'
           include:
             - 'R-lang-extension.zip'
