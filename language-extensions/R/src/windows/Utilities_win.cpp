@@ -31,36 +31,31 @@
 
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: GetAndLogLastError
 //
 // Description:
-//  Gets the last error and logs the message with the error in hex format. Windows only.
+//  Logs the message with the given error after converting it in hex format. Windows only.
 //
-// Returns:
-//  The last error obtained.
-//
-int GetAndLogLastError(const string msg)
+void LogLastError(DWORD dwError, const string msg)
 {
-	DWORD dwError = GetLastError();
 	string errorHex;
 	errorHex.resize(8); // hex is max size 8 bytes
 	snprintf(&errorHex[0], errorHex.size() + 1, "%08lX", dwError);
 	LOG_ERROR(msg + ": 0x" + errorHex);
-
-	return dwError;
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::GetEnvVariable
 //
 // Description:
-//  Gets the value of the given environment variable name.
+//  Gets the value of the given environment variable name if it exists.
+//  The bool logError determines if we want to log the error or not.
 //
 // Returns:
-//  String value of the environment variable requested.
+//  String value of the environment variable requested if it exists, empty string otherwsie.
 //
-string Utilities::GetEnvVariable(const string &envVarName)
+string Utilities::GetEnvVariable(const string &envVarName, bool logError)
 {
 	string envVarValue = "";
 
@@ -73,11 +68,14 @@ string Utilities::GetEnvVariable(const string &envVarName)
 	// If result is 0, there was an error.
 	// Check GetLastError for the exact code.
 	//
-	if (result == 0)
+	if (result == 0 && logError)
 	{
-		GetAndLogLastError("Error while finding length of environment variable " + envVarName);
+		DWORD lastError = GetLastError();
+		LogLastError(
+			lastError,
+			"Error while finding length of environment variable " + envVarName);
 	}
-	else
+	else if (result !=0 )
 	{
 		// Resize the return string to the length returned by GetEnvironmentVariableA,
 		// minus null terminator because strings implicitly have null terminator
@@ -88,9 +86,13 @@ string Utilities::GetEnvVariable(const string &envVarName)
 		//
 		result = GetEnvironmentVariableA(envVarName.c_str(), &envVarValue[0], result);
 
-		if (result == 0)
+		if (result == 0 && logError)
 		{
-			GetAndLogLastError("Error while getting the environment variable " + envVarName);
+			DWORD lastError = GetLastError();
+			LogLastError(
+				lastError,
+				"Error while getting the environment variable "
+				+ envVarName);
 		}
 	}
 
@@ -104,7 +106,7 @@ string Utilities::GetEnvVariable(const string &envVarName)
 //  Sets the environment variable name to the specified value
 //
 // Returns:
-//  Returns 0 if it the result from SetEnvironmentVariableA indicates success, otherwise returns
+//  Returns 0 if the result from SetEnvironmentVariableA indicates success, otherwise returns
 //  the last error.
 //
 int Utilities::SetEnvVariable(const string &envVarName, const string &value)
@@ -117,8 +119,10 @@ int Utilities::SetEnvVariable(const string &envVarName, const string &value)
 	BOOL result = SetEnvironmentVariableA(envVarName.c_str(), value.c_str());
 	if (result == 0)
 	{
-		dwError = GetAndLogLastError("Error while setting the environment variable "
-			+ envVarName + " to value " + value);
+		dwError = GetLastError();
+		LogLastError(
+			dwError,
+			"Error while setting the environment variable " + envVarName + " to value " + value);
 	}
 
 	return result != 0 ? 0 : dwError;

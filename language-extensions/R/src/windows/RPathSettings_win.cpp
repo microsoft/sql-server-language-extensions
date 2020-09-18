@@ -43,10 +43,17 @@ void RPathSettings::CheckAndSetRHome()
 {
 	LOG("RPathSettings::CheckAndSetRHome");
 
-	sm_RHomePath = Utilities::GetEnvVariable("R_HOME");
+	sm_RHomePath =
+		Utilities::GetEnvVariable(
+		"R_HOME", // envVarName
+		// We need to log error if R_HOME is not defined on Windows since its too late to set it now.
+		//
+		true);    // logError
+
 	if (sm_RHomePath == "")
 	{
-		throw runtime_error("On Windows, R_HOME needs to be defined in CREATE EXTERNAL LANGUAGE.");
+		throw runtime_error("On Windows, R_HOME needs to be defined as"
+			" a system environment variable.");
 	}
 	else
 	{
@@ -66,7 +73,12 @@ void RPathSettings::CheckAndSetTZDir()
 {
 	LOG("RPathSettings::CheckAndSetTZDir");
 
-	string tzDir = Utilities::GetEnvVariable("TZDIR");
+	string tzDir =
+		Utilities::GetEnvVariable(
+		"TZDIR", // envVarName
+		// No need to log error if TZDIR is not defined since we can set it below.
+		//
+		false);  // logError
 
 	if (tzDir == "")
 	{

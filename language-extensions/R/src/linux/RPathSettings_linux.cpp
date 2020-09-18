@@ -44,7 +44,13 @@ void RPathSettings::CheckAndSetRHome()
 {
 	LOG("RPathSettings::CheckAndSetRHome");
 
-	sm_RHomePath = Utilities::GetEnvVariable("R_HOME");
+	sm_RHomePath =
+		Utilities::GetEnvVariable(
+			"R_HOME", // envVarName
+			// No need to log error on linux if R_HOME is not defined, since we can set it below.
+			//
+			false);   // logError
+
 	if (sm_RHomePath == "")
 	{
 		int result = Utilities::SetEnvVariable("R_HOME", sm_languagePath);

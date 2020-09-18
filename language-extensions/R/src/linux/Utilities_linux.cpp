@@ -35,12 +35,13 @@ using namespace std;
 // Name: Utilities::GetEnvVariable
 //
 // Description:
-//  Gets the value of the given environment variable name.
+//  Gets the value of the given environment variable name and if logError is true, logs an error
+//  message if the variable is not found.
 //
 // Returns:
 //  String value of the environment variable requested.
 //
-string Utilities::GetEnvVariable(const string &envVarName)
+string Utilities::GetEnvVariable(const string &envVarName, bool logError)
 {
 	string envVarValueString;
 	char * envVarValue = getenv(envVarName.c_str());
@@ -48,6 +49,10 @@ string Utilities::GetEnvVariable(const string &envVarName)
 	{
 		envVarValueString = string(const_cast<const char*>(envVarValue),
 			strlen(envVarValue));
+	}
+	else if (logError)
+	{
+		LOG_ERROR("Did not find the environment variable " + envVarName);
 	}
 
 	return envVarValueString;

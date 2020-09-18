@@ -46,7 +46,7 @@ public:
 
 	// Gets the value of the given environment variable name.
 	//
-	static std::string GetEnvVariable(const std::string &envVarName);
+	static std::string GetEnvVariable(const std::string &envVarName, bool logError);
 
 	// Sets the environment variable name to the specified value.
 	//
