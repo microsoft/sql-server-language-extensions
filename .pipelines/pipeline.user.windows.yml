@@ -155,26 +155,26 @@ build:
       command: 'language-extensions\python\build\windows\build-python-extension.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: 'build-output\python-extension\windows\debug'
-          to: 'out\python-extension\debug'
+        - from: 'build-output\pythonextension\windows\debug'
+          to: 'out\pythonextension\debug'
           include:
             - 'pythonextension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\python-extension\windows\debug'
-          to: 'out\python-extension\debug\symbols'
+        - from: 'build-output\pythonextension\windows\debug'
+          to: 'out\pythonextension\debug\symbols'
           include:
             - 'pythonextension.pdb'
           signing_options:
             profile: 'none'
-        - from: 'build-output\python-extension\windows\release'
-          to: 'out\python-extension\release'
+        - from: 'build-output\pythonextension\windows\release'
+          to: 'out\pythonextension\release'
           include:
             - 'pythonextension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\python-extension\windows\release'
-          to: 'out\python-extension\release\symbols'
+        - from: 'build-output\pythonextension\windows\release'
+          to: 'out\pythonextension\release\symbols'
           include:
             - 'pythonextension.pdb'
           signing_options:
@@ -225,12 +225,12 @@ package:
       command: 'language-extensions\python\build\windows\create-python-extension-zip.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: 'build-output\python-extension\windows\debug\packages'
-          to: 'out\python-extension\packages\debug'
+        - from: 'build-output\pythonextension\windows\debug\packages'
+          to: 'out\pythonextension\packages\debug'
           include:
             - 'python-lang-extension.zip'
-        - from: 'build-output\python-extension\windows\release\packages'
-          to: 'out\python-extension\packages\release'
+        - from: 'build-output\pythonextension\windows\release\packages'
+          to: 'out\pythonextension\packages\release'
           include:
             - 'python-lang-extension.zip'
 
@@ -283,8 +283,8 @@ static_analysis_options:
       - from: 'out\java-extension\debug\'
       - from: 'out\RExtension\debug\'
       - from: 'out\RExtension\release\'
-      - from: 'out\python-extension\debug\'
-      - from: 'out\python-extension\release\'
+      - from: 'out\pythonextension\debug\'
+      - from: 'out\pythonextension\release\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
         - exclude:
@@ -297,5 +297,5 @@ static_analysis_options:
       - from: 'out\java-extension\debug\'
       - from: 'out\RExtension\debug\'
       - from: 'out\RExtension\release\'
-      - from: 'out\python-extension\debug\'
-      - from: 'out\python-extension\release\'
+      - from: 'out\pythonextension\debug\'
+      - from: 'out\pythonextension\release\'

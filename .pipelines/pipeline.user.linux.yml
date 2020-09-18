@@ -136,12 +136,12 @@ build:
       command: 'language-extensions/python/build/linux/build-python-extension.sh' # A root relative path to the script to execute. Any console output
       arguments:  'debug release'
       artifacts:                                                       # A sequence of entries that describes what artifacts to collect and upload.
-        - from: 'build-output/python-extension/linux/debug'
-          to: 'out/python-extension/debug'
+        - from: 'build-output/pythonextension/linux/debug'
+          to: 'out/pythonextension/debug'
           include:
             - 'libPythonExtension.so.1.0'
-        - from: 'build-output/python-extension/linux/release'
-          to: 'out/python-extension/release'
+        - from: 'build-output/pythonextension/linux/release'
+          to: 'out/pythonextension/release'
           include:
             - 'libPythonExtension.so.1.0'
     - !!defaultcommand
@@ -193,12 +193,12 @@ package:
       command: 'language-extensions/python/build/linux/create-python-extension-zip.sh'
       arguments:  'debug release'
       artifacts:
-        - from: 'build-output/python-extension/linux/debug/packages'
-          to: 'out/python-extension/packages/debug'
+        - from: 'build-output/pythonextension/linux/debug/packages'
+          to: 'out/pythonextension/packages/debug'
           include:
             - 'python-lang-extension.zip'
-        - from: 'build-output/python-extension/linux/release/packages'
-          to: 'out/python-extension/packages/release'
+        - from: 'build-output/pythonextension/linux/release/packages'
+          to: 'out/pythonextension/packages/release'
           include:
             - 'python-lang-extension.zip'
 

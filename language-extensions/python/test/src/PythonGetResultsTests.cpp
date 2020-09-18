@@ -559,6 +559,53 @@ namespace ExtensionApiTest
 			(*m_dateInfo).m_columnNames);
 	}
 
+	// Name: NaTDateTimeResultTest
+	//
+	// Description:
+	//  Test GetResults with a script that returns a datetime column with NaT.
+	//
+	TEST_F(PythonExtensionApiTests, NaTDateTimeResultTest)
+	{
+		// With this script, we create a DataFrame with one column, a datetime with NaT.
+		//
+		string scriptString = "from pandas import DataFrame;"
+			"import numpy as np;"
+			"OutputDataSet = DataFrame([np.datetime64('NaT')], columns=['Column1']);";
+
+		InitializeSession(0, // parametersNumber
+			0,               // inputSchemaColumnsNumber
+			scriptString);
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr,
+			nullptr,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputschemaColumnsNumber, 1);
+
+		// Construct the expected output data set
+		//
+		SQLULEN rowsNum = 1;
+		vector<string> colNames = { "Column1" };
+			
+		vector<SQLINTEGER> strLen = { SQL_NULL_DATA };
+		vector<SQLINTEGER *> pStrLen = { strLen.data() };
+
+		vector<SQL_TIMESTAMP_STRUCT> data = { {} };
+		vector<void *> pData = { data.data() };
+
+		TestGetDateTimeResults<SQL_DATE_STRUCT>(
+			rowsNum,
+			pData.data(),
+			pStrLen.data(),
+			colNames);
+	}
+
 	// Name: GetDifferentResultsTest
 	//
 	// Description:
@@ -1120,7 +1167,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber = 0;
 		SQLPOINTER *data = nullptr;
 		SQLINTEGER **strLen_or_Ind = nullptr;
-		SQLRETURN  result = GetResults(
+		SQLRETURN result = GetResults(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -1188,16 +1235,16 @@ namespace ExtensionApiTest
 
 				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
 				{
-					EXPECT_EQ(expectedColumnData->year, columnData->year);
-					EXPECT_EQ(expectedColumnData->month, columnData->month);
-					EXPECT_EQ(expectedColumnData->day, columnData->day);
+					EXPECT_EQ(expectedColumnData[index].year, columnData[index].year);
+					EXPECT_EQ(expectedColumnData[index].month, columnData[index].month);
+					EXPECT_EQ(expectedColumnData[index].day, columnData[index].day);
 
 					if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 					{
-						EXPECT_EQ(expectedColumnData->hour, columnData->hour);
-						EXPECT_EQ(expectedColumnData->minute, columnData->minute);
-						EXPECT_EQ(expectedColumnData->second, columnData->second);
-						EXPECT_EQ(expectedColumnData->fraction, columnData->fraction);
+						EXPECT_EQ(expectedColumnData[index].hour, columnData[index].hour);
+						EXPECT_EQ(expectedColumnData[index].minute, columnData[index].minute);
+						EXPECT_EQ(expectedColumnData[index].second, columnData[index].second);
+						EXPECT_EQ(expectedColumnData[index].fraction, columnData[index].fraction);
 					}
 				}
 			}

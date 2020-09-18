@@ -767,18 +767,21 @@ namespace ExtensionApiTest
 	TEST_F(PythonExtensionApiTests, GetDateTimeOutputParamTest)
 	{
 		string scriptString =
-			"import datetime;import pandas;"
+			"import datetime;import pandas;import numpy;"
 			"param0 = datetime.datetime(9999,12,31,23,59,59,999999);"
 			"param1 = datetime.datetime(1,1,1,0,0,0,0);"
-			"param2 = datetime.datetime(1470,7,27,17,47,52,123456);"
-			"param3 = pandas.Timestamp(2070,7,27,17,47,52,123456);"
-			"param4 = None;";
+			"param2 = datetime.datetime(2004,2,29,17,47,52,123456);" // Leap day
+			"param3 = datetime.datetime(1470,7,27,17,47,52,123456);"
+			"param4 = pandas.Timestamp(2070,7,27,17,47,52,123456);"
+			"param5 = numpy.datetime64('NaT');"
+			"param6 = None;";
 
-		int paramsNumber = 5;
+		int paramsNumber = 7;
 		SQL_TIMESTAMP_STRUCT p0 = { 9999,12,31,23,59,59,999999000 };
 		SQL_TIMESTAMP_STRUCT p1 = { 1,1,1,0,0,0,0 };
-		SQL_TIMESTAMP_STRUCT p2 = { 1470,7,27,17,47,52,123456000 };
-		SQL_TIMESTAMP_STRUCT p3 = { 2070,7,27,17,47,52,123456000 };
+		SQL_TIMESTAMP_STRUCT p2 = { 2004,2,29,17,47,52,123456000 };
+		SQL_TIMESTAMP_STRUCT p3 = { 1470,7,27,17,47,52,123456000 };
+		SQL_TIMESTAMP_STRUCT p4 = { 2070,7,27,17,47,52,123456000 };
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -810,12 +813,14 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-		vector<SQL_TIMESTAMP_STRUCT *> paramValues = { &p0, &p1, &p2, &p3, nullptr };
+		vector<SQL_TIMESTAMP_STRUCT *> paramValues = { &p0, &p1, &p2, &p3, &p4, nullptr, nullptr };
 		vector<SQLINTEGER> strLenOrIndValues = {
 			sizeof(SQL_TIMESTAMP_STRUCT),
 			sizeof(SQL_TIMESTAMP_STRUCT),
 			sizeof(SQL_TIMESTAMP_STRUCT),
 			sizeof(SQL_TIMESTAMP_STRUCT),
+			sizeof(SQL_TIMESTAMP_STRUCT),
+			SQL_NULL_DATA,
 			SQL_NULL_DATA };
 
 		// Verify that the parameters we get back are what we expect
@@ -837,12 +842,14 @@ namespace ExtensionApiTest
 			"param0 = datetime.date(9999,12,31);"
 			"param1 = datetime.date(1,1,1);"
 			"param2 = datetime.date(1470,7,27);"
-			"param3 = None;";
+			"param3 = datetime.date(2004,2,29);" // Leap Day
+			"param4 = None;";
 
-		int paramsNumber = 4;
+		int paramsNumber = 5;
 		SQL_DATE_STRUCT p0 = { 9999,12,31 };
 		SQL_DATE_STRUCT p1 = { 1,1,1 };
 		SQL_DATE_STRUCT p2 = { 1470,7,27 };
+		SQL_DATE_STRUCT p3 = { 2004,2,29 };
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -874,12 +881,13 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-		vector<SQL_DATE_STRUCT *> paramValues = { &p0, &p1, &p2, nullptr };
+		vector<SQL_DATE_STRUCT *> paramValues = { &p0, &p1, &p2, &p3, nullptr };
 
 		// We return a TIMESTAMP_STRUCT because it is more encompassing.
 		// It will just have 0s for hour/minute/sec/usec
 		//
 		vector<SQLINTEGER> strLenOrIndValues = {
+			sizeof(SQL_TIMESTAMP_STRUCT),
 			sizeof(SQL_TIMESTAMP_STRUCT),
 			sizeof(SQL_TIMESTAMP_STRUCT),
 			sizeof(SQL_TIMESTAMP_STRUCT),

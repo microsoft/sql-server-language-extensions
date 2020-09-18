@@ -505,9 +505,22 @@ void PythonDateTimeParam<DataType>::RetrieveValueAndStrLenInd(bp::object mainNam
 	{
 		bp::object tempObj = mainNamespace[m_name];
 
+		bp::exec("from numpy import isnat, datetime64", mainNamespace);
+		bool isNaT = false;
+
+		if (DataType == SQL_C_TYPE_TIMESTAMP)
+		{
+			string checkNaTScript = "isnat(datetime64(" + m_name + "))";
+			isNaT = bp::extract<bool>(bp::eval(checkNaTScript.c_str(), mainNamespace));
+		}
+
 		m_strLenOrInd = SQL_NULL_DATA;
 
-		if (!tempObj.is_none())
+		// Make sure the boost object is not pointing at Python None.
+		// Also check the object type for NaT (Not a Time), a special timestamp type,
+		// because that should be NULL in SQL as well.
+		//
+		if (!tempObj.is_none() && !isNaT)
 		{
 			PyDateTime_IMPORT;
 			PyObject *dateObject = tempObj.ptr();
@@ -525,7 +538,6 @@ void PythonDateTimeParam<DataType>::RetrieveValueAndStrLenInd(bp::object mainNam
 			SQL_TIMESTAMP_STRUCT datetime = { year, month, day, hour, minute, second, usec * 1000 };
 
 			m_value.push_back(datetime);
-
 			m_strLenOrInd = sizeof(SQL_TIMESTAMP_STRUCT);
 		}
 	}

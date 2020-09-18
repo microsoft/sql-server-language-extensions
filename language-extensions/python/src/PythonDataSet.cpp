@@ -1170,9 +1170,12 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 	{
 		bp::object pyObj = column[row];
 
-		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
+		// Make sure the iterator is not pointing at Python None, or else it will crash on extract.
+		// Also check the object type for NaT (Not a Time), a special timestamp type,
+		// because that should be NULL in SQL as well.
 		//
-		if (!pyObj.is_none())
+		if (!pyObj.is_none() && 
+			strcmp(pyObj.ptr()->ob_type->tp_name, "NaTType") != 0)
 		{
 			SQL_TIMESTAMP_STRUCT timestamp = ExtractTimestampFromPyObject(pyObj.ptr());
 			

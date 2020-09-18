@@ -695,10 +695,10 @@ namespace ExtensionApiTest
 		{
 			bp::object val = columnToTest[index];
 
-			if (strLen_or_Ind == nullptr ||
-				(strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA))
+			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
-				EXPECT_TRUE(val.is_none());
+				EXPECT_TRUE(val.is_none() || 
+					strcmp(val.ptr()->ob_type->tp_name, "NaTType") == 0);
 			}
 			else
 			{
