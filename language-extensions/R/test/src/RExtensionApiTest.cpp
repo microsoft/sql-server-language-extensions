@@ -32,11 +32,12 @@
 #include "Common.h"
 
 using namespace std;
+namespace fs = experimental::filesystem;
 
 #ifdef _WIN64
-	const string RExtensionLibName = "libRExtension.dll";
+	const string x_RExtensionLibName = "libRExtension.dll";
 #else
-	const string RExtensionLibName = "libRExtension.so.1.0";
+	const string x_RExtensionLibName = "libRExtension.so.1.0";
 #endif // _WIN64
 
 extern int g_argc;
@@ -46,6 +47,7 @@ namespace ExtensionApiTest
 {
 	// Initialize all the static members
 	//
+	SQLUSMALLINT RExtensionApiTest::sm_numberOfSuitesInitialized = 0;
 	void *RExtensionApiTest::m_libHandle = nullptr;
 	FN_init *RExtensionApiTest::m_initFuncPtr = nullptr;
 	FN_initSession *RExtensionApiTest::m_initSessionFuncPtr = nullptr;
@@ -57,28 +59,60 @@ namespace ExtensionApiTest
 	FN_getOutputParam *RExtensionApiTest::m_getOutputParamFuncPtr = nullptr;
 	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
 	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
+
+	string RExtensionApiTest::sm_libraryRootPath = "testInstallPkgs";
+	string RExtensionApiTest::sm_publicLibraryPath;
+	string RExtensionApiTest::sm_privateLibraryPath;
+
 #ifdef _WIN64
-	const string RExtensionApiTest::m_RHomePath = "";
+	const string RExtensionApiTest::sm_RHomePath = "";
 #else
-	const string RExtensionApiTest::m_RHomePath = "/usr/lib/R";
+	const string RExtensionApiTest::sm_RHomePath = "/usr/lib/R";
 #endif
 
-	// Per-test-suite set-up.
-	// Called before the first test in this test suite.
+	// Name: RExtensionApiTest::SetUpTestSuite
+	//
+	// Description:
+	//  Per-test-suite set-up. Called before the first test in every test suite.
+	//  But we want to execute this only once in the entire test run before the first test suite
+	//  since R can be initialized only once.
 	//
 	void RExtensionApiTest::SetUpTestSuite()
 	{
-		ASSERT_NO_THROW(GetHandles());
-		DoInit();
+		// Initialize only if this is the first test suite.
+		//
+		if (sm_numberOfSuitesInitialized == 0)
+		{
+			// Set and Create the library paths before initialization of R environment
+			// so that they get added to libPaths.
+			//
+			SetupLibPaths();
+			CreateLibPaths();
+
+			ASSERT_NO_THROW(GetHandles());
+			DoInit();
+		}
+
+		++sm_numberOfSuitesInitialized;
 	}
 
-	// Per-test-suite tear-down.
-	// Called after the last test in this test suite.
+	// Name: RExtensionApiTest::TearDownTestSuite
+	//
+	// Description:
+	//  Per-test-suite tear-down. Called after the last test in every test suite.
+	//  But we want to execute this only once in the entire test run after the last test suite
+	//  since R can be torn down only once.
 	//
 	void RExtensionApiTest::TearDownTestSuite()
 	{
-		DoCleanup();
-		ASSERT_NO_THROW(ReleaseHandles());
+		// Cleanup only if this is the last test suite.
+		//
+		if (sm_numberOfSuitesInitialized == TOTAL_NUMBER_OF_TEST_SUITES)
+		{
+			DoCleanup();
+			ASSERT_NO_THROW(ReleaseHandles());
+			CleanupLibPaths();
+		}
 	}
 
 	// Code here will be called immediately after the constructor (right
@@ -98,16 +132,50 @@ namespace ExtensionApiTest
 		CleanupVariables();
 	}
 
+	// Name: RExtensionApiTest::SetupLibPaths
+	//
+	// Description:
+	//  Set the library path variables.
+	//
+	void RExtensionApiTest::SetupLibPaths()
+	{
+		sm_libraryRootPath = fs::absolute(sm_libraryRootPath).string();
+		fs::path libPath = sm_libraryRootPath;
+		sm_publicLibraryPath = (libPath / "public").string();
+		sm_privateLibraryPath = (libPath / "private").string();
+	}
+
+	// Name: RExtensionApiTest::CreateLibPaths
+	//
+	// Description:
+	//  Create the library path directories.
+	//
+	void RExtensionApiTest::CreateLibPaths()
+	{
+		fs::path libPath = fs::absolute(sm_libraryRootPath);
+		if (fs::exists(libPath))
+		{
+			fs::remove_all(libPath);
+		}
+
+		fs::path publicLibraryPath = fs::absolute(sm_publicLibraryPath);
+		fs::path privateLibraryPath = fs::absolute(sm_privateLibraryPath);
+
+		EXPECT_TRUE(fs::create_directory(libPath));
+		EXPECT_TRUE(fs::create_directory(publicLibraryPath));
+		EXPECT_TRUE(fs::create_directory(privateLibraryPath));
+	}
+
 	// Name: GetHandles
 	//
 	// Description:
-	// Load library and get handles to different functions
-	// Testing if RExtension is successfully loaded dynamically
+	//  Load library and get handles to different functions
+	//  Testing if RExtension is successfully loaded dynamically
 	//
 	void RExtensionApiTest::GetHandles()
 	{
 		std::cout << "Loading the RExtension and getting handles for extension APIs.\n";
-		m_libHandle = Utilities::CrossPlatLoadLibrary(RExtensionLibName.c_str());
+		m_libHandle = Utilities::CrossPlatLoadLibrary(x_RExtensionLibName.c_str());
 		ASSERT_TRUE(m_libHandle != nullptr);
 
 		m_initFuncPtr = reinterpret_cast<FN_init*>(
@@ -174,8 +242,8 @@ namespace ExtensionApiTest
 	// Name: DoInit
 	//
 	// Description:
-	// Do Init where embedded R is initialized - can be called only once in the test suite.
-	// Testing if Init is implemented correctly.
+	//  Do Init where embedded R is initialized - can be called only once in the test suite.
+	//  Testing if Init is implemented correctly.
 	//
 	void RExtensionApiTest::DoInit()
 	{
@@ -185,17 +253,24 @@ namespace ExtensionApiTest
 		int paramsLength = strlen(cmdLine.c_str());
 		unique_ptr<SQLCHAR[]> extensionParams = make_unique<SQLCHAR[]>(paramsLength);
 		memcpy(extensionParams.get(), cmdLine.c_str(), paramsLength);
+
 		SQLCHAR *extensionPath = static_cast<SQLCHAR *>(
-			static_cast<void *>(const_cast<char *>(m_RHomePath.c_str())));
+			static_cast<void *>(const_cast<char *>(sm_RHomePath.c_str())));
+		SQLCHAR* publiclibraryPath = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(sm_publicLibraryPath.c_str())));
+		SQLCHAR* privateLibraryPath = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(sm_privateLibraryPath.c_str())));
+
 		result = (*m_initFuncPtr)(
 			extensionParams.get(),
 			paramsLength,
 			extensionPath,
-			m_RHomePath.length(),
-			nullptr,
-			0,
-			nullptr,
-			0);
+			sm_RHomePath.length(),
+			publiclibraryPath,
+			sm_publicLibraryPath.length(),
+			privateLibraryPath,
+			sm_privateLibraryPath.length());
+
 		ASSERT_EQ(result, SQL_SUCCESS);
 	}
 
@@ -394,6 +469,23 @@ namespace ExtensionApiTest
 		SQLRETURN result = SQL_ERROR;
 		result = (*m_cleanupFuncPtr)();
 		ASSERT_EQ(result, SQL_SUCCESS);
+	}
+
+	// Name: CleanupLibPaths
+	//
+	// Description:
+	// Cleanup all the library paths created.
+	//
+	void RExtensionApiTest::CleanupLibPaths()
+	{
+		fs::path libPath = fs::absolute(sm_libraryRootPath);
+
+		if (fs::exists(libPath))
+		{
+			fs::remove_all(libPath);
+		}
+
+		EXPECT_FALSE(fs::exists(libPath));
 	}
 
 	// Name: InitializeSession

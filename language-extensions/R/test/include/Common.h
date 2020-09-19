@@ -31,6 +31,7 @@
 	#include <dlfcn.h>
 #endif
 
+#include <experimental/filesystem>
 #include <iostream>
 #include <math.h>
 #include <memory>
@@ -48,6 +49,8 @@
 #endif
 #include "Rcpp.h"
 #include "RInside.h"
+
+#define TOTAL_NUMBER_OF_TEST_SUITES 2
 
 #include "RExtensionApiTest.h"
 #include "Unicode.h"

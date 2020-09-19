@@ -35,9 +35,9 @@
 
 #include "RColumn.h"
 #include "RDataSet.h"
+#include "RLibrarySession.h"
 #include "RParam.h"
 #include "RParamContainer.h"
-#include "RPathSettings.h"
 #include "RSession.h"
 
 // ODBCVER is defined in sql.h undefine it to avoid redefinition warnings when it is defined in
@@ -47,6 +47,7 @@
 	#undef ODBCVER
 #endif
 #include "sqlexternallanguage.h"
+#include "sqlexternallibrary.h"
 
 #ifndef _WIN64
 #include <linux/limits.h>
@@ -154,6 +155,7 @@ RSession* CheckAndGetSession(string &&funcName, SQLGUID sessionId, SQLUSMALLINT 
 	unordered_map<string, unique_ptr<RSession>>::const_iterator it = g_RSessionMap.find(sessionIdString);
 	RSession* session = nullptr;
 	bool isInitSession = funcName.compare("InitSession") == 0;
+	bool isCleanupSession = funcName.compare("CleanupSession") == 0;
 
 	if (it == g_RSessionMap.end())
 	{
@@ -166,8 +168,11 @@ RSession* CheckAndGetSession(string &&funcName, SQLGUID sessionId, SQLUSMALLINT 
 			g_RSessionMap[sessionIdString] = make_unique<RSession>();
 			session = g_RSessionMap[sessionIdString].get();
 		}
-		else
+		else if (!isCleanupSession)
 		{
+			// Cleanup session can be called before session is initialized in case it is a
+			// library session.
+			//
 			throw runtime_error("Function " + funcName + " called before session id "
 				+ sessionIdString + " is initialized.");
 		}
@@ -572,7 +577,8 @@ SQLRETURN CleanupSession(
 	{
 		RSession* session = CheckAndGetSession("CleanupSession", sessionId, taskId);
 
-		// Clean up the session
+		// Clean up the session; it could be nullptr in case of library sessions
+		// because we don't add library sessions to the map.
 		//
 		if (session != nullptr)
 		{
@@ -629,6 +635,134 @@ SQLRETURN Cleanup()
 	catch (...)
 	{
 		LOG_ERROR("Unexpected exception occurred in function Cleanup().");
+	}
+
+	return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+// External Library APIs
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+// Name: InstallExternalLibrary
+//
+// Description:
+//  Installs an external library to the specified directory
+//  The library file is expected to be a zip containing the R package
+//  which itself could be a zip or tar.gz file.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN InstallExternalLibrary(
+	SQLGUID    setupSessionId,
+	SQLCHAR    *libraryName,
+	SQLINTEGER libraryNameLength,
+	SQLCHAR    *libraryFile,
+	SQLINTEGER libraryFileLength,
+	SQLCHAR    *libraryInstallDirectory,
+	SQLINTEGER libraryInstallDirectoryLength,
+	SQLCHAR    **libraryError,
+	SQLINTEGER *libraryErrorLength)
+{
+	LOG("RExtension::InstallExternalLibrary");
+	SQLRETURN result = SQL_ERROR;
+	string exceptionString;
+
+	try
+	{
+		RLibrarySession librarySession;
+
+		librarySession.Init(
+			setupSessionId,
+			libraryName,
+			libraryNameLength);
+
+		result = librarySession.InstallLibrary(
+			libraryFile,
+			libraryFileLength,
+			libraryInstallDirectory,
+			libraryInstallDirectoryLength);
+	}
+	catch (const exception & ex)
+	{
+		LOG_EXCEPTION(ex);
+		exceptionString = string(ex.what());
+	}
+	catch (...)
+	{
+		exceptionString = "Unexpected exception occurred in function InstallExternalLibrary().";
+		LOG_ERROR(exceptionString);
+	}
+
+	if (!exceptionString.empty())
+	{
+		*libraryErrorLength = exceptionString.length();
+		string *pError = new string(exceptionString);
+		SQLCHAR *error = const_cast<SQLCHAR*>(static_cast<const SQLCHAR *>
+			(static_cast<const void*>(pError->c_str())));
+
+		*libraryError = error;
+	}
+
+	return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: UninstallExternalLibrary
+//
+// Description:
+//  Uninstalls an external library from the specified directory.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN UninstallExternalLibrary(
+	SQLGUID    setupSessionId,
+	SQLCHAR    *libraryName,
+	SQLINTEGER libraryNameLength,
+	SQLCHAR    *libraryInstallDirectory,
+	SQLINTEGER libraryInstallDirectoryLength,
+	SQLCHAR    **libraryError,
+	SQLINTEGER *libraryErrorLength)
+{
+	LOG("RExtension::UninstallExternalLibrary");
+	SQLRETURN result = SQL_ERROR;
+	string exceptionString;
+
+	try
+	{
+		RLibrarySession librarySession;
+
+		librarySession.Init(
+			setupSessionId,
+			libraryName,
+			libraryNameLength);
+
+		result = librarySession.UninstallLibrary(
+			libraryInstallDirectory,
+			libraryInstallDirectoryLength);
+	}
+	catch (const exception & ex)
+	{
+		LOG_EXCEPTION(ex);
+		exceptionString = string(ex.what());
+	}
+	catch (...)
+	{
+		exceptionString = "Unexpected exception occurred in function UninstallExternalLibrary().";
+		LOG_ERROR(exceptionString);
+	}
+
+	if (!exceptionString.empty())
+	{
+		*libraryErrorLength = exceptionString.length();
+		string *pError = new string(exceptionString);
+		SQLCHAR *error = const_cast<SQLCHAR*>(static_cast<const SQLCHAR *>
+			(static_cast<const void*>(pError->c_str())));
+
+		*libraryError = error;
 	}
 
 	return result;

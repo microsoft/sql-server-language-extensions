@@ -30,7 +30,7 @@ function build {
 
 # Enlistment root and location of RExtension-test
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-ENL_ROOT=${SCRIPTDIR}/../../../../..
+export ENL_ROOT=${SCRIPTDIR}/../../../../..
 REXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/RExtension/linux
 REXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/RExtension-test/linux
 PACKAGES_ROOT=${ENL_ROOT}/packages

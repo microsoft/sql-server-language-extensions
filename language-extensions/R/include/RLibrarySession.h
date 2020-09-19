@@ -31,48 +31,63 @@ class RLibrarySession
 {
 public:
 
-	//  Initializes the R library session and a shared pointer to the EmbeddedR environment.
+	// Initializes the R library session by storing the sessionId and the library name.
 	//
-	void Init(const SQLGUID &sessionId);
+	void Init(
+		const SQLGUID &sessionId,
+		const SQLCHAR *libraryName,
+		SQLINTEGER    libraryNameLength);
 
-	// Install the specified library.
+	// Installs the contents of the libraryFile which is of the form <dbId>_<userId>_libName.zip
+	// to the given installation directory.
 	//
 	SQLRETURN InstallLibrary(
-		const SQLCHAR *libraryName,
-		SQLINTEGER    libraryNameLength,
 		const SQLCHAR *libraryFile,
 		SQLINTEGER    libraryFileLength,
 		const SQLCHAR *libraryInstallDirectory,
 		SQLINTEGER    libraryInstallDirectoryLength);
 
-	// Uninstall the specified library.
+	// Uninstalls from the specified directory.
 	//
-	/*SQLRETURN UninstallLibrary(
-		SQLCHAR    *libraryName,
-		SQLINTEGER libraryNameLength,
-		SQLCHAR    *libraryInstallDirectory,
-		SQLINTEGER libraryInstallDirectoryLength);
+	SQLRETURN UninstallLibrary(
+		const SQLCHAR *libraryInstallDirectory,
+		SQLINTEGER    libraryInstallDirectoryLength);
 
-	// Get top level directory/ies for a package
+	// Checks if the library is installed or not.
 	//
-	std::vector<std::experimental::filesystem::directory_entry> GetTopLevel(
-		std::string libName,
-		std::string installDir);
+	bool IsLibraryInstalled();
 
-	// Get all the artifacts we can find of a package that are in the path
+	// Creates a script that would set the libPaths to a character vector of strings.
+	// These strings are the ordered members of the input Rcpp::CharacterVector
+	// and are directory paths.
 	//
-	std::vector<std::experimental::filesystem::directory_entry> GetAllArtifacts(
-		std::string libName,
-		std::string path);*/
+	static std::string GenerateScriptToSetLibPath(
+		Rcpp::CharacterVector pathsVector,
+		bool                  isLastElementLibPaths);
+
+	// Get the correct file extension by looking up the first two magic bytes.
+	//
+	static std::string GetFileExtension(const std::string &libFilePathStr);
+
+	// Tar Gzip extension.
+	//
+	static const std::string sm_TarGzExt;
+
+	// Zip extension.
+	//
+	static const std::string sm_ZipExt;
+
+	// The script to find the current library paths.
+	//
+	static const std::string sm_ScriptToGetLibPaths;
 
 private:
 
-	// A pointer to the embedded R environment via RInside.
-	// We execute all R scripts in this environment and there can only be a single
-	// instance of RInside in the extension.
+	// Session ID.
 	//
-	RInside* m_embeddedREnvPtr;
-
 	SQLGUID m_sessionId { 0, 0, 0, {0} };
-};
 
+	// Library Name being operated upon in this session.
+	//
+	std::string m_libraryName;
+};

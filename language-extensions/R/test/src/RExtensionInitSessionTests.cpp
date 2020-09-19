@@ -68,13 +68,14 @@ namespace ExtensionApiTest
 
 		SQLGUID sessionId = { 0, 0, 1, {1} };
 
-		// Try cleanup without first initializing a different session
-		// This should fail.
+		// Try cleanup without first initializing a different session should still pass
+		// since while cleaning up we can't differentiate if the cleanup is for
+		// library session or not. For library sessions, we don't do initialization.
 		//
 		result = (*m_cleanupSessionFuncPtr)(
 			sessionId,
 			m_taskId);
-		EXPECT_EQ(result, SQL_ERROR);
+		EXPECT_EQ(result, SQL_SUCCESS);
 
 		// Initialize the different session; make sure this also inits independently
 		// even though previous session is still in progress.

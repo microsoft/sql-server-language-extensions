@@ -27,75 +27,118 @@
 
 #include "Common.h"
 
+#include "RLibrarySession.h"
+
 using namespace std;
 
 unique_ptr<RInside> REnvironment::sm_embeddedREnvPtr = nullptr;
 unique_ptr<Rcpp::CharacterVector> REnvironment::sm_originalPath = nullptr;
 
+
 //--------------------------------------------------------------------------------------------------
-// Name: GenerateScriptToSetLibPath
+// Name: GetScriptWithTryCatch
 //
 // Description:
-//  Creates a script that would set the libPaths to a character vector of strings contained in the
-//  given the Rcpp character vector of paths. If the given vector is empty, we simply return the
-//  default value of the script which is .libPaths()
+//  Encloses the given script in a try catch block.
 //
 // Returns:
-//  An R script that can be used to set the libPaths.
+//  Modified script enclosed in try catch
 //
-string GenerateScriptToSetLibPath(Rcpp::CharacterVector pathsVector, bool isLastElementLibPaths)
+string GetScriptWithTryCatch(const string &script)
 {
-	// Initialize the libPaths script to default value
-	//
-	string setLibPaths = ".libPaths()";
+	stringstream tryCatchScript;
+	tryCatchScript << "tryCatch("
 
-	if (pathsVector.size() > 0)
-	{
-		// The script looks like either of the two scenarios :
-		// A) .libPaths( c( 'Path1', 'Path2', .libPaths())); OR
-		// B) .libPaths( c( 'Path1', 'Path2', 'Path3'));
-		//
-		setLibPaths = ".libPaths( c( ";
+		<< "\n{\n  " // open try
 
-		for (int index = 0; index < pathsVector.size(); ++index)
-		{
-			// Do the processing only if the path is not empty
+			<< script
+
+		<< "\n},\n" // end try
+
+		<< "error = function(err)"
+		<< "\n{\n" // open catch
+			// Stop from script evaluation indicates failure
+			// and RInside would throw an exception in that case
 			//
-			if (!pathsVector[index].empty())
-			{
-				string normalizedPath = Utilities::NormalizePathString(
-					string(pathsVector[index]));
+			<< "  stop(err);"
 
-				if (index != pathsVector.size() - 1)
-				{
-					// This is the case for all paths except the last one
-					//
-					setLibPaths += "'" + normalizedPath + "', ";
-				}
-				else
-				{
-					if (isLastElementLibPaths)
-					{
-						// This is scenario A: if the last element is .libPaths()
-						// then we don't need to enclose it in quotes.
-						//
-						setLibPaths += normalizedPath;
-					}
-					else
-					{
-						// This is scenario B: if the last element is a regular path,
-						// we need to enclose it in quotes but not add a ','
-						//
-						setLibPaths += "'" + normalizedPath + "'";
-					}
-				}
-			}
-		}
+		<< "\n}" // end catch
+	<< "\n);"; // end tryCatch
 
-		setLibPaths += "));";
+	return tryCatchScript.str();
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: ExecuteScript
+//
+// Description:
+//  Executes the given script.
+//
+// Remarks:
+//  This may throw an exception if embedded R environment is not initialized or
+//  if evaluation of script fails.
+//
+void ExecuteScript(const string &script)
+{
+	LOG("ExecuteScript");
+
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+	if (embeddedREnvPtr != nullptr)
+	{
+		string tryCatchScript = GetScriptWithTryCatch(script);
+		LOG("Executing\n" + tryCatchScript);
+
+		// If evaluation of script fails, this throws an exception.
+		//
+		embeddedREnvPtr->parseEvalQ(tryCatchScript.c_str());
+	}
+	else
+	{
+		throw runtime_error("Embedded R environment has not been initialized.");
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: ExecuteScriptAndGetResult
+//
+// Description:
+//  Executes the given script and returns the result as an SEXP pointer.
+//
+// Remarks:
+//  This may throw an exception if embedded R environment is not initialized or
+//  if evaluation of script fails.
+//
+SEXP ExecuteScriptAndGetResult(const string &script)
+{
+	LOG("ExecuteScriptAndGetResult");
+
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+	SEXP result = nullptr;
+
+	if (embeddedREnvPtr != nullptr)
+	{
+		string tryCatchScript = GetScriptWithTryCatch(script);
+		LOG(tryCatchScript);
+		result = static_cast<SEXP>(embeddedREnvPtr->parseEval(tryCatchScript));
+	}
+	else
+	{
+		throw runtime_error("Embedded R environment has not been initialized.");
 	}
 
-	return setLibPaths;
+	return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: GetEmbeddedREnvironment
+//
+// Description:
+//  Wrapper around returning the embedded R environment pointer visible as a function handle
+//  outside of the RExtension dll.
+//
+RInside* GetEmbeddedREnvironment()
+{
+	return REnvironment::EmbeddedREnvironment();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -151,39 +194,39 @@ void REnvironment::Init(SQLULEN extensionParamsLength)
 
 	// Store the original path for restoring later in cleanup.
 	//
-	sm_originalPath = make_unique<Rcpp::CharacterVector>(static_cast<SEXP>(
-		sm_embeddedREnvPtr->parseEval(".libPaths()")));
+	sm_originalPath = make_unique<Rcpp::CharacterVector>(
+		ExecuteScriptAndGetResult(RLibrarySession::sm_ScriptToGetLibPaths));
 
 	// Add the public and private library paths to .libPaths() for use later in executing scripts.
 	//
 	Rcpp::CharacterVector pathsToSet(3);
 	pathsToSet[0] = privateLibPath;
 	pathsToSet[1] = publicLibPath;
-	pathsToSet[2] = ".libPaths()";
-	string prependToLibPathsScript = GenerateScriptToSetLibPath(
+	pathsToSet[2] = RLibrarySession::sm_ScriptToGetLibPaths;
+	string prependToLibPathsScript = RLibrarySession::GenerateScriptToSetLibPath(
 		pathsToSet,
 		true); // isLastElementLibPaths
 
 	// Execute prepend to library paths script.
 	//
-	sm_embeddedREnvPtr->parseEvalQ(prependToLibPathsScript);
+	ExecuteScript(prependToLibPathsScript);
 }
 
 //--------------------------------------------------------------------------------------------------
 // Name: REnvironment::Cleanup
 //
 // Description:
-//  Cleanup, reset the R libPath.
+//  Cleans up by resetting the R libPath.
 //
 void REnvironment::Cleanup()
 {
 	LOG("REnvironment::Cleanup");
 
-	string restoreLibPathsScript = GenerateScriptToSetLibPath(
+	string restoreLibPathsScript = RLibrarySession::GenerateScriptToSetLibPath(
 		*sm_originalPath,
 		false); // isLastElementLibPaths
 
 	// Execute restoration of library paths script.
 	//
-	sm_embeddedREnvPtr->parseEvalQ(restoreLibPathsScript);
+	ExecuteScript(restoreLibPathsScript);
 }

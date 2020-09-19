@@ -34,20 +34,25 @@
 class REnvironment
 {
 public:
-	// Initialize this global class
+
+	// Initializes this global class
 	//
 	static void Init(SQLULEN extensionParamsLength);
 
-	// Cleanup this global class
+	// Cleans up this global class
 	//
 	static void Cleanup();
 
-	// Get the global embedded R environment as an RInside object pointer.
+	// Gets the global embedded R environment as an RInside object pointer.
 	//
 	static RInside* EmbeddedREnvironment()
 	{
 		return sm_embeddedREnvPtr.get();
 	}
+
+	// Encloses the given script in a try catch block.
+	//
+	static std::string GetScriptWithTryCatch(const std::string &script);
 
 private:
 
@@ -62,3 +67,29 @@ private:
 	//
 	static std::unique_ptr<Rcpp::CharacterVector> sm_originalPath;
 };
+
+#ifdef _WIN32
+#define REXTENSION_INTERFACE __declspec(dllexport)
+#elif __linux__
+#define REXTENSION_INTERFACE __attribute__((visibility("default")))
+#else
+#define REXTENSION_INTERFACE
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif/* __cplusplus */
+
+// Simply executes the given script.
+//
+REXTENSION_INTERFACE void ExecuteScript(const std::string &script);
+
+// Executes the given script and returns the result as an SEXP pointer.
+//
+REXTENSION_INTERFACE SEXP ExecuteScriptAndGetResult(const std::string &script);
+
+REXTENSION_INTERFACE RInside* GetEmbeddedREnvironment();
+
+#ifdef __cplusplus
+} /* End of extern "C" { */
+#endif/* __cplusplus */

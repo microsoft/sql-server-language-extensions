@@ -122,9 +122,17 @@ public:
 
 private:
 
-	SQLGUID m_sessionId {0, 0, 0, {0}};       // Session ID
-	SQLUSMALLINT m_taskId = 0;                // Task ID for this session
-	SQLUSMALLINT m_numTasks = 0;              // Number of tasks for this session
+	// Session ID
+	//
+	SQLGUID m_sessionId {0, 0, 0, {0}};
+
+	// Task ID for this session
+	//
+	SQLUSMALLINT m_taskId = 0;
+
+	// Number of tasks for this session
+	//
+	SQLUSMALLINT m_numTasks = 0;
 
 	// The R script.
 	//

@@ -139,43 +139,55 @@ namespace ExtensionApiTest
 		// Code here will be called immediately after the constructor (right
 		// before each test).
 		//
-		void SetUp() override;
+		virtual void SetUp() override;
 
 		// Code here will be called immediately after each test (right
 		// before the destructor).
 		//
-		void TearDown() override;
+		virtual void TearDown() override;
 
 		// Check R_HOME and set it if not defined.
 		//
 		static void CheckAndSetRHome();
 
-		// Load library and get handles to different functions
-		// Testing if RExtension is successfully loaded dynamically
+		// Set the library path variables.
 		//
-		static void GetHandles();
+		static void SetupLibPaths();
+
+		// Create the library paths.
+		//
+		static void CreateLibPaths();
 
 		// Do Init where embedded R is initialized - can be called only once in the validate suite.
 		// Testing if Init is implemented correctly.
 		//
 		static void DoInit();
 
-		// Set up default, valid variables for use in tests.
+		// Call Cleanup on the RExtension.
+		// Testing if Cleanup is implemented correctly.
 		//
-		void SetupVariables();
+		static void DoCleanup();
 
-		// Delete the memory allocated to default variables.
+		// Load library and get handles to different functions
+		// Testing if RExtension is successfully loaded dynamically
 		//
-		void CleanupVariables();
+		static void GetHandles();
 
 		// Close the handle to the library.
 		//
 		static void ReleaseHandles();
 
-		// Call Cleanup on the RExtension.
-		// Testing if Cleanup is implemented correctly.
+		// Cleanup all the library paths created.
 		//
-		static void DoCleanup();
+		static void CleanupLibPaths();
+
+		// Set up default, valid variables for use in tests.
+		//
+		virtual void SetupVariables();
+
+		// Delete the memory allocated to default variables.
+		//
+		void CleanupVariables();
 
 		// Initialize a valid session.
 		//
@@ -418,7 +430,7 @@ namespace ExtensionApiTest
 
 		// Objects declared here can be used by all tests in the test suite.
 		//
-		static const std::string m_RHomePath;
+		static const std::string sm_RHomePath;
 		SQLGUID *m_sessionId;
 		SQLUSMALLINT m_taskId;
 		SQLUSMALLINT m_numTasks;
@@ -512,6 +524,10 @@ namespace ExtensionApiTest
 		//
 		Rcpp::Environment m_globalEnvironment;
 
+		// Indicates the number of suites that have been initialized.
+		//
+		static SQLUSMALLINT sm_numberOfSuitesInitialized;
+
 		// Pointer handle to the library libRextension
 		//
 		static void *m_libHandle;
@@ -555,6 +571,21 @@ namespace ExtensionApiTest
 		// Pointer to the Cleanup function
 		//
 		static FN_cleanup *m_cleanupFuncPtr;
+
+		// The following target library paths are defined here in the base
+		// class since we need to use them in the Init() call
+		// which has to be unique across the entire test run.
+		//
+
+		// Root path of the libraries where the test installs them.
+		//
+		static std::string sm_libraryRootPath;
+
+		// Some temp paths for public and private libraries as child folders of the
+		// m_libraryRootPath above.
+		//
+		static std::string sm_publicLibraryPath;
+		static std::string sm_privateLibraryPath;
 	};
 
 	// ColumnInfo template class to store information
