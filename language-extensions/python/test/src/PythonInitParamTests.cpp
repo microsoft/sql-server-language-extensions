@@ -72,16 +72,31 @@ namespace ExtensionApiTest
 		TestParameter<SQLCHAR, SQL_C_BIT>(0, //paramNumber
 			'0');
 
+		// Test 1 BIT value
+		//
+		TestParameter<SQLCHAR, SQL_C_BIT>(0, //paramNumber
+			1);
+
+		// Test 0 BIT value
+		//
+		TestParameter<SQLCHAR, SQL_C_BIT>(0, //paramNumber
+			0);
+
 		// Test null BIT value
 		//
 		TestParameter<SQLCHAR, SQL_C_BIT>(0, //paramNumber
 			0,
 			true); // isNull
 
-		// Test > 1 BIT value
+		// Test > 1 BIT value, should be True
 		//
 		TestParameter<SQLCHAR, SQL_C_BIT>(0, //paramNumber
-			'2');
+			2);
+
+		// Test != '1' and != '0' BIT value, should be True
+		//
+		TestParameter<SQLCHAR, SQL_C_BIT>(0, //paramNumber
+			'3');
 	}
 
 	// Name: InitFloatParamTest
@@ -697,7 +712,7 @@ namespace ExtensionApiTest
 				if (dataType == SQL_C_BIT)
 				{
 					bool param = bp::extract<bool>(obj);
-					EXPECT_EQ(param, paramValue != '0' ? true : false);
+					EXPECT_EQ(param, paramValue != '0' && paramValue != 0);
 				}
 				else
 				{

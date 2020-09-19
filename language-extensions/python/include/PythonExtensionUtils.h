@@ -37,6 +37,10 @@ public:
 	//
 	static std::string NormalizePathString(std::string pathString);
 
+	// Check if bitValue is True or not
+	//
+	static bool IsBitTrue(SQLCHAR bitValue);
+
 	// Converts a SQLGUID to a string
 	//
 	static std::string ConvertGuidToString(const SQLGUID *guid);

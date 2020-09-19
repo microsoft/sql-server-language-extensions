@@ -12,6 +12,7 @@
 //*************************************************************************************************
 
 #include "Logger.h"
+#include "PythonExtensionUtils.h"
 #include "PythonParam.h"
 
 // datetime.h includes macros that define the PyDateTime APIs
@@ -184,7 +185,8 @@ PythonBooleanParam::PythonBooleanParam(
 {
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
-		bool value = *static_cast<SQLCHAR*>(paramValue) != '0' ? true : false;
+		SQLCHAR val = *static_cast<SQLCHAR *>(paramValue);
+		bool value = PythonExtensionUtils::IsBitTrue(val);
 		m_pyObject = bp::object(value);
 	}
 	else

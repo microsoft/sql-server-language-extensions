@@ -114,7 +114,7 @@ namespace ExtensionApiTest
 
 		m_booleanInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"BooleanColumn1",
-			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
+			vector<SQLCHAR>{ '1', '0', '1', 0, 1 },
 			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_BooleanSize),
 			"BooleanColumn2",
 			vector<SQLCHAR>{ '\0', '2', '1', '0', '\0' },

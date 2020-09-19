@@ -192,3 +192,17 @@ string PythonExtensionUtils::NormalizePathString(string pathString)
 	replace(pathString.begin(), pathString.end(), '\\', '/');
 	return pathString;
 }
+
+//-------------------------------------------------------------------------------------------------
+// Name: PythonExtensionUtils::IsBitTrue
+//
+// Description:
+//  Check if a SQLCHAR bit is True (not 0 or '0').
+//
+// Returns:
+//  What the boolean value of the bit is
+//
+bool PythonExtensionUtils::IsBitTrue(SQLCHAR bitValue)
+{
+	return bitValue != '0' && bitValue != 0;
+}

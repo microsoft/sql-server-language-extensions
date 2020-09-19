@@ -92,14 +92,16 @@ namespace ExtensionApiTest
 		SQLCHAR p0 = '\x1';
 		SQLCHAR p1 = '\0';
 		SQLCHAR p2 = '\x1';
+		SQLCHAR p3 = '\0';
 
 		string scriptString =
 			"param0 = True;"
 			"param1 = False;"
 			"param2 = 3;"
-			"param3 = None;";
+			"param3 = 0;"
+			"param4 = None;";
 
-		int paramsNumber = 4;
+		int paramsNumber = 5;
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -131,8 +133,9 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-		vector<SQLCHAR*> paramValues = { &p0, &p1, &p2, nullptr };
+		vector<SQLCHAR*> paramValues = { &p0, &p1, &p2, &p3, nullptr };
 		vector<SQLINTEGER> strLenOrIndValues = {
+			m_BooleanSize,
 			m_BooleanSize,
 			m_BooleanSize,
 			m_BooleanSize,
@@ -777,6 +780,7 @@ namespace ExtensionApiTest
 			"param6 = None;";
 
 		int paramsNumber = 7;
+
 		SQL_TIMESTAMP_STRUCT p0 = { 9999,12,31,23,59,59,999999000 };
 		SQL_TIMESTAMP_STRUCT p1 = { 1,1,1,0,0,0,0 };
 		SQL_TIMESTAMP_STRUCT p2 = { 2004,2,29,17,47,52,123456000 };

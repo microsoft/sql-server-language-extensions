@@ -455,7 +455,7 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 		//
 		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
-			dataArray[row] = dataArray[row] != '0';
+			dataArray[row] = PythonExtensionUtils::IsBitTrue(dataArray[row]);
 		}
 
 		// Create a numpy array that points directly to the C++ data array.
@@ -478,7 +478,7 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 			}
 			else
 			{
-				dataArray[row] = dataArray[row] != '0';
+				dataArray[row] = PythonExtensionUtils::IsBitTrue(dataArray[row]);
 				nArray[row] = bool(dataArray[row]);
 			}
 		}
