@@ -98,13 +98,13 @@ RType RTypeUtils::CreateVector(
 		else
 		{
 			SQLType value = static_cast<SQLType *>(data)[j];
-			if (DataType != SQL_C_BIT)
+			if constexpr (DataType != SQL_C_BIT)
 			{
 				vectorInR[j] = value;
 			}
 			else
 			{
-				vectorInR[j] = value != '0' ? true : false;
+				vectorInR[j] = value != '0' && value != 0;
 			}
 		}
 	}
@@ -332,13 +332,13 @@ void RTypeUtils::FillDataFromRVector(
 	{
 		if (!RType::is_na(vectorInR[index]))
 		{
-			if (DataType != SQL_C_BIT)
+			if constexpr (DataType != SQL_C_BIT)
 			{
 				(*data)[index] = vectorInR[index];
 			}
 			else
 			{
-				(*data)[index] = vectorInR[index] ? '1' : '0';
+				(*data)[index] = vectorInR[index] ? 1 : 0;
 			}
 
 			strLen_or_Ind[index] = sizeof(SQLType);

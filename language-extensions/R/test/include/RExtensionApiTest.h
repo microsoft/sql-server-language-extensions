@@ -341,7 +341,7 @@ namespace ExtensionApiTest
 
 		// Test GetResults to verify the expected results are obtained.
 		//
-		template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT outputDataType>
+		template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT OutputDataType>
 		void GetResults(
 			SQLULEN                  expectedRowsNumber,
 			SQLPOINTER               *expectedData,

@@ -104,10 +104,20 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTest, GetLogicalOutputParamTest)
 	{
+		int parametersNumber = 7;
 		string scriptString = "param1 <- TRUE;"
 			"param2 <- FALSE;"
 			"param3 <- NA;"
-			"param4 <- as.logical();";
+			// param4 is FALSE
+			//
+			"param4 <- as.logical(0);"
+			// param5 is TRUE
+			//
+			"param5 <- as.logical(2);"
+			// param6 is NA
+			//
+			"param6 <- as.logical('1');"
+			"param7 <- as.logical();";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -115,15 +125,19 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,   // inputSchemaColumnsNumber
 			scriptString,
-			4);  // parametersNumber
+			parametersNumber);  // parametersNumber
 
 		vector<shared_ptr<SQLCHAR>> initParamValues = {
 			make_shared<SQLCHAR>(0),
 			make_shared<SQLCHAR>(0),
 			make_shared<SQLCHAR>(0),
+			make_shared<SQLCHAR>(0),
+			make_shared<SQLCHAR>(0),
+			make_shared<SQLCHAR>(0),
 			nullptr };
-		vector<SQLINTEGER> strLenOrInd = { 0, 0, 0, SQL_NULL_DATA };
-		vector<SQLSMALLINT> inputOutputTypes(initParamValues.size(), SQL_PARAM_INPUT_OUTPUT);
+		vector<SQLINTEGER> strLenOrInd(parametersNumber, 0);
+		strLenOrInd[parametersNumber - 1] = SQL_NULL_DATA;
+		vector<SQLSMALLINT> inputOutputTypes(parametersNumber, SQL_PARAM_INPUT_OUTPUT);
 
 		InitParam<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
 			initParamValues,
@@ -143,18 +157,34 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-		// Test '1', '0', NA and NULL BIT values.
+		// Test '1', '0', NA, 0, >1 and NULL BIT values.
 		// When testing out of range NA value with respect to R,
 		// returned paramValue is '\0' even though parameter is NA in R
 		// since type casting NA (which is -2'147'483'648) to SQLCHAR returns \0.
 		//
 		vector<shared_ptr<SQLCHAR>> expectedParamValues = {
-			make_shared<SQLCHAR>('1'),
-			make_shared<SQLCHAR>('0'),
+			// TRUE
+			//
+			make_shared<SQLCHAR>(1),
+			// FALSE
+			//
+			make_shared<SQLCHAR>(0),
+			// NA
+			//
+			make_shared<SQLCHAR>('\0'),
+			// as.logical(0)
+			//
+			make_shared<SQLCHAR>(0),
+			// as.logical(2)
+			//
+			make_shared<SQLCHAR>(1),
+			// as.logical('1') - NA in R
+			//
 			make_shared<SQLCHAR>('\0'),
 			nullptr };
-		vector<SQLINTEGER> expectedStrLenOrInd = { m_LogicalSize, m_LogicalSize,
-			SQL_NULL_DATA, SQL_NULL_DATA};
+		vector<SQLINTEGER> expectedStrLenOrInd = {
+			m_LogicalSize, m_LogicalSize, SQL_NULL_DATA,
+			m_LogicalSize, m_LogicalSize, SQL_NULL_DATA, SQL_NULL_DATA };
 
 		GetOutputParam<SQLCHAR>(
 			expectedParamValues,
@@ -1072,8 +1102,8 @@ namespace ExtensionApiTest
 					//
 					EXPECT_EQ(paramValue, nullptr);
 				}
-				else if ((is_same<SQLType, SQLREAL>::value
-					|| is_same<SQLType, SQLDOUBLE>::value))
+				else if constexpr (is_same_v<SQLType, SQLREAL>
+					|| is_same_v<SQLType, SQLDOUBLE>)
 				{
 					EXPECT_TRUE(isnan(static_cast<SQLDOUBLE>(
 						*(static_cast<SQLType*>(paramValue)))));

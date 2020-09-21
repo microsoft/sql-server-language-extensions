@@ -794,7 +794,7 @@ namespace ExtensionApiTest
 	// Templatized function to compare the given column data
 	// and nullMap with rowsNumber for equality.
 	//
-	template<class InputSQLType, class OutputSQLType, SQLSMALLINT outputDataType>
+	template<class InputSQLType, class OutputSQLType, SQLSMALLINT OutputDataType>
 	void RExtensionApiTest::CheckColumnDataEquality(
 		SQLULEN        rowsNumber,
 		InputSQLType   *expectedColumnData,
@@ -813,13 +813,13 @@ namespace ExtensionApiTest
 			EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
 			if (columnStrLenOrInd[index] == SQL_NULL_DATA)
 			{
-				if (is_same<OutputSQLType, SQLDOUBLE>::value)
+				if constexpr (is_same_v<OutputSQLType, SQLDOUBLE>)
 				{
 					EXPECT_TRUE(isnan(static_cast<SQLDOUBLE>(columnData[index])));
 				}
 				else
 				{
-					if (is_same<InputSQLType, OutputSQLType>::value)
+					if constexpr (is_same_v<InputSQLType, OutputSQLType>)
 					{
 						EXPECT_EQ(columnData[index], expectedColumnData[index]);
 					}
@@ -834,9 +834,17 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				if (outputDataType == SQL_C_BIT && expectedColumnData[index] != '0')
+				if constexpr (OutputDataType == SQL_C_BIT)
 				{
-					EXPECT_EQ(columnData[index], '1');
+					if (expectedColumnData[index] == 0 ||
+						expectedColumnData[index] == '0')
+					{
+						EXPECT_EQ(columnData[index], 0);
+					}
+					else
+					{
+						EXPECT_EQ(columnData[index], 1);
+					}
 				}
 				else
 				{

@@ -325,7 +325,7 @@ namespace ExtensionApiTest
 
 		m_logicalInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"LogicalColumn1",
-			vector<SQLCHAR>{ '1', '0', '1', '0', '1' },
+			vector<SQLCHAR>{ '1', '0', '1', 0, 1 },
 			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_LogicalSize),
 			"LogicalColumn2",
 			vector<SQLCHAR>{ '\0', '2', '1', '0',
@@ -652,7 +652,7 @@ namespace ExtensionApiTest
 	// The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
 	// Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
 	//
-	template<class SQLType, class RType, SQLSMALLINT dataType>
+	template<class SQLType, class RType, SQLSMALLINT DataType>
 	void RExtensionApiTest::CheckVectorEquality(
 		SQLULEN    expectedRowsNumber,
 		RType      vectorToTest,
@@ -669,10 +669,10 @@ namespace ExtensionApiTest
 			else
 			{
 				SQLType expectedValue = static_cast<SQLType*>(expectedData)[index];
-				if (dataType == SQL_C_BIT)
+				if constexpr (DataType == SQL_C_BIT)
 				{
 					EXPECT_EQ(vectorToTest[index],
-						expectedValue != '0' ? true : false);
+						expectedValue != '0' && expectedValue != 0);
 				}
 				else
 				{

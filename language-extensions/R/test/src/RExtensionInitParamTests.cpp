@@ -73,9 +73,9 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
 			"", // scriptString
-			5); // parametersNumber
+			8); // parametersNumber
 
-		// Test '1', '0', NA, NULL and > 1 BIT values.
+		// Test '1', '0', NA, 0, 1, NULL and > 1 BIT values.
 		// When testing out of range NA value with respect to R,
 		// returned paramValue is '\0' even though parameter is NA in R
 		// since type casting NA (which is -2'147'483'648) to SQLCHAR returns \0.
@@ -84,10 +84,13 @@ namespace ExtensionApiTest
 			make_shared<SQLCHAR>('1'),
 			make_shared<SQLCHAR>('0'),
 			make_shared<SQLCHAR>(NA_LOGICAL),
+			make_shared<SQLCHAR>(0),
+			make_shared<SQLCHAR>(1),
 			nullptr,
-			make_shared<SQLCHAR>('2') };
+			make_shared<SQLCHAR>('2'),
+			make_shared<SQLCHAR>(3) };
 		vector<SQLINTEGER> strLenOrInd = { 0, 0,
-			SQL_NULL_DATA, SQL_NULL_DATA, 0};
+			SQL_NULL_DATA, 0, 0, SQL_NULL_DATA, 0, 0 };
 		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
 		InitParam<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
@@ -621,14 +624,15 @@ namespace ExtensionApiTest
 				RType param = m_globalEnvironment[paramNameString.c_str() + 1];
 				if (strLenOrInd[paramNumber] != SQL_NULL_DATA)
 				{
-					if (DataType == SQL_C_BIT)
+					SQLType expectedParamValue = *expectedParamValues[paramNumber];
+					if constexpr (DataType == SQL_C_BIT)
 					{
 						EXPECT_EQ(param[0],
-							*expectedParamValues[paramNumber] != '0' ? true : false);
+							expectedParamValue != '0' && expectedParamValue != 0);
 					}
 					else
 					{
-						EXPECT_EQ(param[0], *expectedParamValues[paramNumber]);
+						EXPECT_EQ(param[0], expectedParamValue);
 					}
 				}
 				else
