@@ -149,19 +149,21 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
 	SQLINTEGER strLenOrInd = StrLenOrInd();
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
-		SQLINTEGER strLen_or_Ind[1] = {SQL_NULL_DATA};
+		SQLINTEGER strLen_or_Ind[1] = { SQL_NULL_DATA };
 		m_RcppVector =
 			RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
 				1, // rowsNumber
 				paramValue,
-				strLen_or_Ind);
+				strLen_or_Ind,
+				SQL_NULLABLE);
 	}
 	else
 	{
 		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
 			1,          // rowsNumber
 			paramValue,
-			nullptr);   // strLen_or_Ind
+			nullptr,    // strLen_or_Ind
+			SQL_NO_NULLS);
 	}
 }
 
@@ -455,17 +457,19 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER p
 	{
 		SQLINTEGER strLen_or_Ind[1] = { SQL_NULL_DATA };
 		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
-			1,         // rowsNumber
+			1, // rowsNumber
 			paramValue,
-			strLen_or_Ind);
+			strLen_or_Ind,
+			SQL_NULLABLE);
 	}
 	else
 	{
 		SQLINTEGER strLen_or_IndArray[1] = { strLenOrInd };
 		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
-			1,        //rowsNumber
+			1, // rowsNumber
 			paramValue,
-			strLen_or_IndArray);
+			strLen_or_IndArray,
+			SQL_NO_NULLS);
 	}
 }
 

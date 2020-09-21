@@ -258,13 +258,25 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string charColumn1Name = "CharColumn1";
-		InitializeColumn(0, charColumn1Name, SQL_C_CHAR, m_CharSize);
+		InitializeColumn(0, // columnNumber
+			charColumn1Name,
+			SQL_C_CHAR,
+			m_CharSize,
+			SQL_NO_NULLS);
 
 		string charColumn2Name = "CharColumn2";
-		InitializeColumn(1, charColumn2Name, SQL_C_CHAR, m_CharSize);
+		InitializeColumn(1, // columnNumber
+			charColumn2Name,
+			SQL_C_CHAR,
+			m_CharSize,
+			SQL_NULLABLE);
 
 		string charColumn3Name = "CharColumn3";
-		InitializeColumn(2, charColumn3Name, SQL_C_CHAR, m_CharSize);
+		InitializeColumn(2, // columnNumber
+			charColumn3Name,
+			SQL_C_CHAR,
+			m_CharSize,
+			SQL_NULLABLE);
 
 		SQLULEN rowsNumber = 5;
 		vector<const char*> charCol1{ "Hello", "test", "data", "RExtension", "-123" };
@@ -324,13 +336,25 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string ncharColumn1Name = "NCharColumn1";
-		InitializeColumn(0, ncharColumn1Name, SQL_C_WCHAR, m_NCharSize);
+		InitializeColumn(0, // columnNumber
+			ncharColumn1Name,
+			SQL_C_WCHAR,
+			m_NCharSize,
+			SQL_NO_NULLS);
 
 		string ncharColumn2Name = "NCharColumn2";
-		InitializeColumn(1, ncharColumn2Name, SQL_C_WCHAR, m_NCharSize);
+		InitializeColumn(1, // columnNumber
+			ncharColumn2Name,
+			SQL_C_WCHAR,
+			m_NCharSize,
+			SQL_NULLABLE);
 
 		string ncharColumn3Name = "NCharColumn3";
-		InitializeColumn(2, ncharColumn3Name, SQL_C_WCHAR, m_NCharSize);
+		InitializeColumn(2, // columnNumber
+			ncharColumn3Name,
+			SQL_C_WCHAR,
+			m_NCharSize,
+			SQL_NULLABLE);
 
 		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
 		vector<const wchar_t *> ncharCol2{ L"", 0, nullptr, L"verify", L"-1" };
@@ -595,13 +619,25 @@ namespace ExtensionApiTest
 			m_scriptString);
 
 		string integerColumnName = "IntegerColumn";
-		InitializeColumn(0, integerColumnName, SQL_C_SLONG, m_IntSize);
+		InitializeColumn(0, // columnNumber
+			integerColumnName,
+			SQL_C_SLONG,
+			m_IntSize,
+			SQL_NULLABLE);
 
 		string doubleColumnName = "DoubleColumn";
-		InitializeColumn(1, doubleColumnName, SQL_C_DOUBLE, m_DoubleSize);
+		InitializeColumn(1, // columnNumber
+			doubleColumnName,
+			SQL_C_DOUBLE,
+			m_DoubleSize,
+			SQL_NO_NULLS);
 
 		string charColumnName = "CharColumn";
-		InitializeColumn(2, charColumnName, SQL_C_CHAR, m_CharSize);
+		InitializeColumn(2, // columnNumber
+			charColumnName,
+			SQL_C_CHAR,
+			m_CharSize,
+			SQL_NULLABLE);
 
 		SQLULEN expectedRowsNumber = 5;
 		vector<SQLINTEGER> intColData{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 };

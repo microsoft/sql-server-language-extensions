@@ -36,9 +36,10 @@ public:
 	//
 	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 	static RType CreateVector(
-		SQLULEN      rowsNumber,
-		SQLPOINTER   data,
-		SQLINTEGER   *strLen_or_Ind);
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER  *strLen_or_Ind,
+		SQLSMALLINT nullable);
 
 	// Create a character vector in R with the data of type CharType.
 	// CharType could be the default char with utf8 encoding,
@@ -61,9 +62,10 @@ public:
 	//
 	template<class SQLType, class RType, class DateTimeTypeInR>
 	static RType CreateDateTimeVector(
-		SQLULEN    rowsNumber,
-		SQLPOINTER data,
-		SQLINTEGER *strLen_or_Ind);
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER  *strLen_or_Ind,
+		SQLSMALLINT nullable);
 
 	// Given the vectorInR, copy its content into the given std::vector pointed to by data.
 	//

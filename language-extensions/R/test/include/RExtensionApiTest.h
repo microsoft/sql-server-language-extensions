@@ -202,7 +202,8 @@ namespace ExtensionApiTest
 			SQLSMALLINT columnNumber,
 			std::string columnNameString,
 			SQLSMALLINT dataType,
-			SQLULEN     columnSize);
+			SQLULEN     columnSize,
+			SQLSMALLINT nullable);
 
 		// Templatized function to call InitializeColumn for all columns in ColumnInfo.
 		//
@@ -266,7 +267,8 @@ namespace ExtensionApiTest
 			SQLULEN     rowsNumber,
 			RType       vectorToTest,
 			void        *expectedVector,
-			SQLINTEGER  *strLen_or_Ind);
+			SQLINTEGER  *strLen_or_Ind,
+			SQLSMALLINT nullable = SQL_NULLABLE);
 
 		// Compare the given character vector and data for equality
 		//
@@ -589,7 +591,7 @@ namespace ExtensionApiTest
 	};
 
 	// ColumnInfo template class to store information
-	// about integer, basic numeric and logical columns.
+	// about integer, basic numeric, logical and date(time) columns.
 	// This assumes two columns and five rows.
 	//
 	template<class SQLType>
@@ -600,7 +602,8 @@ namespace ExtensionApiTest
 			std::string column1Name, std::vector<SQLType> column1,
 			std::vector<SQLINTEGER> col1StrLenOrInd,
 			std::string column2Name, std::vector<SQLType> column2,
-			std::vector<SQLINTEGER> col2StrLenOrInd);
+			std::vector<SQLINTEGER> col2StrLenOrInd,
+			std::vector<SQLSMALLINT> nullable);
 
 		SQLUSMALLINT GetColumnsNumber() const
 		{
@@ -615,5 +618,6 @@ namespace ExtensionApiTest
 		std::vector<SQLINTEGER> m_col1StrLenOrInd;
 		std::vector<SQLINTEGER> m_col2StrLenOrInd;
 		std::vector<SQLINTEGER*> m_strLen_or_Ind;
+		std::vector<SQLSMALLINT> m_nullable;
 	};
 }

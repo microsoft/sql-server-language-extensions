@@ -324,11 +324,13 @@ void RInputDataSet::AddColumnToDataFrame(
 
 	string name = m_columns[columnNumber].get()->Name();
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+	SQLSMALLINT nullable = m_columns[columnNumber].get()->Nullable();
 
 	m_dataFrame[name.c_str()] = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
 		rowsNumber,
 		data,
-		strLen_or_Ind);
+		strLen_or_Ind,
+		nullable);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -380,11 +382,13 @@ void RInputDataSet::AddDateTimeColumnToDataFrame(
 
 	string name = m_columns[columnNumber].get()->Name();
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+	SQLSMALLINT nullable = m_columns[columnNumber].get()->Nullable();
 
 	m_dataFrame[name.c_str()] = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
 		rowsNumber,
 		data,
-		strLen_or_Ind);
+		strLen_or_Ind,
+		nullable);
 }
 
 //--------------------------------------------------------------------------------------------------

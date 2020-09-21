@@ -321,7 +321,8 @@ namespace ExtensionApiTest
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 },
 			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA,
-				SQL_NULL_DATA, m_IntSize });
+				SQL_NULL_DATA, m_IntSize },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		m_logicalInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"LogicalColumn1",
@@ -331,7 +332,8 @@ namespace ExtensionApiTest
 			vector<SQLCHAR>{ '\0', '2', '1', '0',
 				'\0' }, // static_cast from NA_LOGICAL to SQLCHAR is '\0'.
 			vector<SQLINTEGER>{ SQL_NULL_DATA, m_LogicalSize, m_LogicalSize,
-				m_LogicalSize, SQL_NULL_DATA });
+				m_LogicalSize, SQL_NULL_DATA },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		// the input column information set here is the same used to test the expected output
 		// column results; real/bigInt input columns are returned back as double
@@ -344,7 +346,8 @@ namespace ExtensionApiTest
 			"RealColumn2",
 			vector<SQLREAL>{ m_MaxReal, NAN, m_MinReal, NAN, 0 },
 			vector<SQLINTEGER>{ m_DoubleSize, SQL_NULL_DATA, m_DoubleSize,
-				SQL_NULL_DATA, m_DoubleSize });
+				SQL_NULL_DATA, m_DoubleSize },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
@@ -353,7 +356,8 @@ namespace ExtensionApiTest
 			"DoubleColumn2",
 			vector<SQLDOUBLE>{ NAN, m_MaxDouble, NAN, m_MinDouble, NAN },
 			vector<SQLINTEGER>{ SQL_NULL_DATA, m_DoubleSize, SQL_NULL_DATA,
-				m_DoubleSize, SQL_NULL_DATA });
+				m_DoubleSize, SQL_NULL_DATA },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		m_bigIntInfo = make_unique<ColumnInfo<SQLBIGINT>>(
 			"BigIntColumn1",
@@ -363,7 +367,8 @@ namespace ExtensionApiTest
 			"BigIntColumn2",
 			vector<SQLBIGINT>(ColumnInfo<SQLBIGINT>::sm_rowsNumber, NA_REAL),
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
-				SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+				SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		// the input column information set here is the same used to test the
 		// expected output column results; smallint/tinyint input columns are returned back as
@@ -375,7 +380,8 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_IntSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ -1, 0, m_MaxSmallInt, m_MinSmallInt, 3'276 },
-			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_IntSize));
+			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_IntSize),
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NO_NULLS });
 
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
@@ -384,7 +390,8 @@ namespace ExtensionApiTest
 			"TinyIntColumn2",
 			vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 1, 0, 128 },
 			vector<SQLINTEGER>{ m_IntSize, SQL_NULL_DATA,
-				SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize });
+				SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		m_dateInfo = make_unique<ColumnInfo<SQL_DATE_STRUCT>>(
 			"DateColumn1",
@@ -405,7 +412,8 @@ namespace ExtensionApiTest
 				{}
 			},
 			vector<SQLINTEGER>{ m_DateSize, m_DateSize,
-			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		m_dateTimeInfo = make_unique<ColumnInfo<SQL_TIMESTAMP_STRUCT>>(
 			"DateTimeColumn1",
@@ -426,7 +434,8 @@ namespace ExtensionApiTest
 				{}
 			},
 			vector<SQLINTEGER>{ m_DateTimeSize, m_DateTimeSize,
-			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
 		// Retrieve the global environment
 		//
@@ -541,15 +550,16 @@ namespace ExtensionApiTest
 	// Templatized function to call InitializeColumn for all columns in ColumnInfo.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
-	void RExtensionApiTest::InitializeColumns(ColumnInfo<SQLType> *ColumnInfo)
+	void RExtensionApiTest::InitializeColumns(ColumnInfo<SQLType> *columnInfo)
 	{
-		SQLUSMALLINT inputSchemaColumnsNumber = ColumnInfo->GetColumnsNumber();
+		SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
 		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
 		{
 			InitializeColumn(columnNumber,
-				ColumnInfo->m_columnNames[columnNumber],
+				columnInfo->m_columnNames[columnNumber],
 				dataType,
-				sizeof(SQLType));
+				sizeof(SQLType),
+				columnInfo->m_nullable[columnNumber]);
 		}
 	}
 
@@ -583,7 +593,8 @@ namespace ExtensionApiTest
 		SQLSMALLINT columnNumber,
 		string      columnNameString,
 		SQLSMALLINT dataType,
-		SQLULEN     columnSize)
+		SQLULEN     columnSize,
+		SQLSMALLINT nullable)
 	{
 		SQLCHAR *columnName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(columnNameString.c_str()))
@@ -600,7 +611,7 @@ namespace ExtensionApiTest
 				dataType,
 				columnSize,
 				0,         // decimalDigits
-				1,         // nullable
+				nullable,  // nullable
 				-1,        // partitionByNumber
 				-1);       // orderByNumber
 		EXPECT_EQ(result, SQL_SUCCESS);
@@ -650,19 +661,23 @@ namespace ExtensionApiTest
 	// Templatized function to compare the given vector and data for equality.
 	// for integer/numeric/logical data types.
 	// The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
-	// Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
+	// Where strLen_or_Ind == SQL_NULL_DATA and nullable = SQL_NULLABLE, check for is_na.
+	// The default value of nullable is SQL_NULLABLE.
 	//
 	template<class SQLType, class RType, SQLSMALLINT DataType>
 	void RExtensionApiTest::CheckVectorEquality(
-		SQLULEN    expectedRowsNumber,
-		RType      vectorToTest,
-		void       *expectedData,
-		SQLINTEGER *strLen_or_Ind)
+		SQLULEN     expectedRowsNumber,
+		RType       vectorToTest,
+		void        *expectedData,
+		SQLINTEGER  *strLen_or_Ind,
+		SQLSMALLINT nullable)
 	{
 		ASSERT_EQ(static_cast<size_t>(vectorToTest.size()), expectedRowsNumber);
 		for(SQLULEN index = 0 ; index < expectedRowsNumber; ++index)
 		{
-			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
+			if (nullable &&
+				strLen_or_Ind != nullptr &&
+				strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
 				EXPECT_TRUE(RType::is_na(vectorToTest[index]));
 			}
@@ -685,40 +700,47 @@ namespace ExtensionApiTest
 	// Template instantiations
 	//
 	template void RExtensionApiTest::CheckVectorEquality<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
-		SQLULEN              expectedRowsNumber,
-		Rcpp::IntegerVector  vectorToTest,
-		void                 *expectedData,
-		SQLINTEGER           *strLenOrInd);
+		SQLULEN             expectedRowsNumber,
+		Rcpp::IntegerVector vectorToTest,
+		void                *expectedData,
+		SQLINTEGER          *strLenOrInd,
+		SQLSMALLINT         nullable);
 	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::LogicalVector vectorToTest,
 		void                *expectedData,
-		SQLINTEGER          *strLen_or_Ind);
+		SQLINTEGER          *strLen_or_Ind,
+		SQLSMALLINT         nullable);
 	template void RExtensionApiTest::CheckVectorEquality<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::NumericVector vectorToTest,
 		void                *expectedData,
-		SQLINTEGER          *strLen_or_Ind);
+		SQLINTEGER          *strLen_or_Ind,
+		SQLSMALLINT         nullable);
 	template void RExtensionApiTest::CheckVectorEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::NumericVector vectorToTest,
 		void                *expectedData,
-		SQLINTEGER          *strLen_or_Ind);
+		SQLINTEGER          *strLen_or_Ind,
+		SQLSMALLINT         nullable);
 	template void RExtensionApiTest::CheckVectorEquality<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::NumericVector vectorToTest,
 		void                *expectedData,
-		SQLINTEGER          *strLen_or_Ind);
+		SQLINTEGER          *strLen_or_Ind,
+		SQLSMALLINT         nullable);
 	template void RExtensionApiTest::CheckVectorEquality<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::IntegerVector vectorToTest,
 		void                *expectedData,
-		SQLINTEGER          *strLen_or_Ind);
+		SQLINTEGER          *strLen_or_Ind,
+		SQLSMALLINT         nullable);
 	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::IntegerVector vectorToTest,
 		void                *expectedData,
-		SQLINTEGER          *strLen_or_Ind);
+		SQLINTEGER          *strLen_or_Ind,
+		SQLSMALLINT         nullable);
 
 	// Name: CheckCharacterVectorEquality
 	//
@@ -881,12 +903,13 @@ namespace ExtensionApiTest
 	//
 	// Description:
 	// Templetized constructor for the type information.
-	// Useful for ColumnInfo of integer, basic numeric and logical types.
+	// Useful for ColumnInfo of integer, basic numeric, logical and date(time) types.
 	//
 	template<class SQLType>
 	ColumnInfo<SQLType>::ColumnInfo(
 		string column1Name, vector<SQLType> column1, vector<SQLINTEGER> col1StrLenOrInd,
-		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd)
+		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd,
+		vector<SQLSMALLINT> nullable)
 	{
 		m_columnNames = { column1Name, column2Name };
 		m_column1 = column1;
@@ -912,5 +935,6 @@ namespace ExtensionApiTest
 			m_strLen_or_Ind.push_back(m_col2StrLenOrInd.data());
 		}
 
+		m_nullable = nullable;
 	}
 }
