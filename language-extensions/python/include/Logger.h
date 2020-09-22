@@ -14,7 +14,6 @@
 #pragma once
 #include "Common.h"
 
-// TODO: work item 13292457: add different logging levels
 #define LOG(msg) Logger::Log(msg)
 #define LOG_ERROR(msg) Logger::LogError(msg)
 #define LOG_EXCEPTION(e) Logger::LogException(e)
