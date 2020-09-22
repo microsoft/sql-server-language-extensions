@@ -4,7 +4,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // https://www.boost.org/LICENSE_1_0.txt)
 //
-// @File: PythonLibrarySession.cpp
+// @File: PythonLibrarySession.h
 //
 // Purpose:
 //  Class encapsulating operations performed in a library management session
