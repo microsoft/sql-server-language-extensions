@@ -58,7 +58,7 @@ namespace ExtensionApiTest
 	//
 	// Description:
 	//  Per-test-suite set-up. Called before the first test in this test suite.
-	//  Call the base SetUpTestSuite from here.
+	//  Calls the base SetUpTestSuite from here.
 	//
 	void RExtensionLibraryApiTests::SetUpTestSuite()
 	{
@@ -70,7 +70,7 @@ namespace ExtensionApiTest
 	// Name: RExtensionLibraryApiTests::SetUp
 	//
 	// Description:
-	//  Code here will be called immediately after the constructor (right
+	//  Per-test set up. Code here will be called immediately after the constructor (right
 	//  before each test).
 	//
 	void RExtensionLibraryApiTests::SetUp()
@@ -83,8 +83,8 @@ namespace ExtensionApiTest
 	// Name: RExtensionLibraryApiTests::GetHandles
 	//
 	// Description:
-	// Get handles to install and uninstall library API functions
-	// as well as to the Embedded R environment via RInside.
+	//  Gets handles to install and uninstall library API functions
+	//  as well as to the Embedded R environment via RInside.
 	//
 	void RExtensionLibraryApiTests::GetHandles()
 	{
@@ -117,7 +117,7 @@ namespace ExtensionApiTest
 	// Name: RExtensionLibraryApiTests::SetupVariables
 	//
 	// Description:
-	//  Set up default, valid variables for use in tests
+	//  Sets up default, valid variables for use in tests
 	//
 	void RExtensionLibraryApiTests::SetupVariables()
 	{
@@ -190,7 +190,7 @@ namespace ExtensionApiTest
 	// Name: RExtensionLibraryApiTests::GetLocationOfLibrary
 	//
 	// Description:
-	//  Find the location of the given extLibName by executing the script that finds the package
+	//  Finds the location of the given extLibName by executing the script that finds the package
 	//  location. Library and package are synonyms and refer to the same object.
 	//
 	// Returns:
@@ -209,7 +209,7 @@ namespace ExtensionApiTest
 	// Name: RExtensionLibraryApiTests::GetVersionOfLibrary
 	//
 	// Description:
-	//  Find the version of the given extLibName by executing the script that finds the package
+	//  Finds the version of the given extLibName by executing the script that finds the package
 	//  version. Library and package are synonyms and refer to the same object.
 	//
 	// Returns:
@@ -224,10 +224,10 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: InstallAndTest
+	// Name: RExtensionLibraryApiTests::InstallAndTest
 	//
 	// Description:
-	//  Install a package and test it.
+	//  Installs a package and tests it.
 	//  If we expect a successful install, then we check the version and location.
 	//  We then try loading the library and check whether it loads as we expect.
 	//
@@ -300,10 +300,10 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: UninstallAndTest
+	// Name: RExtensionLibraryApiTests::UninstallAndTest
 	//
 	// Description:
-	//  Uninstall and test a package.
+	//  Uninstalls and tests a package.
 	//  If there is a different installation of the same package, then uninstalling won't
 	//  fail on import, but the version in our specified dir should be gone.
 	//
@@ -364,12 +364,15 @@ namespace ExtensionApiTest
 		}
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: BasicZipInstallTest
 	//
 	// Description:
-	//  Install a ZIP R package.
-	//  This zip package also has some random extra_file.txt,
-	//  which we should ignore without failure.
+	//  Installs a ZIP R package. On Windows, the zip is a built R package.
+	//  On Linux, the zip is actually a tar gz file containing the source of the R package
+	//  and is built as part of install.
+	//  This is because SQL Server names the external library files with .zip extension on all
+	//  platforms and we want to test in a similar way.
 	//
 	TEST_F(RExtensionLibraryApiTests, BasicZipInstallTest)
 	{

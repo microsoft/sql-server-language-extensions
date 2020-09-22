@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,17 +23,13 @@
 // Purpose:
 //  Global class to keep language runtime path settings for windows.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
-#include <exception>
-
-#include "RPathSettings.h"
-
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RPathSettings::CheckAndSetRHome
 //
 // Description:
@@ -46,7 +42,8 @@ void RPathSettings::CheckAndSetRHome()
 	sm_RHomePath =
 		Utilities::GetEnvVariable(
 		"R_HOME", // envVarName
-		// We need to log error if R_HOME is not defined on Windows since its too late to set it now.
+		// We need to log error if R_HOME is not defined on Windows
+		// since its too late to set it now.
 		//
 		true);    // logError
 
@@ -61,7 +58,7 @@ void RPathSettings::CheckAndSetRHome()
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RPathSettings::SetTZDir
 //
 // Description:

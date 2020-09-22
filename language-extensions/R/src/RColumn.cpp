@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,12 +23,19 @@
 // Purpose:
 //  Class encapsulating a DataSet's column attributes
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #include "Common.h"
 #include "RColumn.h"
 
 using namespace std;
 
+//--------------------------------------------------------------------------------------------------
+// Name: RColumn::RColumn
+//
+// Description:
+//  The constructor assigning the given column information to members.
+//
 RColumn::RColumn(
 	const SQLCHAR *columnName,
 	SQLSMALLINT   columnNameLength,

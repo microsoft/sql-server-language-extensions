@@ -43,7 +43,7 @@ const string RLibrarySession::sm_ZipExt = ".zip";
 const string RLibrarySession::sm_ScriptToGetLibPaths = ".libPaths()";
 
 //--------------------------------------------------------------------------------------------------
-// Name: GenerateScriptToSetLibPath
+// Name: RLibrarySession::GenerateScriptToSetLibPath
 //
 // Description:
 //  Creates a script that would set the libPaths to a character vector of strings.
@@ -120,7 +120,7 @@ string RLibrarySession::GenerateScriptToSetLibPath(
 // Name: RLibrarySession::GetFileExtension
 //
 // Description:
-//  Get the correct file extension by looking up the first two magic bytes from the file header
+//  Gets the correct file extension by looking up the first two magic bytes from the file header
 //  and if they are equal to 0x1f and 0x8b, returns '.tar.gz.' Otherwise returns '.zip'.
 //
 // Returns:

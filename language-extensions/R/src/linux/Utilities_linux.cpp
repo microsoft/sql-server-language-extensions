@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,15 +23,13 @@
 // Purpose:
 //  Utility functions implemented for the linux platform.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
-#include <stdlib.h>
-#include <string.h>
 #include "Common.h"
 
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::GetEnvVariable
 //
 // Description:
@@ -58,7 +56,7 @@ string Utilities::GetEnvVariable(const string &envVarName, bool logError)
 	return envVarValueString;
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::SetEnvVariable
 //
 // Description:

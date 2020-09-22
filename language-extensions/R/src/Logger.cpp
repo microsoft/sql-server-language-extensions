@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -21,19 +21,16 @@
 // @File: Logger.cpp
 //
 // Purpose:
-// Wrapper class around logging to standardize logging messages
-// and errors.
+//  Wrapper class around logging to standardize logging messages
+//  and errors.
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #include <ctime>
 #include <iostream>
 #include <stdio.h>
-#include <string>
 
 #include "Common.h"
-
-#include <R_ext/Error.h>
-#include <R_ext/Print.h>
 
 #define TIMESTAMP_LENGTH 35
 #define NANOSECONDS_IN_MILLISECOND 1000000
@@ -42,11 +39,11 @@ using namespace std;
 
 char Logger::timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 
-//-------------------------------------------------------------------------------------------------
-// Name: LogError
+//--------------------------------------------------------------------------------------------------
+// Name: Logger::LogError
 //
 // Description:
-//  Log an error to stderr with format "TIMESTAMP Error: <message>".
+//  Logs an error to stderr with format "TIMESTAMP Error: <message>".
 //
 void Logger::LogError(const string &errorMsg)
 {
@@ -54,11 +51,11 @@ void Logger::LogError(const string &errorMsg)
 	LogToStdErr(errorMsgWithTimestamp);
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: LogException
+//--------------------------------------------------------------------------------------------------
+// Name: Logger::LogException
 //
 // Description:
-//  Log a c++ exception to stderr with format "TIMESTAMP Exception
+//  Logs a c++ exception to stderr with format "TIMESTAMP Exception
 //  occurred: <message>".
 //
 void Logger::LogException(const exception &e)
@@ -68,11 +65,11 @@ void Logger::LogException(const exception &e)
 	LogToStdErr(exceptionMsgWithTimestamp);
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: Log
+//--------------------------------------------------------------------------------------------------
+// Name: Logger::Log
 //
 // Description:
-//  Log a message to stdout with format "TIMESTAMP <message>".
+//  Logs a message to stdout with format "TIMESTAMP <message>".
 //
 void Logger::Log(const string &msg)
 {
@@ -89,11 +86,11 @@ void Logger::Log(const string &msg)
 #endif
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: LogRVariable
+//--------------------------------------------------------------------------------------------------
+// Name: Logger::LogRVariable
 //
 // Description:
-//  Print out the value of the given variable name using R's print function.
+//  Prints out the value of the given variable name using R's print function.
 //  Only available in debug mode, not in release.
 //  This function has a precondition that R's environment is already initialized,
 //  otherwise it is a no-op.
@@ -101,17 +98,13 @@ void Logger::Log(const string &msg)
 void Logger::LogRVariable(const string &name)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
-	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
-	if (embeddedREnvPtr != nullptr)
-	{
-		string printVariable = "message(" + name + ");";
-		embeddedREnvPtr->parseEval(printVariable);
-	}
+	string printVariable = "message(" + name + ");";
+	ExecuteScript(printVariable);
 #endif
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: GetCurrentTimestamp
+//--------------------------------------------------------------------------------------------------
+// Name: Logger::GetCurrentTimestamp
 //
 // Description:
 //  Gets the current system time and format it to the SQL log format
@@ -144,8 +137,8 @@ const char* Logger::GetCurrentTimestamp()
 	return timestampBuffer;
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: LogToStdErr
+//--------------------------------------------------------------------------------------------------
+// Name: Logger::LogToStdErr
 //
 // Description:
 //  Logs the given message to stderr; if R is initialized uses its error printing function,

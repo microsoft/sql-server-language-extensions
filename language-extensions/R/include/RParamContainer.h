@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,10 +23,11 @@
 // Purpose:
 //  A container that stores the input and output parameters passed to the R script.
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #pragma once
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamContainer
 //
 // Description:
@@ -35,7 +36,8 @@
 class RParamContainer
 {
 public:
-	// Initialize the container with the number of parameters.
+
+	// Initializes the container with the number of parameters.
 	//
 	void Init(SQLSMALLINT paramsNumber);
 
@@ -53,7 +55,7 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
-	// For the given paramNumber, retrieve and return paramValue and strLen_or_Ind.
+	// For the given paramNumber, retrieves and returns paramValue and strLen_or_Ind.
 	//
 	void GetParamValueAndStrLenInd(
 		SQLUSMALLINT paramNumber,

@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,11 +23,11 @@
 // Purpose:
 //  Classes handling loading and retrieving data from an R Dataframe.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #pragma once
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RDataSet
 //
 // Description:
@@ -37,14 +37,14 @@ class RDataSet
 {
 public:
 
-	// Initialize the RDataSet.
+	// Initializes the RDataSet.
 	//
 	virtual void Init(
 		const SQLCHAR *dataName,
 		SQLUSMALLINT  dataNameLength,
 		SQLUSMALLINT  schemaColumnsNumber);
 
-	// Cleanup the DataFrame from R environment.
+	// Cleans up the DataFrame from R environment.
 	//
 	virtual void Cleanup();
 
@@ -74,7 +74,7 @@ public:
 		return m_columns;
 	}
 
-	// Get the underlying pointer of m_columnNullMap.
+	// Gets the underlying pointer of m_columnNullMap.
 	//
 	SQLINTEGER** GetColumnNullMap()
 	{
@@ -150,7 +150,7 @@ public:
 		SQLSMALLINT    decimalDigits,
 		SQLSMALLINT    nullable);
 
-	// Add columns to the underlying R DataFrame with the given rowsNumber and data.
+	// Adds columns to the underlying R DataFrame with the given rowsNumber and data.
 	//
 	void AddColumnsToDataFrame(
 		SQLULEN    rowsNumber,
@@ -224,7 +224,7 @@ public:
 	//
 	void GetColumnsDataType();
 
-	// Populate rowsNumber based on dataType.
+	// Populates rowsNumber based on dataType.
 	//
 	void PopulateRowsNumber();
 
@@ -235,14 +235,14 @@ public:
 		return m_rowsNumber;
 	}
 
-	// Get the underlying pointer of m_data.
+	// Gets the underlying pointer of m_data.
 	//
 	SQLPOINTER* GetData()
 	{
 		return m_data.data();
 	}
 
-	// Call CleanupColumn on each column.
+	// Calls CleanupColumn on each column.
 	//
 	void CleanupColumns();
 
@@ -284,7 +284,7 @@ private:
 		SQLSMALLINT  &decimalDigits,
 		SQLSMALLINT  &nullable);
 
-	// Determine the data type of the given columnNumber.
+	// Determines the data type of the given columnNumber.
 	//
 	SQLSMALLINT GetColumnDataType(SQLUSMALLINT columnNumber);
 

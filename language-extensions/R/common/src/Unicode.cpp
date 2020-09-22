@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 // Functions providing lengths and conversion between utf16, utf8 encoded unicode character strings.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 #include <algorithm>
 #include <cassert>
 #include <string>
@@ -52,11 +52,11 @@ constexpr size_t TwoChar8Len = 2;
 constexpr size_t ThreeChar8Len = 3;
 constexpr size_t FourChar8Len = 4;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: CharClass
 //
 // Description:
-// Enum listing different character classes.
+//  Enum listing different character classes.
 //
 enum CharClass : uint8_t
 {
@@ -77,11 +77,11 @@ enum CharClass : uint8_t
 	L4C = 11
 };
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: State
 //
 // Description:
-// DFA's states
+//  DFA's states
 //
 enum State : uint8_t
 {
@@ -102,11 +102,11 @@ enum State : uint8_t
 	err = ERR
 };
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: FirstUnitInfo
 //
 // Description:
-// Info for the first character in a multi-byte UTF-8 sequence
+//  Info for the first character in a multi-byte UTF-8 sequence
 //
 struct FirstUnitInfo
 {
@@ -114,11 +114,11 @@ struct FirstUnitInfo
 	State nextState;
 };
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: LookupTables
 //
 // Description:
-// The structure and definition for lookupTables
+//  The structure and definition for lookupTables
 //
 struct alignas(2048) LookupTables
 {
@@ -253,11 +253,11 @@ LookupTables lookupTables =
 	}
 };
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetCharClass
 //
 // Description:
-// Get the character class
+//  Gets the character class
 //
 static inline CharClass
 GetCharClass(uint8_t u)
@@ -265,11 +265,11 @@ GetCharClass(uint8_t u)
 	return lookupTables.charToCharClass[u];
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetFirstUnitInfo
 //
 // Description:
-// Get the first unit info
+//  Gets the first unit info
 //
 static inline const FirstUnitInfo &
 GetFirstUnitInfo(uint8_t u)
@@ -277,11 +277,11 @@ GetFirstUnitInfo(uint8_t u)
 	return lookupTables.charToUnitInfo[u];
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetFirstUnitInfo
 //
 // Description:
-// Get the next state
+//  Gets the next state
 //
 static inline State
 GetNextState(uint8_t u)
@@ -289,11 +289,11 @@ GetNextState(uint8_t u)
 	return lookupTables.transition[u];
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetChar16
 //
 // Description:
-// Convert a UTF32 character to UTF16 and return the number of char16_t units in len.
+//  Converts a UTF32 character to UTF16 and return the number of char16_t units in len.
 //
 static inline void
 GetChar16(char32_t char32, char16_t *char16, size_t *len)
@@ -317,11 +317,11 @@ GetChar16(char32_t char32, char16_t *char16, size_t *len)
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetChar16Len
 //
 // Description:
-// Get the length of the UTF16 representation of a UTF32 character
+//  Gets the length of the UTF16 representation of a UTF32 character
 //
 static inline size_t
 GetChar16Len(char32_t char32)
@@ -344,11 +344,11 @@ GetChar16Len(char32_t char32)
 	return ans;
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetChar32
 //
 // Description:
-// Convert a UTF16 character to UTF32 and return the number of char16s in len.
+//  Converts a UTF16 character to UTF32 and return the number of char16s in len.
 //
 static inline void
 GetChar32(const char16_t *char16, size_t char16Len, char32_t *char32, size_t *len)
@@ -377,11 +377,11 @@ GetChar32(const char16_t *char16, size_t char16Len, char32_t *char32, size_t *le
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Handle2ByteUtf8
 //
 // Description:
-// Handle utf8 characters that are 2 bytes long.
+//  Handles utf8 characters that are 2 bytes long.
 //
 static inline void
 Handle2ByteUtf8(const uint8_t* p, size_t char8Len, char32_t* char32, size_t* len, bool* ill)
@@ -408,11 +408,11 @@ Handle2ByteUtf8(const uint8_t* p, size_t char8Len, char32_t* char32, size_t* len
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: HandleUtf8
 //
 // Description:
-// Templatized function to handle utf8 characters that are 3 or 4 bytes long.
+//  Templatized function that handles utf8 characters that are 3 or 4 bytes long.
 //
 template<size_t Bytes>
 static inline void
@@ -494,11 +494,11 @@ HandleUtf8(const uint8_t* char8, size_t char8Len, char32_t* char32, size_t* len,
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetChar32
 //
 // Description:
-// Convert a UTF8 character to UTF32
+//  Converts a UTF8 character to UTF32
 //
 static inline void
 GetChar32(const char *char8, size_t char8Len, char32_t *char32, size_t *len, bool *ill)
@@ -544,11 +544,11 @@ GetChar32(const char *char8, size_t char8Len, char32_t *char32, size_t *len, boo
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetChar8Len
 //
 // Description:
-// Get the length of the UTF8 representation of a UTF32 character
+//  Gets the length of the UTF8 representation of a UTF32 character
 //
 static inline size_t
 GetChar8Len(char32_t char32) noexcept
@@ -573,11 +573,11 @@ GetChar8Len(char32_t char32) noexcept
 	return ans;
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: GetChar8
 //
 // Description:
-// Convert UTF32 to UTF8 and return the number of char8s in charLen.
+//  Converts UTF32 to UTF8 and return the number of char8s in charLen.
 //
 static inline void
 GetChar8(char32_t char32, char *char8, size_t *charLen) noexcept
@@ -622,11 +622,11 @@ GetChar8(char32_t char32, char *char8, size_t *charLen) noexcept
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf8
 //
 // Description:
-// Convert the given char16_t to an utf-8 encoded string
+//  Converts the given char16_t to an utf-8 encoded string
 //
 void ToUtf8(const char16_t *s, size_t len, std::string &ans)
 {
@@ -647,22 +647,22 @@ void ToUtf8(const char16_t *s, size_t len, std::string &ans)
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf8
 //
 // Description:
-// Convert the given u16string to an utf8 encoded string
+//  Converts the given u16string to an utf8 encoded string
 //
 void ToUtf8(const std::u16string &str, std::string &ans)
 {
 	ToUtf8(str.data(), str.size(), ans);
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf8
 //
 // Description:
-// Convert the given char16_t and size l to an utf-8 encoded string and return it back
+//  Converts the given char16_t and size l to an utf-8 encoded string and return it back
 //
 std::string ToUtf8(const char16_t *s, size_t l)
 {
@@ -671,22 +671,22 @@ std::string ToUtf8(const char16_t *s, size_t l)
 	return ans;
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf8
 //
 // Description:
-// Convert the given u16string to an utf-8 encoded string
+//  Converts the given u16string to an utf-8 encoded string
 //
 std::string ToUtf8(const std::u16string &str)
 {
 	return ToUtf8(str.data(), str.size());
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf16
 //
 // Description:
-// Convert the given char string with the given length to an utf-16 encoded u16string
+//  Converts the given char string with the given length to an utf-16 encoded u16string
 //
 void ToUtf16(const char *s, size_t l, std::u16string &ans)
 {
@@ -732,22 +732,22 @@ void ToUtf16(const char *s, size_t l, std::u16string &ans)
 	}
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf16
 //
 // Description:
-// Convert the given char string with the given length to an utf-16 encoded u16string
+//  Converts the given char string with the given length to an utf-16 encoded u16string
 //
 void ToUtf16(const std::string &str, std::u16string &ans)
 {
 	ToUtf16(str.data(), str.size(), ans);
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf16
 //
 // Description:
-// Convert the given char string with the given length to an utf-16 encoded u16string
+//  Converts the given char string with the given length to an utf-16 encoded u16string
 //
 std::u16string ToUtf16(const char *s, size_t l)
 {
@@ -756,33 +756,33 @@ std::u16string ToUtf16(const char *s, size_t l)
 	return ans;
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: ToUtf16
 //
 // Description:
-// Convert the given char string to an utf-16 encoded u16string
+//  Converts the given char string to an utf-16 encoded u16string
 //
 std::u16string ToUtf16(const std::string &str)
 {
 	return ToUtf16(str.data(), str.size());
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Utf8Size
 //
 // Description:
-// Returns the number of chars (bytes) in the string. Same as str.size().
+//  Returns the number of chars (bytes) in the string. Same as str.size().
 //
 size_t Utf8Size(const std::string &str)
 {
 	return str.size();
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Utf8Size
 //
 // Description:
-// Returns the number of chars (bytes) in the UTF8 representation of the string
+//  Returns the number of chars (bytes) in the UTF8 representation of the string
 //
 size_t Utf8Size(const char16_t *s, size_t l)
 {
@@ -800,33 +800,33 @@ size_t Utf8Size(const char16_t *s, size_t l)
 	return ans;
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Utf8Size
 //
 // Description:
-// Returns the number of chars (bytes) in the UTF8 representation of the string
+//  Returns the number of chars (bytes) in the UTF8 representation of the string
 //
 size_t Utf8Size(const std::u16string &str)
 {
 	return Utf8Size(str.data(), str.size());
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Utf16Size
 //
 // Description:
-// Returns the number of char16s in the string. Same as str.size().
+//  Returns the number of char16s in the string. Same as str.size().
 //
 size_t Utf16Size(const std::u16string &str)
 {
 	return str.size();
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Utf16Size
 //
 // Description:
-// Returns the number of char16s in the UTF16 representation of the string
+//  Returns the number of char16s in the UTF16 representation of the string
 //
 size_t Utf16Size(const char *s, size_t l)
 {
@@ -852,10 +852,11 @@ size_t Utf16Size(const char *s, size_t l)
 	return ans;
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Name: Utf16Size
 //
-// Returns the number of char16s in the UTF16 representation of the string
+// Description:
+//  Returns the number of char16s in the UTF16 representation of the string
 //
 size_t Utf16Size(const std::string &str)
 {

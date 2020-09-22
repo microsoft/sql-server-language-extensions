@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Class handling loading and retrieving data from an R Dataframe.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 #include <limits>
@@ -34,11 +34,9 @@
 #include "RDataSet.h"
 #include "RTypeUtils.h"
 
-#include "Rcpp.h"
-
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Function map - maps a ODBC C data type to the function for adding a column
 //
 const RInputDataSet::AddColumnFnMap RInputDataSet::sm_FnAddColumnMap =
@@ -132,11 +130,11 @@ const ROutputDataSet::CleanupColumnFnMap ROutputDataSet::sm_FnCleanupColumnMap =
 		 &ROutputDataSet::CleanupColumn<SQL_TIMESTAMP_STRUCT>)}
 };
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RDataSet::Init
 //
 // Description:
-//  Initialize the DataSet with name and number of columns.
+//  Initializes the DataSet with name and number of columns.
 //
 void RDataSet::Init(
 	const SQLCHAR  *dataName,
@@ -172,11 +170,11 @@ void RDataSet::Init(
 	m_columnNullMap.resize(schemaColumnsNumber);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RDataSet::Cleanup
 //
 // Description:
-//  Cleanup the DataFrame from the global R environment.
+//  Cleans up the DataFrame from the global R environment.
 //
 void RDataSet::Cleanup()
 {
@@ -190,15 +188,15 @@ void RDataSet::Cleanup()
 
 		// Execute the cleanup script to remove the DataFrame from the global R environment.
 		//
-		m_embeddedREnvPtr->parseEvalQ(cleanupScript.c_str());
+		ExecuteScript(cleanupScript.c_str());
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RInputDataSet::Init
 //
 // Description:
-//  Call the base Init and create the underlying DataFrame with stringsAsFactors = false.
+//  Calls the base Init and create the underlying DataFrame with stringsAsFactors = false.
 //  This makes sure when character columns are added, they are not converted into factors.
 //
 void RInputDataSet::Init(
@@ -210,7 +208,7 @@ void RInputDataSet::Init(
 	m_dataFrame = Rcpp::DataFrame::create(Rcpp::Named("stringsAsFactors") = false);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RInputDataSet::InitColumn
 //
 // Description:
@@ -259,11 +257,11 @@ void RInputDataSet::InitColumn(
 		nullable);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RInputDataSet::AddColumnsToDataFrame
 //
 // Description:
-//  Add columns to the underlying R DataFrame with the given rowsNumber and data.
+//  Adds columns to the underlying R DataFrame with the given rowsNumber and data.
 //
 void RInputDataSet::AddColumnsToDataFrame(
 	SQLULEN      rowsNumber,
@@ -395,7 +393,7 @@ void RInputDataSet::AddDateTimeColumnToDataFrame(
 // Name: RInputDataSet::AddDataFrameToEmbeddedR
 //
 // Description:
-//  Add the underlying R DataFrame to the embedded R environment.
+//  Adds the underlying R DataFrame to the embedded R environment.
 //
 void RInputDataSet::AddDataFrameToEmbeddedR()
 {
@@ -408,7 +406,7 @@ void RInputDataSet::AddDataFrameToEmbeddedR()
 	// Cast the list into a DataFrame
 	//
 	string castToDataFrame = m_name + "<- as.data.frame(" + m_name + ", stringsAsFactors = FALSE)";
-	m_embeddedREnvPtr->parseEvalQ(castToDataFrame);
+	ExecuteScript(castToDataFrame);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -534,7 +532,7 @@ void ROutputDataSet::GetColumnFromDataFrame(
 // Name: ROutputDataSet::GetCharacterColumnFromDataFrame
 //
 // Description:
-//  Get character column information from the underlying m_dataFrame,
+//  Gets character column information from the underlying m_dataFrame,
 //  adds data to m_data and nullmap to m_columnNullMap.
 //
 void ROutputDataSet::GetCharacterColumnFromDataFrame(
@@ -587,7 +585,7 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 // Name: ROutputDataSet::GetRawColumnFromDataFrame
 //
 // Description:
-//  Get raw column information from the underlying m_dataFrame,
+//  Gets raw column information from the underlying m_dataFrame,
 //  adds data to m_data and nullmap to m_columnNullMap.
 //
 void ROutputDataSet::GetRawColumnFromDataFrame(
@@ -737,8 +735,7 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 
 	// Evaluate the script and store the result in a string
 	//
-	Rcpp::CharacterVector classInR(static_cast<SEXP>(
-		m_embeddedREnvPtr->parseEval(scriptToFindRClass)));
+	Rcpp::CharacterVector classInR(ExecuteScriptAndGetResult(scriptToFindRClass));
 
 	// Look up the map with the key classInR.
 	//
@@ -760,8 +757,8 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 //
 // Description:
 //  Set the number of rows from the underlying DataFrame.
-//  If there is a binary raw column, number of rows is set to 1 even if the underlying DataFrame has more
-//  rows since all the bytes are returned in a single row.
+//  If there is a binary raw column, number of rows is set to 1 even if the underlying DataFrame
+//  has more rows since all the bytes are returned in a single row.
 //
 void ROutputDataSet::PopulateRowsNumber()
 {

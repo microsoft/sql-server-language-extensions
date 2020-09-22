@@ -70,6 +70,7 @@ namespace ExtensionApiTest
 	const string RExtensionApiTest::sm_RHomePath = "/usr/lib/R";
 #endif
 
+	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::SetUpTestSuite
 	//
 	// Description:
@@ -96,6 +97,7 @@ namespace ExtensionApiTest
 		++sm_numberOfSuitesInitialized;
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::TearDownTestSuite
 	//
 	// Description:
@@ -115,15 +117,23 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Code here will be called immediately after the constructor (right
-	// before each test).
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::SetUp
+	//
+	// Description:
+	//  Per-test setup. Code here will be called immediately after the constructor (right
+	//  before each test).
 	//
 	void RExtensionApiTest::SetUp()
 	{
 		SetupVariables();
 	}
 
-	// Code here will be called immediately after each test (right
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::TearDown
+	//
+	// Description:
+	//  Per-test tear-down. Code here will be called immediately after each test (right
 	// before the destructor).
 	//
 	void RExtensionApiTest::TearDown()
@@ -132,10 +142,11 @@ namespace ExtensionApiTest
 		CleanupVariables();
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::SetupLibPaths
 	//
 	// Description:
-	//  Set the library path variables.
+	//  Sets the library path variables.
 	//
 	void RExtensionApiTest::SetupLibPaths()
 	{
@@ -145,10 +156,11 @@ namespace ExtensionApiTest
 		sm_privateLibraryPath = (libPath / "private").string();
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::CreateLibPaths
 	//
 	// Description:
-	//  Create the library path directories.
+	//  Creates the library path directories.
 	//
 	void RExtensionApiTest::CreateLibPaths()
 	{
@@ -166,10 +178,11 @@ namespace ExtensionApiTest
 		EXPECT_TRUE(fs::create_directory(privateLibraryPath));
 	}
 
-	// Name: GetHandles
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetHandles
 	//
 	// Description:
-	//  Load library and get handles to different functions
+	//  Loads library and gets handles to different functions
 	//  Testing if RExtension is successfully loaded dynamically
 	//
 	void RExtensionApiTest::GetHandles()
@@ -239,11 +252,12 @@ namespace ExtensionApiTest
 		ASSERT_TRUE(m_cleanupFuncPtr != nullptr);
 	}
 
-	// Name: DoInit
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::DoInit
 	//
 	// Description:
-	//  Do Init where embedded R is initialized - can be called only once in the test suite.
-	//  Testing if Init is implemented correctly.
+	//  Does Init where embedded R is initialized - can be called only once in the test suite.
+	//  Testing if Init api is implemented correctly.
 	//
 	void RExtensionApiTest::DoInit()
 	{
@@ -274,10 +288,11 @@ namespace ExtensionApiTest
 		ASSERT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Name: SetupVariables
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::SetupVariables
 	//
 	// Description:
-	// Set up default, valid variables for use in tests
+	//  Sets up default, valid variables for use in tests
 	//
 	void RExtensionApiTest::SetupVariables()
 	{
@@ -442,10 +457,11 @@ namespace ExtensionApiTest
 		m_globalEnvironment = Rcpp::Environment::global_env();
 	}
 
-	// Name: CleanupVariables
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CleanupVariables
 	//
 	// Description:
-	// Delete the memory allocated to default variables.
+	//  Deletes the memory allocated to default variables.
 	//
 	void RExtensionApiTest::CleanupVariables()
 	{
@@ -455,10 +471,11 @@ namespace ExtensionApiTest
 		}
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ReleaseHandles
 	//
 	// Description:
-	// Close the handle to the library.
+	//  Closes the handle to the library.
 	//
 	void RExtensionApiTest::ReleaseHandles()
 	{
@@ -466,10 +483,11 @@ namespace ExtensionApiTest
 		Utilities::CrossPlatCloseLibrary(m_libHandle);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: DoCleanup
 	//
 	// Description:
-	// Call Cleanup on the RExtension.
+	// Calls Cleanup on the RExtension.
 	// Testing if Cleanup is implemented correctly.
 	//
 	void RExtensionApiTest::DoCleanup()
@@ -480,10 +498,11 @@ namespace ExtensionApiTest
 		ASSERT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Name: CleanupLibPaths
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CleanupLibPaths
 	//
 	// Description:
-	// Cleanup all the library paths created.
+	//  Cleans up all the library paths created.
 	//
 	void RExtensionApiTest::CleanupLibPaths()
 	{
@@ -497,10 +516,11 @@ namespace ExtensionApiTest
 		EXPECT_FALSE(fs::exists(libPath));
 	}
 
-	// Name: InitializeSession
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::InitializeSession
 	//
 	// Description:
-	// Initialize a valid, default session for later tests
+	//  Initializes a valid, default session for later tests
 	//
 	void RExtensionApiTest::InitializeSession(
 		SQLUSMALLINT inputSchemaColumnsNumber,
@@ -528,10 +548,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Name: CleanupSession
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CleanupSession
 	//
 	// Description:
-	// Cleanup a valid, default session for later tests
+	//  Cleans up a valid, default session for later tests
 	//
 	void RExtensionApiTest::CleanupSession()
 	{
@@ -544,10 +565,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Name: InitializeColumns
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::InitializeColumns
 	//
 	// Description:
-	// Templatized function to call InitializeColumn for all columns in ColumnInfo.
+	//  Templatized function to call InitializeColumn for all columns in ColumnInfo.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
 	void RExtensionApiTest::InitializeColumns(ColumnInfo<SQLType> *columnInfo)
@@ -584,10 +606,11 @@ namespace ExtensionApiTest
 	template void RExtensionApiTest::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 		ColumnInfo<SQL_TIMESTAMP_STRUCT> *ColumnInfo);
 
-	// Name: InitializeColumn
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::RExtensionApiTestInitializeColumn
 	//
 	// Description:
-	// Call InitColumn for the given columnNumber, columnName, dataType and columnSize.
+	//  Calls InitColumn for the given columnNumber, columnName, dataType and columnSize.
 	//
 	void RExtensionApiTest::InitializeColumn(
 		SQLSMALLINT columnNumber,
@@ -617,10 +640,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Name: GenerateContiguousData
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GenerateContiguousData
 	//
 	// Description:
-	//  Fill a contiguous array columnData with members from the given columnVector
+	//  Fills a contiguous array columnData with members from the given columnVector
 	//  having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 	//
 	template<class SQLType>
@@ -655,7 +679,8 @@ namespace ExtensionApiTest
 		vector<const wchar_t*> columnVector,
 		SQLINTEGER             *strLenOrInd);
 
-	// Name: CheckVectorEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckVectorEquality
 	//
 	// Description:
 	// Templatized function to compare the given vector and data for equality.
@@ -742,12 +767,13 @@ namespace ExtensionApiTest
 		SQLINTEGER          *strLen_or_Ind,
 		SQLSMALLINT         nullable);
 
-	// Name: CheckCharacterVectorEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckCharacterVectorEquality
 	//
 	// Description:
-	// Compare character vector with the given data and corresponding strLen_or_Ind.
-	// The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
-	// Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
+	//  Compares character vector with the given data and corresponding strLen_or_Ind.
+	//  The expectedData is input as a void*, hence we input the expectedRowsNumber as well.
+	//  Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
 	//
 	template<class CharType>
 	void RExtensionApiTest::CheckCharacterVectorEquality(
@@ -825,10 +851,11 @@ namespace ExtensionApiTest
 		void                  *expectedData,
 		SQLINTEGER            *strLen_or_Ind);
 
-	// Name: CheckDateTimeVectorEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckDateTimeVectorEquality
 	//
 	// Description:
-	// Compare the given R Date(time) vector and data for equality
+	//  Compares the given R Date(time) vector and data for equality
 	//
 	template<class SQLType, class RType, class DateTimeTypeInR>
 	void RExtensionApiTest::CheckDateTimeVectorEquality(
@@ -899,7 +926,8 @@ namespace ExtensionApiTest
 			void                 *expectedData,
 			SQLINTEGER           *strLen_or_Ind);
 
-	// Name: ColumnInfo
+	//----------------------------------------------------------------------------------------------
+	// Name: ColumnInfo::ColumnInfo
 	//
 	// Description:
 	// Templetized constructor for the type information.

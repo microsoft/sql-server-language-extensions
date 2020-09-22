@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,10 +23,11 @@
 // Purpose:
 //  Classes storing information about an RExtension input/output parameter.
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #pragma once
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParam
 //
 // Description:
@@ -36,30 +37,30 @@ class RParam
 {
 public:
 
-	// Retrieve data from m_RcppVector, fill it in m_value
+	// Retrieves data from m_RcppVector, fill it in m_value
 	// and set m_strLenOrInd accordingly.
 	//
 	virtual void RetrieveValueAndStrLenInd() = 0;
 
-	// Get m_value
+	// Gets m_value
 	//
 	virtual SQLPOINTER Value() const = 0;
 
-	// Get m_name
+	// Gets m_name
 	//
 	const std::string& Name() const
 	{
 		return m_name;
 	}
 
-	// Get m_strLenOrInd
+	// Gets m_strLenOrInd
 	//
 	SQLINTEGER StrLenOrInd() const
 	{
 		return m_strLenOrInd;
 	}
 
-	// Get m_inputOutputType
+	// Gets m_inputOutputType
 	//
 	SQLSMALLINT InputOutputType() const
 	{
@@ -141,7 +142,7 @@ protected:
 	SQLSMALLINT m_inputOutputType;
 };
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamTemplate
 //
 // Description:
@@ -166,19 +167,19 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
-	// Retrieve data from m_RcppVector, fill it in m_value
+	// Retrieves data from m_RcppVector, fill it in m_value
 	// and set m_strLenOrInd accordingly
 	//
 	void RetrieveValueAndStrLenInd() override;
 
-	// Get m_RcppVector
+	// Gets m_RcppVector
 	//
 	RType& RcppVector()
 	{
 		return m_RcppVector;
 	}
 
-	// Get the data underlying m_value vector
+	// Gets the data underlying m_value vector
 	//
 	SQLPOINTER Value() const override
 	{
@@ -212,7 +213,7 @@ private:
 	RType m_RcppVector;
 };
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RCharacterParam
 //
 // Description:
@@ -237,19 +238,19 @@ public :
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
-	// Retrieve data from m_RcppVector, fill it in m_value
+	// Retrieves data from m_RcppVector, fill it in m_value
 	// and set m_strLenOrInd accordingly
 	//
 	void RetrieveValueAndStrLenInd() override;
 
-	// Get m_RcppVector
+	// Gets m_RcppVector
 	//
 	Rcpp::CharacterVector& RcppVector()
 	{
 		return m_RcppVector;
 	}
 
-	// Get the data underlying m_value vector
+	// Gets the data underlying m_value vector
 	//
 	SQLPOINTER Value() const override
 	{
@@ -266,7 +267,7 @@ public :
 
 private:
 
-	// Set the RcppVector by creating a character object in R with given value.
+	// Sets the RcppVector by creating a character object in R with given value.
 	//
 	void SetRcppVector(SQLPOINTER paramValue);
 
@@ -281,7 +282,7 @@ private:
 	Rcpp::CharacterVector m_RcppVector;
 };
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RRawParam
 //
 // Description:
@@ -304,19 +305,19 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
-	// Retrieve data from m_RcppVector, fill it in m_value
+	// Retrieves data from m_RcppVector, fill it in m_value
 	// and set m_strLenOrInd accordingly
 	//
 	void RetrieveValueAndStrLenInd() override;
 
-	// Get m_RcppVector
+	// Gets m_RcppVector
 	//
 	Rcpp::RawVector& RcppVector()
 	{
 		return m_RcppVector;
 	}
 
-	// Get the data underlying m_value vector
+	// Gets the data underlying m_value vector
 	//
 	SQLPOINTER Value() const override
 	{
@@ -333,7 +334,7 @@ public:
 
 private:
 
-	// Set the RcppVector by creating a raw object in R with given value.
+	// Sets the RcppVector by creating a raw object in R with given value.
 	//
 	void SetRcppVector(SQLPOINTER paramValue);
 
@@ -348,7 +349,7 @@ private:
 	std::vector<SQLCHAR> m_value;
 };
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RDateTimeParam
 //
 // Description:
@@ -375,19 +376,19 @@ public:
 		SQLINTEGER    strLen_or_Ind,
 		SQLSMALLINT   inputOutputType);
 
-	// Retrieve data from m_RcppVector, fill it in m_value
+	// Retrieves data from m_RcppVector, fill it in m_value
 	// and set m_strLenOrInd accordingly
 	//
 	void RetrieveValueAndStrLenInd() override;
 
-	// Get m_RcppVector
+	// Gets m_RcppVector
 	//
 	RType& RcppVector()
 	{
 		return m_RcppVector;
 	}
 
-	// Get the data underlying m_value vector
+	// Gets the data underlying m_value vector
 	//
 	SQLPOINTER Value() const override
 	{

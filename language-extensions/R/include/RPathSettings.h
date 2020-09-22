@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,15 +23,20 @@
 // Purpose:
 //  Global class to keep language runtime path settings.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 #pragma once
 
-//	Global class storing the language runtime paths and parameters
+//--------------------------------------------------------------------------------------------------
+// Name: RPathSettings
+//
+// Description:
+//  Global class storing the language runtime paths and parameters.
 //
 class RPathSettings
 {
 public:
-	// Initialize this global class
+
+	// Initializes this global class
 	//
 	static void Init(
 		const SQLCHAR *languageParams,
@@ -39,19 +44,19 @@ public:
 		const SQLCHAR *publicLibraryPath,
 		const SQLCHAR *privateLibraryPath);
 
-	// Get the private library path sent by SQL Server
+	// Gets the private library path sent by SQL Server
 	//
 	static const std::string& PrivateLibraryPath() {return sm_privateLibraryPath; }
 
-	// Get the public library path sent by SQL Server
+	// Gets the public library path sent by SQL Server
 	//
 	static const std::string& PublicLibraryPath() {return sm_publicLibraryPath; }
 
-	// Get the extension root folder
+	// Gets the extension root folder
 	//
 	static const std::string& RootPath() {return sm_languagePath; }
 
-	// Get the language parameters sent by SQL Server
+	// Gets the language parameters sent by SQL Server
 	//
 	static const std::string& Params() {return sm_languageParams; }
 
@@ -59,11 +64,12 @@ public:
 	//
 	static void CheckAndSetRHome();
 
-	// Set the environment variable TZDIR.
+	// Sets the environment variable TZDIR.
 	//
 	static void CheckAndSetTZDir();
 
 private:
+
 	// Directory where R language extension library is extracted onto.
 	//
 	static std::string sm_languagePath;

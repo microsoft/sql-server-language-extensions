@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -24,11 +24,11 @@
 //  RExtension DLL that can be loaded by ExtHost. This library inits embedded R,
 //  handles communication with ExtHost, and executes user-specified R script
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #include "Common.h"
 
 #include <cstring>
-#include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <unordered_map>
@@ -78,10 +78,10 @@ SQLUSMALLINT GetInterfaceVersion()
 // Name: Init
 //
 // Description:
-//	Initialize the RExtension.
+//  Initializes the RExtension.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Init(
 	SQLCHAR *extensionParams,
@@ -120,15 +120,11 @@ SQLRETURN Init(
 	}
 	catch (exception &ex)
 	{
-		result = SQL_ERROR;
-
 		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		result = SQL_ERROR;
-
-		LOG_ERROR("Unexpected exception occurred in function Init()");
+		LOG_ERROR("Unexpected exception occurred in function Init().");
 	}
 
 	return result;
@@ -152,7 +148,9 @@ SQLRETURN Init(
 RSession* CheckAndGetSession(string &&funcName, SQLGUID sessionId, SQLUSMALLINT taskId)
 {
 	string sessionIdString = Utilities::ConvertGuidToString(&sessionId);
-	unordered_map<string, unique_ptr<RSession>>::const_iterator it = g_RSessionMap.find(sessionIdString);
+	unordered_map<string, unique_ptr<RSession>>::const_iterator it =
+		g_RSessionMap.find(sessionIdString);
+
 	RSession* session = nullptr;
 	bool isInitSession = funcName.compare("InitSession") == 0;
 	bool isCleanupSession = funcName.compare("CleanupSession") == 0;
@@ -197,11 +195,12 @@ RSession* CheckAndGetSession(string &&funcName, SQLGUID sessionId, SQLUSMALLINT 
 // Name: InitSession
 
 // Description:
-// Initializes session-specific data. We store the schema, parameter info, output input data info here
+//  Initializes session-specific data. We store the schema, parameter info,
+//  output input data info here.
 
 // Returns:
-// SQL_SUCCESS on success, else SQL_ERROR
-
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
 SQLRETURN InitSession(
 	SQLGUID      sessionId,
 	SQLUSMALLINT taskId,
@@ -252,19 +251,17 @@ SQLRETURN InitSession(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function InitSession()");
+		LOG_ERROR("Unexpected exception occurred in function InitSession().");
 	}
 
 	return result;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 // Name: InitColumn
 //
 // Description:
-//  Initializes column-specific data. We store the name and the data type of the column
-//  here.
+//  Initializes column-specific data. We store the name and the data type of the column here.
 //
 // Returns:
 //  SQL_SUCCESS on success, else SQL_ERROR
@@ -309,7 +306,7 @@ SQLRETURN InitColumn(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function InitColumn()");
+		LOG_ERROR("Unexpected exception occurred in function InitColumn().");
 	}
 
 	return result;
@@ -319,10 +316,10 @@ SQLRETURN InitColumn(
 // Name: InitParam
 //
 // Description:
-//	Initializes parameter-specific data.
+//  Initializes parameter-specific data.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN InitParam(
 	SQLGUID      sessionId,
@@ -344,7 +341,7 @@ SQLRETURN InitParam(
 
 	try
 	{
-		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		RSession* session = CheckAndGetSession("InitParam", sessionId, taskId);
 		session->InitParam(
 			paramNumber,
 			paramName,
@@ -364,7 +361,7 @@ SQLRETURN InitParam(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function InitParam()");
+		LOG_ERROR("Unexpected exception occurred in function InitParam().");
 	}
 
 	return result;
@@ -397,7 +394,7 @@ SQLRETURN Execute(
 
 	try
 	{
-		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		RSession* session = CheckAndGetSession("Execute", sessionId, taskId);
 		session->ExecuteWorkflow(
 			rowsNumber,
 			data,
@@ -412,7 +409,7 @@ SQLRETURN Execute(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function Execute()");
+		LOG_ERROR("Unexpected exception occurred in function Execute().");
 	}
 
 	return result;
@@ -425,7 +422,7 @@ SQLRETURN Execute(
 //  Returns information about the output column
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResultColumn(
 	SQLGUID      sessionId,
@@ -443,7 +440,7 @@ SQLRETURN GetResultColumn(
 
 	try
 	{
-		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		RSession* session = CheckAndGetSession("GetResultColumn", sessionId, taskId);
 		session->GetResultColumn(
 			columnNumber,
 			dataType,
@@ -459,7 +456,7 @@ SQLRETURN GetResultColumn(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function GetResultColumn()");
+		LOG_ERROR("Unexpected exception occurred in function GetResultColumn().");
 	}
 
 	return result;
@@ -469,10 +466,10 @@ SQLRETURN GetResultColumn(
 // Name: GetResults
 //
 // Description:
-//	Returns the output data as well as the null map retrieved from the user program
+//  Returns the output data as well as the null map retrieved from the user program
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetResults(
 	SQLGUID      sessionId,
@@ -488,7 +485,7 @@ SQLRETURN GetResults(
 
 	try
 	{
-		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		RSession* session = CheckAndGetSession("GetResults", sessionId, taskId);
 		session->GetResults(
 			rowsNumber,
 			data,
@@ -506,7 +503,7 @@ SQLRETURN GetResults(
 	{
 		result = SQL_ERROR;
 
-		LOG_ERROR("Unexpected exception occurred in function GetResults()");
+		LOG_ERROR("Unexpected exception occurred in function GetResults().");
 	}
 
 	return result;
@@ -516,10 +513,10 @@ SQLRETURN GetResults(
 // Name: GetOutputParam
 //
 // Description:
-//	Returns the output parameter's data.
+//  Returns the output parameter's data.
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN GetOutputParam(
 	SQLGUID      sessionId,
@@ -534,7 +531,7 @@ SQLRETURN GetOutputParam(
 
 	try
 	{
-		RSession* session = CheckAndGetSession("InitColumn", sessionId, taskId);
+		RSession* session = CheckAndGetSession("GetOutputParam", sessionId, taskId);
 		session->GetOutputParam(
 			paramNumber,
 			paramValue,
@@ -548,7 +545,7 @@ SQLRETURN GetOutputParam(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function GetOutputParam()");
+		LOG_ERROR("Unexpected exception occurred in function GetOutputParam().");
 	}
 
 	return result;
@@ -558,11 +555,11 @@ SQLRETURN GetOutputParam(
 // Name: CleanupSession
 //
 // Description:
-//	Cleans up the output data buffers that we persist for
-//	ExtHost to finish processing the data
+//  Cleans up the output data buffers that we persist for
+//  ExtHost to finish processing the data
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN CleanupSession(
 	SQLGUID      sessionId,
@@ -596,7 +593,7 @@ SQLRETURN CleanupSession(
 	}
 	catch (...)
 	{
-		LOG_ERROR("Unexpected exception occurred in function CleanupSession()");
+		LOG_ERROR("Unexpected exception occurred in function CleanupSession().");
 	}
 
 	return result;
@@ -606,10 +603,10 @@ SQLRETURN CleanupSession(
 // Name: Cleanup
 //
 // Description:
-//	Completely clean up the extension
+//  Completely cleans up the extension
 //
 // Returns:
-//	SQL_SUCCESS on success, else SQL_ERROR
+//  SQL_SUCCESS on success, else SQL_ERROR
 //
 SQLRETURN Cleanup()
 {
@@ -621,7 +618,7 @@ SQLRETURN Cleanup()
 	{
 		// End Embedded R - usually done by calling Rf_endEmbdeddR(0)
 		// However, with RInside, that is not needed here.
-		// When the use count of REnvironment::sm_embeddedREnvPtr storing counter to RInside reaches 0,
+		// When REnvironment::sm_embeddedREnvPtr - the unique pointer to RInside goes out of scope,
 		// it will be destructed and that will end embeddedR.
 		//
 		REnvironment::Cleanup();
@@ -692,7 +689,7 @@ SQLRETURN InstallExternalLibrary(
 	}
 	catch (...)
 	{
-		exceptionString = "Unexpected exception occurred in function InstallExternalLibrary().";
+		exceptionString = "Unexpected exception in function InstallExternalLibrary().";
 		LOG_ERROR(exceptionString);
 	}
 
@@ -746,12 +743,12 @@ SQLRETURN UninstallExternalLibrary(
 	}
 	catch (const exception & ex)
 	{
-		LOG_EXCEPTION(ex);
 		exceptionString = string(ex.what());
+		LOG_EXCEPTION(ex);
 	}
 	catch (...)
 	{
-		exceptionString = "Unexpected exception occurred in function UninstallExternalLibrary().";
+		exceptionString = "Unexpected exception in function UninstallExternalLibrary().";
 		LOG_ERROR(exceptionString);
 	}
 

@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,18 +23,17 @@
 // Purpose:
 //  Class providing functions to manipulate between R data types and SQL types.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 #include <iostream>
 
 #include "RTypeUtils.h"
 #include "Unicode.h"
-#include "Rcpp.h"
 
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Map to store the ODBC C datatype to NA value in R.
 // R_NaInt, R_NaReal are R's special values indicative of null in C++.
 // Even for logical type, NA value is R_NaInt.
@@ -63,14 +62,14 @@ const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
 	{"POSIXct", SQL_C_TYPE_TIMESTAMP}
 };
 
-//-------------------------------------------------------------------------------------------------
-// Name: CreateVector
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::CreateVector
 //
 // Description:
 //  Templatized function to create an Rcpp vector encapsulating SEXP pointers to the equivalent R
 //  objects for the given SQL type with given data. This is only for numeric,
 //  integer or logical R types. rowsNumber indicates the number of elements to be added in the vector.
-//  Iterate over data to set the value at each index of the vector.
+//  Iterates over data to set the value at each index of the vector.
 //  strLen_or_Ind if non-null is an array, where each cell represents the size of the SQL data type
 //  and null values are indicated by SQL_NULL_DATA.
 //  If at any index strLen_or_Ind is SQL_NULL_DATA, we fill the equivalent R NA value in Rcpp vector.
@@ -123,15 +122,15 @@ RType RTypeUtils::CreateVector(
 	return vectorInR;
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: CreateCharacterVector
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::CreateCharacterVector
 //
 // Description:
-//  Create a character Rcpp vector encapsulating SEXP pointers to the equivalent R character
+//  Creates a character Rcpp vector encapsulating SEXP pointers to the equivalent R character
 //  objects with the given data. If the given data is wide character utf16, convert it to utf8
 //  first before creating the Rcpp vector since R only accepts utf-8 encoding.
-//  rowsNumber indicates the number of elements
-//  to be added in the vector. Iterate over data to push_back the value to the vector.
+//  rowsNumber indicates the number of elements to be added in the vector.
+//  Iterates over data to set the value at each index of the vector.
 //  strLen_or_Ind if non-null is an array, where each cell represents the number of bytes occupied
 //  by the corresponding string in the given data and null strings are indicated by SQL_NULL_DATA.
 //  If at any index strLen_or_Ind is SQL_NULL_DATA, we fill in the NA_STRING value in Rcpp vector.
@@ -181,14 +180,14 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 	return charVector;
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: CreateRawVector
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::CreateRawVector
 //
 // Description:
-//  Create a raw Rcpp vector in R encapsulating SEXP pointers to the equivalent R raw objects
+//  Creates a raw Rcpp vector in R encapsulating SEXP pointers to the equivalent R raw objects
 //  with the given data. rowsNumber indicates the number of elements to be added in the data.
 //  Each cell in a non-null strLen_or_Ind array indicates the length of each element.
-//  Iterate over data and for each element, over each byte to push_back the value to the vector.
+//  Iterates over data and for each element, over each byte to push_back the value to the vector.
 //  If at any index strLen_or_Ind is SQL_NULL_DATA, it pushes back an empty raw(0) element.
 //  If strLen_or_Ind is nullptr, we push raw(0) for all the rows in the data.
 //
@@ -228,15 +227,15 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 	return rawVector;
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: CreateDateTimeVector
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::CreateDateTimeVector
 //
 // Description:
 //  Templatized function to create an Rcpp vector encapsulating SEXP pointers to the equivalent R
 //  objects for the given data types with given data. This is only for date, datetime(2)
 //  SQL data types mapping to Rcpp::DateVector and DateTimeVector respectively.
 //  rowsNumber indicates the number of elements to be added in the vector.
-//  Iterate over data to set the value at each index of the vector.
+//  Iterates over data to set the value at each index of the vector.
 //  strLen_or_Ind if non-null is an array, where each cell represents the size of the SQL data type
 //  and null values are indicated by SQL_NULL_DATA.
 //  If at any index strLen_or_Ind is SQL_NULL_DATA, we fill the equivalent R NA value in Rcpp vector.
@@ -327,15 +326,15 @@ RType RTypeUtils::CreateDateTimeVector(
 	return vectorInR;
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: FillDataFromVector
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::FillDataFromVector
 //
 // Description:
-//  Given the vectorInR, copy its content into the given std::vector pointed to by data.
-//  Copy the content only as far as the rowsNumber indicates.
+//  Given the vectorInR, copies its content into the given std::vector pointed to by data.
+//  Copies the content only as far as the rowsNumber indicates.
 //  The cells in the strLenOrInd array are set to the size of the SQL data type if the
 //  corresponding rows in the vectorInR are not NA.
-//  Otherwise if they are NA, set nullable to true and the corresponding cells in
+//  Otherwise if they are NA, sets nullable to true and the corresponding cells in
 //  the array strLenOrInd to SQL_NULL_DATA.
 //
 template<class SQLType, class RType, SQLSMALLINT DataType>
@@ -373,16 +372,16 @@ void RTypeUtils::FillDataFromRVector(
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: FillDataFromCharacterVector
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::FillDataFromCharacterVector
 //
 // Description:
-//  Given the vectorInR, copy its content into the given std::vector pointed to by data of SQLType.
-//  Copy the content only as far as the rowsNumber indicates.
+//  Given the vectorInR, copies its content into the given std::vector pointed to by data of SQLType.
+//  Copies the content only as far as the rowsNumber indicates.
 //  The cells in the strLenOrInd array are set to the number of bytes occupied by the
 //  corresponding strings in the vector being filled if the strings are not NA.
-//  Otherwise if they are NA strings, set nullable and the corresponding cells in the array 
-//  strLenOrInd to SQL_NULL_DATA. Also, return the maxLen of character string identified after all
+//  Otherwise if they are NA strings, sets nullable and the corresponding cells in the array
+//  strLenOrInd to SQL_NULL_DATA. Also, returns the maxLen of character string identified after all
 //  the strings are scanned. maxLen or any of the string lengths cannot exceed the allowedLen.
 //
 template<class SQLType>
@@ -455,7 +454,7 @@ void RTypeUtils::FillDataFromCharacterVector(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: FillDataFromRawVector
+// Name: RTypeUtils::FillDataFromRawVector
 //
 // Description:
 //  Given the raw vectorInR, copy its content into the given std::vector pointed to by rawCharVector.
@@ -482,14 +481,14 @@ void RTypeUtils::FillDataFromRawVector(
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: FillDataFromDateTimeVector
+// Name: RTypeUtils::FillDataFromDateTimeVector
 //
 // Description:
-//  Given the vectorInR, copy its content into the given std::vector pointed to by data.
-//  Copy the content only as far as the rowsNumber indicates.
+//  Given the vectorInR, copies its content into the given std::vector pointed to by data.
+//  Copies the content only as far as the rowsNumber indicates.
 //  The cells in the strLenOrInd array are set to the size of the SQL data type if the
 //  corresponding rows in the vectorInR are not NA.
-//  Otherwise if they are NA, set nullable to true and the corresponding cells in
+//  Otherwise if they are NA, sets nullable to true and the corresponding cells in
 //  the array strLenOrInd to SQL_NULL_DATA.
 //
 template<class SQLType, class RType, class DateTimeTypeInR>

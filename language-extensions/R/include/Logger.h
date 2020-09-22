@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -21,10 +21,10 @@
 // @File: Logger.h
 //
 // Purpose:
-// Wrapper class around logging to standardize logging messages
-// and errors.
+// Wrapper class around logging to standardize logging messages and errors.
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #pragma once
 
 #define LOG(msg) Logger::Log(msg)
@@ -34,29 +34,30 @@
 class Logger
 {
 public:
-	// Log an error to stderr
+
+	// Logs an error to stderr
 	//
 	static void LogError(const std::string &errorMsg);
 
-	// Log an extension exception to stderr
+	// Logs an extension exception to stderr
 	//
 	static void LogException(const std::exception &e);
 
-	// Log a message to stdout
+	// Logs a message to stdout
 	//
 	static void Log(const std::string &errorMsg);
 
-	// Log an R variable using R's print function
+	// Logs an R variable using R's print function
 	//
 	static void LogRVariable(const std::string &name);
 
 private:
 
-	// Log the message to stderr
+	// Logs the message to stderr
 	//
 	static void LogToStdErr(const std::string &errorMsgWithTimestamp);
 
-	// Get a string of the current timestamp in the same format
+	// Gets a string of the current timestamp in the same format
 	// of SQL format
 	//
 	static const char* GetCurrentTimestamp();

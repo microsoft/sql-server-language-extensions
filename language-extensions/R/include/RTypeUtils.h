@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Class providing functions to manipulate between R data types and SQL types.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #pragma once
 
@@ -41,7 +41,7 @@ public:
 		SQLINTEGER  *strLen_or_Ind,
 		SQLSMALLINT nullable);
 
-	// Create a character vector in R with the data of type CharType.
+	// Creates a character vector in R with the data of type CharType.
 	// CharType could be the default char with utf8 encoding,
 	// or char16_t with utf16 encoding.
 	//
@@ -51,14 +51,14 @@ public:
 		SQLPOINTER data,
 		SQLINTEGER *strLen_or_Ind);
 
-	// Create a raw vector in R corresponding to the given binary data.
+	// Creates a raw vector in R corresponding to the given binary data.
 	//
 	static Rcpp::RawVector CreateRawVector(
 		SQLULEN    rowsNumber,
 		SQLPOINTER data,
 		SQLINTEGER *strLen_or_Ind);
 
-	// Create a date/datetime vector in R corresponding to the given data.
+	// Creates a date/datetime vector in R corresponding to the given data.
 	//
 	template<class SQLType, class RType, class DateTimeTypeInR>
 	static RType CreateDateTimeVector(
@@ -67,7 +67,7 @@ public:
 		SQLINTEGER  *strLen_or_Ind,
 		SQLSMALLINT nullable);
 
-	// Given the vectorInR, copy its content into the given std::vector pointed to by data.
+	// Given the vectorInR, copies its content into the given std::vector pointed to by data.
 	//
 	template<class SQLType, class RType, SQLSMALLINT DataType>
 	static void FillDataFromRVector(
@@ -77,7 +77,7 @@ public:
 		SQLINTEGER           *strLen_or_Ind,
 		SQLSMALLINT          &nullable);
 
-	// Given the vectorInR, copy its content into the given std::vector pointed to by charVector.
+	// Given the vectorInR, copies its content into the given std::vector pointed to by charVector.
 	//
 	template<class SQLType>
 	static void FillDataFromCharacterVector(
@@ -89,7 +89,8 @@ public:
 		SQLSMALLINT           &nullable,
 		SQLULEN               &maxLen);
 
-	// Given the raw vectorInR, copy its content into the given std::vector pointed to by rawCharVector.
+	// Given the raw vectorInR, copies its content into the given std::vector
+	// pointed to by rawCharVector.
 	//
 	static void FillDataFromRawVector(
 		Rcpp::RawVector      vectorInR,
@@ -97,7 +98,7 @@ public:
 		std::vector<SQLCHAR> *data,
 		SQLINTEGER           *strLenOrInd);
 
-	// Given the vectorInR, copy its content into the given std::vector pointed to by data.
+	// Given the vectorInR, copies its content into the given std::vector pointed to by data.
 	//
 	template<class SQLType, class RType, class DateTimeTypeInR>
 	static void FillDataFromDateTimeVector(
@@ -107,15 +108,15 @@ public:
 		SQLINTEGER           *strLenOrInd,
 		SQLSMALLINT          &nullable);
 
-	// Map to store the ODBC C type to NA value mapping
+	// Maps to store the ODBC C type to NA value mapping
 	//
 	static const std::unordered_map<SQLSMALLINT, SQLPOINTER> m_dataTypeToNAMap;
 
-	// Map to store the R class to ODBC C type mapping
+	// Maps to store the R class to ODBC C type mapping
 	//
 	static const std::unordered_map<std::string, SQLSMALLINT> m_classInRToOdbcTypeMap;
 
-	// Map typedef.
+	// Maps typedef.
 	//
 	typedef std::unordered_map<std::string, SQLSMALLINT> RToOdbcTypeMap;
 };

@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension-test : Executable testing language extension that implements the SQL Server external language communication protocol.
+//**************************************************************************************************
+// RExtension-test : Executable testing language extension that implements the SQL Server
+// external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
 
 // This file is part of RExtension-test.
@@ -23,7 +24,8 @@
 //  Specifies some typedefinitions to be used in the test.
 //  And declares the base test fixture class RExtensionApiTest.
 //
-//******************************************************************************************************
+//**************************************************************************************************
+
 #pragma once
 
 typedef SQLRETURN FN_init(

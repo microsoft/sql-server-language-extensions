@@ -1,5 +1,6 @@
-//******************************************************************************************************
-// RExtension-test : Executable testing language extension that implements the SQL Server external language communication protocol.
+//**************************************************************************************************
+// RExtension-test : Executable testing language extension that implements the SQL Server
+// external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
 
 // This file is part of RExtension-test.
@@ -22,7 +23,8 @@
 // Purpose:
 //  Common headers for RExtenion-test.
 //
-//******************************************************************************************************
+//**************************************************************************************************
+
 #pragma once
 
 #ifdef _WIN64

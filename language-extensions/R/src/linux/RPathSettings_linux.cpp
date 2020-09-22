@@ -27,10 +27,6 @@
 
 #include "Common.h"
 
-#include <exception>
-
-#include "RPathSettings.h"
-
 using namespace std;
 
 //--------------------------------------------------------------------------------------------------

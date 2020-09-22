@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,14 +23,18 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language InitColumn API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
 namespace ExtensionApiTest
 {
-	// Positive and negative test
-	// Test InitColumn() API with valid values, can initialize only once.
+	//----------------------------------------------------------------------------------------------
+	// Name: InitColumnTest
+	//
+	// Description:
+	//  Tests InitColumn() API with valid values, can initialize only once.
+	//  A positive and negative test.
 	//
 	TEST_F(RExtensionApiTest, InitColumnTest)
 	{
@@ -66,8 +70,14 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
-	// Negative test
-	// Test InitColumn() API with null column name
+	//
+	// Negative tests
+	//
+	//----------------------------------------------------------------------------------------------
+	// Name: InitInvalidColumnTest
+	//
+	// Description:
+	//  Tests InitColumn() API with null column name. A negative test.
 	//
 	TEST_F(RExtensionApiTest, InitInvalidColumnTest)
 	{
@@ -90,8 +100,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
-	// Negative test
-	// Test InitColumn() API with bad column numbers (too big)
+	//----------------------------------------------------------------------------------------------
+	// Name: InitInvalidColumnNumberTest
+	//
+	// Description:
+	//  Tests InitColumn() API with bad column numbers (too big). A negative test.
 	//
 	TEST_F(RExtensionApiTest, InitInvalidColumnNumberTest)
 	{
@@ -113,8 +126,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
-	// Negative test
-	// Test InitColumn() API with unsupported column datatype
+	//----------------------------------------------------------------------------------------------
+	// Name: InitInvalidColumnDataTypeTest
+	//
+	// Description:
+	//  Tests InitColumn() API with unsupported column datatype. A negative test.
 	//
 	TEST_F(RExtensionApiTest, InitInvalidColumnDataTypeTest)
 	{

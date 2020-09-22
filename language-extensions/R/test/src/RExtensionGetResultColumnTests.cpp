@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language GetResultColumn API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
@@ -31,10 +31,12 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
+
+	//----------------------------------------------------------------------------------------------
 	// Name: GetIntegerResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of Integer columns.
 	//
 	TEST_F(RExtensionApiTest, GetIntegerResultColumnsTest)
 	{
@@ -67,10 +69,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetLogicalResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Logical columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of Logical columns.
 	//
 	TEST_F(RExtensionApiTest, GetLogicalResultColumnsTest)
 	{
@@ -103,10 +106,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetRealResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Real columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of Real columns.
 	//
 	TEST_F(RExtensionApiTest, GetRealResultColumnsTest)
 	{
@@ -139,10 +143,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDoubleResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Double columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of Double columns.
 	//
 	TEST_F(RExtensionApiTest, GetDoubleResultColumnsTest)
 	{
@@ -175,10 +180,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetBigIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of BigInteger columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of BigInteger columns.
 	//
 	TEST_F(RExtensionApiTest, GetBigIntResultColumnsTest)
 	{
@@ -211,10 +217,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetSmallIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of SmallInt columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of SmallInt columns.
 	//
 	TEST_F(RExtensionApiTest, GetSmallIntResultColumnsTest)
 	{
@@ -247,10 +254,11 @@ namespace ExtensionApiTest
 			SQL_NO_NULLS); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetTinyIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of TinyInt columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of TinyInt columns.
 	//
 	TEST_F(RExtensionApiTest, GetTinyIntResultColumnsTest)
 	{
@@ -283,10 +291,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetCharResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of Character columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of Character columns.
 	//
 	TEST_F(RExtensionApiTest, GetCharResultColumnsTest)
 	{
@@ -374,10 +383,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetNCharResultColumnsTest
 	//
 	// Description:
-	//  Test GetResultColumn with default script using an OutputDataSet of nchar columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of nchar columns.
 	//
 	TEST_F(RExtensionApiTest, GetNCharResultColumnsTest)
 	{
@@ -500,10 +510,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // expectedNullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetRawResultColumnTest
 	//
 	// Description:
-	// Test GetResultColumn with a script that returns OutputDataSet with a single raw column.
+	//  Tests GetResultColumn with a script that returns OutputDataSet with a single raw column.
 	//
 	TEST_F(RExtensionApiTest, GetRawResultColumnTest)
 	{
@@ -568,10 +579,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDateResultColumnsTest
 	//
 	// Description:
-	//  Test GetResultColumn with default script expecting an OutputDataSet of Date columns.
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of Date columns.
 	//
 	TEST_F(RExtensionApiTest, GetDateResultColumnsTest)
 	{
@@ -605,10 +617,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE);   // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDateTimeResultColumnsTest
 	//
 	// Description:
-	//  Test GetResultColumn with default script expecting an OutputDataSet of DateTime columns.
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of DateTime columns.
 	//
 	TEST_F(RExtensionApiTest, GetDateTimeResultColumnsTest)
 	{
@@ -641,10 +654,11 @@ namespace ExtensionApiTest
 			SQL_NULLABLE);        // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDifferentResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of different column types.
+	//  Tests GetResultColumn with default script using an OutputDataSet of different column types.
 	//
 	TEST_F(RExtensionApiTest, GetDifferentResultColumnsTest)
 	{
@@ -725,10 +739,11 @@ namespace ExtensionApiTest
 			SQL_NO_NULLS); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetEmptyResultColumnTest
 	//
 	// Description:
-	// Test GetResultColumn with a script that returns OutputDataSet with empty rows.
+	//  Tests GetResultColumn with a script that returns OutputDataSet with empty rows.
 	//
 	TEST_F(RExtensionApiTest, GetEmptyResultColumnTest)
 	{
@@ -762,10 +777,11 @@ namespace ExtensionApiTest
 			SQL_NO_NULLS); // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetResultColumn
 	//
 	// Description:
-	// Test GetResultColumn to verify the expected result column information is obtained.
+	//  Tests GetResultColumn to verify the expected result column information is obtained.
 	//
 	void RExtensionApiTest::GetResultColumn(
 		SQLUSMALLINT columnNumber,

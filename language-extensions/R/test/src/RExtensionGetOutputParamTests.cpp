@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language GetOutputParam API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
@@ -31,10 +31,11 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
+	//----------------------------------------------------------------------------------------------
 	// Name: GetIntegerOutputParamTest
 	//
 	// Description:
-	// Test multiple SQLINTEGER values
+	//  Tests multiple SQLINTEGER values.
 	//
 	TEST_F(RExtensionApiTest, GetIntegerOutputParamTest)
 	{
@@ -97,10 +98,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetLogicalOutputParamTest
 	//
 	// Description:
-	// Test multiple logical (bit) values
+	//  Tests multiple logical (bit) values.
 	//
 	TEST_F(RExtensionApiTest, GetLogicalOutputParamTest)
 	{
@@ -191,10 +193,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetRealOutputParamTest
 	//
 	// Description:
-	// Test multiple real values
+	//  Tests multiple real values.
 	//
 	TEST_F(RExtensionApiTest, GetRealOutputParamTest)
 	{
@@ -255,10 +258,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDoubleOutputParamTest
 	//
 	// Description:
-	// Test multiple double values
+	//  Tests multiple double values.
 	//
 	TEST_F(RExtensionApiTest, GetDoubleOutputParamTest)
 	{
@@ -319,10 +323,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetBigIntOutputParamTest
 	//
 	// Description:
-	// Test multiple big int values
+	//  Tests multiple big int values.
 	//
 	TEST_F(RExtensionApiTest, GetBigIntOutputParamTest)
 	{
@@ -389,10 +394,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetSmallIntOutputParamTest
 	//
 	// Description:
-	// Test multiple small int values
+	//  Tests multiple small int values.
 	//
 	TEST_F(RExtensionApiTest, GetSmallIntOutputParamTest)
 	{
@@ -456,10 +462,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetTinyIntOutputParamTest
 	//
 	// Description:
-	// Test multiple tiny int values
+	//  Tests multiple tiny int values.
 	//
 	TEST_F(RExtensionApiTest, GetTinyIntOutputParamTest)
 	{
@@ -526,10 +533,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetCharOutputParamTest
 	//
 	// Description:
-	// Test multiple character values
+	//  Tests multiple character values.
 	//
 	TEST_F(RExtensionApiTest, GetCharOutputParamTest)
 	{
@@ -619,10 +627,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetNCharOutputParamTest
 	//
 	// Description:
-	// Test multiple nchar/nvarchar values
+	//  Tests multiple nchar/nvarchar values.
 	//
 	TEST_F(RExtensionApiTest, GetNCharOutputParamTest)
 	{
@@ -714,10 +723,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetRawOutputParamTest
 	//
 	// Description:
-	// Test multiple binary values
+	//  Tests multiple binary values.
 	//
 	TEST_F(RExtensionApiTest, GetRawOutputParamTest)
 	{
@@ -798,10 +808,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDateOutputParamTest
 	//
 	// Description:
-	// Test multiple DATE values
+	//  Tests multiple DATE values.
 	//
 	TEST_F(RExtensionApiTest, GetDateOutputParamTest)
 	{
@@ -891,10 +902,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDateTimeOutputParamTest
 	//
 	// Description:
-	// Test multiple DATETIME values
+	//  Tests multiple DATETIME values.
 	//
 	TEST_F(RExtensionApiTest, GetDateTimeOutputParamTest)
 	{
@@ -996,10 +1008,11 @@ namespace ExtensionApiTest
 			expectedStrLenOrInd);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetInvalidOutputParamTest
 	//
 	// Description:
-	// Negative tests.
+	//  Negative tests.
 	//
 	TEST_F(RExtensionApiTest, GetInvalidOutputParamTest)
 	{
@@ -1061,10 +1074,11 @@ namespace ExtensionApiTest
 		ASSERT_EQ(result, SQL_ERROR);
 	}
 
-	// Name: GetOutputParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetOutputParam
 	//
 	// Description:
-	// Templatized function to test output param value and strLenOrInd is as expected.
+	//  Templatized function to test output param value and strLenOrInd is as expected.
 	//
 	template<class SQLType>
 	void RExtensionApiTest::GetOutputParam(
@@ -1117,10 +1131,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetCharOutputParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetCharOutputParam
 	//
 	// Description:
-	// Test character output param value and strLenOrInd is as expected.
+	//  Tests character output param value and strLenOrInd is as expected.
 	//
 	void RExtensionApiTest::GetCharOutputParam(
 		vector<SQLCHAR*>   expectedParamValues,
@@ -1158,10 +1173,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetNCharOutputParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetNCharOutputParam
 	//
 	// Description:
-	// Test nchar/nvarchar output param value and strLenOrInd are as expected.
+	//  Tests nchar/nvarchar output param value and strLenOrInd are as expected.
 	//
 	void RExtensionApiTest::GetNCharOutputParam(
 		vector<const wchar_t*> expectedParamValues,
@@ -1209,10 +1225,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetRawOutputParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetRawOutputParam
 	//
 	// Description:
-	// Test raw (binary) output param value and strLenOrInd is as expected.
+	//  Tests raw (binary) output param value and strLenOrInd is as expected.
 	//
 	void RExtensionApiTest::GetRawOutputParam(
 		vector<SQLCHAR*>   expectedParamValues,
@@ -1249,10 +1266,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetDateTimeOutputParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetDateTimeOutputParam
 	//
 	// Description:
-	// Templatized function to test output param value and strLenOrInd is as expected.
+	//  Templatized function to test output param value and strLenOrInd is as expected.
 	//
 	template<class SQLType>
 	void RExtensionApiTest::GetDateTimeOutputParam(

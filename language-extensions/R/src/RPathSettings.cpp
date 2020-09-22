@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,11 +23,9 @@
 // Purpose:
 //  Global class to keep language runtime path settings for both platforms.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
-
-#include "RPathSettings.h"
 
 using namespace std;
 
@@ -37,7 +35,7 @@ string RPathSettings::sm_privateLibraryPath;
 string RPathSettings::sm_publicLibraryPath;
 string RPathSettings::sm_RHomePath;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RPathSettings::Init
 //
 // Description:

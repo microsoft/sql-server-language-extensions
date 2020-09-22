@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,16 +23,14 @@
 // Purpose:
 //  Utility functions implemented for the windows platform.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
-#include <stdlib.h>
-#include <string.h>
 #include "Common.h"
 
 using namespace std;
 
 //--------------------------------------------------------------------------------------------------
-// Name: GetAndLogLastError
+// Name: LogLastError
 //
 // Description:
 //  Logs the message with the given error after converting it in hex format. Windows only.
@@ -99,7 +97,7 @@ string Utilities::GetEnvVariable(const string &envVarName, bool logError)
 	return envVarValue;
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::SetEnvVariable
 //
 // Description:

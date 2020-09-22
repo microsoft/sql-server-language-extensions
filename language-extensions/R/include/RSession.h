@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Class encapsulating operations performed per R script session
 //
-//*************************************************************************************************
+//**************************************************************************************************
 #pragma once
 
 // Forward Declarations
@@ -31,11 +31,16 @@
 class Column;
 class Parameter;
 
-// Data pertaining to a session
+//--------------------------------------------------------------------------------------------------
+// Name: RSession
+//
+// Description:
+//  Stores data pertaining to a session.
 //
 class RSession
 {
 public:
+
 	// Constructor to initialize the members
 	//
 	RSession()
@@ -44,7 +49,7 @@ public:
 		m_numTasks(0)
 	{}
 
-	// Init the session
+	// Inits the session
 	//
 	void Init(
 		const SQLGUID  &sessionId,
@@ -59,7 +64,7 @@ public:
 		const SQLCHAR  *outputDataName,
 		SQLUSMALLINT   outputDataNameLength);
 
-	// Init the input column
+	// Inits the input column
 	//
 	void InitColumn(
 		SQLUSMALLINT   columnNumber,
@@ -72,7 +77,7 @@ public:
 		SQLSMALLINT    partitionByNumber,
 		SQLSMALLINT    orderByNumber);
 
-	// Init the input parameter
+	// Inits the input parameter
 	//
 	void InitParam(
 		SQLUSMALLINT   paramNumber,
@@ -85,7 +90,7 @@ public:
 		SQLINTEGER     strLen_or_Ind,
 		SQLSMALLINT    inputOutputType);
 
-	// Execute the workflow for the session
+	// Executes the workflow for the session
 	//
 	void ExecuteWorkflow(
 		SQLULEN       rowsNumber,
@@ -93,7 +98,7 @@ public:
 		SQLINTEGER    **strLen_or_Ind,
 		SQLUSMALLINT  *outputSchemaColumnsNumber);
 
-	// Get the metadata for the output column
+	// Gets the metadata for the output column
 	//
 	void GetResultColumn(
 		SQLUSMALLINT columnNumber,
@@ -102,21 +107,21 @@ public:
 		SQLSMALLINT  *decimalDigits,
 		SQLSMALLINT  *nullable);
 
-	// Get the results
+	// Gets the results
 	//
 	void GetResults(
 		SQLULEN      *rowsNumber,
 		SQLPOINTER   **data,
 		SQLINTEGER   ***strLen_or_Ind);
 
-	// Get the the output parameter
+	// Gets the the output parameter
 	//
 	void GetOutputParam(
 		SQLUSMALLINT paramNumber,
 		SQLPOINTER   *paramValue,
 		SQLINTEGER   *strLen_or_Ind);
 
-	// Cleanup session
+	// Cleans up session
 	//
 	void Cleanup();
 
@@ -152,10 +157,4 @@ private:
 	// OutputDataSet
 	//
 	ROutputDataSet m_outputDataSet;
-
-	// A pointer to the embedded R environment via RInside.
-	// We execute all R scripts in this environment and there can only be a single
-	// instance of RInside in the extension.
-	//
-	RInside* m_embeddedREnvPtr;
 };

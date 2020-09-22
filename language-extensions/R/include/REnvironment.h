@@ -21,13 +21,15 @@
 //  @File: REnvironment.h
 //
 // Purpose:
-//  Global class to keep the global embedded R environment.
+//  Class to keep the global embedded R environment.
 //
 //**************************************************************************************************
 
 #pragma once
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+// Name: REnvironment
+//
 // Description:
 //  Global class storing the global embedded R environment.
 //
@@ -87,8 +89,6 @@ REXTENSION_INTERFACE void ExecuteScript(const std::string &script);
 // Executes the given script and returns the result as an SEXP pointer.
 //
 REXTENSION_INTERFACE SEXP ExecuteScriptAndGetResult(const std::string &script);
-
-REXTENSION_INTERFACE RInside* GetEmbeddedREnvironment();
 
 #ifdef __cplusplus
 } /* End of extern "C" { */

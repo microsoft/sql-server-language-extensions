@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language InitParam API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
@@ -31,10 +31,11 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
+	//----------------------------------------------------------------------------------------------
 	// Name: InitIntegerParamTest
 	//
 	// Description:
-	// Test multiple SQLINTEGER values
+	//  Tests multiple SQLINTEGER values.
 	//
 	TEST_F(RExtensionApiTest, InitIntegerParamTest)
 	{
@@ -63,10 +64,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitLogicalParamTest
 	//
 	// Description:
-	// Test multiple logical (bit) values
+	//  Tests multiple logical (bit) values.
 	//
 	TEST_F(RExtensionApiTest, InitLogicalParamTest)
 	{
@@ -99,10 +101,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitRealParamTest
 	//
 	// Description:
-	// Test multiple real values
+	//  Tests multiple real values.
 	//
 	TEST_F(RExtensionApiTest, InitRealParamTest)
 	{
@@ -129,10 +132,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitDoubleParamTest
 	//
 	// Description:
-	// Test multiple double values
+	//  Tests multiple double values.
 	//
 	TEST_F(RExtensionApiTest, InitDoubleParamTest)
 	{
@@ -160,10 +164,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitBigIntParamTest
 	//
 	// Description:
-	// Test multiple big int values
+	//  Tests multiple big int values.
 	//
 	TEST_F(RExtensionApiTest, InitBigIntParamTest)
 	{
@@ -190,10 +195,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitSmallIntParamTest
 	//
 	// Description:
-	// Test multiple small int values
+	//  Tests multiple small int values.
 	//
 	TEST_F(RExtensionApiTest, InitSmallIntParamTest)
 	{
@@ -223,10 +229,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitTinyIntParamTest
 	//
 	// Description:
-	// Test multiple tiny int values
+	//  Tests multiple tiny int values.
 	//
 	TEST_F(RExtensionApiTest, InitTinyIntParamTest)
 	{
@@ -257,10 +264,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitCharParamTest
 	//
 	// Description:
-	// Test multiple character values
+	//  Tests multiple character values
 	//
 	TEST_F(RExtensionApiTest, InitCharParamTest)
 	{
@@ -314,7 +322,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
-	// Test multiple NCHAR and NVARCHAR values
+	//----------------------------------------------------------------------------------------------
+	// Name: InitNCharParamTest
+	//
+	// Description:
+	//  Tests multiple NCHAR and NVARCHAR values.
 	//
 	TEST_F(RExtensionApiTest, InitNCharParamTest)
 	{
@@ -375,10 +387,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitRawParamTest
 	//
 	// Description:
-	// Test multiple binary values
+	//  Tests multiple binary values.
 	//
 	TEST_F(RExtensionApiTest, InitRawParamTest)
 	{
@@ -433,10 +446,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitDateParamTest
 	//
 	// Description:
-	//  Test multiple DATE values
+	//  Tests multiple DATE values.
 	//
 	TEST_F(RExtensionApiTest, InitDateParamTest)
 	{
@@ -476,10 +490,11 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitDateTimeParamTest
 	//
 	// Description:
-	//  Test multiple DATETIME values
+	//  Tests multiple DATETIME values.
 	//
 	TEST_F(RExtensionApiTest, InitDateTimeParamTest)
 	{
@@ -519,8 +534,14 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
-	// Negative test
-	// Test InitParam() API with null parameter name
+	//
+	// Negative tests
+	//
+	//----------------------------------------------------------------------------------------------
+	// Name: InitNullNameParamTest
+	//
+	// Description:
+	//  Tests InitParam() API with null parameter name. A negative test.
 	//
 	TEST_F(RExtensionApiTest, InitNullNameParamTest)
 	{
@@ -549,8 +570,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
-	// Negative test
-	// Test InitParam() API with bad param numbers (too big)
+	//----------------------------------------------------------------------------------------------
+	// Name: InitInvalidParamNumberTest
+	//
+	// Description:
+	//  Tests InitParam() API with bad param numbers (too big). A negative test.
 	//
 	TEST_F(RExtensionApiTest, InitInvalidParamNumberTest)
 	{
@@ -581,12 +605,13 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
-	// Name: InitParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::InitParam
 	//
 	// Description:
-	// Templatized function to call InitParam for the given paramValues and dataType.
-	// Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
-	// When inRange is false and paramValue is 0, it tests a nullptr paramValue given to InitParam.
+	//  Templatized function to call InitParam for the given paramValues and dataType.
+	//  Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
+	//  When inRange is false and paramValue is 0, it tests a nullptr paramValue given to InitParam.
 	//
 	template<class SQLType, class RType, SQLSMALLINT DataType>
 	void RExtensionApiTest::InitParam(
@@ -643,11 +668,12 @@ namespace ExtensionApiTest
 		}
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: InitCharParam
 	//
 	// Description:
-	// Templatized function testing if InitParam is implemented correctly for the
-	// (n)char/(n)varchar dataTypes
+	//  Templatized function testing if InitParam is implemented correctly for the
+	//  (n)char/(n)varchar dataTypes
 	//
 	template<class CharType, SQLSMALLINT DataType>
 	void RExtensionApiTest::InitCharParam(
@@ -762,10 +788,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: InitRawParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::InitRawParam
 	//
 	// Description:
-	// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
+	//  Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 	//
 	void RExtensionApiTest::InitRawParam(
 		vector<SQLCHAR*>    expectedParamValues,
@@ -820,7 +847,8 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: InitDateTimeParam
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::InitDateTimeParam
 	//
 	// Description:
 	//  Testing if InitParam is implemented correctly for the date/datetime dataTypes.

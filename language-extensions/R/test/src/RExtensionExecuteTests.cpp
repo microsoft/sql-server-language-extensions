@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language Execute API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
@@ -31,10 +31,11 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteIntegerColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of Integer columns.
+	//  Tests Execute with default script using an InputDataSet of Integer columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteIntegerColumnsTest)
 	{
@@ -54,10 +55,11 @@ namespace ExtensionApiTest
 			(*m_integerInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteLogicalColumnsTest
 	//
 	// Description:
-	// Test Execute using an InputDataSet of Logical columns.
+	//  Tests Execute using an InputDataSet of Logical columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteLogicalColumnsTest)
 	{
@@ -77,10 +79,11 @@ namespace ExtensionApiTest
 			(*m_logicalInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteRealColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of Real columns.
+	//  Tests Execute with default script using an InputDataSet of Real columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteRealColumnsTest)
 	{
@@ -100,10 +103,11 @@ namespace ExtensionApiTest
 			(*m_realInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteDoubleColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of Double columns.
+	//  Tests Execute with default script using an InputDataSet of Double columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteDoubleColumnsTest)
 	{
@@ -123,10 +127,11 @@ namespace ExtensionApiTest
 			(*m_doubleInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteBigIntColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of BigInteger columns.
+	//  Tests Execute with default script using an InputDataSet of BigInteger columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteBigIntColumnsTest)
 	{
@@ -146,10 +151,11 @@ namespace ExtensionApiTest
 			(*m_bigIntInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteSmallIntColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of SmallInt columns.
+	//  Tests Execute with default script using an InputDataSet of SmallInt columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteSmallIntColumnsTest)
 	{
@@ -169,10 +175,11 @@ namespace ExtensionApiTest
 			(*m_smallIntInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteTinyIntColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of TinyInt columns.
+	//  Tests Execute with default script using an InputDataSet of TinyInt columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteTinyIntColumnsTest)
 	{
@@ -192,10 +199,11 @@ namespace ExtensionApiTest
 			(*m_tinyIntInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteCharColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of Character columns.
+	//  Tests Execute with default script using an InputDataSet of Character columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteCharColumnsTest)
 	{
@@ -259,10 +267,11 @@ namespace ExtensionApiTest
 			columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteNCharColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of NCHAR/NVARCHAR columns.
+	//  Tests Execute with default script using an InputDataSet of NCHAR/NVARCHAR columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteNCharColumnsTest)
 	{
@@ -338,10 +347,11 @@ namespace ExtensionApiTest
 			columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteDifferentColumnsTest
 	//
 	// Description:
-	// Test Execute with default script using an InputDataSet of different column types.
+	//  Tests Execute with default script using an InputDataSet of different column types.
 	//
 	TEST_F(RExtensionApiTest, ExecuteDifferentColumnsTest)
 	{
@@ -457,10 +467,11 @@ namespace ExtensionApiTest
 			inputDataSet[2]);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteDateColumnsTest
 	//
 	// Description:
-	//  Test Execute with default script using an InputDataSet of Date columns.
+	//  Tests Execute with default script using an InputDataSet of Date columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteDateColumnsTest)
 	{
@@ -481,10 +492,11 @@ namespace ExtensionApiTest
 			(*m_dateInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: ExecuteDateTimeColumnsTest
 	//
 	// Description:
-	//  Test Execute with default script using an InputDataSet of DateTime columns.
+	//  Tests Execute with default script using an InputDataSet of DateTime columns.
 	//
 	TEST_F(RExtensionApiTest, ExecuteDateTimeColumnsTest)
 	{
@@ -504,15 +516,16 @@ namespace ExtensionApiTest
 			(*m_dateTimeInfo).m_columnNames);
 	}
 
-	// Name: Execute
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::Execute
 	//
 	// Description:
-	// Templatized function to call Execute with default script that assigns Input to Output.
-	// for integer/numeric/logical data types.
-	// If validate is true (which is the default), it checks the correctness of the:
-	//  1. Executed script,
-	//  2. InputDataSet and
-	//  3. OutputDataSet
+	//  Templatized function to call Execute with default script that assigns Input to Output.
+	//  for integer/numeric/logical data types.
+	//  If validate is true (which is the default), it checks the correctness of the:
+	//   1. Executed script,
+	//   2. InputDataSet and
+	//   3. OutputDataSet
 	//
 	template<class SQLType, class RType, SQLSMALLINT dataType>
 	void RExtensionApiTest::Execute(
@@ -567,14 +580,15 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: ExecuteChar
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::ExecuteChar
 	//
 	// Description:
-	// Call Execute with default script for Character columns.
-	// If validate is true (which is the default), it checks the correctness of the:
-	//  1. Executed script,
-	//  2. InputDataSet and
-	//  3. OutputDataSet
+	//  Calls Execute with default script for Character columns.
+	//  If validate is true (which is the default), it checks the correctness of the:
+	//   1. Executed script,
+	//   2. InputDataSet and
+	//   3. OutputDataSet
 	//
 	template<class CharType>
 	void RExtensionApiTest::ExecuteChar(
@@ -645,15 +659,16 @@ namespace ExtensionApiTest
 		vector<string> columnNames,
 		bool           validate);
 
-	// Name: ExecuteDateTime
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::ExecuteDateTime
 	//
 	// Description:
-	// Templatized function to call Execute with default script that assigns Input to Output.
-	// for date/datetime types.
-	// If validate is true (which is the default), it checks the correctness of the:
-	//  1. Executed script,
-	//  2. InputDataSet and
-	//  3. OutputDataSet
+	//  Templatized function to call Execute with default script that assigns Input to Output.
+	//  for date/datetime types.
+	//  If validate is true (which is the default), it checks the correctness of the:
+	//   1. Executed script,
+	//   2. InputDataSet and
+	//   3. OutputDataSet
 	//
 	template<class SQLType, class RType, class DateTimeTypeInR>
 	void RExtensionApiTest::ExecuteDateTime(
@@ -708,10 +723,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: CheckVectorEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckVectorEquality
 	//
 	// Description:
-	// Templatized function to compare the given vectors for equality
+	//  Templatized function to compare the given vectors for equality.
 	//
 	template<class RType>
 	void RExtensionApiTest::CheckVectorEquality(
@@ -733,10 +749,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: CheckDataFrameEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckDataFrameEquality
 	//
 	// Description:
-	// Templatized function to compare the given dataframes for equality.
+	//  Templatized function to compare the given dataframes for equality.
 	//
 	template<class RType>
 	void RExtensionApiTest::CheckDataFrameEquality(

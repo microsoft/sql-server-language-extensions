@@ -21,7 +21,7 @@
 //  @File: REnvironment.cpp
 //
 // Purpose:
-//  Global class to keep the global R environment.
+//  Class to keep the global R environment.
 //
 //**************************************************************************************************
 
@@ -33,7 +33,6 @@ using namespace std;
 
 unique_ptr<RInside> REnvironment::sm_embeddedREnvPtr = nullptr;
 unique_ptr<Rcpp::CharacterVector> REnvironment::sm_originalPath = nullptr;
-
 
 //--------------------------------------------------------------------------------------------------
 // Name: GetScriptWithTryCatch
@@ -130,18 +129,6 @@ SEXP ExecuteScriptAndGetResult(const string &script)
 }
 
 //--------------------------------------------------------------------------------------------------
-// Name: GetEmbeddedREnvironment
-//
-// Description:
-//  Wrapper around returning the embedded R environment pointer visible as a function handle
-//  outside of the RExtension dll.
-//
-RInside* GetEmbeddedREnvironment()
-{
-	return REnvironment::EmbeddedREnvironment();
-}
-
-//--------------------------------------------------------------------------------------------------
 // Name: REnvironment::Init
 //
 // Description:
@@ -167,7 +154,8 @@ void REnvironment::Init(SQLULEN extensionParamsLength)
 	else
 	{
 		// If no command line, pass in a dummy input script
-		// Rf_initEmbeddedR needs an input script parameter as the first argument even if it isn't used.
+		// Rf_initEmbeddedR needs an input script parameter as the first argument
+		// even if it isn't used.
 		//
 		argsForR.push_back(dummyInputScriptPtr.get());
 	}
@@ -178,7 +166,8 @@ void REnvironment::Init(SQLULEN extensionParamsLength)
 	argsForR.push_back(noSaveOptionPtr.get());
 
 	// Initialize the R runtime using the parameters set above.
-	// Generate an unique pointer first then move it to be shared to avoid printing issues on windows.
+	// Generate an unique pointer first then move it to be shared to avoid
+	// printing issues on windows.
 	//
 	sm_embeddedREnvPtr = make_unique<RInside>(argsForR.size(), argsForR.data());
 

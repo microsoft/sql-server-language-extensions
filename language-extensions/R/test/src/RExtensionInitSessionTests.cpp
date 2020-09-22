@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,13 +23,17 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language InitSession API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
 namespace ExtensionApiTest
 {
-	// Test InitSession() API with valid values
+	//----------------------------------------------------------------------------------------------
+	// Name: InitSessionTest
+	//
+	// Description:
+	//  Tests InitSession() API with valid values.
 	//
 	TEST_F(RExtensionApiTest, InitSessionTest)
 	{
@@ -102,8 +106,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
-	// Negative test
-	// Test InitSession() API with invalid values
+	//----------------------------------------------------------------------------------------------
+	// Name: InitInvalidSessionTest
+	//
+	// Description:
+	// Test InitSession() API with invalid values. A negative test.
 	//
 	TEST_F(RExtensionApiTest, InitInvalidSessionTest)
 	{

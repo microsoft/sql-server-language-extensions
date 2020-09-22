@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -21,22 +21,18 @@
 // @File: RParamContainer.cpp
 //
 // Purpose:
-// RExtension input/output parameters wrappers, along with the container consolidating them.
+//  RExtension input/output parameters wrappers, along with the container consolidating them.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
-#include <sqlext.h>
-#include <string>
 
 #include "RParam.h"
 #include "RParamContainer.h"
 
-#include "Rcpp.h"
-
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Function map - maps a ODBC C data type to the appropriate param creator
 //
 const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
@@ -76,8 +72,8 @@ const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
 		<RDateTimeParam<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>>)},
 };
 
-//-------------------------------------------------------------------------------------------------
-// Name: Init
+//--------------------------------------------------------------------------------------------------
+// Name: RParamContainer::Init
 //
 // Description:
 //  Initialize this container with the number of parameters.
@@ -89,12 +85,12 @@ void RParamContainer::Init(SQLSMALLINT paramsNumber)
 	m_params.resize(paramsNumber);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamContainer::AddParamToEmbeddedR
 //
 // Description:
-//  Creates an RParam object containing an RcppVector, assigns the parameter name to this RcppVector
-//  so that the underlying R object can be accessed via this parameter name in the
+//  Creates an RParam object containing an RcppVector, assigns the parameter name to this
+//  RcppVector so that the underlying R object can be accessed via this parameter name in the
 //  embedded R environment.
 //  Eventually, adds the RParam to m_params for future use.
 //  Creation is done by calling the respective constructor based on the datatype.
@@ -132,7 +128,7 @@ void RParamContainer::AddParamToEmbeddedR(
 		inputOutputType);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamContainer::CreateParam
 //
 // Description:
@@ -173,12 +169,12 @@ void RParamContainer::CreateParam(
 	m_params[paramNumber] = std::move(paramToBeAdded);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamContainer::GetParamValueAndStrLenInd
 //
 // Description:
-//  For the given paramNumber, call RetriveValueAndStrLenOrInd() to retrieve the value from R and
-//  return it via paramValue. Return the strLenOrInd as well.
+//  For the given paramNumber, calls RetriveValueAndStrLenOrInd() to retrieve the value from R and
+//  returns it via paramValue. Return the strLenOrInd as well.
 //
 void RParamContainer::GetParamValueAndStrLenInd(
 	SQLUSMALLINT paramNumber,

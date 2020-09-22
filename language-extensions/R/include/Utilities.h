@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,13 +23,14 @@
 // Purpose:
 //  Utility functions
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #pragma once
 
 class Utilities
 {
 public:
+
 	// Converts a SQLGUID to a string
 	//
 	static std::string ConvertGuidToString(const SQLGUID * guid);
@@ -39,7 +40,7 @@ public:
 	//
 	static void Tokenize(char *input, const char* delimiter, std::vector<char*> *tokens);
 
-	// Given a constant string input, generate a unique pointer
+	// Given a constant string input, generates a unique pointer
 	// pointing to a char array containing the same contents as that of the input
 	//
 	static std::unique_ptr<char[]> GenerateUniquePtr(const std::string &input);
@@ -58,15 +59,15 @@ public:
 	static std::string GetSecondsAfterDecimalPointFromNanoSeconds(
 		SQLUINTEGER nanoSeconds);
 
-	// Find the current time zone defined in R if any
+	// Finds the current time zone defined in R if any
 	//
 	static std::string GetTimeZoneInR();
 
-	// Set the time zone in R to the given value or unset it if the value is empty.
+	// Sets the time zone in R to the given value or unset it if the value is empty.
 	//
 	static void SetTimeZoneInR(std::string valueToSet);
 
-	// Normalize path strings by replacting \ with /
+	// Normalizes path strings by replacting \ with /
 	//
 	static std::string NormalizePathString(std::string pathString);
 };

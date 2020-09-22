@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Functions providing lengths and conversion between utf16, utf8 encoded unicode characters.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 #pragma once
 
 #include <string>

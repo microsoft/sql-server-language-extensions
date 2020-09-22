@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,20 +23,16 @@
 // Purpose:
 //  Class storing information about the RExtension input/output parameter.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
-#include <sqlext.h>
-#include "string.h"
 #include "RParam.h"
 #include "RTypeUtils.h"
 
-#include "Rcpp.h"
-
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParam::RParam
 //
 // Description:
@@ -76,7 +72,7 @@ RParam::RParam(
 	m_name = string(name + 1, paramNameLength - 1);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParam::CheckParamSize
 //
 // Description:
@@ -99,7 +95,7 @@ void RParam::CheckParamSize()
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamTemplate::RParamTemplate
 //
 // Description:
@@ -128,7 +124,7 @@ RParamTemplate<SQLType, RType, NAType, DataType>::RParamTemplate(
 	SetRcppVector(paramValue);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamTemplate::SetRcppVector
 //
 // Description:
@@ -167,11 +163,11 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RParamTemplate::RetrieveValueAndStrLenInd
 //
 // Description:
-//  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
+//  Retrieves data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
 template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
 void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd()
@@ -213,7 +209,7 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RCharacterParam::RCharacterParam
 //
 // Description:
@@ -242,11 +238,11 @@ RCharacterParam<CharType, SQLType>::RCharacterParam(
 	SetRcppVector(paramValue);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RCharacterParam::SetRcppVector
 //
 // Description:
-//  Set the RcppVector for RCharacterParam with the given paramValue.
+//  Sets the RcppVector for RCharacterParam with the given paramValue.
 //  This is a wrapper to CreateCharacterVector with rowsNumber = 1.
 //  For null parameters, a size one vector with member value = NA_STRING is created.
 //
@@ -273,11 +269,11 @@ void RCharacterParam<CharType, SQLType>::SetRcppVector(SQLPOINTER paramValue)
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RCharacterParam::RetrieveValueAndStrLenInd
 //
 // Description:
-//  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
+//  Retrieves data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
 template<class CharType, class SQLType>
 void RCharacterParam<CharType, SQLType>::RetrieveValueAndStrLenInd()
@@ -322,7 +318,7 @@ void RCharacterParam<CharType, SQLType>::RetrieveValueAndStrLenInd()
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RRawParam::RRawParam
 //
 // Description:
@@ -350,11 +346,11 @@ RRawParam::RRawParam(
 	SetRcppVector(paramValue);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RRawParam::SetRcppVector
 //
 // Description:
-//  Set the RcppVector for RRawParam with the given paramValue.
+//  Sets the RcppVector for RRawParam with the given paramValue.
 //  This is a wrapper to CreateRawVector with rowsNumber = 1.
 //  For null parameters, a size one vector with member value = raw(0) is created.
 //
@@ -371,11 +367,11 @@ void RRawParam::SetRcppVector(SQLPOINTER paramValue)
 		strLen_or_IndArray);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RRawParam::RetrieveValueAndStrLenInd
 //
 // Description:
-//  Retrieve data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
+//  Retrieves data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
 void RRawParam::RetrieveValueAndStrLenInd()
 {
@@ -409,8 +405,8 @@ void RRawParam::RetrieveValueAndStrLenInd()
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
-// Name: RDateTimeParam
+//--------------------------------------------------------------------------------------------------
+// Name: RDateTimeParam::RDateTimeParam
 //
 // Description:
 //  Constructor.
@@ -439,11 +435,11 @@ RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RDateTimeParam(
 	SetRcppVector(paramValue);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RDateTimeParam::SetRcppVector
 //
 // Description:
-//  Set the RcppVector for RDateTimeParam with the given paramValue.
+//  Sets the RcppVector for RDateTimeParam with the given paramValue.
 //  This is a wrapper to CreateDateTimeVector with rowsNumber = 1.
 //  For null parameters, a size one vector with member value = NA is created.
 //
@@ -473,7 +469,7 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER p
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RDateTimeParam::RetrieveValueAndStrLenInd
 //
 // Description:

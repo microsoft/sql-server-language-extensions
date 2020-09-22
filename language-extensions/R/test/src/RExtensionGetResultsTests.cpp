@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,7 +23,7 @@
 // Purpose:
 //  Tests the RExtension's implementation of the external language GetResults API.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #include "Common.h"
 
@@ -31,10 +31,11 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
+	//----------------------------------------------------------------------------------------------
 	// Name: GetIntegerResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of Integer column data.
+	//  Tests GetResults with default script expecting an OutputDataSet of Integer column data.
 	//
 	TEST_F(RExtensionApiTest, GetIntegerResultsTest)
 	{
@@ -61,10 +62,11 @@ namespace ExtensionApiTest
 			(*m_integerInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetLogicalResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of Logical column data.
+	//  Tests GetResults with default script expecting an OutputDataSet of Logical column data.
 	//
 	TEST_F(RExtensionApiTest, GetLogicalResultsTest)
 	{
@@ -91,10 +93,11 @@ namespace ExtensionApiTest
 			(*m_logicalInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetRealResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of Real column data.
+	//  Tests GetResults with default script expecting an OutputDataSet of Real column data.
 	//
 	TEST_F(RExtensionApiTest, GetRealResultsTest)
 	{
@@ -121,10 +124,11 @@ namespace ExtensionApiTest
 			(*m_realInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDoubleResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of Double column data.
+	//  Tests GetResults with default script expecting an OutputDataSet of Double column data.
 	//
 	TEST_F(RExtensionApiTest, GetDoubleResultsTest)
 	{
@@ -151,10 +155,11 @@ namespace ExtensionApiTest
 			(*m_doubleInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetBigIntResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of BigInteger columns.
+	//  Tests GetResults with default script expecting an OutputDataSet of BigInteger columns.
 	//
 	TEST_F(RExtensionApiTest, GetBigIntResultsTest)
 	{
@@ -181,10 +186,11 @@ namespace ExtensionApiTest
 			(*m_bigIntInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetSmallIntResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of SmallInt columns.
+	//  Tests GetResults with default script expecting an OutputDataSet of SmallInt columns.
 	//
 	TEST_F(RExtensionApiTest, GetSmallIntResultsTest)
 	{
@@ -211,10 +217,11 @@ namespace ExtensionApiTest
 			(*m_smallIntInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetTinyIntResultColumnsTest
 	//
 	// Description:
-	// Test GetResultColumn with default script using an OutputDataSet of TinyInt columns.
+	//  Tests GetResultColumn with default script using an OutputDataSet of TinyInt columns.
 	//
 	TEST_F(RExtensionApiTest, GetTinyIntResultsTest)
 	{
@@ -241,10 +248,11 @@ namespace ExtensionApiTest
 			(*m_tinyIntInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetCharResultsTest
 	//
 	// Description:
-	// Test GetResults with default script expecting an OutputDataSet of Character columns.
+	//  Tests GetResults with default script expecting an OutputDataSet of Character columns.
 	//
 	TEST_F(RExtensionApiTest, GetCharResultsTest)
 	{
@@ -319,10 +327,11 @@ namespace ExtensionApiTest
 			columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetNCharResultsTest
 	//
 	// Description:
-	//  Test GetResults with default script expecting an OutputDataSet of NChar columns.
+	//  Tests GetResults with default script expecting an OutputDataSet of NChar columns.
 	//
 	TEST_F(RExtensionApiTest, GetNCharResultsTest)
 	{
@@ -447,10 +456,11 @@ namespace ExtensionApiTest
 			columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetRawResultsTest
 	//
 	// Description:
-	// Test GetResults with a script that returns OutputDataSet with a single raw column.
+	//  Tests GetResults with a script that returns OutputDataSet with a single raw column.
 	//
 	TEST_F(RExtensionApiTest, GetRawResultsTest)
 	{
@@ -543,10 +553,11 @@ namespace ExtensionApiTest
 		EXPECT_EQ(strLen_or_Ind[0], nullptr);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDateResultsTest
 	//
 	// Description:
-	//  Test GetResults with default script expecting an OutputDataSet of Date column data.
+	//  Tests GetResults with default script expecting an OutputDataSet of Date column data.
 	//
 	TEST_F(RExtensionApiTest, GetDateResultsTest)
 	{
@@ -574,10 +585,11 @@ namespace ExtensionApiTest
 			(*m_dateInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDateTimeResultsTest
 	//
 	// Description:
-	//  Test GetResults with default script expecting an OutputDataSet of DateTime column data.
+	//  Tests GetResults with default script expecting an OutputDataSet of DateTime column data.
 	//
 	TEST_F(RExtensionApiTest, GetDateTimeResultsTest)
 	{
@@ -604,10 +616,11 @@ namespace ExtensionApiTest
 			(*m_dateTimeInfo).m_columnNames);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetDifferentColumnResultsTest
 	//
 	// Description:
-	// Test GetResults with default script using an OutputDataSet of different column types.
+	//  Tests GetResults with default script using an OutputDataSet of different column types.
 	//
 	TEST_F(RExtensionApiTest, GetDifferentColumnResultsTest)
 	{
@@ -733,10 +746,11 @@ namespace ExtensionApiTest
 			strLen_or_Ind[2]);
 	}
 
+	//----------------------------------------------------------------------------------------------
 	// Name: GetEmptyResultsTest
 	//
 	// Description:
-	// Test GetResults with a script that returns OutputDataSet with empty rows.
+	//  Tests GetResults with a script that returns OutputDataSet with empty rows.
 	//
 	TEST_F(RExtensionApiTest, GetEmptyResultsTest)
 	{
@@ -770,11 +784,12 @@ namespace ExtensionApiTest
 			vector<string>{"intCol"});
 	}
 
-	// Name: GetResults
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetResults
 	//
 	// Description:
-	// Test GetResults to verify the expected results are obtained.
-	// For numeric, logical and integer types.
+	//  Tests GetResults to verify the expected results are obtained.
+	//  For numeric, logical and integer types.
 	//
 	template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT outputDataType>
 	void RExtensionApiTest::GetResults(
@@ -824,11 +839,12 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: CheckColumnDataEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckColumnDataEquality
 	//
 	// Description:
-	// Templatized function to compare the given column data
-	// and nullMap with rowsNumber for equality.
+	//  Templatized function to compare the given column data
+	//  and nullMap with rowsNumber for equality.
 	//
 	template<class InputSQLType, class OutputSQLType, SQLSMALLINT OutputDataType>
 	void RExtensionApiTest::CheckColumnDataEquality(
@@ -890,10 +906,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetCharResults
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetCharResults
 	//
 	// Description:
-	// Test GetResults to verify the expected results are obtained for character data.
+	//  Tests GetResults to verify the expected results are obtained for character data.
 	//
 	void RExtensionApiTest::GetCharResults(
 		SQLULEN        expectedRowsNumber,
@@ -942,10 +959,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: CheckCharDataEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckCharDataEquality
 	//
 	// Description:
-	// Compare the given character data & nullMap with rowsNumber for equality.
+	//  Compares the given character data & nullMap with rowsNumber for equality.
 	//
 	void RExtensionApiTest::CheckCharDataEquality(
 		SQLULEN    rowsNumber,
@@ -976,10 +994,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: GetDateTimeResults
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetDateTimeResults
 	//
 	// Description:
-	// Test GetResults to verify the expected results are obtained for date(time) data.
+	//  Tests GetResults to verify the expected results are obtained for date(time) data.
 	//
 	template<class SQLType, class RType, class DateTimeTypeInR>
 	void RExtensionApiTest::GetDateTimeResults(
@@ -1029,10 +1048,11 @@ namespace ExtensionApiTest
 		}
 	}
 
-	// Name: CheckDateTimeDataEquality
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::CheckDateTimeDataEquality
 	//
 	// Description:
-	//  Compare the given datetime data & nullMap for equality.
+	//  Compares the given datetime data & nullMap for equality.
 	//
 	template<class SQLType>
 	void RExtensionApiTest::CheckDateTimeDataEquality(

@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,12 +23,8 @@
 // Purpose:
 //  Utility functions implemented for both the platforms.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
-#include <memory>
-#include <stdlib.h>
-#include <string.h>
-#include <vector>
 #include "Common.h"
 
 using namespace std;
@@ -40,8 +36,12 @@ using namespace std;
 
 const char* GuidFormat="%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 
-// Given a constant string input, generate a unique pointer
-// pointing to a char array containing the same contents as that of the input
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::GenerateUniquePtr
+//
+// Description:
+//  Given a constant string input, generates a unique pointer
+//  pointing to a char array containing the same contents as that of the input
 //
 unique_ptr<char[]> Utilities::GenerateUniquePtr(const string &inputStr)
 {
@@ -142,7 +142,7 @@ string Utilities::GetSecondsAfterDecimalPointFromNanoSeconds(
 // Name: Utilities::GetTimeZoneInR
 //
 // Description:
-// Find the current time zone defined in R if any
+//  Finds the current time zone defined in R if any
 //
 // Returns:
 //  The time zone environment variable's value as a string if it is set or an empty string if not.
@@ -173,35 +173,33 @@ string Utilities::GetTimeZoneInR()
 // Name: Utilities::SetTimeZoneInR
 //
 // Description:
-// Set the time zone in R to the given value or unset it if the value is empty.
+//  Sets the time zone in R to the given value or unset it if the value is empty.
 //
 // Returns:
-// Nothing.
+//  Nothing.
 //
 void Utilities::SetTimeZoneInR(string valueToSet)
 {
-	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
-
 	if (valueToSet.length() > 0)
 	{
 		// Reset the stored time zone using the temporary variable above.
 		//
-		embeddedREnvPtr->parseEvalQ("Sys.setenv(TZ = '" + valueToSet + "')");
+		ExecuteScript("Sys.setenv(TZ = '" + valueToSet + "')");
 	}
 	else
 	{
 		// If time zone was not set, unset it again.
 		// On Windows, it default is UTC while on Linux it is the local time zone.
 		//
-		embeddedREnvPtr->parseEvalQ("Sys.unsetenv('TZ')");
+		ExecuteScript("Sys.unsetenv('TZ')");
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: Utilities::NormalizePathString
 //
 // Description:
-//  Normalize path strings by replacting \ with / and the trailing / with a null terminator.
+//  Normalizes path strings by replacting \ with / and the trailing / with a null terminator.
 //
 // Returns:
 //  The normalized path string

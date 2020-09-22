@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -24,6 +24,7 @@
 //  Utility functions
 //
 //**************************************************************************************************
+
 #pragma once
 
 # define LOCAL_DATE 1

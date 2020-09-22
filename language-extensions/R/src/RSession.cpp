@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -23,10 +23,10 @@
 // Purpose:
 //  Class encapsulating operations performed per R script
 //
-//*************************************************************************************************
+//**************************************************************************************************
+
 #include "Common.h"
 
-#include <memory>
 #include <stdexcept>
 
 #include "RColumn.h"
@@ -38,7 +38,7 @@
 
 using namespace std;
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::Init
 //
 // Description:
@@ -59,7 +59,6 @@ void RSession::Init(
 {
 	LOG("RSession::Init");
 
-	m_embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 	m_sessionId = sessionId;
 	m_taskId = taskId;
 	m_numTasks = numTasks;
@@ -98,7 +97,7 @@ void RSession::Init(
 	m_paramContainer.Init(parametersNumber);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::Init
 //
 // Description:
@@ -127,7 +126,7 @@ void RSession::InitColumn(
 		nullable);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::InitParam
 //
 // Description:
@@ -169,11 +168,11 @@ void RSession::InitParam(
 		inputOutputType);
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::ExecuteWorkflow
 //
 // Description:
-//  Execute the workflow for the session
+//  Executes the workflow for the session
 //
 void RSession::ExecuteWorkflow(
 	SQLULEN      rowsNumber,
@@ -193,7 +192,7 @@ void RSession::ExecuteWorkflow(
 
 	// Execute the script, any standard output or error is flushed to the console.
 	//
-	m_embeddedREnvPtr->parseEvalQ(m_script.c_str());
+	ExecuteScript(m_script);
 
 	// In case of streaming clean up the previous stream batch's output buffers
 	//
@@ -216,7 +215,7 @@ void RSession::ExecuteWorkflow(
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::GetResultColumn
 //
 // Description:
@@ -259,7 +258,7 @@ void RSession::GetResultColumn(
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::GetResults
 //
 // Description:
@@ -285,7 +284,7 @@ void RSession::GetResults(
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::GetOutputParam
 //
 // Description:
@@ -314,7 +313,7 @@ void RSession::GetOutputParam(
 	}
 }
 
-//-------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 // Name: RSession::Cleanup()
 //
 // Description:

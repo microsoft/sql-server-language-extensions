@@ -36,7 +36,7 @@ using namespace std;
 // Name: Utilities::GetMaxLength
 //
 // Description:
-// Get max length from given arrayOfLengths with size = rowsNumber.
+//  Gets max length from given arrayOfLengths with size = rowsNumber.
 //
 SQLINTEGER Utilities::GetMaxLength(
 	SQLINTEGER *arrayOfLengths,
@@ -58,7 +58,7 @@ SQLINTEGER Utilities::GetMaxLength(
 // Name: Utilities::GetWStringLength
 //
 // Description:
-//  Get the length of a wchar_t *.
+//  Gets the length of a wchar_t *.
 //  wcslen does not work in Linux with -fshort-wchar, so we use this function instead.
 //
 SQLULEN Utilities::GetWStringLength(const wchar_t *wstr)
@@ -102,7 +102,7 @@ time_t Utilities::GetNow()
 // Name: Utilities::GetTodaysDate
 //
 // Description:
-//  Get the current UTC date in the form of a SQL_DATE_STRUCT
+//  Gets the current UTC date in the form of a SQL_DATE_STRUCT
 //
 template<SQLSMALLINT DateType>
 SQL_DATE_STRUCT Utilities::GetTodaysDate()
@@ -137,10 +137,10 @@ template SQL_DATE_STRUCT Utilities::GetTodaysDate<LOCAL_DATE>();
 template SQL_DATE_STRUCT Utilities::GetTodaysDate<UTC_DATE>();
 
 //--------------------------------------------------------------------------------------------------
-// Name: ToUtc
+// Name: Utilities::ToUtc
 //
 // Description:
-//  Convert the given SQLDateTimeType into an equivalent UTC SQLDateTimeType
+//  Converts the given SQLDateTimeType into an equivalent UTC SQLDateTimeType
 //
 template<class SQLDateTimeType>
 SQLDateTimeType Utilities::ToUtc(SQLDateTimeType givenDateTime)

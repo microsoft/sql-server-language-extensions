@@ -27,6 +27,12 @@
 
 #pragma once
 
+//--------------------------------------------------------------------------------------------------
+// Name: RLibrarySession
+//
+// Description:
+//  Class encapsulating operations performed in a library management session.
+//
 class RLibrarySession
 {
 public:
@@ -65,7 +71,7 @@ public:
 		Rcpp::CharacterVector pathsVector,
 		bool                  isLastElementLibPaths);
 
-	// Get the correct file extension by looking up the first two magic bytes.
+	// Gets the correct file extension by looking up the first two magic bytes.
 	//
 	static std::string GetFileExtension(const std::string &libFilePathStr);
 

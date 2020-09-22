@@ -1,4 +1,4 @@
-//*************************************************************************************************
+//**************************************************************************************************
 // RExtension : A language extension implementing the SQL Server
 // external language communication protocol for R.
 // Copyright (C) 2019 Microsoft Corporation.
@@ -21,9 +21,9 @@
 // @File: Common.h
 //
 // Purpose:
-//  Common headers for RExtension
+//  Common headers for RExtension.
 //
-//*************************************************************************************************
+//**************************************************************************************************
 
 #pragma once
 
@@ -31,9 +31,11 @@
 #include <windows.h>
 #endif
 
+#include <exception>
 #include <memory>
 #include <sqlext.h>
 #include <sqltypes.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
