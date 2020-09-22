@@ -62,7 +62,7 @@ namespace ExtensionApiTest
 	//
 	void RExtensionLibraryApiTests::SetUpTestSuite()
 	{
-		RExtensionApiTest::SetUpTestSuite();
+		RExtensionApiTests::SetUpTestSuite();
 		GetHandles();
 	}
 
@@ -75,7 +75,7 @@ namespace ExtensionApiTest
 	//
 	void RExtensionLibraryApiTests::SetUp()
 	{
-		RExtensionApiTest::SetUp();
+		RExtensionApiTests::SetUp();
 		SetupVariables();
 	}
 
@@ -90,25 +90,25 @@ namespace ExtensionApiTest
 	{
 		sm_installExternalLibraryFuncPtr = reinterpret_cast<FN_installExternalLibrary*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"InstallExternalLibrary"));
 		ASSERT_TRUE(sm_installExternalLibraryFuncPtr != nullptr);
 
 		sm_uninstallExternalLibraryFuncPtr = reinterpret_cast<FN_uninstallExternalLibrary*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"UninstallExternalLibrary"));
 		ASSERT_TRUE(sm_uninstallExternalLibraryFuncPtr != nullptr);
 
 		sm_executeScriptFuncPtr = reinterpret_cast<FN_executeScript*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"ExecuteScript"));
 		ASSERT_TRUE(sm_executeScriptFuncPtr != nullptr);
 
 		sm_executeScriptAndGetResultFuncPtr = reinterpret_cast<FN_executeScriptAndGetResult*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"ExecuteScriptAndGetResult"));
 		ASSERT_TRUE(sm_executeScriptAndGetResultFuncPtr != nullptr);
 	}
@@ -123,7 +123,7 @@ namespace ExtensionApiTest
 	{
 		// First call the base SetupVariables
 		//
-		RExtensionApiTest::SetupVariables();
+		RExtensionApiTests::SetupVariables();
 
 		string enlRoot = string(getenv("ENL_ROOT"));
 
@@ -388,11 +388,11 @@ namespace ExtensionApiTest
 		InstallAndTest(
 			libName,
 			pkgPath.string(),
-			RExtensionApiTest::sm_publicLibraryPath,
+			RExtensionApiTests::sm_publicLibraryPath,
 			version);
 
 		UninstallAndTest(
 			libName,
-			RExtensionApiTest::sm_publicLibraryPath);
+			RExtensionApiTests::sm_publicLibraryPath);
 	}
 }

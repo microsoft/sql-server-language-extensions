@@ -166,7 +166,7 @@ private:
 	// Adds a single column of values into the R DataFrame
 	// template for basic numeric and integer types.
 	//
-	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
+	template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
 	void AddColumnToDataFrame(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
@@ -182,7 +182,7 @@ private:
 
 	// Adds a single column of date(time) values into the R DataFrame.
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR>
+	template<class SQLType, class RVectorType, class DateTimeTypeInR>
 	void AddDateTimeColumnToDataFrame(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,
@@ -250,7 +250,7 @@ private:
 
 	// Gets the column information, adds data to m_data and nullmap to m_columnNullMap
 	//
-	template<class RType, class SQLType, SQLSMALLINT dataType>
+	template<class RVectorType, class SQLType, SQLSMALLINT dataType>
 	void GetColumnFromDataFrame(
 		SQLUSMALLINT columnNumber,
 		SQLULEN      &columnSize,
@@ -277,7 +277,7 @@ private:
 
 	// Gets the date(time) column information, adds data to m_data and nullmap to m_columnNullMap
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR>
+	template<class SQLType, class RVectorType, class DateTimeTypeInR>
 	void GetDateTimeColumnFromDataFrame(
 		SQLUSMALLINT columnNumber,
 		SQLULEN      &columnSize,

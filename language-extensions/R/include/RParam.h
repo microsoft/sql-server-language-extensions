@@ -147,9 +147,9 @@ protected:
 //
 // Description:
 //  Template class representing numeric, integer, logical parameters by storing the RcppVector of
-//  given RType for the corresponding SQLType and having NA value of NAType.
+//  given RVectorType for the corresponding SQLType and having NA value of NAType.
 //
-template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
+template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
 class RParamTemplate : public RParam
 {
 
@@ -174,7 +174,7 @@ public:
 
 	// Gets m_RcppVector
 	//
-	RType& RcppVector()
+	RVectorType& RcppVector()
 	{
 		return m_RcppVector;
 	}
@@ -210,7 +210,7 @@ private:
 	// The Rcpp::Vector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
 	//
-	RType m_RcppVector;
+	RVectorType m_RcppVector;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -355,10 +355,10 @@ private:
 // Description:
 //  Class representing a Date/DateTime parameter.
 //  Corresponds to ODBC C type SQL_C_TYPE_DATE and SQL_C_TYPE_TIMESTAMP.
-//  RType is the parameter of type Rcpp vector where each of its elements are of the scalar type
+//  RVectorType is the parameter of type Rcpp vector where each of its elements are of the scalar type
 //  DateTimeTypeInR.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
 class RDateTimeParam : public RParam
 {
 public:
@@ -383,7 +383,7 @@ public:
 
 	// Gets m_RcppVector
 	//
-	RType& RcppVector()
+	RVectorType& RcppVector()
 	{
 		return m_RcppVector;
 	}
@@ -419,5 +419,5 @@ private:
 	// The Rcpp::Vector encapsulating the SEXP pointer
 	// pointing to the R object with the param value.
 	//
-	RType m_RcppVector = RType(1);
+	RVectorType m_RcppVector = RVectorType(1);
 };

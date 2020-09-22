@@ -101,8 +101,8 @@ void RParam::CheckParamSize()
 // Description:
 //  Constructor.
 //
-template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
-RParamTemplate<SQLType, RType, NAType, DataType>::RParamTemplate(
+template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
+RParamTemplate<SQLType, RVectorType, NAType, DataType>::RParamTemplate(
 	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -135,8 +135,8 @@ RParamTemplate<SQLType, RType, NAType, DataType>::RParamTemplate(
 //  NA is R's special value indicative of null in C++.
 //  For each R type, there is a special NA value with a corresponding NA type in C++.
 //
-template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
-void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
+template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
+void RParamTemplate<SQLType, RVectorType, NAType, DataType>::SetRcppVector(
 	SQLPOINTER   paramValue)
 {
 	LOG("RParamTemplate::SetRcppVector");
@@ -147,7 +147,7 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
 	{
 		SQLINTEGER strLen_or_Ind[1] = { SQL_NULL_DATA };
 		m_RcppVector =
-			RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
+			RTypeUtils::CreateVector<SQLType, RVectorType, NAType, DataType>(
 				1, // rowsNumber
 				paramValue,
 				strLen_or_Ind,
@@ -155,7 +155,7 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
 	}
 	else
 	{
-		m_RcppVector = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
+		m_RcppVector = RTypeUtils::CreateVector<SQLType, RVectorType, NAType, DataType>(
 			1,          // rowsNumber
 			paramValue,
 			nullptr,    // strLen_or_Ind
@@ -169,8 +169,8 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::SetRcppVector(
 // Description:
 //  Retrieves data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
-template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
-void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd()
+template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
+void RParamTemplate<SQLType, RVectorType, NAType, DataType>::RetrieveValueAndStrLenInd()
 {
 	LOG("RParamTemplate::RetrieveValueAndStrLenInd");
 
@@ -195,7 +195,7 @@ void RParamTemplate<SQLType, RType, NAType, DataType>::RetrieveValueAndStrLenInd
 			// but fill only the first value as the parameter value.
 			// hence pass in rowsNumber = 1.
 			//
-			RTypeUtils::FillDataFromRVector<SQLType, RType, DataType>(
+			RTypeUtils::FillDataFromRVector<SQLType, RVectorType, DataType>(
 				1,  // rowsNumber
 				m_RcppVector,
 				&m_value,
@@ -412,8 +412,8 @@ void RRawParam::RetrieveValueAndStrLenInd()
 //  Constructor.
 //  Calls the base constructor then calls the function to Set the Rcpp vector with the paramValue.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
-RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RDateTimeParam(
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
+RDateTimeParam<SQLType, RVectorType, DateTimeTypeInR>::RDateTimeParam(
 	SQLUSMALLINT  paramNumber,
 	const SQLCHAR *paramName,
 	SQLSMALLINT   paramNameLength,
@@ -443,8 +443,8 @@ RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RDateTimeParam(
 //  This is a wrapper to CreateDateTimeVector with rowsNumber = 1.
 //  For null parameters, a size one vector with member value = NA is created.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
-void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER paramValue)
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
+void RDateTimeParam<SQLType, RVectorType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER paramValue)
 {
 	LOG("RDateTimeParam::SetRcppVector");
 
@@ -452,7 +452,7 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER p
 	if (strLenOrInd == SQL_NULL_DATA)
 	{
 		SQLINTEGER strLen_or_Ind[1] = { SQL_NULL_DATA };
-		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 			1, // rowsNumber
 			paramValue,
 			strLen_or_Ind,
@@ -461,7 +461,7 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER p
 	else
 	{
 		SQLINTEGER strLen_or_IndArray[1] = { strLenOrInd };
-		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+		m_RcppVector = RTypeUtils::CreateDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 			1, // rowsNumber
 			paramValue,
 			strLen_or_IndArray,
@@ -475,8 +475,8 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::SetRcppVector(SQLPOINTER p
 // Description:
 //  Retrieves data from m_RcppVector, fill it in m_value and set m_strLenOrInd accordingly.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
-void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RetrieveValueAndStrLenInd()
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
+void RDateTimeParam<SQLType, RVectorType, DateTimeTypeInR>::RetrieveValueAndStrLenInd()
 {
 	LOG("RDateTimeParam::RetrieveValueAndStrLenInd");
 
@@ -497,7 +497,7 @@ void RDateTimeParam<SQLType, RType, DateTimeTypeInR>::RetrieveValueAndStrLenInd(
 			// but fill only the first value as the parameter value.
 			// hence pass in rowsNumber = 1.
 			//
-			RTypeUtils::FillDataFromDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+			RTypeUtils::FillDataFromDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 				1,  // rowsNumber
 				m_RcppVector,
 				&m_value,

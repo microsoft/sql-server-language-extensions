@@ -36,12 +36,12 @@ namespace ExtensionApiTest
 	//  Tests InitColumn() API with valid values, can initialize only once.
 	//  A positive and negative test.
 	//
-	TEST_F(RExtensionApiTest, InitColumnTest)
+	TEST_F(RExtensionApiTests, InitColumnTest)
 	{
 		InitializeSession(m_inputSchemaColumnsNumber);
 
 		SQLRETURN result = SQL_ERROR;
-		result = (*m_initColumnFuncPtr)(
+		result = (*sm_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				0,
@@ -55,7 +55,7 @@ namespace ExtensionApiTest
 				-1);           // orderByNumber
 		EXPECT_EQ(result, SQL_SUCCESS);
 
-		result = (*m_initColumnFuncPtr)(
+		result = (*sm_initColumnFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -79,12 +79,12 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests InitColumn() API with null column name. A negative test.
 	//
-	TEST_F(RExtensionApiTest, InitInvalidColumnTest)
+	TEST_F(RExtensionApiTests, InitInvalidColumnTest)
 	{
 		InitializeSession(m_inputSchemaColumnsNumber);
 
 		SQLRETURN result = SQL_SUCCESS;
-		result = (*m_initColumnFuncPtr)(
+		result = (*sm_initColumnFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,           // columnNumber
@@ -106,12 +106,12 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests InitColumn() API with bad column numbers (too big). A negative test.
 	//
-	TEST_F(RExtensionApiTest, InitInvalidColumnNumberTest)
+	TEST_F(RExtensionApiTests, InitInvalidColumnNumberTest)
 	{
 		InitializeSession(m_inputSchemaColumnsNumber);
 
 		SQLRETURN result = SQL_SUCCESS;
-		result = (*m_initColumnFuncPtr)(
+		result = (*sm_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				m_inputSchemaColumnsNumber + 1, // column number greater than inputSchemaColumnsNumber
@@ -132,12 +132,12 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests InitColumn() API with unsupported column datatype. A negative test.
 	//
-	TEST_F(RExtensionApiTest, InitInvalidColumnDataTypeTest)
+	TEST_F(RExtensionApiTests, InitInvalidColumnDataTypeTest)
 	{
 		InitializeSession(m_inputSchemaColumnsNumber);
 
 		SQLRETURN result = SQL_SUCCESS;
-		result = (*m_initColumnFuncPtr)(
+		result = (*sm_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				0,

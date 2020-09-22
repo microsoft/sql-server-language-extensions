@@ -38,7 +38,7 @@ using namespace std;
 // R_NaInt, R_NaReal are R's special values indicative of null in C++.
 // Even for logical type, NA value is R_NaInt.
 //
-const unordered_map<SQLSMALLINT, SQLPOINTER> RTypeUtils::m_dataTypeToNAMap =
+const unordered_map<SQLSMALLINT, SQLPOINTER> RTypeUtils::sm_dataTypeToNAMap =
 {
 	{SQL_C_BIT, static_cast<SQLPOINTER>(&R_NaInt)},
 	{SQL_C_SLONG, static_cast<SQLPOINTER>(&R_NaInt)},
@@ -51,7 +51,7 @@ const unordered_map<SQLSMALLINT, SQLPOINTER> RTypeUtils::m_dataTypeToNAMap =
 
 // Map to store the R class to ODBC C dataType mapping
 //
-const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
+const unordered_map<string, SQLSMALLINT> RTypeUtils::sm_classInRToOdbcTypeMap =
 {
 	{"logical", SQL_C_BIT},
 	{"integer", SQL_C_SLONG},
@@ -76,8 +76,8 @@ const unordered_map<string, SQLSMALLINT> RTypeUtils::m_classInRToOdbcTypeMap =
 //  If strLen_or_Ind is nullptr, there are no null values in the data.
 //  If nullable is SQL_NO_NULLS, we ignore strLen_or_Ind.
 //
-template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
-RType RTypeUtils::CreateVector(
+template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
+RVectorType RTypeUtils::CreateVector(
 	SQLULEN      rowsNumber,
 	SQLPOINTER   data,
 	SQLINTEGER   *strLen_or_Ind,
@@ -88,7 +88,7 @@ RType RTypeUtils::CreateVector(
 	// Note: Always preallocate the Rcpp vector with the size instead of using
 	// push_back since Rcpp push_back involves copying to create a new vector in R environment.
 	//
-	RType vectorInR(rowsNumber);
+	RVectorType vectorInR(rowsNumber);
 	bool isNullable = nullable == SQL_NULLABLE;
 
 	for (SQLULEN j = 0; j < rowsNumber; ++j)
@@ -99,7 +99,7 @@ RType RTypeUtils::CreateVector(
 		{
 			// It is NULL (NA) only in this case.
 			//
-			NAType valueForNA = *(static_cast<NAType*>(m_dataTypeToNAMap.at(DataType)));
+			NAType valueForNA = *(static_cast<NAType*>(sm_dataTypeToNAMap.at(DataType)));
 			vectorInR[j] = valueForNA;
 		}
 		else
@@ -242,8 +242,8 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 //  If strLen_or_Ind is nullptr, there are no null values in the data.
 //  If nullable is SQL_NO_NULLS, we ignore strLen_or_Ind.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
-RType RTypeUtils::CreateDateTimeVector(
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
+RVectorType RTypeUtils::CreateDateTimeVector(
 	SQLULEN     rowsNumber,
 	SQLPOINTER  data,
 	SQLINTEGER  *strLen_or_Ind,
@@ -254,7 +254,7 @@ RType RTypeUtils::CreateDateTimeVector(
 	// Note: Always preallocate the Rcpp vector with the size instead of using
 	// push_back since Rcpp push_back involves copying to create a new vector in R environment.
 	//
-	RType vectorInR(rowsNumber);
+	RVectorType vectorInR(rowsNumber);
 
 	// Get the time zone if any that R is set to and store it in a temporary variable.
 	//
@@ -337,10 +337,10 @@ RType RTypeUtils::CreateDateTimeVector(
 //  Otherwise if they are NA, sets nullable to true and the corresponding cells in
 //  the array strLenOrInd to SQL_NULL_DATA.
 //
-template<class SQLType, class RType, SQLSMALLINT DataType>
+template<class SQLType, class RVectorType, SQLSMALLINT DataType>
 void RTypeUtils::FillDataFromRVector(
 	SQLULEN         rowsNumber,
-	RType           vectorInR,
+	RVectorType           vectorInR,
 	vector<SQLType> *data,
 	SQLINTEGER      *strLen_or_Ind,
 	SQLSMALLINT     &nullable)
@@ -350,7 +350,7 @@ void RTypeUtils::FillDataFromRVector(
 	data->resize(rowsNumber);
 	for(SQLULEN index = 0 ; index < rowsNumber; ++index)
 	{
-		if (!RType::is_na(vectorInR[index]))
+		if (!RVectorType::is_na(vectorInR[index]))
 		{
 			if constexpr (DataType != SQL_C_BIT)
 			{
@@ -491,10 +491,10 @@ void RTypeUtils::FillDataFromRawVector(
 //  Otherwise if they are NA, sets nullable to true and the corresponding cells in
 //  the array strLenOrInd to SQL_NULL_DATA.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
 void RTypeUtils::FillDataFromDateTimeVector(
 	SQLULEN         rowsNumber,
-	RType           vectorInR,
+	RVectorType     vectorInR,
 	vector<SQLType> *data,
 	SQLINTEGER      *strLenOrInd,
 	SQLSMALLINT     &nullable)
@@ -512,7 +512,7 @@ void RTypeUtils::FillDataFromDateTimeVector(
 			value.month = valueInR.getMonth();
 			value.day = valueInR.getDay();
 
-			if constexpr (is_same_v<RType, Rcpp::DatetimeVector>)
+			if constexpr (is_same_v<RVectorType, Rcpp::DatetimeVector>)
 			{
 				value.hour = valueInR.getHours();
 				value.minute = valueInR.getMinutes();

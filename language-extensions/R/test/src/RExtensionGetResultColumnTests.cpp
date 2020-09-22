@@ -38,7 +38,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script expecting an OutputDataSet of Integer columns.
 	//
-	TEST_F(RExtensionApiTest, GetIntegerResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetIntegerResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -75,7 +75,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of Logical columns.
 	//
-	TEST_F(RExtensionApiTest, GetLogicalResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetLogicalResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -112,7 +112,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of Real columns.
 	//
-	TEST_F(RExtensionApiTest, GetRealResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetRealResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -149,7 +149,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of Double columns.
 	//
-	TEST_F(RExtensionApiTest, GetDoubleResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetDoubleResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -186,7 +186,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of BigInteger columns.
 	//
-	TEST_F(RExtensionApiTest, GetBigIntResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetBigIntResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -223,7 +223,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of SmallInt columns.
 	//
-	TEST_F(RExtensionApiTest, GetSmallIntResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetSmallIntResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -260,7 +260,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of TinyInt columns.
 	//
-	TEST_F(RExtensionApiTest, GetTinyIntResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetTinyIntResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -297,7 +297,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of Character columns.
 	//
-	TEST_F(RExtensionApiTest, GetCharResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetCharResultColumnsTest)
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
@@ -389,7 +389,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of nchar columns.
 	//
-	TEST_F(RExtensionApiTest, GetNCharResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetNCharResultColumnsTest)
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
@@ -516,7 +516,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with a script that returns OutputDataSet with a single raw column.
 	//
-	TEST_F(RExtensionApiTest, GetRawResultColumnTest)
+	TEST_F(RExtensionApiTests, GetRawResultColumnTest)
 	{
 		string scriptString = "rawChars <- charToRaw(paste(letters[1:26], collapse=''));"
 			"OutputDataSet <- data.frame(rawChars);"
@@ -530,7 +530,7 @@ namespace ExtensionApiTest
 			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -561,7 +561,7 @@ namespace ExtensionApiTest
 			scriptString);
 
 		outputschemaColumnsNumber = 0;
-		result = (*m_executeFuncPtr)(
+		result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -585,7 +585,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script expecting an OutputDataSet of Date columns.
 	//
-	TEST_F(RExtensionApiTest, GetDateResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetDateResultColumnsTest)
 	{
 		// Initialize with a default session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -623,7 +623,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script expecting an OutputDataSet of DateTime columns.
 	//
-	TEST_F(RExtensionApiTest, GetDateTimeResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetDateTimeResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -660,7 +660,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of different column types.
 	//
-	TEST_F(RExtensionApiTest, GetDifferentResultColumnsTest)
+	TEST_F(RExtensionApiTests, GetDifferentResultColumnsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -709,7 +709,7 @@ namespace ExtensionApiTest
 		vector<void *> dataSet { intColData.data(), doubleColData.data(), charColData.data()};
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			rowsNumber,
@@ -745,7 +745,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with a script that returns OutputDataSet with empty rows.
 	//
-	TEST_F(RExtensionApiTest, GetEmptyResultColumnTest)
+	TEST_F(RExtensionApiTests, GetEmptyResultColumnTest)
 	{
 		string scriptString = ""
 			"OutputDataSet <- data.frame(intCol = as.integer(c()))\n"
@@ -759,7 +759,7 @@ namespace ExtensionApiTest
 			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -783,7 +783,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn to verify the expected result column information is obtained.
 	//
-	void RExtensionApiTest::GetResultColumn(
+	void RExtensionApiTests::GetResultColumn(
 		SQLUSMALLINT columnNumber,
 		SQLSMALLINT  expectedDataType,
 		SQLULEN      expectedColumnSize,
@@ -795,7 +795,7 @@ namespace ExtensionApiTest
 		SQLSMALLINT decimalDigits = 0;
 		SQLSMALLINT nullable = 0;
 
-		SQLRETURN result = (*m_getResultColumnFuncPtr)(
+		SQLRETURN result = (*sm_getResultColumnFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			columnNumber,

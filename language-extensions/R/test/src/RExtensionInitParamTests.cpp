@@ -37,7 +37,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple SQLINTEGER values.
 	//
-	TEST_F(RExtensionApiTest, InitIntegerParamTest)
+	TEST_F(RExtensionApiTests, InitIntegerParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -70,7 +70,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple logical (bit) values.
 	//
-	TEST_F(RExtensionApiTest, InitLogicalParamTest)
+	TEST_F(RExtensionApiTests, InitLogicalParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -107,7 +107,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple real values.
 	//
-	TEST_F(RExtensionApiTest, InitRealParamTest)
+	TEST_F(RExtensionApiTests, InitRealParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -138,7 +138,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple double values.
 	//
-	TEST_F(RExtensionApiTest, InitDoubleParamTest)
+	TEST_F(RExtensionApiTests, InitDoubleParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -170,7 +170,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple big int values.
 	//
-	TEST_F(RExtensionApiTest, InitBigIntParamTest)
+	TEST_F(RExtensionApiTests, InitBigIntParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -201,7 +201,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple small int values.
 	//
-	TEST_F(RExtensionApiTest, InitSmallIntParamTest)
+	TEST_F(RExtensionApiTests, InitSmallIntParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -235,7 +235,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple tiny int values.
 	//
-	TEST_F(RExtensionApiTest, InitTinyIntParamTest)
+	TEST_F(RExtensionApiTests, InitTinyIntParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -270,7 +270,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple character values
 	//
-	TEST_F(RExtensionApiTest, InitCharParamTest)
+	TEST_F(RExtensionApiTests, InitCharParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -328,7 +328,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple NCHAR and NVARCHAR values.
 	//
-	TEST_F(RExtensionApiTest, InitNCharParamTest)
+	TEST_F(RExtensionApiTests, InitNCharParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -393,7 +393,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple binary values.
 	//
-	TEST_F(RExtensionApiTest, InitRawParamTest)
+	TEST_F(RExtensionApiTests, InitRawParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -452,7 +452,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple DATE values.
 	//
-	TEST_F(RExtensionApiTest, InitDateParamTest)
+	TEST_F(RExtensionApiTests, InitDateParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -496,7 +496,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple DATETIME values.
 	//
-	TEST_F(RExtensionApiTest, InitDateTimeParamTest)
+	TEST_F(RExtensionApiTests, InitDateTimeParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -543,7 +543,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests InitParam() API with null parameter name. A negative test.
 	//
-	TEST_F(RExtensionApiTest, InitNullNameParamTest)
+	TEST_F(RExtensionApiTests, InitNullNameParamTest)
 	{
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
@@ -554,7 +554,7 @@ namespace ExtensionApiTest
 		SQLSMALLINT paramNameLength = 0;
 		SQLINTEGER paramValue = 123;
 
-		SQLRETURN result = (*m_initParamFuncPtr)(
+		SQLRETURN result = (*sm_initParamFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,                // paramNumber
@@ -576,7 +576,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests InitParam() API with bad param numbers (too big). A negative test.
 	//
-	TEST_F(RExtensionApiTest, InitInvalidParamNumberTest)
+	TEST_F(RExtensionApiTests, InitInvalidParamNumberTest)
 	{
 		SQLUSMALLINT parametersNumber = 1;
 		InitializeSession(
@@ -589,7 +589,7 @@ namespace ExtensionApiTest
 			static_cast<void *>(const_cast<char *>(paramNameString.c_str())));
 		SQLINTEGER paramValue = 123;
 
-		SQLRETURN result = (*m_initParamFuncPtr)(
+		SQLRETURN result = (*sm_initParamFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			parametersNumber + 1, // paramNumber outside of range
@@ -613,8 +613,8 @@ namespace ExtensionApiTest
 	//  Testing if InitParam is implemented correctly for integer/numeric/logical dataTypes.
 	//  When inRange is false and paramValue is 0, it tests a nullptr paramValue given to InitParam.
 	//
-	template<class SQLType, class RType, SQLSMALLINT DataType>
-	void RExtensionApiTest::InitParam(
+	template<class SQLType, class RVectorType, SQLSMALLINT DataType>
+	void RExtensionApiTests::InitParam(
 		vector<shared_ptr<SQLType>> expectedParamValues,
 		vector<SQLINTEGER>          strLenOrInd,
 		vector<SQLSMALLINT>         inputOutputTypes,
@@ -627,7 +627,7 @@ namespace ExtensionApiTest
 			static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
 
 			SQLRETURN result = SQL_ERROR;
-			result = (*m_initParamFuncPtr)(
+			result = (*sm_initParamFuncPtr)(
 					*m_sessionId,
 					m_taskId,
 					paramNumber,
@@ -646,7 +646,7 @@ namespace ExtensionApiTest
 			{
 				// Do + 1 to skip the @ from the paramName
 				//
-				RType param = m_globalEnvironment[paramNameString.c_str() + 1];
+				RVectorType param = m_globalEnvironment[paramNameString.c_str() + 1];
 				if (strLenOrInd[paramNumber] != SQL_NULL_DATA)
 				{
 					SQLType expectedParamValue = *expectedParamValues[paramNumber];
@@ -662,7 +662,7 @@ namespace ExtensionApiTest
 				}
 				else
 				{
-					EXPECT_TRUE(RType::is_na(param[0]));
+					EXPECT_TRUE(RVectorType::is_na(param[0]));
 				}
 			}
 		}
@@ -676,7 +676,7 @@ namespace ExtensionApiTest
 	//  (n)char/(n)varchar dataTypes
 	//
 	template<class CharType, SQLSMALLINT DataType>
-	void RExtensionApiTest::InitCharParam(
+	void RExtensionApiTests::InitCharParam(
 		vector<const CharType*> expectedParamValues,
 		vector<SQLULEN>         paramSizes,
 		vector<bool>            isFixedType,
@@ -739,7 +739,7 @@ namespace ExtensionApiTest
 			// Even though paramSize doesn't include the null terminator,
 			// we create a CharacterVector parameter with a null terminator string
 			//
-			result = (*m_initParamFuncPtr)(
+			result = (*sm_initParamFuncPtr)(
 					*m_sessionId,
 					m_taskId,
 					paramNumber,
@@ -794,7 +794,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 	//
-	void RExtensionApiTest::InitRawParam(
+	void RExtensionApiTests::InitRawParam(
 		vector<SQLCHAR*>    expectedParamValues,
 		vector<SQLINTEGER>  strLenOrInd,
 		vector<SQLULEN>     paramSizes,
@@ -809,7 +809,7 @@ namespace ExtensionApiTest
 			SQLCHAR *expectedParamValue = expectedParamValues[paramNumber];
 
 			SQLRETURN result = SQL_ERROR;
-			result = (*m_initParamFuncPtr)(
+			result = (*sm_initParamFuncPtr)(
 					*m_sessionId,
 					m_taskId,
 					paramNumber,
@@ -853,8 +853,8 @@ namespace ExtensionApiTest
 	// Description:
 	//  Testing if InitParam is implemented correctly for the date/datetime dataTypes.
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR, SQLSMALLINT DataType>
-	void RExtensionApiTest::InitDateTimeParam(
+	template<class SQLType, class RVectorType, class DateTimeTypeInR, SQLSMALLINT DataType>
+	void RExtensionApiTests::InitDateTimeParam(
 		vector<SQLType>     expectedParamValues,
 		vector<SQLINTEGER>  strLenOrInd,
 		vector<SQLSMALLINT> inputOutputTypes,
@@ -869,7 +869,7 @@ namespace ExtensionApiTest
 			SQLType expectedParamValue = expectedParamValues[paramNumber];
 
 			SQLRETURN result = SQL_ERROR;
-			result = (*m_initParamFuncPtr)(
+			result = (*sm_initParamFuncPtr)(
 					*m_sessionId,
 					m_taskId,
 					paramNumber,
@@ -887,8 +887,8 @@ namespace ExtensionApiTest
 			{
 				// Do + 1 to skip the @ from the paramName
 				//
-				RType param = m_globalEnvironment[paramNameString.c_str() + 1];
-				CheckDateTimeVectorEquality<SQLType, RType, DateTimeTypeInR>(
+				RVectorType param = m_globalEnvironment[paramNameString.c_str() + 1];
+				CheckRDateTimeVectorColumnDataEquality<SQLType, RVectorType, DateTimeTypeInR>(
 					1,
 					param,
 					&expectedParamValue,

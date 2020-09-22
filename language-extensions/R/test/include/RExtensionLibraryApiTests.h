@@ -60,7 +60,7 @@ namespace ExtensionApiTest
 {
 	// All the tests in the RExtensionLibraryApiTests suite run one after the other
 	//
-	class RExtensionLibraryApiTests : public RExtensionApiTest
+	class RExtensionLibraryApiTests : public RExtensionApiTests
 	{
 	protected:
 

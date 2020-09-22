@@ -37,7 +37,7 @@
 
 using namespace std;
 
-char Logger::timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
+char Logger::sm_timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 
 //--------------------------------------------------------------------------------------------------
 // Name: Logger::LogError
@@ -132,9 +132,9 @@ const char* Logger::GetCurrentTimestamp()
 
 	// Append the milliseconds and the tab to the timestamp
 	//
-	sprintf(timestampBuffer, "%s.%02li\t", buffer, ms);
+	sprintf(sm_timestampBuffer, "%s.%02li\t", buffer, ms);
 
-	return timestampBuffer;
+	return sm_timestampBuffer;
 }
 
 //--------------------------------------------------------------------------------------------------

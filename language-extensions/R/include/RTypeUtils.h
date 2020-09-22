@@ -34,8 +34,8 @@ public:
 	// Templatized function to create a vector of an equivalent R type for the given SQL type
 	// with the given data. This is only for numeric, integer or logical R types.
 	//
-	template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
-	static RType CreateVector(
+	template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
+	static RVectorType CreateVector(
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data,
 		SQLINTEGER  *strLen_or_Ind,
@@ -60,8 +60,8 @@ public:
 
 	// Creates a date/datetime vector in R corresponding to the given data.
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR>
-	static RType CreateDateTimeVector(
+	template<class SQLType, class RVectorType, class DateTimeTypeInR>
+	static RVectorType CreateDateTimeVector(
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data,
 		SQLINTEGER  *strLen_or_Ind,
@@ -69,10 +69,10 @@ public:
 
 	// Given the vectorInR, copies its content into the given std::vector pointed to by data.
 	//
-	template<class SQLType, class RType, SQLSMALLINT DataType>
+	template<class SQLType, class RVectorType, SQLSMALLINT DataType>
 	static void FillDataFromRVector(
 		SQLULEN              rowsNumber,
-		RType                vectorInR,
+		RVectorType                vectorInR,
 		std::vector<SQLType> *data,
 		SQLINTEGER           *strLen_or_Ind,
 		SQLSMALLINT          &nullable);
@@ -100,21 +100,21 @@ public:
 
 	// Given the vectorInR, copies its content into the given std::vector pointed to by data.
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR>
+	template<class SQLType, class RVectorType, class DateTimeTypeInR>
 	static void FillDataFromDateTimeVector(
 		SQLULEN              rowsNumber,
-		RType                vectorInR,
+		RVectorType                vectorInR,
 		std::vector<SQLType> *data,
 		SQLINTEGER           *strLenOrInd,
 		SQLSMALLINT          &nullable);
 
 	// Maps to store the ODBC C type to NA value mapping
 	//
-	static const std::unordered_map<SQLSMALLINT, SQLPOINTER> m_dataTypeToNAMap;
+	static const std::unordered_map<SQLSMALLINT, SQLPOINTER> sm_dataTypeToNAMap;
 
 	// Maps to store the R class to ODBC C type mapping
 	//
-	static const std::unordered_map<std::string, SQLSMALLINT> m_classInRToOdbcTypeMap;
+	static const std::unordered_map<std::string, SQLSMALLINT> sm_classInRToOdbcTypeMap;
 
 	// Maps typedef.
 	//

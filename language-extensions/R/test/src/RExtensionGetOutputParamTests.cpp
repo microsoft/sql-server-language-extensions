@@ -37,7 +37,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple SQLINTEGER values.
 	//
-	TEST_F(RExtensionApiTest, GetIntegerOutputParamTest)
+	TEST_F(RExtensionApiTests, GetIntegerOutputParamTest)
 	{
 		string scriptString = "param1 <- as.integer(" + to_string(m_MaxInt) + ");"
 			"param2 <- as.integer(" + to_string(m_MinInt) + ");"
@@ -69,7 +69,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -104,7 +104,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple logical (bit) values.
 	//
-	TEST_F(RExtensionApiTest, GetLogicalOutputParamTest)
+	TEST_F(RExtensionApiTests, GetLogicalOutputParamTest)
 	{
 		int parametersNumber = 7;
 		string scriptString = "param1 <- TRUE;"
@@ -148,7 +148,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -199,7 +199,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple real values.
 	//
-	TEST_F(RExtensionApiTest, GetRealOutputParamTest)
+	TEST_F(RExtensionApiTests, GetRealOutputParamTest)
 	{
 		string scriptString = "param1 <- " + to_string(m_MaxReal) + ";"
 			"param2 <- " + to_string(m_MinReal) + ";"
@@ -231,7 +231,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -264,7 +264,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple double values.
 	//
-	TEST_F(RExtensionApiTest, GetDoubleOutputParamTest)
+	TEST_F(RExtensionApiTests, GetDoubleOutputParamTest)
 	{
 		string scriptString = "param1 <- " + to_string(m_MaxDouble) + ";"
 			"param2 <- " + to_string(m_MinDouble) + ";"
@@ -296,7 +296,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -329,7 +329,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple big int values.
 	//
-	TEST_F(RExtensionApiTest, GetBigIntOutputParamTest)
+	TEST_F(RExtensionApiTests, GetBigIntOutputParamTest)
 	{
 		string scriptString = "param1 <- " + to_string(m_MaxBigInt) + ";"
 			"param2 <- " + to_string(m_MinBigInt) + ";"
@@ -361,7 +361,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -400,7 +400,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple small int values.
 	//
-	TEST_F(RExtensionApiTest, GetSmallIntOutputParamTest)
+	TEST_F(RExtensionApiTests, GetSmallIntOutputParamTest)
 	{
 		string scriptString = "param1 <- as.integer(" + to_string(m_MaxSmallInt) + ");"
 			"param2 <- as.integer(" + to_string(m_MinSmallInt) + ");"
@@ -432,7 +432,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -468,7 +468,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple tiny int values.
 	//
-	TEST_F(RExtensionApiTest, GetTinyIntOutputParamTest)
+	TEST_F(RExtensionApiTests, GetTinyIntOutputParamTest)
 	{
 		string scriptString = "param1 <- as.integer(" + to_string(m_MaxTinyInt) + ");"
 			"param2 <- as.integer(" + to_string(m_MinTinyInt) + ");"
@@ -502,7 +502,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -539,7 +539,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple character values.
 	//
-	TEST_F(RExtensionApiTest, GetCharOutputParamTest)
+	TEST_F(RExtensionApiTests, GetCharOutputParamTest)
 	{
 		string scriptString = "param1 <- 'HELLO';"
 			"param2 <- 'RExtension';"
@@ -573,7 +573,7 @@ namespace ExtensionApiTest
 			false); // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -633,7 +633,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple nchar/nvarchar values.
 	//
-	TEST_F(RExtensionApiTest, GetNCharOutputParamTest)
+	TEST_F(RExtensionApiTests, GetNCharOutputParamTest)
 	{
 		// Construct the values that correspond to 你好
 		//
@@ -673,7 +673,7 @@ namespace ExtensionApiTest
 			false);           // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -729,7 +729,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple binary values.
 	//
-	TEST_F(RExtensionApiTest, GetRawOutputParamTest)
+	TEST_F(RExtensionApiTests, GetRawOutputParamTest)
 	{
 		string scriptString = "param1 <- c(as.raw(0x00), as.raw(0x01), as.raw(0xe2), as.raw(0x40));"
 			"param2 <- charToRaw(paste(letters[1:10], collapse=''));"
@@ -759,7 +759,7 @@ namespace ExtensionApiTest
 			false); // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -814,7 +814,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple DATE values.
 	//
-	TEST_F(RExtensionApiTest, GetDateOutputParamTest)
+	TEST_F(RExtensionApiTests, GetDateOutputParamTest)
 	{
 		string scriptString =
 			// Max Date value
@@ -884,7 +884,7 @@ namespace ExtensionApiTest
 			false); // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -908,7 +908,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests multiple DATETIME values.
 	//
-	TEST_F(RExtensionApiTest, GetDateTimeOutputParamTest)
+	TEST_F(RExtensionApiTests, GetDateTimeOutputParamTest)
 	{
 		string scriptString =
 			// Set the time zone to UTC explicitly
@@ -990,7 +990,7 @@ namespace ExtensionApiTest
 			false); // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,       // rowsNumber
@@ -1014,7 +1014,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Negative tests.
 	//
-	TEST_F(RExtensionApiTest, GetInvalidOutputParamTest)
+	TEST_F(RExtensionApiTests, GetInvalidOutputParamTest)
 	{
 		// Initialize a Session with empty script and 2 parameters.
 		//
@@ -1035,7 +1035,7 @@ namespace ExtensionApiTest
 			false);  // validate
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -1052,7 +1052,7 @@ namespace ExtensionApiTest
 
 		// Test input parameter requested as output.
 		//
-		result = (*m_getOutputParamFuncPtr)(
+		result = (*sm_getOutputParamFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0, // paramNumber
@@ -1064,7 +1064,7 @@ namespace ExtensionApiTest
 		// Test uninitialized parameter.
 		//
 		result = SQL_SUCCESS;
-		result = (*m_getOutputParamFuncPtr)(
+		result = (*sm_getOutputParamFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			1, // paramNumber
@@ -1081,7 +1081,7 @@ namespace ExtensionApiTest
 	//  Templatized function to test output param value and strLenOrInd is as expected.
 	//
 	template<class SQLType>
-	void RExtensionApiTest::GetOutputParam(
+	void RExtensionApiTests::GetOutputParam(
 		vector<shared_ptr<SQLType>> expectedParamValues,
 		vector<SQLINTEGER>          expectedStrLenOrInd)
 	{
@@ -1090,7 +1090,7 @@ namespace ExtensionApiTest
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
 			SQLRETURN result = SQL_ERROR;
-			result = (*m_getOutputParamFuncPtr)(
+			result = (*sm_getOutputParamFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				paramNumber,
@@ -1137,7 +1137,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests character output param value and strLenOrInd is as expected.
 	//
-	void RExtensionApiTest::GetCharOutputParam(
+	void RExtensionApiTests::GetCharOutputParam(
 		vector<SQLCHAR*>   expectedParamValues,
 		vector<SQLINTEGER> expectedStrLenOrInd)
 	{
@@ -1147,7 +1147,7 @@ namespace ExtensionApiTest
 			SQLINTEGER strLen_or_Ind = 0;
 			SQLRETURN result = SQL_ERROR;
 
-			result = (*m_getOutputParamFuncPtr)(
+			result = (*sm_getOutputParamFuncPtr)(
 					*m_sessionId,
 					m_taskId,
 					paramNumber,
@@ -1179,7 +1179,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests nchar/nvarchar output param value and strLenOrInd are as expected.
 	//
-	void RExtensionApiTest::GetNCharOutputParam(
+	void RExtensionApiTests::GetNCharOutputParam(
 		vector<const wchar_t*> expectedParamValues,
 		vector<SQLINTEGER>     expectedStrLenOrInd)
 	{
@@ -1189,7 +1189,7 @@ namespace ExtensionApiTest
 			SQLINTEGER strLen_or_Ind = 0;
 			SQLRETURN result = SQL_ERROR;
 
-			result = (*m_getOutputParamFuncPtr)(
+			result = (*sm_getOutputParamFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				paramNumber,
@@ -1231,7 +1231,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests raw (binary) output param value and strLenOrInd is as expected.
 	//
-	void RExtensionApiTest::GetRawOutputParam(
+	void RExtensionApiTests::GetRawOutputParam(
 		vector<SQLCHAR*>   expectedParamValues,
 		vector<SQLINTEGER> expectedStrLenOrInd)
 	{
@@ -1241,7 +1241,7 @@ namespace ExtensionApiTest
 			SQLINTEGER strLen_or_Ind = 0;
 
 			SQLRETURN result = SQL_ERROR;
-			result = (*m_getOutputParamFuncPtr)(
+			result = (*sm_getOutputParamFuncPtr)(
 					*m_sessionId,
 					m_taskId,
 					paramNumber,
@@ -1273,7 +1273,7 @@ namespace ExtensionApiTest
 	//  Templatized function to test output param value and strLenOrInd is as expected.
 	//
 	template<class SQLType>
-	void RExtensionApiTest::GetDateTimeOutputParam(
+	void RExtensionApiTests::GetDateTimeOutputParam(
 		vector<SQLType>    expectedParamValues,
 		vector<SQLINTEGER> expectedStrLenOrInd)
 	{
@@ -1286,7 +1286,7 @@ namespace ExtensionApiTest
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
 			SQLRETURN result = SQL_ERROR;
-			result = (*m_getOutputParamFuncPtr)(
+			result = (*sm_getOutputParamFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				paramNumber,

@@ -54,6 +54,6 @@
 
 #define TOTAL_NUMBER_OF_TEST_SUITES 2
 
-#include "RExtensionApiTest.h"
+#include "RExtensionApiTests.h"
 #include "Unicode.h"
 #include "Utilities.h"

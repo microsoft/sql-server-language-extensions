@@ -64,5 +64,5 @@ private:
 
 	// Buffer to hold the timestamp string.
 	//
-	static char timestampBuffer[];
+	static char sm_timestampBuffer[];
 };

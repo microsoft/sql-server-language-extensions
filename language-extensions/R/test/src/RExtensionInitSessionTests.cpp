@@ -35,10 +35,10 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests InitSession() API with valid values.
 	//
-	TEST_F(RExtensionApiTest, InitSessionTest)
+	TEST_F(RExtensionApiTests, InitSessionTest)
 	{
 		SQLRETURN result = SQL_ERROR;
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
@@ -55,7 +55,7 @@ namespace ExtensionApiTest
 
 		// Try to reinitialize with the same session Id should fail
 		//
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
@@ -76,7 +76,7 @@ namespace ExtensionApiTest
 		// since while cleaning up we can't differentiate if the cleanup is for
 		// library session or not. For library sessions, we don't do initialization.
 		//
-		result = (*m_cleanupSessionFuncPtr)(
+		result = (*sm_cleanupSessionFuncPtr)(
 			sessionId,
 			m_taskId);
 		EXPECT_EQ(result, SQL_SUCCESS);
@@ -84,7 +84,7 @@ namespace ExtensionApiTest
 		// Initialize the different session; make sure this also inits independently
 		// even though previous session is still in progress.
 		//
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			sessionId,
 			m_taskId,
 			m_numTasks,
@@ -99,7 +99,7 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 
-		result = (*m_cleanupSessionFuncPtr)(
+		result = (*sm_cleanupSessionFuncPtr)(
 			sessionId,
 			m_taskId);
 
@@ -112,10 +112,10 @@ namespace ExtensionApiTest
 	// Description:
 	// Test InitSession() API with invalid values. A negative test.
 	//
-	TEST_F(RExtensionApiTest, InitInvalidSessionTest)
+	TEST_F(RExtensionApiTests, InitInvalidSessionTest)
 	{
 		SQLRETURN result = SQL_SUCCESS;
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
@@ -131,7 +131,7 @@ namespace ExtensionApiTest
 		CleanupSession();
 
 		result = SQL_SUCCESS;
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
@@ -147,7 +147,7 @@ namespace ExtensionApiTest
 		CleanupSession();
 
 		result = SQL_SUCCESS;
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,

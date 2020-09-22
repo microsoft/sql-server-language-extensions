@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension-test.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: RExtensionApiTest.cpp
+// @File: RExtensionApiTests.cpp
 //
 // Purpose:
 //  Defines the base test fixture members and tests RExtension's implementation of
@@ -47,38 +47,38 @@ namespace ExtensionApiTest
 {
 	// Initialize all the static members
 	//
-	SQLUSMALLINT RExtensionApiTest::sm_numberOfSuitesInitialized = 0;
-	void *RExtensionApiTest::m_libHandle = nullptr;
-	FN_init *RExtensionApiTest::m_initFuncPtr = nullptr;
-	FN_initSession *RExtensionApiTest::m_initSessionFuncPtr = nullptr;
-	FN_initColumn *RExtensionApiTest::m_initColumnFuncPtr = nullptr;
-	FN_initParam *RExtensionApiTest::m_initParamFuncPtr = nullptr;
-	FN_execute *RExtensionApiTest::m_executeFuncPtr = nullptr;
-	FN_getResultColumn *RExtensionApiTest::m_getResultColumnFuncPtr = nullptr;
-	FN_getResults *RExtensionApiTest::m_getResultsFuncPtr = nullptr;
-	FN_getOutputParam *RExtensionApiTest::m_getOutputParamFuncPtr = nullptr;
-	FN_cleanupSession *RExtensionApiTest::m_cleanupSessionFuncPtr = nullptr;
-	FN_cleanup *RExtensionApiTest::m_cleanupFuncPtr = nullptr;
+	SQLUSMALLINT RExtensionApiTests::sm_numberOfSuitesInitialized = 0;
+	void *RExtensionApiTests::sm_libHandle = nullptr;
+	FN_init *RExtensionApiTests::sm_initFuncPtr = nullptr;
+	FN_initSession *RExtensionApiTests::sm_initSessionFuncPtr = nullptr;
+	FN_initColumn *RExtensionApiTests::sm_initColumnFuncPtr = nullptr;
+	FN_initParam *RExtensionApiTests::sm_initParamFuncPtr = nullptr;
+	FN_execute *RExtensionApiTests::sm_executeFuncPtr = nullptr;
+	FN_getResultColumn *RExtensionApiTests::sm_getResultColumnFuncPtr = nullptr;
+	FN_getResults *RExtensionApiTests::sm_getResultsFuncPtr = nullptr;
+	FN_getOutputParam *RExtensionApiTests::sm_getOutputParamFuncPtr = nullptr;
+	FN_cleanupSession *RExtensionApiTests::sm_cleanupSessionFuncPtr = nullptr;
+	FN_cleanup *RExtensionApiTests::sm_cleanupFuncPtr = nullptr;
 
-	string RExtensionApiTest::sm_libraryRootPath = "testInstallPkgs";
-	string RExtensionApiTest::sm_publicLibraryPath;
-	string RExtensionApiTest::sm_privateLibraryPath;
+	string RExtensionApiTests::sm_libraryRootPath = "testInstallPkgs";
+	string RExtensionApiTests::sm_publicLibraryPath;
+	string RExtensionApiTests::sm_privateLibraryPath;
 
 #ifdef _WIN64
-	const string RExtensionApiTest::sm_RHomePath = "";
+	const string RExtensionApiTests::sm_RHomePath = "";
 #else
-	const string RExtensionApiTest::sm_RHomePath = "/usr/lib/R";
+	const string RExtensionApiTests::sm_RHomePath = "/usr/lib/R";
 #endif
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::SetUpTestSuite
+	// Name: RExtensionApiTests::SetUpTestSuite
 	//
 	// Description:
 	//  Per-test-suite set-up. Called before the first test in every test suite.
 	//  But we want to execute this only once in the entire test run before the first test suite
 	//  since R can be initialized only once.
 	//
-	void RExtensionApiTest::SetUpTestSuite()
+	void RExtensionApiTests::SetUpTestSuite()
 	{
 		// Initialize only if this is the first test suite.
 		//
@@ -98,14 +98,14 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::TearDownTestSuite
+	// Name: RExtensionApiTests::TearDownTestSuite
 	//
 	// Description:
 	//  Per-test-suite tear-down. Called after the last test in every test suite.
 	//  But we want to execute this only once in the entire test run after the last test suite
 	//  since R can be torn down only once.
 	//
-	void RExtensionApiTest::TearDownTestSuite()
+	void RExtensionApiTests::TearDownTestSuite()
 	{
 		// Cleanup only if this is the last test suite.
 		//
@@ -118,13 +118,13 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::SetUp
+	// Name: RExtensionApiTests::SetUp
 	//
 	// Description:
 	//  Per-test setup. Code here will be called immediately after the constructor (right
 	//  before each test).
 	//
-	void RExtensionApiTest::SetUp()
+	void RExtensionApiTests::SetUp()
 	{
 		SetupVariables();
 	}
@@ -136,19 +136,19 @@ namespace ExtensionApiTest
 	//  Per-test tear-down. Code here will be called immediately after each test (right
 	// before the destructor).
 	//
-	void RExtensionApiTest::TearDown()
+	void RExtensionApiTests::TearDown()
 	{
 		CleanupSession();
 		CleanupVariables();
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::SetupLibPaths
+	// Name: RExtensionApiTests::SetupLibPaths
 	//
 	// Description:
 	//  Sets the library path variables.
 	//
-	void RExtensionApiTest::SetupLibPaths()
+	void RExtensionApiTests::SetupLibPaths()
 	{
 		sm_libraryRootPath = fs::absolute(sm_libraryRootPath).string();
 		fs::path libPath = sm_libraryRootPath;
@@ -157,12 +157,12 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::CreateLibPaths
+	// Name: RExtensionApiTests::CreateLibPaths
 	//
 	// Description:
 	//  Creates the library path directories.
 	//
-	void RExtensionApiTest::CreateLibPaths()
+	void RExtensionApiTests::CreateLibPaths()
 	{
 		fs::path libPath = fs::absolute(sm_libraryRootPath);
 		if (fs::exists(libPath))
@@ -185,71 +185,71 @@ namespace ExtensionApiTest
 	//  Loads library and gets handles to different functions
 	//  Testing if RExtension is successfully loaded dynamically
 	//
-	void RExtensionApiTest::GetHandles()
+	void RExtensionApiTests::GetHandles()
 	{
 		std::cout << "Loading the RExtension and getting handles for extension APIs.\n";
-		m_libHandle = Utilities::CrossPlatLoadLibrary(x_RExtensionLibName.c_str());
-		ASSERT_TRUE(m_libHandle != nullptr);
+		sm_libHandle = Utilities::CrossPlatLoadLibrary(x_RExtensionLibName.c_str());
+		ASSERT_TRUE(sm_libHandle != nullptr);
 
-		m_initFuncPtr = reinterpret_cast<FN_init*>(
+		sm_initFuncPtr = reinterpret_cast<FN_init*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"Init"));
-		ASSERT_TRUE(m_initFuncPtr != nullptr);
+		ASSERT_TRUE(sm_initFuncPtr != nullptr);
 
-		m_initSessionFuncPtr = reinterpret_cast<FN_initSession*>(
+		sm_initSessionFuncPtr = reinterpret_cast<FN_initSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"InitSession"));
-		ASSERT_TRUE(m_initSessionFuncPtr != nullptr);
+		ASSERT_TRUE(sm_initSessionFuncPtr != nullptr);
 
-		m_initColumnFuncPtr = reinterpret_cast<FN_initColumn*>(
+		sm_initColumnFuncPtr = reinterpret_cast<FN_initColumn*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"InitColumn"));
-		ASSERT_TRUE(m_initColumnFuncPtr != nullptr);
+		ASSERT_TRUE(sm_initColumnFuncPtr != nullptr);
 
-		m_initParamFuncPtr = reinterpret_cast<FN_initParam*>(
+		sm_initParamFuncPtr = reinterpret_cast<FN_initParam*>(
 		Utilities::CrossPlatGetFunctionFromLibHandle(
-			m_libHandle,
+			sm_libHandle,
 			"InitParam"));
-		ASSERT_TRUE(m_initParamFuncPtr != nullptr);
+		ASSERT_TRUE(sm_initParamFuncPtr != nullptr);
 
-		m_executeFuncPtr = reinterpret_cast<FN_execute*>(
+		sm_executeFuncPtr = reinterpret_cast<FN_execute*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"Execute"));
-		ASSERT_TRUE(m_executeFuncPtr != nullptr);
+		ASSERT_TRUE(sm_executeFuncPtr != nullptr);
 
-		m_getResultColumnFuncPtr = reinterpret_cast<FN_getResultColumn*>(
+		sm_getResultColumnFuncPtr = reinterpret_cast<FN_getResultColumn*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"GetResultColumn"));
-		ASSERT_TRUE(m_getResultColumnFuncPtr != nullptr);
+		ASSERT_TRUE(sm_getResultColumnFuncPtr != nullptr);
 
-		m_getResultsFuncPtr = reinterpret_cast<FN_getResults*>(
+		sm_getResultsFuncPtr = reinterpret_cast<FN_getResults*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"GetResults"));
-		ASSERT_TRUE(m_getResultsFuncPtr != nullptr);
+		ASSERT_TRUE(sm_getResultsFuncPtr != nullptr);
 
-		m_getOutputParamFuncPtr = reinterpret_cast<FN_getOutputParam*>(
+		sm_getOutputParamFuncPtr = reinterpret_cast<FN_getOutputParam*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"GetOutputParam"));
-		ASSERT_TRUE(m_getOutputParamFuncPtr != nullptr);
+		ASSERT_TRUE(sm_getOutputParamFuncPtr != nullptr);
 
-		m_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
+		sm_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"CleanupSession"));
-		ASSERT_TRUE(m_cleanupSessionFuncPtr != nullptr);
+		ASSERT_TRUE(sm_cleanupSessionFuncPtr != nullptr);
 
-		m_cleanupFuncPtr = reinterpret_cast<FN_cleanup*>(
+		sm_cleanupFuncPtr = reinterpret_cast<FN_cleanup*>(
 			Utilities::CrossPlatGetFunctionFromLibHandle(
-				m_libHandle,
+				sm_libHandle,
 				"Cleanup"));
-		ASSERT_TRUE(m_cleanupFuncPtr != nullptr);
+		ASSERT_TRUE(sm_cleanupFuncPtr != nullptr);
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ namespace ExtensionApiTest
 	//  Does Init where embedded R is initialized - can be called only once in the test suite.
 	//  Testing if Init api is implemented correctly.
 	//
-	void RExtensionApiTest::DoInit()
+	void RExtensionApiTests::DoInit()
 	{
 		std::cout << "Calling Init.\n";
 		SQLRETURN result = SQL_ERROR;
@@ -275,7 +275,7 @@ namespace ExtensionApiTest
 		SQLCHAR* privateLibraryPath = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(sm_privateLibraryPath.c_str())));
 
-		result = (*m_initFuncPtr)(
+		result = (*sm_initFuncPtr)(
 			extensionParams.get(),
 			paramsLength,
 			extensionPath,
@@ -294,7 +294,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Sets up default, valid variables for use in tests
 	//
-	void RExtensionApiTest::SetupVariables()
+	void RExtensionApiTests::SetupVariables()
 	{
 		m_sessionId = new SQLGUID();
 		m_taskId = 0;
@@ -463,7 +463,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Deletes the memory allocated to default variables.
 	//
-	void RExtensionApiTest::CleanupVariables()
+	void RExtensionApiTests::CleanupVariables()
 	{
 		if (m_sessionId != nullptr)
 		{
@@ -477,10 +477,10 @@ namespace ExtensionApiTest
 	// Description:
 	//  Closes the handle to the library.
 	//
-	void RExtensionApiTest::ReleaseHandles()
+	void RExtensionApiTests::ReleaseHandles()
 	{
 		std::cout << "Closing the library handle.\n";
-		Utilities::CrossPlatCloseLibrary(m_libHandle);
+		Utilities::CrossPlatCloseLibrary(sm_libHandle);
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -490,11 +490,11 @@ namespace ExtensionApiTest
 	// Calls Cleanup on the RExtension.
 	// Testing if Cleanup is implemented correctly.
 	//
-	void RExtensionApiTest::DoCleanup()
+	void RExtensionApiTests::DoCleanup()
 	{
 		std::cout << "Calling Cleanup.\n";
 		SQLRETURN result = SQL_ERROR;
-		result = (*m_cleanupFuncPtr)();
+		result = (*sm_cleanupFuncPtr)();
 		ASSERT_EQ(result, SQL_SUCCESS);
 	}
 
@@ -504,7 +504,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Cleans up all the library paths created.
 	//
-	void RExtensionApiTest::CleanupLibPaths()
+	void RExtensionApiTests::CleanupLibPaths()
 	{
 		fs::path libPath = fs::absolute(sm_libraryRootPath);
 
@@ -522,7 +522,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Initializes a valid, default session for later tests
 	//
-	void RExtensionApiTest::InitializeSession(
+	void RExtensionApiTests::InitializeSession(
 		SQLUSMALLINT inputSchemaColumnsNumber,
 		string       scriptString,
 		SQLUSMALLINT parametersNumber)
@@ -532,7 +532,7 @@ namespace ExtensionApiTest
 		SQLCHAR *script = static_cast<SQLCHAR*>(
 			static_cast<void*>(const_cast<char*>(scriptString.c_str())));
 
-		result = (*m_initSessionFuncPtr)(
+		result = (*sm_initSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			m_numTasks,
@@ -554,11 +554,11 @@ namespace ExtensionApiTest
 	// Description:
 	//  Cleans up a valid, default session for later tests
 	//
-	void RExtensionApiTest::CleanupSession()
+	void RExtensionApiTests::CleanupSession()
 	{
 		SQLRETURN result = SQL_SUCCESS;
 
-		result = (*m_cleanupSessionFuncPtr)(
+		result = (*sm_cleanupSessionFuncPtr)(
 			*m_sessionId,
 			m_taskId);
 
@@ -572,7 +572,7 @@ namespace ExtensionApiTest
 	//  Templatized function to call InitializeColumn for all columns in ColumnInfo.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
-	void RExtensionApiTest::InitializeColumns(ColumnInfo<SQLType> *columnInfo)
+	void RExtensionApiTests::InitializeColumns(ColumnInfo<SQLType> *columnInfo)
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
 		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
@@ -587,23 +587,23 @@ namespace ExtensionApiTest
 
 	// Template instantiations
 	//
-	template void RExtensionApiTest::InitializeColumns<SQLINTEGER, SQL_C_SLONG>(
+	template void RExtensionApiTests::InitializeColumns<SQLINTEGER, SQL_C_SLONG>(
 		ColumnInfo<SQLINTEGER> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQLCHAR, SQL_C_BIT>(
+	template void RExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_BIT>(
 		ColumnInfo<SQLCHAR> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQLREAL, SQL_C_FLOAT>(
+	template void RExtensionApiTests::InitializeColumns<SQLREAL, SQL_C_FLOAT>(
 		ColumnInfo<SQLREAL> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(
+	template void RExtensionApiTests::InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(
 		ColumnInfo<SQLDOUBLE> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(
+	template void RExtensionApiTests::InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(
 		ColumnInfo<SQLBIGINT> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(
+	template void RExtensionApiTests::InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(
 		ColumnInfo<SQLSMALLINT> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
+	template void RExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
 		ColumnInfo<SQLCHAR> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
+	template void RExtensionApiTests::InitializeColumns<SQL_DATE_STRUCT, SQL_C_TYPE_DATE>(
 		ColumnInfo<SQL_DATE_STRUCT> *ColumnInfo);
-	template void RExtensionApiTest::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
+	template void RExtensionApiTests::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 		ColumnInfo<SQL_TIMESTAMP_STRUCT> *ColumnInfo);
 
 	//----------------------------------------------------------------------------------------------
@@ -612,7 +612,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Calls InitColumn for the given columnNumber, columnName, dataType and columnSize.
 	//
-	void RExtensionApiTest::InitializeColumn(
+	void RExtensionApiTests::InitializeColumn(
 		SQLSMALLINT columnNumber,
 		string      columnNameString,
 		SQLSMALLINT dataType,
@@ -625,7 +625,7 @@ namespace ExtensionApiTest
 
 		SQLRETURN result = SQL_ERROR;
 
-		result = (*m_initColumnFuncPtr)(
+		result = (*sm_initColumnFuncPtr)(
 				*m_sessionId,
 				m_taskId,
 				columnNumber,
@@ -648,7 +648,7 @@ namespace ExtensionApiTest
 	//  having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 	//
 	template<class SQLType>
-	vector<SQLType> RExtensionApiTest::GenerateContiguousData(
+	vector<SQLType> RExtensionApiTests::GenerateContiguousData(
 		vector<const SQLType*> columnVector,
 		SQLINTEGER             *strLenOrInd)
 	{
@@ -669,18 +669,18 @@ namespace ExtensionApiTest
 
 	// Template instantiations
 	//
-	template vector<char> RExtensionApiTest::GenerateContiguousData(
+	template vector<char> RExtensionApiTests::GenerateContiguousData(
 		vector<const char*> columnVector,
 		SQLINTEGER          *strLenOrInd);
-	template vector<SQLCHAR> RExtensionApiTest::GenerateContiguousData(
+	template vector<SQLCHAR> RExtensionApiTests::GenerateContiguousData(
 		vector<const SQLCHAR*> columnVector,
 		SQLINTEGER             *strLenOrInd);
-	template vector<wchar_t> RExtensionApiTest::GenerateContiguousData(
+	template vector<wchar_t> RExtensionApiTests::GenerateContiguousData(
 		vector<const wchar_t*> columnVector,
 		SQLINTEGER             *strLenOrInd);
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::CheckVectorEquality
+	// Name: RExtensionApiTest::CheckRVectorColumnDataEquality
 	//
 	// Description:
 	// Templatized function to compare the given vector and data for equality.
@@ -689,10 +689,10 @@ namespace ExtensionApiTest
 	// Where strLen_or_Ind == SQL_NULL_DATA and nullable = SQL_NULLABLE, check for is_na.
 	// The default value of nullable is SQL_NULLABLE.
 	//
-	template<class SQLType, class RType, SQLSMALLINT DataType>
-	void RExtensionApiTest::CheckVectorEquality(
+	template<class SQLType, class RVectorType, SQLSMALLINT DataType>
+	void RExtensionApiTests::CheckRVectorColumnDataEquality(
 		SQLULEN     expectedRowsNumber,
-		RType       vectorToTest,
+		RVectorType vectorToTest,
 		void        *expectedData,
 		SQLINTEGER  *strLen_or_Ind,
 		SQLSMALLINT nullable)
@@ -704,7 +704,7 @@ namespace ExtensionApiTest
 				strLen_or_Ind != nullptr &&
 				strLen_or_Ind[index] == SQL_NULL_DATA)
 			{
-				EXPECT_TRUE(RType::is_na(vectorToTest[index]));
+				EXPECT_TRUE(RVectorType::is_na(vectorToTest[index]));
 			}
 			else
 			{
@@ -724,43 +724,43 @@ namespace ExtensionApiTest
 
 	// Template instantiations
 	//
-	template void RExtensionApiTest::CheckVectorEquality<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::IntegerVector vectorToTest,
 		void                *expectedData,
 		SQLINTEGER          *strLenOrInd,
 		SQLSMALLINT         nullable);
-	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLCHAR, Rcpp::LogicalVector, SQL_C_BIT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::LogicalVector vectorToTest,
 		void                *expectedData,
 		SQLINTEGER          *strLen_or_Ind,
 		SQLSMALLINT         nullable);
-	template void RExtensionApiTest::CheckVectorEquality<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLREAL, Rcpp::NumericVector, SQL_C_FLOAT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::NumericVector vectorToTest,
 		void                *expectedData,
 		SQLINTEGER          *strLen_or_Ind,
 		SQLSMALLINT         nullable);
-	template void RExtensionApiTest::CheckVectorEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::NumericVector vectorToTest,
 		void                *expectedData,
 		SQLINTEGER          *strLen_or_Ind,
 		SQLSMALLINT         nullable);
-	template void RExtensionApiTest::CheckVectorEquality<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLBIGINT, Rcpp::NumericVector, SQL_C_SBIGINT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::NumericVector vectorToTest,
 		void                *expectedData,
 		SQLINTEGER          *strLen_or_Ind,
 		SQLSMALLINT         nullable);
-	template void RExtensionApiTest::CheckVectorEquality<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLSMALLINT, Rcpp::IntegerVector, SQL_C_SSHORT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::IntegerVector vectorToTest,
 		void                *expectedData,
 		SQLINTEGER          *strLen_or_Ind,
 		SQLSMALLINT         nullable);
-	template void RExtensionApiTest::CheckVectorEquality<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
+	template void RExtensionApiTests::CheckRVectorColumnDataEquality<SQLCHAR, Rcpp::IntegerVector, SQL_C_UTINYINT>(
 		SQLULEN             expectedRowsNumber,
 		Rcpp::IntegerVector vectorToTest,
 		void                *expectedData,
@@ -768,7 +768,7 @@ namespace ExtensionApiTest
 		SQLSMALLINT         nullable);
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::CheckCharacterVectorEquality
+	// Name: RExtensionApiTest::CheckRCharacterVectorColumnDataEquality
 	//
 	// Description:
 	//  Compares character vector with the given data and corresponding strLen_or_Ind.
@@ -776,7 +776,7 @@ namespace ExtensionApiTest
 	//  Where strLen_or_Ind == SQL_NULL_DATA, check for is_na.
 	//
 	template<class CharType>
-	void RExtensionApiTest::CheckCharacterVectorEquality(
+	void RExtensionApiTests::CheckRCharacterVectorColumnDataEquality(
 		SQLULEN               expectedRowsNumber,
 		Rcpp::CharacterVector vectorToTest,
 		void                  *expectedData,
@@ -839,30 +839,30 @@ namespace ExtensionApiTest
 
 	// Template instantiations
 	//
-	template void RExtensionApiTest::CheckCharacterVectorEquality<char>(
+	template void RExtensionApiTests::CheckRCharacterVectorColumnDataEquality<char>(
 		SQLULEN               expectedRowsNumber,
 		Rcpp::CharacterVector vectorToTest,
 		void                  *expectedData,
 		SQLINTEGER            *strLen_or_Ind);
 
-	template void RExtensionApiTest::CheckCharacterVectorEquality<wchar_t>(
+	template void RExtensionApiTests::CheckRCharacterVectorColumnDataEquality<wchar_t>(
 		SQLULEN               expectedRowsNumber,
 		Rcpp::CharacterVector vectorToTest,
 		void                  *expectedData,
 		SQLINTEGER            *strLen_or_Ind);
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionApiTest::CheckDateTimeVectorEquality
+	// Name: RExtensionApiTest::CheckRDateTimeVectorColumnDataEquality
 	//
 	// Description:
 	//  Compares the given R Date(time) vector and data for equality
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR>
-	void RExtensionApiTest::CheckDateTimeVectorEquality(
-		SQLULEN    expectedRowsNumber,
-		RType      vectorToTest,
-		void       *expectedData,
-		SQLINTEGER *strLen_or_Ind)
+	template<class SQLType, class RVectorType, class DateTimeTypeInR>
+	void RExtensionApiTests::CheckRDateTimeVectorColumnDataEquality(
+		SQLULEN     expectedRowsNumber,
+		RVectorType vectorToTest,
+		void        *expectedData,
+		SQLINTEGER  *strLen_or_Ind)
 	{
 		ASSERT_EQ(static_cast<SQLULEN>(vectorToTest.size()), expectedRowsNumber);
 
@@ -912,14 +912,14 @@ namespace ExtensionApiTest
 
 	// Template instantiations
 	//
-	template void RExtensionApiTest::CheckDateTimeVectorEquality
+	template void RExtensionApiTests::CheckRDateTimeVectorColumnDataEquality
 		<SQL_DATE_STRUCT, Rcpp::DateVector, Rcpp::Date>(
 			SQLULEN          expectedRowsNumber,
 			Rcpp::DateVector vectorToTest,
 			void             *expectedData,
 			SQLINTEGER       *strLen_or_Ind);
 
-	template void RExtensionApiTest::CheckDateTimeVectorEquality
+	template void RExtensionApiTests::CheckRDateTimeVectorColumnDataEquality
 		<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>(
 			SQLULEN              expectedRowsNumber,
 			Rcpp::DatetimeVector vectorToTest,

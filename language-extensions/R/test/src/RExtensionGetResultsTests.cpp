@@ -37,7 +37,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of Integer column data.
 	//
-	TEST_F(RExtensionApiTest, GetIntegerResultsTest)
+	TEST_F(RExtensionApiTests, GetIntegerResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -68,7 +68,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of Logical column data.
 	//
-	TEST_F(RExtensionApiTest, GetLogicalResultsTest)
+	TEST_F(RExtensionApiTests, GetLogicalResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -99,7 +99,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of Real column data.
 	//
-	TEST_F(RExtensionApiTest, GetRealResultsTest)
+	TEST_F(RExtensionApiTests, GetRealResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -130,7 +130,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of Double column data.
 	//
-	TEST_F(RExtensionApiTest, GetDoubleResultsTest)
+	TEST_F(RExtensionApiTests, GetDoubleResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -161,7 +161,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of BigInteger columns.
 	//
-	TEST_F(RExtensionApiTest, GetBigIntResultsTest)
+	TEST_F(RExtensionApiTests, GetBigIntResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -192,7 +192,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of SmallInt columns.
 	//
-	TEST_F(RExtensionApiTest, GetSmallIntResultsTest)
+	TEST_F(RExtensionApiTests, GetSmallIntResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -223,7 +223,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResultColumn with default script using an OutputDataSet of TinyInt columns.
 	//
-	TEST_F(RExtensionApiTest, GetTinyIntResultsTest)
+	TEST_F(RExtensionApiTests, GetTinyIntResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -254,7 +254,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of Character columns.
 	//
-	TEST_F(RExtensionApiTest, GetCharResultsTest)
+	TEST_F(RExtensionApiTests, GetCharResultsTest)
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
@@ -333,7 +333,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of NChar columns.
 	//
-	TEST_F(RExtensionApiTest, GetNCharResultsTest)
+	TEST_F(RExtensionApiTests, GetNCharResultsTest)
 	{
 		SQLUSMALLINT inputSchemaColumnsNumber = 3;
 
@@ -462,7 +462,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with a script that returns OutputDataSet with a single raw column.
 	//
-	TEST_F(RExtensionApiTest, GetRawResultsTest)
+	TEST_F(RExtensionApiTests, GetRawResultsTest)
 	{
 		string scriptString = "rawChars <- charToRaw(paste(letters[1:5], collapse=''));"
 			"OutputDataSet <- data.frame(rawChars);"
@@ -476,7 +476,7 @@ namespace ExtensionApiTest
 			scriptString);
 
 		SQLUSMALLINT outputSchemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -495,7 +495,7 @@ namespace ExtensionApiTest
 		vector<SQLINTEGER> expectedStrLenOrInd =
 			{ static_cast<SQLINTEGER>(expectedData.size()) };
 
-		result = (*m_getResultsFuncPtr)(
+		result = (*sm_getResultsFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -529,7 +529,7 @@ namespace ExtensionApiTest
 			scriptString);
 
 		outputSchemaColumnsNumber = 0;
-		result = (*m_executeFuncPtr)(
+		result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
@@ -540,7 +540,7 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 1);
 
-		result = (*m_getResultsFuncPtr)(
+		result = (*sm_getResultsFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -559,7 +559,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of Date column data.
 	//
-	TEST_F(RExtensionApiTest, GetDateResultsTest)
+	TEST_F(RExtensionApiTests, GetDateResultsTest)
 	{
 		// Initialize with a default session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -591,7 +591,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script expecting an OutputDataSet of DateTime column data.
 	//
-	TEST_F(RExtensionApiTest, GetDateTimeResultsTest)
+	TEST_F(RExtensionApiTests, GetDateTimeResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -622,7 +622,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with default script using an OutputDataSet of different column types.
 	//
-	TEST_F(RExtensionApiTest, GetDifferentColumnResultsTest)
+	TEST_F(RExtensionApiTests, GetDifferentColumnResultsTest)
 	{
 		// Initialize with a default Session that prints Hello RExtension
 		// and assigns InputDataSet to OutputDataSet
@@ -674,7 +674,7 @@ namespace ExtensionApiTest
 		vector<void *> expectedData { intColData.data(), doubleColData.data(), charColData.data()};
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			expectedRowsNumber,
@@ -686,7 +686,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber = 0;
 		SQLPOINTER *data = nullptr;
 		SQLINTEGER **strLen_or_Ind = nullptr;
-		result = (*m_getResultsFuncPtr)(
+		result = (*sm_getResultsFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -725,21 +725,21 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputschemaColumnsNumber, outputDataSet.size());
 		Rcpp::IntegerVector intColumn = outputDataSet[integerColumnName.c_str()];
-		CheckVectorEquality<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+		CheckRVectorColumnDataEquality<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
 			rowsNumber,
 			intColumn,
 			data[0],
 			strLen_or_Ind[0]);
 
 		Rcpp::NumericVector numericColumn = outputDataSet[doubleColumnName.c_str()];
-		CheckVectorEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
+		CheckRVectorColumnDataEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
 			rowsNumber,
 			numericColumn,
 			data[1],
 			strLen_or_Ind[1]);
 
 		Rcpp::CharacterVector charColumn = outputDataSet[charColumnName.c_str()];
-		CheckCharacterVectorEquality<char>(
+		CheckRCharacterVectorColumnDataEquality<char>(
 			rowsNumber,
 			charColumn,
 			data[2],
@@ -752,7 +752,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults with a script that returns OutputDataSet with empty rows.
 	//
-	TEST_F(RExtensionApiTest, GetEmptyResultsTest)
+	TEST_F(RExtensionApiTests, GetEmptyResultsTest)
 	{
 		string scriptString = ""
 			"OutputDataSet <- data.frame(intCol = as.integer(c()))\n"
@@ -766,7 +766,7 @@ namespace ExtensionApiTest
 			scriptString);
 
 		SQLUSMALLINT outputschemaColumnsNumber = 0;
-		SQLRETURN result = (*m_executeFuncPtr)(
+		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,  // input rowsNumber
@@ -791,8 +791,8 @@ namespace ExtensionApiTest
 	//  Tests GetResults to verify the expected results are obtained.
 	//  For numeric, logical and integer types.
 	//
-	template<class InputSQLType, class RType, class OutputSQLType, SQLSMALLINT outputDataType>
-	void RExtensionApiTest::GetResults(
+	template<class InputSQLType, class RVectorType, class OutputSQLType, SQLSMALLINT outputDataType>
+	void RExtensionApiTests::GetResults(
 		SQLULEN        expectedRowsNumber,
 		SQLPOINTER     *expectedData,
 		SQLINTEGER     **expectedStrLen_or_Ind,
@@ -801,7 +801,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber = 0;
 		SQLPOINTER *data = nullptr;
 		SQLINTEGER **strLen_or_Ind = nullptr;
-		SQLRETURN result = (*m_getResultsFuncPtr)(
+		SQLRETURN result = (*sm_getResultsFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -830,8 +830,8 @@ namespace ExtensionApiTest
 				expectedColumnStrLenOrInd,
 				columnStrLenOrInd);
 
-			RType column = outputDataSet[columnNames[columnNumber].c_str()];
-			CheckVectorEquality<OutputSQLType, RType, outputDataType>(
+			RVectorType column = outputDataSet[columnNames[columnNumber].c_str()];
+			CheckRVectorColumnDataEquality<OutputSQLType, RVectorType, outputDataType>(
 				rowsNumber,
 				column,
 				columnData,
@@ -847,7 +847,7 @@ namespace ExtensionApiTest
 	//  and nullMap with rowsNumber for equality.
 	//
 	template<class InputSQLType, class OutputSQLType, SQLSMALLINT OutputDataType>
-	void RExtensionApiTest::CheckColumnDataEquality(
+	void RExtensionApiTests::CheckColumnDataEquality(
 		SQLULEN        rowsNumber,
 		InputSQLType   *expectedColumnData,
 		OutputSQLType  *columnData,
@@ -912,7 +912,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults to verify the expected results are obtained for character data.
 	//
-	void RExtensionApiTest::GetCharResults(
+	void RExtensionApiTests::GetCharResults(
 		SQLULEN        expectedRowsNumber,
 		SQLPOINTER     *expectedData,
 		SQLINTEGER     **expectedStrLen_or_Ind,
@@ -921,7 +921,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber = 0;
 		SQLPOINTER *data = nullptr;
 		SQLINTEGER **strLen_or_Ind = nullptr;
-		SQLRETURN result = (*m_getResultsFuncPtr)(
+		SQLRETURN result = (*sm_getResultsFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -951,7 +951,7 @@ namespace ExtensionApiTest
 				columnStrLenOrInd);
 
 			Rcpp::CharacterVector column = outputDataSet[columnNames[columnNumber].c_str()];
-			CheckCharacterVectorEquality<char>(
+			CheckRCharacterVectorColumnDataEquality<char>(
 				rowsNumber,
 				column,
 				columnData,
@@ -965,7 +965,7 @@ namespace ExtensionApiTest
 	// Description:
 	//  Compares the given character data & nullMap with rowsNumber for equality.
 	//
-	void RExtensionApiTest::CheckCharDataEquality(
+	void RExtensionApiTests::CheckCharDataEquality(
 		SQLULEN    rowsNumber,
 		char       *expectedColumnData,
 		char       *columnData,
@@ -1000,8 +1000,8 @@ namespace ExtensionApiTest
 	// Description:
 	//  Tests GetResults to verify the expected results are obtained for date(time) data.
 	//
-	template<class SQLType, class RType, class DateTimeTypeInR>
-	void RExtensionApiTest::GetDateTimeResults(
+	template<class SQLType, class RVectorType, class DateTimeTypeInR>
+	void RExtensionApiTests::GetDateTimeResults(
 		SQLULEN        expectedRowsNumber,
 		SQLPOINTER     *expectedData,
 		SQLINTEGER     **expectedStrLen_or_Ind,
@@ -1010,7 +1010,7 @@ namespace ExtensionApiTest
 		SQLULEN    rowsNumber = 0;
 		SQLPOINTER *data = nullptr;
 		SQLINTEGER **strLen_or_Ind = nullptr;
-		SQLRETURN result = (*m_getResultsFuncPtr)(
+		SQLRETURN result = (*sm_getResultsFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			&rowsNumber,
@@ -1039,8 +1039,8 @@ namespace ExtensionApiTest
 				expectedColumnStrLenOrInd,
 				columnStrLenOrInd);
 
-			RType column = outputDataSet[columnNames[columnNumber].c_str()];
-			CheckDateTimeVectorEquality<SQLType, RType, DateTimeTypeInR>(
+			RVectorType column = outputDataSet[columnNames[columnNumber].c_str()];
+			CheckRDateTimeVectorColumnDataEquality<SQLType, RVectorType, DateTimeTypeInR>(
 				rowsNumber,
 				column,
 				columnData,
@@ -1055,7 +1055,7 @@ namespace ExtensionApiTest
 	//  Compares the given datetime data & nullMap for equality.
 	//
 	template<class SQLType>
-	void RExtensionApiTest::CheckDateTimeDataEquality(
+	void RExtensionApiTests::CheckDateTimeDataEquality(
 		SQLULEN    rowsNumber,
 		SQLType    *expectedColumnData,
 		SQLType    *columnData,

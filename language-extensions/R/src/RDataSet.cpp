@@ -307,7 +307,7 @@ void RInputDataSet::AddColumnsToDataFrame(
 // Description:
 //  Adds a single column of values into the R DataFrame
 //
-template<class SQLType, class RType, class NAType, SQLSMALLINT DataType>
+template<class SQLType, class RVectorType, class NAType, SQLSMALLINT DataType>
 void RInputDataSet::AddColumnToDataFrame(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -324,7 +324,7 @@ void RInputDataSet::AddColumnToDataFrame(
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
 	SQLSMALLINT nullable = m_columns[columnNumber].get()->Nullable();
 
-	m_dataFrame[name.c_str()] = RTypeUtils::CreateVector<SQLType, RType, NAType, DataType>(
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateVector<SQLType, RVectorType, NAType, DataType>(
 		rowsNumber,
 		data,
 		strLen_or_Ind,
@@ -365,7 +365,7 @@ void RInputDataSet::AddCharacterColumnToDataFrame(
 // Description:
 //  Adds a single column of date(time) values into the R DataFrame.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
 void RInputDataSet::AddDateTimeColumnToDataFrame(
 	SQLSMALLINT columnNumber,
 	SQLULEN     rowsNumber,
@@ -382,7 +382,7 @@ void RInputDataSet::AddDateTimeColumnToDataFrame(
 	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
 	SQLSMALLINT nullable = m_columns[columnNumber].get()->Nullable();
 
-	m_dataFrame[name.c_str()] = RTypeUtils::CreateDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+	m_dataFrame[name.c_str()] = RTypeUtils::CreateDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 		rowsNumber,
 		data,
 		strLen_or_Ind,
@@ -490,7 +490,7 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 //  adds data to m_data and nullmap to m_columnNullMap.
 //  Templated for integer, numeric and logical R class types.
 //
-template<class RType, class SQLType, SQLSMALLINT DataType>
+template<class RVectorType, class SQLType, SQLSMALLINT DataType>
 void ROutputDataSet::GetColumnFromDataFrame(
 	SQLUSMALLINT columnNumber,
 	SQLULEN      &columnSize,
@@ -511,8 +511,8 @@ void ROutputDataSet::GetColumnFromDataFrame(
 		columnData = new vector<SQLType>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
-		RType column = m_dataFrame[columnNumber];
-		RTypeUtils::FillDataFromRVector<SQLType, RType, DataType>(
+		RVectorType column = m_dataFrame[columnNumber];
+		RTypeUtils::FillDataFromRVector<SQLType, RVectorType, DataType>(
 			m_rowsNumber,
 			column,
 			columnData,
@@ -640,7 +640,7 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 //  Templated for Date(Rcpp::Date) and POSIXct(Rcpp::Datetime) R class types for
 //  date and datetime SQLTypes respectively.
 //
-template<class SQLType, class RType, class DateTimeTypeInR>
+template<class SQLType, class RVectorType, class DateTimeTypeInR>
 void ROutputDataSet::GetDateTimeColumnFromDataFrame(
 	SQLUSMALLINT columnNumber,
 	SQLULEN      &columnSize,
@@ -661,8 +661,8 @@ void ROutputDataSet::GetDateTimeColumnFromDataFrame(
 		columnData = new vector<SQLType>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
-		RType column = m_dataFrame[columnNumber];
-		RTypeUtils::FillDataFromDateTimeVector<SQLType, RType, DateTimeTypeInR>(
+		RVectorType column = m_dataFrame[columnNumber];
+		RTypeUtils::FillDataFromDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 			m_rowsNumber,
 			column,
 			columnData,
@@ -740,9 +740,9 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 	// Look up the map with the key classInR.
 	//
 	RTypeUtils::RToOdbcTypeMap::const_iterator it =
-		RTypeUtils::m_classInRToOdbcTypeMap.find(string(classInR[0]));
+		RTypeUtils::sm_classInRToOdbcTypeMap.find(string(classInR[0]));
 
-	if (it == RTypeUtils::m_classInRToOdbcTypeMap.end())
+	if (it == RTypeUtils::sm_classInRToOdbcTypeMap.end())
 	{
 		throw invalid_argument("Unsupported data type in output data for column #"
 			+ to_string(columnNumber) + ".");
