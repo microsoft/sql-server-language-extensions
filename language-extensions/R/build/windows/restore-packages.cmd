@@ -35,12 +35,12 @@ SET R_LIBRARY_PATH=%R_HOME%\library
 
 REM Install Rcpp and RInside
 REM
-%R_BIN_PATH%\R -e "install.packages('Rcpp', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
-%R_BIN_PATH%\R -e "stopifnot(require(Rcpp))"
+"%R_BIN_PATH%\R" -e "install.packages('Rcpp', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
+"%R_BIN_PATH%\R" -e "stopifnot(require(Rcpp))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rcpp package" || EXIT /b %ERRORLEVEL%
 
-%R_BIN_PATH%\R -e "install.packages('RInside', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
-%R_BIN_PATH%\R -e "stopifnot(require(RInside))"
+"%R_BIN_PATH%\R" -e "install.packages('RInside', lib = '!R_LIBRARY_PATH:\=/!', repos = 'https://ftp.osuosl.org/pub/cran/')"
+"%R_BIN_PATH%\R" -e "stopifnot(require(RInside))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install RInside package" || EXIT /b %ERRORLEVEL%
 SETLOCAL disabledelayedexpansion
 
@@ -55,9 +55,9 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools4.0." || EXIT /b 
 
 REM Install RTools
 REM
-%RTOOLS_HOME%\Rtools35.exe /VERYSILENT /DIR="C:\Rtools\"
+"%RTOOLS_HOME%\Rtools35.exe" /VERYSILENT /DIR="C:\Rtools\"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools3.5." || EXIT /b %ERRORLEVEL%
-%RTOOLS_HOME%\rtools40.exe /VERYSILENT /DIR="C:\rtools40\"
+"%RTOOLS_HOME%\rtools40.exe" /VERYSILENT /DIR="C:\rtools40\"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools4.0." || EXIT /b %ERRORLEVEL%
 
 EXIT /b %ERRORLEVEL%

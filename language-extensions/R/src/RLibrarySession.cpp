@@ -207,34 +207,45 @@ SQLRETURN RLibrarySession::InstallLibrary(
 	string renamedLibFilePathStr = Utilities::NormalizePathString(
 		fs::path(installDir).append(m_libraryName + extension).string());
 
-	// Copy the library file to the install directory with the expected name.
-	//
-	string copyScript = "file.copy(from = '" + libFilePathStr + "', to = '"
-		+ renamedLibFilePathStr + "');";
-	ExecuteScript(copyScript);
-
-	// Install the package using the new renamedLibFilePathStr.
-	//
-	string installScript =
-		"install.packages(pkgs = '" + renamedLibFilePathStr + "', "
-			"lib = '" + installDir + "', repos = NULL, clean = TRUE, quiet = FALSE, "
-			"verbose = TRUE, INSTALL_opts=c('--debug'));";
-	ExecuteScript(installScript);
-
-	// Confirm the installation.
-	//
-	bool isInstalled = IsLibraryInstalled();
-	if (!isInstalled)
+	try
 	{
-		throw runtime_error("install.packages() failed to install the package "
-			+ m_libraryName + ".");
+		// Copy the library file to the install directory with the expected name.
+		//
+		string copyScript = "file.copy(from = '" + libFilePathStr + "', to = '"
+			+ renamedLibFilePathStr + "');";
+		ExecuteScript(copyScript);
+
+		// Install the package using the new renamedLibFilePathStr.
+		//
+		string installScript =
+			"install.packages(pkgs = '" + renamedLibFilePathStr + "', "
+				"lib = '" + installDir + "', repos = NULL, clean = TRUE, quiet = FALSE, "
+				"verbose = TRUE, INSTALL_opts=c('--debug'));";
+		ExecuteScript(installScript);
+
+		// Confirm the installation.
+		//
+		bool isInstalled = IsLibraryInstalledAtPath(installDir);
+		if (!isInstalled)
+		{
+			throw runtime_error("install.packages() failed to install the package "
+				+ m_libraryName + ".");
+		}
 	}
-
-	// Clean up the copied library file path with the new name.
-	//
-	if (fs::exists(renamedLibFilePathStr))
+	catch (exception ex)
 	{
-		fs::remove_all(renamedLibFilePathStr);
+		// Clean up the copied library file path with the new name.
+		//
+		if (fs::exists(renamedLibFilePathStr))
+		{
+			fs::remove_all(renamedLibFilePathStr);
+		}
+
+		// Rethrow this exception, since the install has failed.
+		// We denote SQL_ERROR, by rethrowing this exception so that it can be caught by the caller
+		// and sent back to SQL Server to record the errors.
+		//
+		throw(ex);
 	}
 
 	return SQL_SUCCESS;
@@ -273,7 +284,7 @@ SQLRETURN RLibrarySession::UninstallLibrary(
 			"', lib = '" + installDir + "');";
 		ExecuteScript(uninstallScript);
 
-		bool isInstalled = IsLibraryInstalled();
+		bool isInstalled = IsLibraryInstalledAtPath(installDir);
 		if (isInstalled)
 		{
 			throw runtime_error("remove.packages() failed to uninstall the package " +
@@ -340,24 +351,53 @@ SQLRETURN RLibrarySession::UninstallLibrary(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Name: RLibrarySession::IsLibraryInstalled
+// Name: RLibrarySession::IsLibraryInstalledAtPath
 //
 // Description:
-//  Checks if the library is installed or not by executing the script require('libraryName')
-//  If the library is installed, this script returns true. Otherwise, it returns false.
+//  Checks if the library is installed at the correct location or not by executing
+//  the script find.package()
+//  If the library is installed, this script returns its first installation location.
+//  If its installed location is same as the installDir, it returns true.
+//  Otherwise, it returns false.
 //
 // Returns:
-//  True if installed, false otherwise.
+//  True if installed at correct location, false otherwise.
 //
-bool RLibrarySession::IsLibraryInstalled()
+bool RLibrarySession::IsLibraryInstalledAtPath(const string &installDir)
 {
-	LOG("RLibrarySession::IsLibraryInstalled");
+	LOG("RLibrarySession::IsLibraryInstalledAtPath");
 
-	string checkInstallationScript = "require('" + m_libraryName + "')";
-	Rcpp::LogicalVector isInstalledVector(
-		ExecuteScriptAndGetResult(checkInstallationScript));
+	string getInstallationLocationScript = "find.package(package = '" + m_libraryName + "'"
+		", lib.loc = '" + installDir + "')[1];";
 
-	bool isInstalled = isInstalledVector[0];
+	bool isInstalled = false;
 
+	try
+	{
+		Rcpp::CharacterVector installedLocationVector(
+			ExecuteScriptAndGetResult(getInstallationLocationScript));
+		
+		if (installedLocationVector.size() > 0)
+		{
+			string firstInstallPath(installedLocationVector[0]);
+			LOG(m_libraryName + " is found installed at " + firstInstallPath);
+			fs::path fullExpectedInstallPath = fs::path(installDir) / m_libraryName;
+
+			string normalizedFoundPath =
+				Utilities::NormalizePathString(firstInstallPath);
+			string normalizedExpectedInstallPath =
+				Utilities::NormalizePathString(fullExpectedInstallPath.string());
+			isInstalled =
+				normalizedFoundPath.compare(normalizedExpectedInstallPath) == 0;
+		}
+	}
+	catch (...)
+	{
+		// If the script throws an exception, it means we could not find the package.
+		// Keep isInstalled = false.
+		//
+		LOG(m_libraryName + " is not installed.");
+	}
+	
 	return isInstalled;
 }

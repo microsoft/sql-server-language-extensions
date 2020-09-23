@@ -74,4 +74,8 @@ public:
 	//
 	template<class SQLDateTimeType>
 	static SQLDateTimeType ToUtc(SQLDateTimeType givenTimeStamp);
+
+	// Normalizes path string.
+	//
+	static std::string NormalizePathString(std::string pathString);
 };

@@ -59,9 +59,9 @@ public:
 		const SQLCHAR *libraryInstallDirectory,
 		SQLINTEGER    libraryInstallDirectoryLength);
 
-	// Checks if the library is installed or not.
+	// Checks if the library is installed at correct location or not.
 	//
-	bool IsLibraryInstalled();
+	bool IsLibraryInstalledAtPath(const std::string &installDir);
 
 	// Creates a script that would set the libPaths to a character vector of strings.
 	// These strings are the ordered members of the input Rcpp::CharacterVector

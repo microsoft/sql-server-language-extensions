@@ -85,7 +85,7 @@ void ExecuteScript(const string &script)
 	if (embeddedREnvPtr != nullptr)
 	{
 		string tryCatchScript = GetScriptWithTryCatch(script);
-		LOG("Executing\n" + tryCatchScript);
+		LOG(tryCatchScript);
 
 		// If evaluation of script fails, this throws an exception.
 		//

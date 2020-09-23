@@ -69,12 +69,7 @@ namespace ExtensionApiTest
 		//
 		static void SetUpTestSuite();
 
-		// Code here will be called immediately after the constructor (right
-		// before each test).
-		//
-		void SetUp() override;
-
-		// Get handles to install and uninstall library API functions.
+		// Gets handles to install and uninstall library API functions.
 		//
 		static void GetHandles();
 
@@ -83,23 +78,23 @@ namespace ExtensionApiTest
 		//
 		static std::string ExecuteScriptAndGetResultAsString(std::string script);
 
-		// Set up default, valid variables for use in tests
+		// Sets the package source path root for use in tests.
 		//
-		void SetupVariables() override;
+		static void SetPackageSourcePath();
 
-		// Detach package from R runtime to remove load traces.
+		// Detaches package from R runtime to remove load traces.
 		//
 		void DetachLibrary(std::string extLibName);
 
-		// Find the location of the given extLibName.
+		// Finds the location of the given extLibName.
 		//
 		std::string GetLocationOfLibrary(std::string extLibName);
 
-		// Find the version of the given extLibName.
+		// Finds the version of the given extLibName.
 		//
 		std::string GetVersionOfLibrary(std::string extLibName);
 
-		// Install and test a package
+		// Installs and test a package
 		//
 		void InstallAndTest(
 			std::string extLibName,
@@ -110,7 +105,7 @@ namespace ExtensionApiTest
 			bool        successfulInstall = true,
 			bool        successfulLoad = true);
 
-		// Uninstall and test a package
+		// Uninstalls and test a package
 		//
 		void UninstallAndTest(
 			std::string extLibName,
@@ -120,11 +115,12 @@ namespace ExtensionApiTest
 		// Filesystem path of the source location of the directory containing the
 		// packages we will install.
 		//
-		std::experimental::filesystem::path m_packagesPath;
+		static std::experimental::filesystem::path sm_packagesSourcePath;
 
-		// The prefix appended to zip file paths.
+		// Different prefixes appended to zip file paths based on public or private libraries.
 		//
-		static const std::string sm_DbIdUserIdPrefix;
+		static const std::string sm_PublicDbIdUserIdPrefix;
+		static const std::string sm_PrivateDbIdUserIdPrefix;
 
 		// Pointer to the InstallExternalLibrary function.
 		//

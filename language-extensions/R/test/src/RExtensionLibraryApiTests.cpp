@@ -51,7 +51,9 @@ namespace ExtensionApiTest
 	FN_uninstallExternalLibrary *RExtensionLibraryApiTests::sm_uninstallExternalLibraryFuncPtr = nullptr;
 	FN_executeScript *RExtensionLibraryApiTests::sm_executeScriptFuncPtr = nullptr;
 	FN_executeScriptAndGetResult *RExtensionLibraryApiTests::sm_executeScriptAndGetResultFuncPtr = nullptr;
-	const string RExtensionLibraryApiTests::sm_DbIdUserIdPrefix = "1_1_";
+	const string RExtensionLibraryApiTests::sm_PublicDbIdUserIdPrefix = "1_1_";
+	const string RExtensionLibraryApiTests::sm_PrivateDbIdUserIdPrefix = "24_58_";
+	fs::path RExtensionLibraryApiTests::sm_packagesSourcePath;
 
 	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionLibraryApiTests::SetUpTestSuite
@@ -64,19 +66,7 @@ namespace ExtensionApiTest
 	{
 		RExtensionApiTests::SetUpTestSuite();
 		GetHandles();
-	}
-
-	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionLibraryApiTests::SetUp
-	//
-	// Description:
-	//  Per-test set up. Code here will be called immediately after the constructor (right
-	//  before each test).
-	//
-	void RExtensionLibraryApiTests::SetUp()
-	{
-		RExtensionApiTests::SetUp();
-		SetupVariables();
+		SetPackageSourcePath();
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -114,22 +104,17 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// Name: RExtensionLibraryApiTests::SetupVariables
+	// Name: RExtensionLibraryApiTests::SetPackageSourcePath
 	//
 	// Description:
-	//  Sets up default, valid variables for use in tests
+	// Sets the package source path root for use in tests.
 	//
-	void RExtensionLibraryApiTests::SetupVariables()
+	void RExtensionLibraryApiTests::SetPackageSourcePath()
 	{
-		// First call the base SetupVariables
-		//
-		RExtensionApiTests::SetupVariables();
-
 		string enlRoot = string(getenv("ENL_ROOT"));
-
-		m_packagesPath = fs::absolute(enlRoot);
-		m_packagesPath = m_packagesPath / "language-extensions" / "R" / "test" / "test-packages";
-		ASSERT_TRUE(fs::exists(m_packagesPath));
+		sm_packagesSourcePath = fs::absolute(enlRoot);
+		sm_packagesSourcePath = sm_packagesSourcePath / "language-extensions" / "R" / "test" / "test-packages";
+		ASSERT_TRUE(fs::exists(sm_packagesSourcePath));
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -271,10 +256,15 @@ namespace ExtensionApiTest
 				string location = GetLocationOfLibrary(extLibName);
 				if (expectedLocation.empty())
 				{
-					expectedLocation = fs::path(installDir).append(extLibName).string();
+					expectedLocation = fs::path(installDir).string();
 				}
 
-				EXPECT_TRUE(fs::equivalent(location, expectedLocation));
+				fs::path fullExpectedLocation = fs::path(expectedLocation) / extLibName;
+				string normalizedExpectedLocation =
+					Utilities::NormalizePathString(fullExpectedLocation.string());
+				string normalizedFoundLocation = Utilities::NormalizePathString(location);
+
+				EXPECT_TRUE(normalizedFoundLocation.compare(normalizedExpectedLocation) == 0);
 
 				string version = GetVersionOfLibrary(extLibName);
 				EXPECT_EQ(version, expectedVersion);
@@ -336,6 +326,14 @@ namespace ExtensionApiTest
 
 			string location = GetLocationOfLibrary(extLibName);
 
+			// We will reach here only if GetLocationOfLibrary succeeds
+			// which either means other installation exists or uninstallation failed above.
+			//
+			fs::path previousFullInstallLocation = fs::path(installDir) / extLibName;
+			string normalizedPreviousFullInstall =
+				Utilities::NormalizePathString(previousFullInstallLocation.string());
+			string normalizedFoundLocation = Utilities::NormalizePathString(location);
+
 			// If another installation exists,
 			// then the uninstall should succeed and load should still work
 			//
@@ -346,14 +344,18 @@ namespace ExtensionApiTest
 				EXPECT_EQ(libErrorLength, 0);
 
 				EXPECT_TRUE(fs::exists(location));
+
 				if (fs::exists(installDir))
 				{
-					EXPECT_FALSE(fs::equivalent(location, installDir));
+					EXPECT_FALSE(normalizedFoundLocation.compare(normalizedPreviousFullInstall) == 0);
 				}
 			}
 			else
 			{
+				// Uninstallation failed.
+				//
 				EXPECT_EQ(result, SQL_ERROR);
+				EXPECT_TRUE(normalizedFoundLocation.compare(normalizedPreviousFullInstall) == 0);
 			}
 		}
 		catch (...)
@@ -378,21 +380,402 @@ namespace ExtensionApiTest
 	{
 		string libName = "assertthat";
 		string version = "0.2.1";
-		string zipName = RExtensionLibraryApiTests::sm_DbIdUserIdPrefix +
+		string zipFileName = sm_PublicDbIdUserIdPrefix +
 			libName + "_" + version + x_FileExtension;
 
-		fs::path pkgPath = m_packagesPath / x_OsName / zipName;
+		fs::path pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
 
 		EXPECT_TRUE(fs::exists(pkgPath));
 
 		InstallAndTest(
 			libName,
 			pkgPath.string(),
-			RExtensionApiTests::sm_publicLibraryPath,
+			sm_publicLibraryPath,
 			version);
 
 		UninstallAndTest(
 			libName,
-			RExtensionApiTests::sm_publicLibraryPath);
+			sm_publicLibraryPath);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: InstallMultipleTest
+	//
+	// Description:
+	//  Installs multiple packages in different paths without cleaning.
+	//
+	TEST_F(RExtensionLibraryApiTests, InstallMultipleTest)
+	{
+		vector<string> libNames{ "assertthat", "pkgconfig", "rlang" };
+		vector<string> versions{ "0.2.1", "2.0.3", "0.4.7"};
+
+		vector<string> zipFileNames{
+			sm_PublicDbIdUserIdPrefix + libNames[0] + "_"
+				+ versions[0] + x_FileExtension,
+			sm_PublicDbIdUserIdPrefix + libNames[1] + "_"
+				+ versions[1] + x_FileExtension,
+			sm_PrivateDbIdUserIdPrefix + libNames[2] + "_"
+				+ versions[2] + x_FileExtension };
+
+		vector<fs::path> pkgPaths{
+			sm_packagesSourcePath / x_OsName / zipFileNames[0],
+			sm_packagesSourcePath / x_OsName / zipFileNames[1],
+			sm_packagesSourcePath / x_OsName / zipFileNames[2] };
+
+		EXPECT_TRUE(fs::exists(pkgPaths[0]));
+		InstallAndTest(
+			libNames[0],
+			pkgPaths[0].string(),
+			sm_publicLibraryPath,
+			versions[0]);
+
+		EXPECT_TRUE(fs::exists(pkgPaths[1]));
+		InstallAndTest(
+			libNames[1],
+			pkgPaths[1].string(),
+			sm_publicLibraryPath,
+			versions[1]);
+
+		EXPECT_TRUE(fs::exists(pkgPaths[2]));
+		InstallAndTest(
+			libNames[2],
+			pkgPaths[2].string(),
+			sm_privateLibraryPath,
+			versions[2]);
+
+		UninstallAndTest(
+			libNames[0],
+			sm_publicLibraryPath);
+		UninstallAndTest(
+			libNames[1],
+			sm_publicLibraryPath);
+		UninstallAndTest(
+			libNames[2],
+			sm_privateLibraryPath);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: InstallPublicPrivate
+	//
+	// Description:
+	//  Installs package to public and makes sure its loaded from public path. 
+	//  Then installs to private path without uninstalling from public.
+	//  This time makes sure it is loaded from private.
+	//
+	TEST_F(RExtensionLibraryApiTests, InstallPublicPrivate)
+	{
+		string libName = "assertthat";
+		string version = "0.2.1";
+		string zipFileName =
+			sm_PublicDbIdUserIdPrefix + libName + "_" + version + x_FileExtension;
+		fs::path pkgPath;
+
+		// First install in public path
+		//
+		pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_publicLibraryPath,
+			version);
+
+		// Install same package in different context to see if it is loaded instead of public
+		//
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_privateLibraryPath, // USE PRIVATE LIB PATH
+			version);
+
+		// Uninstall private then public, make sure we at least get the public after
+		// uninstalling private.
+		//
+		UninstallAndTest(libName, sm_privateLibraryPath, true); // otherInstallationExists
+		UninstallAndTest(libName, sm_publicLibraryPath, false);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: InstallPrivatePublic
+	//
+	// Description:
+	//  Installs package to private and makes sure its loaded from private path.
+	//  Then installs to public path without uninstalling from private.
+	//  This time again makes sure it is loaded from private path since private takes precendence
+	//  over public.
+	//
+	TEST_F(RExtensionLibraryApiTests, InstallPrivatePublic)
+	{
+		string libName = "lazyeval";
+		string privateVersion = "0.2.1";
+		string zipFileName =
+			sm_PrivateDbIdUserIdPrefix + libName + "_" + privateVersion + x_FileExtension;
+		fs::path pkgPath;
+
+		pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		// First install in private path
+		//
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_privateLibraryPath, // USE PRIVATE LIB PATH
+			privateVersion,
+			sm_privateLibraryPath); // Expected Location
+
+		// Install same package in different context
+		// We install this package into the PUBLIC scope, but since we have already
+		// installed a package into PRIVATE,
+		// we should still be loading PRIVATE over PUBLIC.
+		//
+		string publicVersion = "0.2.2";
+		zipFileName = sm_PublicDbIdUserIdPrefix + libName + "_" + publicVersion + x_FileExtension;
+		pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_publicLibraryPath,   // install to the public path
+			privateVersion,         // expected version
+			sm_privateLibraryPath); // expected location
+
+		// Uninstall private then public, make sure we at least get the public after
+		// uninstalling private.
+		//
+		UninstallAndTest(
+			libName,
+			sm_privateLibraryPath,
+			true); // otherInstallationExists
+
+		UninstallAndTest(
+			libName,
+			sm_publicLibraryPath,
+			false);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: DependencyInstallTest
+	//
+	// Description:
+	//  Installs a package that requires a dependency, without the dependency first - then with
+	//  the dependency.
+	//
+	TEST_F(RExtensionLibraryApiTests, DependencyInstallTest)
+	{
+		string libName = "bindrcpp";
+		string version = "0.2.2";
+		string zipFileName =
+			sm_PrivateDbIdUserIdPrefix + libName + "_" + version + x_FileExtension;
+
+		fs::path pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		bool isLinux = x_OsName.compare("linux") == 0;
+
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_privateLibraryPath,
+			version,
+			sm_privateLibraryPath,
+			// Successful install possible only on Windows since on Linux we can't even build
+			// without the link library being installed.
+			//
+			!isLinux, // successfulInstall
+			false);   // successfulLoad
+
+		// bindrcpp depends on bindr and Rcpp; rcpp is already installed.
+		// install bindr here.
+		//
+		string dependencyLibName = "bindr";
+		string dependencyVersion = "0.1.1";
+		string dependencyZipFileName =
+			sm_PublicDbIdUserIdPrefix + dependencyLibName + "_"
+			+ dependencyVersion + x_FileExtension;
+		fs::path dependencyPkgPath = sm_packagesSourcePath / x_OsName / dependencyZipFileName;
+
+		EXPECT_TRUE(fs::exists(dependencyPkgPath));
+
+		// Install the dependency.
+		//
+		InstallAndTest(
+			dependencyLibName,
+			dependencyPkgPath.string(),
+			sm_publicLibraryPath,
+			dependencyVersion);
+
+		string linkLibName = "plogr";
+		if (isLinux)
+		{
+			// If it is linux, need to install plogr as well
+			// since bindrcpp links to it while building.
+			//
+			string linkLibVersion = "0.2.0";
+			string linkLibraryZipFileName =
+				sm_PublicDbIdUserIdPrefix + linkLibName + "_"
+				+ linkLibVersion + x_FileExtension;
+			fs::path linkLibraryPkgPath = sm_packagesSourcePath / x_OsName / linkLibraryZipFileName;
+
+			EXPECT_TRUE(fs::exists(linkLibraryPkgPath));
+
+			// Install the link library.
+			//
+			InstallAndTest(
+				linkLibName,
+				linkLibraryPkgPath.string(),
+				sm_publicLibraryPath,
+				linkLibVersion);
+		}
+
+		// Install bindrcpp now that all the dependencies are installed.
+		// Here we try installing the top package into private, which will get the dependency
+		// from public.
+		//
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_privateLibraryPath,
+			version);
+
+		// Detach bindr library which would have been loaded when bindrcpp is loaded.
+		//
+		DetachLibrary(dependencyLibName);
+
+		UninstallAndTest(
+			dependencyLibName,
+			sm_publicLibraryPath);
+
+		if (isLinux)
+		{
+			DetachLibrary(linkLibName);
+			UninstallAndTest(
+				linkLibName,
+				sm_publicLibraryPath);
+		}
+
+		UninstallAndTest(
+			libName,
+			sm_privateLibraryPath);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: UninstallNonexistentTest
+	//
+	// Description:
+	//  Uninstalls nonexistent package.
+	//
+	TEST_F(RExtensionLibraryApiTests, UninstallNonexistentTest)
+	{
+		string libName = "noPackage";
+
+		// There will be an error while uninstalling via R
+		// but we check for non-existence of folder to confirm the library is not installed.
+		// So, this will still succeed since no such folder with "noPackage" exists.
+		//
+		UninstallAndTest(
+			libName,
+			sm_publicLibraryPath);
+	}
+
+	//
+	// Negative Tests
+	//
+
+	//----------------------------------------------------------------------------------------------
+	// Name: NoDescriptionPackageInstallTest
+	//
+	// Description:
+	//  Tries to install a package without DESCRIPTION.
+	//
+	TEST_F(RExtensionLibraryApiTests, NoDescriptionPackageInstallTest)
+	{
+		string libName = "assertthatbad";
+		string version = "0.2.1";
+		string zipFileName =
+			sm_PublicDbIdUserIdPrefix + libName + "_" + version + x_FileExtension;
+		fs::path pkgPath;
+
+		pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		// Installation should fail.
+		//
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_publicLibraryPath,
+			version,
+			sm_publicLibraryPath,
+			false); // successfulInstall
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: InterchangedPackagesTest
+	//
+	// Description:
+	//  Tries to install a source tar.gz package on Windows (succeeds since Rtools is installed)
+	//  and a zip of windows built package on Linux (fails).
+	//
+	TEST_F(RExtensionLibraryApiTests, InterchangedPackagesTest)
+	{
+		string libName = "assertthat";
+		string version = "0.2.1";
+		string zipFileName =
+			sm_PublicDbIdUserIdPrefix + libName + "interchange_" + version + x_FileExtension;
+		fs::path pkgPath;
+
+		pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		bool isWindows = x_OsName.compare("windows") == 0;
+
+		// Installation should succeed on windows, fail on linux.
+		//
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_publicLibraryPath,
+			version,
+			sm_publicLibraryPath,
+			isWindows); // successfulInstall
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: ZipWithinZipTest
+	//
+	// Description:
+	//  Tries to install a wrongly structured zip i.e. zip within zip.
+	//  This fails because we expect only one level of compression of the orginal package.
+	//
+	TEST_F(RExtensionLibraryApiTests, ZipWithinZipTest)
+	{
+		string libName = "assertthatzipwithinzip";
+		string version = "0.2.1";
+		string zipFileName =
+			sm_PublicDbIdUserIdPrefix + libName + "_" + version + x_FileExtension;
+		fs::path pkgPath;
+
+		pkgPath = sm_packagesSourcePath / x_OsName / zipFileName;
+
+		EXPECT_TRUE(fs::exists(pkgPath));
+
+		// Installation should fail.
+		//
+		InstallAndTest(
+			libName,
+			pkgPath.string(),
+			sm_publicLibraryPath,
+			version,
+			sm_publicLibraryPath,
+			false); // successfulInstall
 	}
 }

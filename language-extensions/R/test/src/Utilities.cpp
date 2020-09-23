@@ -214,3 +214,26 @@ template SQL_DATE_STRUCT Utilities::ToUtc
 	<SQL_DATE_STRUCT>(SQL_DATE_STRUCT givenDate);
 template SQL_TIMESTAMP_STRUCT Utilities::ToUtc
 	<SQL_TIMESTAMP_STRUCT>(SQL_TIMESTAMP_STRUCT givenTime);
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::NormalizePathString
+//
+// Description:
+//  Normalizes path strings by replacting \ with / and the trailing / with a null terminator.
+//
+// Returns:
+//  The normalized path string
+//
+string Utilities::NormalizePathString(string pathString)
+{
+	replace(pathString.begin(), pathString.end(), '\\', '/');
+
+	// Replace trailing / with \0.
+	//
+	if (pathString.length() > 0 && *(pathString.end() - 1) == '/')
+	{
+		*(pathString.end() - 1) = '\0';
+	}
+
+	return pathString;
+}

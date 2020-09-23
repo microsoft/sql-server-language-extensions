@@ -24,6 +24,7 @@
 //  Class encapsulating operations performed per R script session
 //
 //**************************************************************************************************
+
 #pragma once
 
 // Forward Declarations
