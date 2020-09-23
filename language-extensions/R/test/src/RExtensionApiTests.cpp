@@ -1,7 +1,7 @@
 //*************************************************************************************************
 // RExtension-test : Executable testing language extension that implements the SQL Server
 // external language communication protocol.
-// Copyright (C) 2019 Microsoft Corporation.
+// Copyright (C) 2020 Microsoft Corporation.
 //
 // This file is part of RExtension-test.
 //
