@@ -3,7 +3,7 @@
 
 Welcome to the SQL Server Language Extensions project!
 
-Starting in SQL Server 2019, we have added support for language extensibility, which means that you can now execute code in various languages like Java from SQL Server.
+Starting in SQL Server 2019, we have added support for language extensibility, which means that you can now execute code in various languages like R, Python and Java from SQL Server.
 
 We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
