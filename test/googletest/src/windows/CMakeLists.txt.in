@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.8.2)
+
+project(googletest-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(googletest
+	GIT_REPOSITORY    https://github.com/google/googletest.git
+	GIT_TAG           release-1.10.0
+
+	# Make sure core.symlinks, core.bare are set to false otherwise
+	# git clone fails with "operation need to be run in a working tree".
+	# Keep core.longpaths = true as a precaution to not fail on longpaths.
+	#
+	GIT_CONFIG        core.bare=false core.symlinks=false core.longpaths=true
+
+	SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/googletest-src"
+	BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/googletest-build"
+	CONFIGURE_COMMAND ""
+	BUILD_COMMAND     ""
+	INSTALL_COMMAND   ""
+	TEST_COMMAND      ""
+)
