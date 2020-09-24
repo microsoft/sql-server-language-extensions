@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension-test.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: RExtensionApiTests.cpp
+// @File: main.cpp
 //
 // Purpose:
 //  Tests the RExtension's implementation of the external language APIs.

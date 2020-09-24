@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with RExtension-test.  If not, see <https://www.gnu.org/licenses/>.
 //
-// @File: Utilities.cpp
+// @File: Utilities_win.cpp
 //
 // Purpose:
 //  Utility functions
