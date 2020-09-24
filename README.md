@@ -5,28 +5,26 @@ Welcome to the SQL Server Language Extensions project!
 
 Starting in SQL Server 2019, we have added support for language extensibility, which means that you can now execute code in various languages like R, Python and Java from SQL Server.
 
+To download the released prebuilt versions of these extensions, go to the [Releases section of this repository](https://github.com/microsoft/sql-server-language-extensions/releases). Download the latest version of whichever extension corresponds to your machine configuration (Windows or Linux). There are separate releases for each language extension.
+
 We hope you enjoy using Microsoft SQL Server and the language extension feature.
 
 -SQL Server Team
 
-## Announcements
-
-* In SQL Server 2019, we are open sourcing the SDK for our Java language extension: [**Microsoft Extensibility SDK for Java for Microsoft SQL Server​**](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/sdk)
-
-## Things to Know
-
-* The Java components in this project are built on Java 8
-* The SDK is also installed as part of SQL Server 2019 on both Windows as Linux
-  * Default installation path on Windows: [instance installation home directory]\MSSQL\Binn\mssql-java-lang-extension.jar
-  * Default installation path on Linux: /opt/mssql/lib/mssql-java-lang-extension.jar 
-
 ## Documentation
 
-You can read more about how to use language extensions in SQL Server 2019 in the Microsoft [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sqlallproducts-allversions).
+You can read more about how to use language extensions and how to use Java in SQL Server 2019 in the Microsoft [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sqlallproducts-allversions).
 
-## Get Started
+Tutorials and documentation for the R and Python extensions can be found here:
 
-This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository. [Sample code files](https://github.com/microsoft/sql-server-language-extensions/tree/master/language-extensions/java/samples/regex) are also available in this repository.
+[Python Documentation](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-py?view=sql-server-ver15)
+
+[R Documentation](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-r?view=sql-server-ver15)
+
+## Custom Builds
+
+To build your own version of the language extensions, refer to each respective language's README file. \
+For example, to modify and build a custom version of the R Extension, go to [language-extensions/R/README.md](language-extensions/R/README.md).
 
 ## Contributing
 
