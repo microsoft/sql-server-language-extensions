@@ -17,7 +17,7 @@ You can read more about how to use language extensions and how to use Java in SQ
 
 Tutorials and documentation for the R and Python extensions can be found here:
 
-[Python Documentation](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-py?view=sql-server-ver15)
+[Python Documentation](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-python?view=sql-server-ver15)
 
 [R Documentation](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-r?view=sql-server-ver15)
 

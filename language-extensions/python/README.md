@@ -7,7 +7,7 @@ For more information about SQL Server Language Extensions, refer to this [docume
 
 The Python extension version in this repository is compatible with SQL Server 2019 CU3 onwards. 
 
-Note that the Python Extension released in the current repository works with Python 3.7.x - to use the released package, follow [this tutorial](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-py?view=sql-server-ver15). For any other version of Python (3.6, 3.8, etc) you must modify and rebuild the Python Extension binaries using the following instructions.
+Note that the Python Extension released in the current repository works with Python 3.7.x - to use the released package, follow [this tutorial](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-python?view=sql-server-ver15). For any other version of Python (3.6, 3.8, etc) you must modify and rebuild the Python Extension binaries using the following instructions.
 
 ## Building
 
@@ -82,4 +82,4 @@ To unit test this extension,
 ## Usage
 After downloading or building the Python extension zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to create the language on the SQL Server. 
 
-This [tutorial](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-py?view=sql-server-ver15) will walk you through an end to end sample using the Python language extension. 
+This [tutorial](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-python?view=sql-server-ver15) will walk you through an end to end sample using the Python language extension. 
