@@ -1000,7 +1000,7 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 
 	// Insert the string column into the columnData vector contiguously.
 	//
-	SQLINTEGER maxLen = 0;
+	SQLINTEGER maxLen = sizeof(SQLCHAR);
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bp::object pyObj = column[row];
@@ -1085,7 +1085,7 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 
 	// Insert the raw column into the columnData vector contiguously.
 	//
-	SQLINTEGER maxLen = 0;
+	SQLINTEGER maxLen = sizeof(SQLCHAR);
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bp::object pyObj = column[row];
@@ -1330,7 +1330,7 @@ SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumbe
 		// The uninitialized "end" iterator is equivalent to the end of the list.
 		//
 		bp::stl_input_iterator<bp::object> itVal(column), end;
-		while(type == "NoneType" && itVal != end)
+		while (type == "NoneType" && itVal != end)
 		{
 			type = itVal->ptr()->ob_type->tp_name;
 			++itVal;
