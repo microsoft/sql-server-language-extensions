@@ -353,7 +353,7 @@ namespace ExtensionApiTest
 
 		TestGetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType
-			0,                 // columnSize
+			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -446,7 +446,7 @@ namespace ExtensionApiTest
 
 		TestGetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // expectedDataType
-			0,                 // expectedColumnSize
+			sizeof(SQLCHAR),   // expectedColumnSize
 			0,                 // expectedDecimalDigits
 			SQL_NULLABLE);     // expectedNullable
 	}
@@ -544,7 +544,7 @@ namespace ExtensionApiTest
 
 		TestGetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType; since the whole column is None, we use CHAR NoneType
-			0,                 // columnSize
+			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -780,6 +780,46 @@ namespace ExtensionApiTest
 			m_BigIntSize,       // columnSize
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
+	}
+
+	// Name: AllNonesColumnTest
+	//
+	// Description:
+	//  Test GetResultColumn with a script that returns a dataset with a column of all Nones.
+	//  We expect the output to be of type CHAR and have the minimum columnSize of 1.
+	//
+	TEST_F(PythonExtensionApiTests, AllNonesColumnTest)
+	{
+		// With this script, we create a DataFrame with column of Nones.
+		//
+		string scriptString = "from pandas import DataFrame;"
+			"OutputDataSet = DataFrame({'noneColumn': [None, None, None, None, None]});"
+			"print(OutputDataSet)";
+
+		// Initialize with a Session that executes the above script
+		// that creates an OutputDataSet with column of Nones.
+		//
+		InitializeSession(0, // parametersNumber
+			0,               // inputSchemaColumnsNumber
+			scriptString);
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr,
+			nullptr,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputschemaColumnsNumber, 1);
+
+		TestGetResultColumn(0,  // columnNumber
+			SQL_C_CHAR,         // dataType
+			sizeof(SQLCHAR),    // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: TestGetResultColumn
