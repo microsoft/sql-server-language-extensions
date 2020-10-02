@@ -106,7 +106,6 @@ RVectorType RTypeUtils::CreateVector(
 		{
 			// In all other scenarios, it is not NULL (NA).
 			//
-			
 			SQLType value = static_cast<SQLType *>(data)[j];
 			if constexpr (DataType != SQL_C_BIT)
 			{

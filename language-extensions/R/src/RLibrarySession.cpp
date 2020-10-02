@@ -232,7 +232,7 @@ SQLRETURN RLibrarySession::InstallLibrary(
 				+ m_libraryName + ".");
 		}
 	}
-	catch (exception ex)
+	catch (exception &ex)
 	{
 		// Clean up the copied library file path with the new name.
 		//

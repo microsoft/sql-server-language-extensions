@@ -548,7 +548,12 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 
 	vector<SQLCHAR> *columnData = nullptr;
 	SQLINTEGER *strLenOrInd = nullptr;
-	SQLULEN maxLen = 0;
+
+	// maxLen determines the columnSize, which is a property of this column's data type
+	// i.e. the n in char(n) is char(columnSize).
+	// Since char(0) is an illegal data type, columnSize has to be at least sizeof(SQLCHAR).
+	//
+	SQLULEN maxLen = sizeof(SQLCHAR);
 
 	if(m_rowsNumber > 0)
 	{

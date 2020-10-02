@@ -378,7 +378,7 @@ namespace ExtensionApiTest
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,    // dataType
-			0,             // columnSize
+			m_CharSize,    // columnSize
 			0,             // decimalDigits
 			SQL_NULLABLE); // nullable
 	}
@@ -505,7 +505,7 @@ namespace ExtensionApiTest
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,    // expectedDataType
-			0,             // expectedColumnSize
+			m_CharSize,    // expectedColumnSize
 			0,             // expectedDecimalDigits
 			SQL_NULLABLE); // expectedNullable
 	}
@@ -773,6 +773,66 @@ namespace ExtensionApiTest
 		GetResultColumn(0, // columnNumber
 			SQL_C_SLONG,   // dataType
 			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: GetNAOrEmptyCharResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with a script that returns a dataset with
+	//  a default column of all NAs, a character column of all NAs,
+	//  and a character column of all empty strings.
+	//  In the result columns, we expect default NA column to be of type SQL_C_BIT and
+	//  the character columns to be of type SQL_C_CHAR with the minimum columnSize of 1.
+	//
+	TEST_F(RExtensionApiTests, GetNAOrEmptyCharResultColumnsTest)
+	{
+		// With this script, we create a DataFrame with 3 columns
+		// 1. a default column of all NAs.
+		// 2. a character column of all NAs.
+		// 3. a character column of all empty strings.
+		//
+		string scriptString =
+			"OutputDataSet <- data.frame(logicalNA = c(NA,NA),"
+				" charNA = as.character(c(NA,NA)), emptyChar = as.character(c('', '')));"
+			"print(OutputDataSet);";
+
+		// Initialize with a Session that executes the above script
+		// that creates an OutputDataSet with 2 columns of all NAs.
+		//
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = (*sm_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr,
+			nullptr,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputschemaColumnsNumber, 3);
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_BIT,     // dataType
+			m_LogicalSize, // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_CHAR,    // dataType
+			m_CharSize,    // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+
+		GetResultColumn(2, // columnNumber
+			SQL_C_CHAR,    // dataType
+			m_CharSize,    // columnSize
 			0,             // decimalDigits
 			SQL_NO_NULLS); // nullable
 	}
