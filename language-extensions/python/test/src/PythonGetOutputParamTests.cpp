@@ -487,12 +487,13 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, GetStringOutputParamTest)
 	{
-		string scriptString = "param0 = 'HELLO';"
+		string scriptString = 
+			"param0 = 'HELLO';"
 			"param1 = 'PyExtension';"
-			"param2 = 'WORLD';"
-			"param3 = None;"
+			"param2 = '';"
+			"param3 = 'WORLD';"
 			"param4 = None;"
-			"param5 = ''";
+			"param5 = None;";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -539,17 +540,18 @@ namespace ExtensionApiTest
 			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
 			//
 			"PyExte",
-			// Test CHAR(10) value with string length less than the type allows.
-			//
-			"WORLD",
 			// Test a 0 length string
 			//
-			"" };
+			"" ,
+			// Test CHAR(10) value with string length less than the type allows.
+			//
+			"WORLD"};
 
 		vector<const char*> expectedParamValues = {
 			ExpectedParamValueStrings[0].c_str(),
 			ExpectedParamValueStrings[1].c_str(),
 			ExpectedParamValueStrings[2].c_str(),
+			ExpectedParamValueStrings[3].c_str(),
 
 			// Test None returned in a VARCHAR(5) parameter.
 			//
@@ -557,16 +559,15 @@ namespace ExtensionApiTest
 
 			// Test None CHAR(5) value.
 			//
-			nullptr,
-			ExpectedParamValueStrings[3].c_str() };
+			nullptr };
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
 			SQL_NULL_DATA,
-			SQL_NULL_DATA,
-			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()) };
+			SQL_NULL_DATA };
 
 		TestGetStringOutputParam(
 			expectedParamValues,
@@ -585,13 +586,14 @@ namespace ExtensionApiTest
 		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
 		string chineseString = string(chineseBytes.data(), 6);
 
-		string scriptString = "param0 = 'HELLO';"
+		string scriptString = 
+			"param0 = 'HELLO';"
 			"param1 = 'PyExtension';"
-			"param2 = 'WORLD';"
-			"param3 = '" + chineseString + "';"
-			"param4 = None;"
+			"param2 = '';"
+			"param3 = 'WORLD';"
+			"param4 = '" + chineseString + "';"
 			"param5 = None;"
-			"param6 = '';";
+			"param6 = None;";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -604,8 +606,8 @@ namespace ExtensionApiTest
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true, true, false, true, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 10, 2, 5, 5, 5 };
+		vector<bool> isFixedType = { true, false, true , true, true, false, true};
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 5, 5 };
 
 		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
@@ -638,6 +640,9 @@ namespace ExtensionApiTest
 			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
 			//
 			L"PyExte",
+			// Test a 0 length string
+			//
+			L"" ,
 			// Test CHAR(10) value with string length less than the type allows.
 			//
 			L"WORLD",
@@ -645,19 +650,16 @@ namespace ExtensionApiTest
 			//
 			L"你好",
 			nullptr,
-			nullptr,
-			// Test a 0 length string
-			//
-			L"" };
+			nullptr};
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(0 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
 			SQL_NULL_DATA,
-			SQL_NULL_DATA,
-			static_cast<SQLINTEGER>(0 * sizeof(wchar_t))
+			SQL_NULL_DATA
 		};
 
 		TestGetWStringOutputParam(
@@ -672,12 +674,13 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, GetRawOutputParamTest)
 	{
-		string scriptString = "param0 = b'HELLO';"
+		string scriptString = 
+			"param0 = b'HELLO';"
 			"param1 = b'PyExtension';"
-			"param2 = b'WORLD';"
-			"param3 = None;"
+			"param2 = b'';"
+			"param3 = b'WORLD';"
 			"param4 = None;"
-			"param5 = b''";
+			"param5 = None";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -690,8 +693,8 @@ namespace ExtensionApiTest
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true, false, true, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
+		vector<bool> isFixedType = { true, false, true, true, false, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 5, 5 };
 
 		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
@@ -726,12 +729,12 @@ namespace ExtensionApiTest
 			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
 			//
 			"PyExte",
+			// Test a 0 length raw
+			//
+			"",
 			// Test BINARY(10) value with string length less than the type allows.
 			//
-			"WORLD",
-			// Test a 0 length string
-			//
-			"" };
+			"WORLD" };
 
 		vector<SQLCHAR*> expectedParamValues = {
 			static_cast<SQLCHAR*>(
@@ -740,22 +743,22 @@ namespace ExtensionApiTest
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[1].c_str()))),
 			static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))),
 			// Test None returned in a VARCHAR(5) parameter.
 			//
 			nullptr,
 			// Test None CHAR(5) value.
 			//
-			nullptr,
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))) };
+			nullptr };
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
 			SQL_NULL_DATA,
-			SQL_NULL_DATA,
-			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()) };
+			SQL_NULL_DATA };
 
 		TestGetRawOutputParam(
 			expectedParamValues,
@@ -996,6 +999,8 @@ namespace ExtensionApiTest
 
 			if (expectedParamValue != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
+
 				EXPECT_EQ(*(static_cast<SQLType*>(paramValue)), *expectedParamValue);
 			}
 			else
@@ -1014,6 +1019,8 @@ namespace ExtensionApiTest
 		vector<const char*> expectedParamValues,
 		vector<SQLINTEGER>  expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1032,6 +1039,8 @@ namespace ExtensionApiTest
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
+
 				string paramValueString(static_cast<char*>(paramValue),
 					strLen_or_Ind);
 				string expectedParamValueString(expectedParamValues[paramNumber],
@@ -1055,6 +1064,8 @@ namespace ExtensionApiTest
 		vector<const wchar_t*> expectedParamValues,
 		vector<SQLINTEGER>     expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1073,6 +1084,8 @@ namespace ExtensionApiTest
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
+
 				wstring paramValueString(static_cast<wchar_t*>(paramValue),
 					strLen_or_Ind / sizeof(wchar_t));
 				wstring expectedParamValueString(expectedParamValues[paramNumber],
@@ -1105,6 +1118,8 @@ namespace ExtensionApiTest
 		vector<SQLCHAR*>   expectedParamValues,
 		vector<SQLINTEGER> expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1123,6 +1138,8 @@ namespace ExtensionApiTest
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
+
 				for (SQLINTEGER i = 0; i < strLen_or_Ind; ++i)
 				{
 					EXPECT_EQ(*(static_cast<SQLCHAR*>(paramValue) + i),
@@ -1169,6 +1186,8 @@ namespace ExtensionApiTest
 
 			if (expectedParamValue != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
+
 				DateTimeStruct expectedValue = *expectedParamValue;
 				DateTimeStruct actualValue = *(static_cast<DateTimeStruct *>(paramValue));
 			
