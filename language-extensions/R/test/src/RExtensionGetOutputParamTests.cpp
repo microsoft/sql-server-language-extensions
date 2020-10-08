@@ -541,12 +541,13 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTests, GetCharOutputParamTest)
 	{
+		int paramsNumber = 6;
 		string scriptString = "param1 <- 'HELLO';"
 			"param2 <- 'RExtension';"
-			"param3 <- 'WORLD';"
-			"param4 <- as.character(NA);"
-			"param5 <- as.character();"
-			"param6 <- ''";
+			"param3 <- '';"
+			"param4 <- 'WORLD';"
+			"param5 <- as.character(NA);"
+			"param6 <- as.character();";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -554,16 +555,16 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,   // inputSchemaColumnsNumber
 			scriptString,
-			6);  // parametersNumber
+			paramsNumber);
 
-		vector<const char*> initParamValues(6,"");
-		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
+		vector<const char*> initParamValues(paramsNumber, "");
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 5, 5 };
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
 		vector<bool> isFixedType = { true, false, true, false, true, true };
-		vector<SQLSMALLINT> inputOutputTypes(initParamValues.size(), SQL_PARAM_INPUT_OUTPUT);
+		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
 
 		InitCharParam<char, SQL_C_CHAR>(
 			initParamValues,
@@ -592,12 +593,13 @@ namespace ExtensionApiTest
 			// Above R script sets the parameter to "RExtension" but we only expect "RExten".
 			//
 			"RExten",
-			// Test CHAR(10) value with string length less than the type allows.
-			//
-			"WORLD",
 			// Test a 0 length string
 			//
-			""};
+			"",
+			// Test CHAR(10) value with string length less than the type allows.
+			//
+			"WORLD"};
+
 		vector<SQLCHAR*> expectedParamValues = {
 			static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[0].c_str()))),
@@ -605,22 +607,23 @@ namespace ExtensionApiTest
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[1].c_str()))),
 			static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))),
 			// Test NA returned in a VARCHAR(5) parameter.
 			//
 			nullptr,
 			// Test nullptr CHAR(5) value.
 			//
-			nullptr,
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))) };
+			nullptr };
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
 			SQL_NULL_DATA,
-			SQL_NULL_DATA,
-			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length())};
+			SQL_NULL_DATA};
+
 
 		GetCharOutputParam(
 			expectedParamValues,
@@ -635,6 +638,8 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTests, GetNCharOutputParamTest)
 	{
+		int paramsNumber = 8;
+
 		// Construct the values that correspond to 你好
 		//
 		vector<char> chineseString = { -28, -67, -96, -27, -91, -67 };
@@ -642,12 +647,12 @@ namespace ExtensionApiTest
 
 		string scriptString = "param1 <- 'HELLO';"
 			"param2 <- 'RExtension';"
-			"param3 <- 'WORLD';"
-			"param4 <- '" + dummystring + "';"
-			"param5 <- 'Mix " + dummystring + "';"
-			"param6 <- as.character(NA);"
-			"param7 <- as.character();"
-			"param8 <- '';";
+			"param3 <- '';"
+			"param4 <- 'WORLD';"
+			"param5 <- '" + dummystring + "';"
+			"param6 <- 'Mix " + dummystring + "';"
+			"param7 <- as.character(NA);"
+			"param8 <- as.character();";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -655,15 +660,15 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
 			scriptString,
-			8); // parametersNumber
+			paramsNumber);
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
-		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
+		// parameters. So it doesn't matter if they are initialized as fixed or varying.
 		//
 		vector<bool> isFixedType = { true, false, true, true, true, false, true, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 10, 2, 6, 5, 5, 5 };
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 6, 5, 5 };
 		vector<const wchar_t*> initParamValues(8, L"");
-		vector<SQLSMALLINT> inputOutputTypes(initParamValues.size(), SQL_PARAM_INPUT_OUTPUT);
+		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
 
 		InitCharParam<wchar_t, SQL_C_WCHAR>(
 			initParamValues,
@@ -692,6 +697,9 @@ namespace ExtensionApiTest
 			// Above python script sets the parameter to "RExtension" but we only expect "RExten".
 			//
 			L"RExten",
+			// Test a 0 length string
+			//
+			L"",
 			// Test NCHAR(10) value with string length less than the type allows.
 			//
 			L"WORLD",
@@ -702,20 +710,17 @@ namespace ExtensionApiTest
 			//
 			L"Mix 你好",
 			nullptr,
-			nullptr,
-			// Test a 0 length string
-			//
-			L"" };
+			nullptr};
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(0 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
 			SQL_NULL_DATA,
-			SQL_NULL_DATA,
-			static_cast<SQLINTEGER>(0 * sizeof(wchar_t))
+			SQL_NULL_DATA
 		};
 
 		GetNCharOutputParam(
@@ -1085,6 +1090,8 @@ namespace ExtensionApiTest
 		vector<shared_ptr<SQLType>> expectedParamValues,
 		vector<SQLINTEGER>          expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1119,11 +1126,13 @@ namespace ExtensionApiTest
 				else if constexpr (is_same_v<SQLType, SQLREAL>
 					|| is_same_v<SQLType, SQLDOUBLE>)
 				{
+					EXPECT_NE(paramValue, nullptr);
 					EXPECT_TRUE(isnan(static_cast<SQLDOUBLE>(
 						*(static_cast<SQLType*>(paramValue)))));
 				}
 				else
 				{
+					EXPECT_NE(paramValue, nullptr);
 					EXPECT_EQ(*(static_cast<SQLType*>(paramValue)),
 						*expectedParamValues[paramNumber]);
 				}
@@ -1141,6 +1150,8 @@ namespace ExtensionApiTest
 		vector<SQLCHAR*>   expectedParamValues,
 		vector<SQLINTEGER> expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1156,9 +1167,9 @@ namespace ExtensionApiTest
 			ASSERT_EQ(result, SQL_SUCCESS);
 
 			EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
-
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
 				string paramValueString(static_cast<char*>(paramValue),
 					strLen_or_Ind);
 				string expectedParamValueString(static_cast<char*>(
@@ -1183,6 +1194,8 @@ namespace ExtensionApiTest
 		vector<const wchar_t*> expectedParamValues,
 		vector<SQLINTEGER>     expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1201,6 +1214,7 @@ namespace ExtensionApiTest
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
 				wstring paramValueString(static_cast<wchar_t*>(paramValue),
 					strLen_or_Ind / sizeof(wchar_t));
 				wstring expectedParamValueString(expectedParamValues[paramNumber],
@@ -1235,6 +1249,8 @@ namespace ExtensionApiTest
 		vector<SQLCHAR*>   expectedParamValues,
 		vector<SQLINTEGER> expectedStrLenOrInd)
 	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
@@ -1253,6 +1269,7 @@ namespace ExtensionApiTest
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
+				EXPECT_NE(paramValue, nullptr);
 				for (SQLINTEGER i = 0; i < strLen_or_Ind; ++i)
 				{
 					EXPECT_EQ(*(static_cast<SQLCHAR*>(paramValue) + i),
@@ -1299,6 +1316,7 @@ namespace ExtensionApiTest
 
 			if (expectedStrLenOrInd[paramNumber] != SQL_NULL_DATA)
 			{
+				EXPECT_NE(paramValue, nullptr);
 				SQLType actualValue = *(static_cast<SQLType *>(paramValue));
 
 				EXPECT_EQ(expectedParamValue.year, actualValue.year);

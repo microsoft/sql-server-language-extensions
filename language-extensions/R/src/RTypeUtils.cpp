@@ -372,6 +372,57 @@ void RTypeUtils::FillDataFromRVector(
 }
 
 //--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::InsertStringBasedOnLengthAndRowsNumber
+//
+// Description:
+//  Given the unicode string, inserts it into the data vector based on the
+//  rowsNumber(total number of rows) in the data
+//  and the length of the string adjusted as per allowedLen.
+//  We trim the string upto the allowedLen if the original length goes beyond it.
+//  For multiple rows with interspersed empty strings in the data, it doesn't add 0 length strings
+//  between two non-empty strings. But for a single row, it adds a 0 length string explicitly.
+//
+// Returns:
+//  The length of the string that is inserted.
+//
+// Remarks:
+//  In the case when an empty string is inserted in the vector, the return value is 0 since the
+//  length of the string inserted is 0 but the vector's size is still 1.
+//
+template<class SQLType, class UnicodeString>
+SQLINTEGER RTypeUtils::InsertStringBasedOnLengthAndRowsNumber(
+	const SQLULEN   allowedLen,
+	const SQLULEN   rowsNumber,
+	vector<SQLType> *data,
+	UnicodeString   &unicodeString)
+{
+	SQLINTEGER lengthOfStringToInsert = unicodeString.length();
+
+	lengthOfStringToInsert =
+		static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
+		? lengthOfStringToInsert
+		: static_cast<SQLINTEGER>(allowedLen);
+
+	if (rowsNumber > 1 || lengthOfStringToInsert > 0)
+	{
+		// Do this when there are multiple rows in the data OR
+		// in case of single row, only when it is not an empty string.
+		//
+		data->insert(data->end(), unicodeString.begin(),
+			unicodeString.begin() + lengthOfStringToInsert);
+	}
+	else
+	{
+		// When its a single row and is an empty string,
+		// add a single element of value '\0' to the vector.
+		//
+		data->push_back(unicodeString[0]);
+	}
+
+	return lengthOfStringToInsert;
+}
+
+//--------------------------------------------------------------------------------------------------
 // Name: RTypeUtils::FillDataFromCharacterVector
 //
 // Description:
@@ -413,35 +464,33 @@ void RTypeUtils::FillDataFromCharacterVector(
 			//
 			string utf8String(vectorInR[index], bytesOccupied);
 
-			SQLINTEGER lengthOfStringToInsert = 0;
+			SQLINTEGER lengthOfStringInserted = 0;
 
 			if constexpr (is_same_v<SQLType, SQLWCHAR>)
 			{
 				u16string utf16String;
 				estd::ToUtf16(utf8String.c_str(), bytesOccupied, utf16String);
-				lengthOfStringToInsert = utf16String.length();
-				lengthOfStringToInsert =
-					static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
-					? lengthOfStringToInsert
-					: static_cast<SQLINTEGER>(allowedLen);
-				data->insert(data->end(), utf16String.begin(),
-					utf16String.begin() + lengthOfStringToInsert);
+				lengthOfStringInserted =
+					InsertStringBasedOnLengthAndRowsNumber<SQLWCHAR, u16string>(
+						allowedLen,
+						rowsNumber,
+						data,
+						utf16String);
 			}
 			else
 			{
-				lengthOfStringToInsert = bytesOccupied;
-				lengthOfStringToInsert =
-					static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
-					? lengthOfStringToInsert
-					: static_cast<SQLINTEGER>(allowedLen);
-				data->insert(data->end(), utf8String.begin(),
-					utf8String.begin() + lengthOfStringToInsert);
+				lengthOfStringInserted =
+					InsertStringBasedOnLengthAndRowsNumber<SQLCHAR, string>(
+						allowedLen,
+						rowsNumber,
+						data,
+						utf8String);
 			}
 
-			strLenOrInd[index] = lengthOfStringToInsert * sizeof(SQLType);
-			if (maxLen < static_cast<SQLULEN>(lengthOfStringToInsert))
+			strLenOrInd[index] = lengthOfStringInserted * sizeof(SQLType);
+			if (maxLen < static_cast<SQLULEN>(lengthOfStringInserted))
 			{
-				maxLen = lengthOfStringToInsert;
+				maxLen = lengthOfStringInserted;
 			}
 		}
 		else

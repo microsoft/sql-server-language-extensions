@@ -77,6 +77,16 @@ public:
 		SQLINTEGER           *strLen_or_Ind,
 		SQLSMALLINT          &nullable);
 
+	// Given the unicode string, inserts it into the data vector based on the rowsNumber in the data
+	// and the length of the string adjusted as per allowedLen.
+	//
+	template<class SQLType, class UnicodeString>
+	static SQLINTEGER InsertStringBasedOnLengthAndRowsNumber(
+		const SQLULEN         allowedLen,
+		const SQLULEN         rowsNumber,
+		std::vector<SQLType>  *data,
+		UnicodeString         &unicodeString);
+
 	// Given the vectorInR, copies its content into the given std::vector pointed to by charVector.
 	//
 	template<class SQLType>
