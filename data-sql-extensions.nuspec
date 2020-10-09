@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package >
+    <metadata minClientVersion="2.5">
+        <id>data-sql-extensions</id>
+        <version>1.0</version>
+        <authors>brnieb</authors>
+        <owners>brnieb</owners>
+        <description>SQL Language Extensions</description>
+    </metadata>
+    <files>
+        <file src=".\**\debug\**\*.*" target="build" />
+        <file src=".\**\release\**\*.*" target="build" />
+        <file src="..\..\..\package\out\java-extension\packages\debug\java-lang-extension.zip" target="build\debug" />
+        <file src="..\..\..\package\out\java-extension\packages\release\java-lang-extension.zip" target="build\release" />
+        <file src="..\..\..\package\out\pythonextension\packages\debug\python-lang-extension.zip" target="build\debug" />
+        <file src="..\..\..\package\out\pythonextension\packages\release\python-lang-extension.zip" target="build\release" />
+        <file src="..\..\..\package\out\RExtension\packages\debug\R-lang-extension.zip" target="build\debug" />
+        <file src="..\..\..\package\out\RExtension\packages\release\R-lang-extension.zip" target="build\release" />
+    </files>
+</package>

@@ -5,6 +5,12 @@ This repo contains 3rd-party language extensions for SQL Server. This repo is bu
 Overview:
 The directory \extension-host\ contains the extension API, while \language-extensions\ contains all of the extensions (e.g. language-extensions\java).
 
+This repo is a staging area for the [open source repository](https://github.com/microsoft/sql-server-language-extensions) where the SQL Server language extensions will be hosted. The code is tested in the pipeline and in TestShellTests through an artifact.
+
+Whenever there is a new release scheduled in the open source repo, code should be ported from the master branch to the open source branch. **When moving code from master, make sure to change the default build configuration from debug to release.**
+
+Copy the files in the language-extensions folder ONLY to the open source repository, but **DO NOT** copy the restore-packages.cmd/sh files, packages.config files, or the vcxproj files. They are used for internal builds in the Azure Pipeline and may reference internal nugets.
+
 # Build
 Each extension should contain its own building process.
 All the scripts to trigger the build of an extension for a specific platform should be located in its respective build\<platform> folders 
@@ -65,4 +71,4 @@ To create a release do the following:
 3) Update the nuget version numbers in DS_Main_Dev and run PVS before checking in.
 
 # Contribute
-Contact brnieb@microsoft.com, yaelh@microsoft.com, or sqlext@microsoft.com for questions and contributing.
+Contact sqlext@microsoft.com for questions and contributing.

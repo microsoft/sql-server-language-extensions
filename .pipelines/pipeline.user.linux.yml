@@ -97,7 +97,7 @@ build:
                                                                         # in the order they appear here.
     - !!buildcommand                                                    # buildcommand --- run a build script, collect artifacts, specify
                                                                         #                  files to sign and logs.
-      name: 'Build Java extension'                                         # This is name for this step. The step name will be in logs and in the
+      name: 'Build Java extension'                                      # This is name for this step. The step name will be in logs and in the
                                                                         # future, will be associated with metrics, timelines, journal etc.
       command: 'language-extensions/java/build/linux/build-java-extension.sh' # A root relative path to the script to execute.
       arguments:  'debug release'
@@ -114,10 +114,10 @@ build:
             - 'libjavaextension.so.1.0'
           signing_options:
             profile: '135020002'
-    - !!buildcommand                                                    # buildcommand --- run a build script, collect artifacts, specify
-                                                                        #                  files to sign and logs.
+    - !!buildcommand                                                   # buildcommand --- run a build script, collect artifacts, specify
+                                                                       #                  files to sign and logs.
       name: 'Build RExtension'                                         # This is name for this step. The step name will be in logs and in the
-                                                                        # future, will be associated with metrics, timelines, journal etc.
+                                                                       # future, will be associated with metrics, timelines, journal etc.
       command: 'language-extensions/R/build/linux/build-RExtension.sh' # A root relative path to the script to execute.
       arguments:  'debug release'
       artifacts:                                                       # A sequence of entries that describes what artifacts to collect and upload.
@@ -125,25 +125,33 @@ build:
           to: 'out/RExtension/debug'
           include:
             - 'libRExtension.so.1.0'
+          signing_options:
+            profile: '135020002'
         - from: 'build-output/RExtension/linux/release'
           to: 'out/RExtension/release'
           include:
             - 'libRExtension.so.1.0'
+          signing_options:
+            profile: '135020002'
     - !!buildcommand                                                    # buildcommand --- run a build script, collect artifacts, specify
                                                                         #                  files to sign and logs.
-      name: 'Build Python Extension'                                         # This is name for this step. The step name will be in logs and in the
+      name: 'Build Python Extension'                                    # This is name for this step. The step name will be in logs and in the
                                                                         # future, will be associated with metrics, timelines, journal etc.
       command: 'language-extensions/python/build/linux/build-python-extension.sh' # A root relative path to the script to execute. Any console output
       arguments:  'debug release'
-      artifacts:                                                       # A sequence of entries that describes what artifacts to collect and upload.
+      artifacts:                                                        # A sequence of entries that describes what artifacts to collect and upload.
         - from: 'build-output/pythonextension/linux/debug'
           to: 'out/pythonextension/debug'
           include:
             - 'libPythonExtension.so.1.0'
+          signing_options:
+            profile: '135020002'
         - from: 'build-output/pythonextension/linux/release'
           to: 'out/pythonextension/release'
           include:
             - 'libPythonExtension.so.1.0'
+          signing_options:
+            profile: '135020002'
     - !!defaultcommand
       name: 'Build RExtension test'                             # This is name for this step. The step name will be in logs and in the
                                                                 # future, will be associated with metrics, timelines, journal etc.

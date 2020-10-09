@@ -136,13 +136,17 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --tar
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Java extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
+REM Copy DLL, LIB, etc files out of debug/debug and release/release into the build output folder
+REM
+copy %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\* %BUILD_OUTPUT%\
+
 REM This will create the Java extension package with unsigned binaries, this is used for local development and non-release builds. release
 REM builds will call create-java-extension-zip.cmd after the binaries have been signed and this will be included in the zip
 REM
 IF /I %CMAKE_CONFIGURATION%==debug (
-	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\javaextension.dll, %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\javaextension.pdb -DestinationPath %TARGET%\java-lang-extension.zip"
+	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\javaextension.dll, %BUILD_OUTPUT%\javaextension.pdb -DestinationPath %TARGET%\java-lang-extension.zip"
 ) ELSE (
-	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\javaextension.dll -DestinationPath %TARGET%\java-lang-extension.zip"
+	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\javaextension.dll -DestinationPath %TARGET%\java-lang-extension.zip"
 )
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for Java extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
