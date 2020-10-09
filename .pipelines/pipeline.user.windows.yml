@@ -99,13 +99,13 @@ build:
             - 'mssql-java-lang-extension.jar'
           signing_options:
             profile: '170'
-        - from: 'language-extensions\java\build\windows\x64\debug'
+        - from: 'build-output\java-extension\windows\debug'
           to: 'out\java-extension\debug'
           include:
             - 'javaextension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'language-extensions\java\build\windows\x64\debug'
+        - from: 'build-output\java-extension\windows\debug'
           to: 'out\java-extension\debug\symbols'
           include:
             - 'javaextension.pdb'
@@ -117,13 +117,13 @@ build:
             - 'mssql-java-lang-extension.jar'
           signing_options:
             profile: '170'
-        - from: 'language-extensions\java\build\windows\x64\release'
+        - from: 'build-output\java-extension\windows\release'
           to: 'out\java-extension\release'
           include:
             - 'javaextension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'language-extensions\java\build\windows\x64\release'
+        - from: 'build-output\java-extension\windows\release'
           to: 'out\java-extension\release\symbols'
           include:
             - 'javaextension.pdb'
