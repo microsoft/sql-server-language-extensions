@@ -28,34 +28,9 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/extension-host/include EXTENSION_API_INCLUDE_DIR)
 
 # C++ code; only these files are compiled-in
 #
-set(JAVAEXTENSION_SOURCE_FILES
-	${JAVAEXTENSION_SRC_DIR}/JavaArgContainer.cpp
-	${JAVAEXTENSION_SRC_DIR}/JavaDataset.cpp
-	${JAVAEXTENSION_SRC_DIR}/javaextension.cpp
-	${JAVAEXTENSION_SRC_DIR}/JavaExtensionUtils.cpp
-	${JAVAEXTENSION_SRC_DIR}/JavaLibraryUtils.cpp
-	${JAVAEXTENSION_SRC_DIR}/JavaSession.cpp
-	${JAVAEXTENSION_SRC_DIR}/JavaSqlTypeHelper.cpp
-	${JAVAEXTENSION_SRC_DIR}/JniHelper.cpp
-	${JAVAEXTENSION_SRC_DIR}/Logger.cpp
-	${JAVAEXTENSION_SRC_DIR}/JavaPathSettings.cpp
-)
-
-if (${PLATFORM} STREQUAL linux)
-	set(JAVAEXTENSION_SOURCE_FILES
-		${JAVAEXTENSION_SOURCE_FILES}
-		${JAVAEXTENSION_SRC_DIR}/linux/Logger_linux.cpp
-		${JAVAEXTENSION_SRC_DIR}/linux/JavaLibraryUtils_linux.cpp
-		${JAVAEXTENSION_SRC_DIR}/linux/JavaExtensionUtils_linux.cpp
-	)
-elseif(${PLATFORM} STREQUAL windows)
-	set(JAVAEXTENSION_SOURCE_FILES
-		${JAVAEXTENSION_SOURCE_FILES}
-		${JAVAEXTENSION_SRC_DIR}/windows/Logger_win.cpp
-		${JAVAEXTENSION_SRC_DIR}/windows/JavaLibraryUtils_win.cpp
-		${JAVAEXTENSION_SRC_DIR}/windows/JavaExtensionUtils_win.cpp
-	)
-endif()
+# C++ code; only these files are compiled-in
+#
+file(GLOB JAVAEXTENSION_SOURCE_FILES ${JAVAEXTENSION_SRC_DIR}/*.cpp ${JAVAEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
 # Create the target library
 #
@@ -106,6 +81,13 @@ elseif(${PLATFORM} STREQUAL windows)
 	#
 	target_compile_definitions(JavaExtension PRIVATE WIN_EXPORT)
 	
+	if (${CMAKE_BUILD_TYPE} STREQUAL debug)
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi")
+		set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /OPT:REF /OPT:ICF")
+	else()
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG:FULL /OPT:REF /OPT:ICF")
+	endif()
 	file(TO_CMAKE_PATH ${JAVA_HOME}\\include JAVA_INCLUDE)
 	file(TO_CMAKE_PATH ${JAVA_INCLUDE}\\win32 JAVA_INCLUDE_WIN32)
 	

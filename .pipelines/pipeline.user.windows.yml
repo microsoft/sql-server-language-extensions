@@ -175,6 +175,12 @@ build:
             - 'pythonextension.pdb'
           signing_options:
             profile: 'none'
+        - from: '.'
+          to: 'out'
+          include:
+            - 'data-sql-extensions.nuspec'
+          signing_options:
+            profile: 'none'
     - !!defaultcommand
       name: 'Build RExtension Test'
       command: 'language-extensions\R\test\build\windows\build-RExtension-test.cmd'
@@ -225,12 +231,6 @@ package:
           to: 'out\pythonextension\packages\release'
           include:
             - 'python-lang-extension.zip'
-        - from: '.'
-          to: 'out'
-          include:
-            - 'data-sql-extensions.nuspec'
-          signing_options:
-            profile: 'none'
 
 # An optional user defined stage for running tests that need network access. Note that unit tests and others that do not
 # need network access can be run in build or package stages itself. Any artifacts built in this stage will be separated
