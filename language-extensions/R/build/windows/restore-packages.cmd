@@ -53,6 +53,10 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools3.5." || EXIT /b 
 powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/rtools40-x86_64.exe -OutFile %RTOOLS_HOME%\rtools40.exe"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools4.0." || EXIT /b %ERRORLEVEL%
 
+REM Download cv2pdb.exe 
+REM
+powershell -Command "Invoke-WebRequest https://ci.appveyor.com/api/projects/rainers/visuald/artifacts/cv2pdb.exe -OutFile %PACKAGES_ROOT%\cv2pdb.exe"
+
 REM Install RTools
 REM
 "%RTOOLS_HOME%\Rtools35.exe" /VERYSILENT /DIR="C:\Rtools\"

@@ -49,6 +49,12 @@ IF "%CMAKE_ROOT%" == "" (
 	)
 )
 
+IF "%CV2PDB_HOME%" == "" (
+	IF EXIST %PACKAGES_ROOT% (
+		SET CV2PDB_HOME=%PACKAGES_ROOT%
+	)
+)
+
 IF EXIST %REXTENSION_WORKING_DIR% (RMDIR /s /q %REXTENSION_WORKING_DIR%)
 MKDIR %REXTENSION_WORKING_DIR%
 
@@ -110,6 +116,12 @@ REM builds will call create-RExtension-zip.cmd after the binaries have been sign
 REM
 powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\libRExtension.dll, %BUILD_OUTPUT%\libRExtension.dll.a -DestinationPath %TARGET%\R-lang-extension.zip"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for RExtension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
+
+IF NOT "%CV2PDB_HOME%" == "" (
+    REM Create pdb from the RExtension dll using cv2pdb
+    REM
+    %CV2PDB_HOME%\cv2pdb.exe %BUILD_OUTPUT%\libRExtension.dll
+)
 
 REM Advance arg passed to build-RExtension.cmd
 REM

@@ -140,12 +140,24 @@ build:
             - 'libRExtension.dll'
           signing_options:
             profile: '135020002'
+        - from: 'build-output\RExtension\windows\debug'
+          to: 'out\RExtension\debug\symbols'
+          include:
+            - 'libRExtension.pdb'
+          signing_options:
+            profile: 'none'
         - from: 'build-output\RExtension\windows\release'
           to: 'out\RExtension\release'
           include:
             - 'libRExtension.dll'
           signing_options:
             profile: '135020002'
+        - from: 'build-output\RExtension\windows\release'
+          to: 'out\RExtension\release\symbols'
+          include:
+            - 'libRExtension.pdb'
+          signing_options:
+            profile: 'none'
     - !!buildcommand
       name: 'Build python extension'
       command: 'language-extensions\python\build\windows\build-python-extension.cmd'
@@ -175,6 +187,10 @@ build:
             - 'pythonextension.pdb'
           signing_options:
             profile: 'none'
+    - !!buildcommand
+      name: 'Copy nuspec'
+      command: 'empty-script.cmd'
+      artifacts:
         - from: '.'
           to: 'out'
           include:
