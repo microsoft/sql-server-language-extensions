@@ -194,7 +194,7 @@ build:
         - from: '.'
           to: 'out'
           include:
-            - 'data-sql-extensions.nuspec'
+            - 'data-sql-language-extensions.nuspec'
           signing_options:
             profile: 'none'
     - !!defaultcommand

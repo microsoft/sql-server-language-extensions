@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package >
     <metadata minClientVersion="2.5">
-        <id>data-sql-extensions</id>
+        <id>data-sql-language-extensions</id>
         <version>1.0</version>
-        <authors>brnieb</authors>
-        <owners>brnieb</owners>
+        <authors>jarupatj</authors>
+        <owners>jarupatj</owners>
         <description>SQL Language Extensions</description>
     </metadata>
     <files>
