@@ -3,8 +3,8 @@
     <metadata minClientVersion="2.5">
         <id>data-sql-language-extensions</id>
         <version>1.0</version>
-        <authors>jarupatj</authors>
-        <owners>jarupatj</owners>
+        <authors>extclrcommitters</authors>
+        <owners>extclrcommitters</owners>
         <description>SQL Language Extensions</description>
     </metadata>
     <files>

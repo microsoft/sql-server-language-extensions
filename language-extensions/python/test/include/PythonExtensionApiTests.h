@@ -58,7 +58,7 @@ namespace ExtensionApiTest
 
 		// Get length of a wstring
 		//
-		SQLULEN GetWStringLength(const wchar_t *str);
+		SQLINTEGER GetWStringLength(const wchar_t *str);
 
 		template<class SQLType, SQLSMALLINT dataType>
 		void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
@@ -100,17 +100,19 @@ namespace ExtensionApiTest
 			SQLULEN     paramSize,
 			bool        isFixedType,
 			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-			bool        validate = true);
+			bool        validate = true,
+			bool        expectSuccess = true);
 
 		// Test a wstring parameter
 		//
 		void TestWStringParameter(
 			int           paramNumber,
 			const wchar_t *paramValue,
-			SQLULEN       paramSize,
+			SQLINTEGER    paramSize,
 			bool          isFixedType,
 			SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-			bool          validate = true);
+			bool          validate = true,
+			bool          expectSuccess = true);
 
 		// Test a binary parameter
 		//

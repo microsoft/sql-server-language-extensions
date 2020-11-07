@@ -255,15 +255,33 @@ PythonStringParam<CharType>::PythonStringParam(
 {
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
-		SQLINTEGER strlen = strLen_or_Ind / sizeof(CharType);
+		PyObject *pyObj = nullptr;
+		SQLINTEGER strlen = strLen_or_Ind;
+
+		char *str = reinterpret_cast<char *>(paramValue);
 
 		// Create a string PyObject from the str and strLen.
 		// This DOES copy the underlying string into a new buffer and null terminates it.
 		// Then, convert to a boost object so that boost handles ref counting.
 		//
-		m_pyObject = bp::object(bp::handle<>(
-			PyUnicode_FromKindAndData(sizeof(CharType), paramValue, strlen)
-		));
+		if constexpr (is_same_v<CharType, char>)
+		{
+			pyObj = PyUnicode_DecodeUTF8(
+				str,      // char * version of string
+				strlen,   // len of string in bytes
+				nullptr); // special error handling options, we don't need any
+		}
+		else
+		{
+			int byteOrder = -1; // -1: little endian
+			pyObj = PyUnicode_DecodeUTF16(
+				str,         // char * version of string
+				strlen,      // len of string in bytes
+				nullptr,     // special error handling options, we don't need any
+				&byteOrder); // byte order to parse UTF-16. SQL Server uses little-endian.
+		}
+
+		m_pyObject = bp::object(bp::handle<>(pyObj));
 	}
 	else
 	{

@@ -324,6 +324,24 @@ namespace ExtensionApiTest
 			6,       // paramSize
 			false);  // isFixedType
 
+		// Test CHAR value with UTF-8 encoded string (with chinese)
+		//
+		string utfstring = u8"中文编码";
+		TestStringParameter(
+			0,                  // paramNumber
+			utfstring.c_str(),  // paramValue
+			utfstring.length(), // paramSize
+			true);              // isFixedType
+
+		// Test VARCHAR value with UTF-8 encoded string (with cyrillic)
+		//
+		utfstring = u8"абвг";
+		TestStringParameter(
+			0,                  // paramNumber
+			utfstring.c_str(),  // paramValue
+			utfstring.length(), // paramSize
+			false);             // isFixedType
+
 		// Test null VARCHAR(5) value
 		//
 		TestStringParameter(
@@ -331,6 +349,16 @@ namespace ExtensionApiTest
 			nullptr, // paramValue
 			5,       // paramSize
 			false);  // isFixedType
+
+		// Test CHAR value with UTF-8 self-constructed encoded character (Euro sign)
+		// https://en.wikipedia.org/wiki/UTF-8#Examples
+		//
+		string goodUTF8 = string("a") + "\xE2" + "\x82" + "\xAC";
+		TestStringParameter(
+			0,                 // paramNumber
+			goodUTF8.c_str(),  // paramValue
+			goodUTF8.length(), // paramSize
+			true);             // isFixedType
 	}
 
 	// Name: InitWStringParamTest
@@ -420,15 +448,27 @@ namespace ExtensionApiTest
 			0,        // paramNumber
 			L"你好",
 			2,        // paramSize
-			true);   // isFixedType
+			true);    // isFixedType
 
-		// Test Unicode NVARCHAR(6) value
+		// Test Unicode NVARCHAR value (with cyrillic)
 		//
 		TestWStringParameter(
-			0,        // paramNumber
-			L"你好",
-			6,        // paramSize
-			false);   // isFixedType
+			0,       // paramNumber
+			L"абвг",
+			10,      // paramSize
+			false);  // isFixedType
+
+		// Test NCHAR with self-constructed UTF-16 char (𐐷)
+		// https://en.wikipedia.org/wiki/UTF-16#Examples
+		// We need to use u16string here because wstring doesn't 
+		// handle multibyte characters well in Linux with the -fshort-wchar option.
+		//
+		u16string goodUTF16 = u16string(u"a") + u"\xd801\xdc37" + u"b";
+		TestWStringParameter(
+			0,                                                    // paramNumber
+			reinterpret_cast<const wchar_t *>(goodUTF16.c_str()), // paramValue
+			goodUTF16.size(),                                     // paramSize
+			true);                                                // isFixedType
 	}
 
 	// Name: InitBinaryParamTest
@@ -657,6 +697,46 @@ namespace ExtensionApiTest
 		EXPECT_EQ(result, SQL_ERROR);
 	}
 
+	// Name: InitBadEncodingParamTest
+	//
+	// Description:
+	//  Test InitParam() API with bad strings (out of encoding range)
+	//
+	TEST_F(PythonExtensionApiTests, InitBadEncodingParamTest)
+	{
+		InitializeSession(1);  // parametersNumber
+
+		// Construct a bad UTF-8 string:
+		// https://en.wikipedia.org/wiki/UTF-8#Encoding
+		// 0xF7 defines a 4-byte character and expects three more chars of range 0x80-0xBF
+		//
+		string badUTF8 = string("a") + "\xF7" + "\xFF" + "b";
+		TestStringParameter(
+			0,                 // paramNumber
+			badUTF8.c_str(),   // paramValue
+			badUTF8.length(),  // paramSize
+			true,              // isFixedType
+			SQL_PARAM_INPUT_OUTPUT,
+			false,             // validate
+			false);            // expectSuccess
+
+		// Construct a bad UTF-16 string:
+		// https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF
+		// 0xd800 (high surrogate) expects a low surrogate afterwards (0xdc00-0xdfff)
+		// We need to use u16string here because wstring doesn't 
+		// handle multibyte characters well in Linux with the -fshort-wchar option.
+		//
+		u16string badUTF16 = u16string(u"a") + u"\xd800\xd800" + u"b";
+		TestWStringParameter(
+			0,                                                   // paramNumber
+			reinterpret_cast<const wchar_t *>(badUTF16.c_str()), // paramValue
+			badUTF16.size(),                                     // paramSize
+			true,                                                // isFixedType
+			SQL_PARAM_INPUT_OUTPUT,
+			false,                                               // validate
+			false);                                              // expectSuccess
+	}
+
 	// Name: TestParameter
 	//
 	// Description:
@@ -738,7 +818,8 @@ namespace ExtensionApiTest
 		const SQLULEN paramSize,
 		bool          isFixedType,
 		SQLSMALLINT   inputOutputType,
-		bool          validate)
+		bool          validate,
+		bool          expectSuccess)
 	{
 		string paramName = "param" + to_string(paramNumber);
 		string atParam = "@" + paramName;
@@ -795,24 +876,31 @@ namespace ExtensionApiTest
 			strLenOrInd,
 			inputOutputType);
 
-		EXPECT_EQ(result, SQL_SUCCESS);
-
-		if (validate)
+		if (!expectSuccess)
 		{
-			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
-
-			if (paramValue != nullptr)
+			EXPECT_EQ(result, SQL_ERROR);
+		} 
+		else 
+		{
+			EXPECT_EQ(result, SQL_SUCCESS);
+			if (validate)
 			{
-				ASSERT_FALSE(obj.is_none());
+				bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
-				char *param = bp::extract<char *>(obj);
+				if (paramValue != nullptr)
+				{
+					ASSERT_FALSE(obj.is_none());
 
-				EXPECT_STREQ(param, expectedParamValue);
+					char *param = bp::extract<char *>(obj);
+
+					EXPECT_STREQ(param, expectedParamValue);
+				}
+				else
+				{
+					ASSERT_TRUE(obj.is_none());
+				}
 			}
-			else
-			{
-				ASSERT_TRUE(obj.is_none());
-			}
+
 		}
 	}
 
@@ -822,12 +910,13 @@ namespace ExtensionApiTest
 	// Testing if InitParam is implemented correctly for the nchar/nvarchar dataType.
 	//
 	void PythonExtensionApiTests::TestWStringParameter(
-		int           paramNumber,
-		const wchar_t *paramValue,
-		const SQLULEN paramSize,
-		bool          isFixedType,
-		SQLSMALLINT   inputOutputType,
-		bool          validate)
+		int              paramNumber,
+		const wchar_t    *paramValue,
+		const SQLINTEGER paramSize,
+		bool             isFixedType,
+		SQLSMALLINT      inputOutputType,
+		bool             validate,
+		bool             expectSuccess)
 	{
 		string paramName = "param" + to_string(paramNumber);
 		string atParam = "@" + paramName;
@@ -842,7 +931,7 @@ namespace ExtensionApiTest
 
 		if (paramValue != nullptr)
 		{
-			SQLULEN paramLength = GetWStringLength(paramValue);
+			SQLINTEGER paramLength = GetWStringLength(paramValue);
 
 			fixedParamValue.assign(paramValue, paramValue + min(paramLength, paramSize));
 
@@ -880,46 +969,45 @@ namespace ExtensionApiTest
 			strLenOrInd,
 			inputOutputType);
 
-		EXPECT_EQ(result, SQL_SUCCESS);
-
-		if (validate)
+		if (!expectSuccess)
 		{
-			bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
+			EXPECT_EQ(result, SQL_ERROR);
+		}
+		else
+		{
+			EXPECT_EQ(result, SQL_SUCCESS);
 
-			if (paramValue != nullptr)
+			if (validate)
 			{
-				ASSERT_FALSE(obj.is_none());
-				
-				SQLINTEGER strlen = strLenOrInd / sizeof(wchar_t);
+				bp::object obj(bp::extract<bp::dict>(m_mainNamespace)().get(paramName));
 
-				// Get length of the unicode object in pyObj
-				//
-				int size = PyUnicode_GET_LENGTH(obj.ptr());
-
-				EXPECT_EQ(strlen, size);
-
-				// Get a byte representation of the string as UTF16.
-				// PyUnicode_AsUTF16String adds a BOM to the front of every string.
-				//
-				char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(obj.ptr()));
-
-				// Ignore the 2 byte BOM added above
-				//
-				char *actualBytes = utf16str + 2;
-
-				// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
-				// don't work properly for wstrings in Linux with -fshort-wchar
-				//
-				char *expectedParamBytes = reinterpret_cast<char *>(expectedParamValue);
-
-				for (SQLINTEGER i = 0; i < strLenOrInd; ++i)
+				if (paramValue != nullptr)
 				{
-					EXPECT_EQ(actualBytes[i], expectedParamBytes[i]);
+					ASSERT_FALSE(obj.is_none());
+
+					// Get a byte representation of the string as UTF16.
+					// PyUnicode_AsUTF16String adds a BOM to the front of every string.
+					//
+					char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(obj.ptr()));
+
+					// Ignore the 2 byte BOM added above
+					//
+					char *actualBytes = utf16str + 2;
+
+					// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
+					// don't work properly for wstrings in Linux with -fshort-wchar
+					//
+					char *expectedParamBytes = reinterpret_cast<char *>(expectedParamValue);
+
+					for (SQLINTEGER i = 0; i < strLenOrInd; ++i)
+					{
+						EXPECT_EQ(actualBytes[i], expectedParamBytes[i]);
+					}
 				}
-			}
-			else
-			{
-				ASSERT_TRUE(obj.is_none());
+				else
+				{
+					ASSERT_TRUE(obj.is_none());
+				}
 			}
 		}
 	}

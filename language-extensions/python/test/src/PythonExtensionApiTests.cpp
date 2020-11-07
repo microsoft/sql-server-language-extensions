@@ -421,9 +421,9 @@ namespace ExtensionApiTest
 	//  Utility function to get the length of a wchar_t *.
 	//  wcslen does not work in Linux with -fshort-wchar, so we use this function instead.
 	//
-	SQLULEN PythonExtensionApiTests::GetWStringLength(const wchar_t *wstr)
+	SQLINTEGER PythonExtensionApiTests::GetWStringLength(const wchar_t *wstr)
 	{
-		SQLULEN distance = -1;
+		SQLINTEGER distance = -1;
 
 		// If nullptr, return
 		//
