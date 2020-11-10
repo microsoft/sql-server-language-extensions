@@ -520,6 +520,115 @@ void RDateTimeParam<SQLType, RVectorType, DateTimeTypeInR>::RetrieveValueAndStrL
 }
 
 //--------------------------------------------------------------------------------------------------
+// Name: RNumericParam::RNumericParam
+//
+// Description:
+//  Constructor.
+//
+RNumericParam::RNumericParam(
+	SQLUSMALLINT  paramNumber,
+	const SQLCHAR *paramName,
+	SQLSMALLINT   paramNameLength,
+	SQLSMALLINT   dataType,
+	SQLULEN       paramSize,
+	SQLSMALLINT   decimalDigits,
+	SQLPOINTER    paramValue,
+	SQLINTEGER    strLen_or_Ind,
+	SQLSMALLINT   inputOutputType)
+	: RParam(paramNumber,
+		paramName,
+		paramNameLength,
+		dataType,
+		paramSize,
+		decimalDigits,
+		strLen_or_Ind,
+		inputOutputType)
+{
+	SetRcppVector(paramValue);
+
+	// paramSize is the precision value ranging from 1 to 38.
+	//
+	m_precision = paramSize;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: RNumericParam::SetRcppVector
+//
+// Description:
+//  Sets the RcppVector for RNumericParam with the given paramValue.
+//  This is a wrapper to CreateNumericVector with rowsNumber = 1.
+//  For null parameters, a size one vector with member value = NA is created.
+//
+void RNumericParam::SetRcppVector(SQLPOINTER paramValue)
+{
+	LOG("RNumericParam::SetRcppVector");
+
+	SQLINTEGER strLenOrInd = StrLenOrInd();
+	if (strLenOrInd == SQL_NULL_DATA)
+	{
+		SQLINTEGER strLen_or_IndArray[1] = { SQL_NULL_DATA };
+		m_RcppVector = RTypeUtils::CreateNumericVector(
+			1, // rowsNumber
+			paramValue,
+			strLen_or_IndArray,
+			m_decimalDigits,
+			SQL_NULLABLE);
+	}
+	else
+	{
+		SQLINTEGER strLen_or_IndArray[1] = { strLenOrInd };
+		m_RcppVector = RTypeUtils::CreateNumericVector(
+			1,        // rowsNumber
+			paramValue,
+			strLen_or_IndArray,
+			m_decimalDigits,
+			SQL_NO_NULLS);
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: RNumericParam::RetrieveValueAndStrLenInd
+//
+// Description:
+//  Retrieves data from m_RcppVector, fills it in m_value and sets m_strLenOrInd accordingly.
+//
+void RNumericParam::RetrieveValueAndStrLenInd()
+{
+	LOG("RNumericParam::RetrieveValueAndStrLenInd");
+
+	Rcpp::Environment globalEnv = Rcpp::Environment::global_env();
+
+	if (globalEnv.exists(m_name.c_str()))
+	{
+		Logger::LogRVariable(m_name);
+		RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
+
+		m_RcppVector = (*embeddedREnvPtr)[m_name.c_str()];
+
+		if (m_RcppVector.size() == 0)
+		{
+			m_strLenOrInd = SQL_NULL_DATA;
+		}
+		else
+		{
+			SQLSMALLINT nullable = SQL_NO_NULLS;
+			RTypeUtils::FillDataFromNumericVector(
+				1, // rowsNumber
+				m_RcppVector,
+				&m_value,
+				&m_strLenOrInd,
+				nullable,
+				m_decimalDigits,
+				m_precision);
+		}
+	}
+	else
+	{
+		m_strLenOrInd = SQL_NULL_DATA;
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
 // Do explicit template instantiations, so that object code is generated for these
 // and the linker is able to find their definitions even after instantiations are in different
 // translation units (i.e. RParamTemplate instantiation is in RParamContainer.cpp)

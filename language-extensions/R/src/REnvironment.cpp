@@ -82,19 +82,12 @@ void ExecuteScript(const string &script)
 	LOG("ExecuteScript");
 
 	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
-	if (embeddedREnvPtr != nullptr)
-	{
-		string tryCatchScript = GetScriptWithTryCatch(script);
-		LOG(tryCatchScript);
+	string tryCatchScript = GetScriptWithTryCatch(script);
+	LOG(tryCatchScript);
 
-		// If evaluation of script fails, this throws an exception.
-		//
-		embeddedREnvPtr->parseEvalQ(tryCatchScript.c_str());
-	}
-	else
-	{
-		throw runtime_error("Embedded R environment has not been initialized.");
-	}
+	// If evaluation of script fails, this throws an exception.
+	//
+	embeddedREnvPtr->parseEvalQ(tryCatchScript.c_str());
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -111,19 +104,12 @@ SEXP ExecuteScriptAndGetResult(const string &script)
 {
 	LOG("ExecuteScriptAndGetResult");
 
-	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 	SEXP result = nullptr;
+	RInside* embeddedREnvPtr = REnvironment::EmbeddedREnvironment();
 
-	if (embeddedREnvPtr != nullptr)
-	{
-		string tryCatchScript = GetScriptWithTryCatch(script);
-		LOG(tryCatchScript);
-		result = static_cast<SEXP>(embeddedREnvPtr->parseEval(tryCatchScript));
-	}
-	else
-	{
-		throw runtime_error("Embedded R environment has not been initialized.");
-	}
+	string tryCatchScript = GetScriptWithTryCatch(script);
+	LOG(tryCatchScript);
+	result = static_cast<SEXP>(embeddedREnvPtr->parseEval(tryCatchScript));
 
 	return result;
 }

@@ -1014,6 +1014,139 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
+	// Name: GetNumericOutputParamTest
+	//
+	// Description:
+	//  Tests multiple numeric output parameter values with varying precision and scale for all
+	//  the following storage classes:
+	//  Precision  Storage bytes
+	//    1 - 9      5
+	//    10-19      9
+	//    20-28      13
+	//    29-38      17
+	//
+	TEST_F(RExtensionApiTests, GetNumericOutputParamTest)
+	{
+		string scriptString =
+			// Test numeric(38, 0)
+			//
+			"param1 <- as.numeric(1e38);"
+			// Test max numeric(38, 38)
+			//
+			"param2 <- as.numeric(9999999999999999999999999999999999999e-38);"
+			// Test min numeric(38, 38)
+			//
+			"param3 <- as.numeric(1e-38);"
+			// Test numeric(38, 19)
+			//
+			"param4 <- as.numeric(-5578989.33434e-14);"
+			// Test numeric(28, 0)
+			//
+			"param5 <- as.numeric(1e28);"
+			// Test numeric(28, 28)
+			//
+			"param6 <- as.numeric(1e-28);"
+			// Test numeric(28, 14)
+			//
+			"param7 <- as.numeric(-5578989.33434e-9);"
+			// Test numeric(19, 0)
+			//
+			"param8 <- as.numeric(1e18);"
+			// Test numeric(19, 19)
+			//
+			"param9 <- as.numeric(1e-19);"
+			// Test numeric(19, 9)
+			//
+			"param10 <- as.numeric(-5578989.33434e-4);"
+			// Test numeric(9, 0)
+			//
+			"param11 <- as.numeric(1e8);"
+			// Test numeric(9, 9)
+			//
+			"param12 <- as.numeric(1e-9);"
+			// Test numeric(9, 5)
+			//
+			"param13 <- as.numeric(-5578.33434);"
+			// Test ULLONG_MAX; R considers this as ULLONG_MAX + 1
+			//
+			"param14 <- as.numeric(18446744073709551615);"
+			// Test ULLONG_MAX + 1; R considers this as ULLONG_MAX + 1
+			//
+			"param15 <- as.numeric(18446744073709551616);"
+			// Test NA
+			//
+			"param16 <- as.numeric(NA);";
+
+		int paramsNumber = 16;
+		int numberOfNAs = 1;
+
+		vector<SQL_NUMERIC_STRUCT> initParamValues(paramsNumber, { 0, 0, 0, 0, 0, 0, 0 });
+		vector<SQLINTEGER> expectedStrLenOrInd(paramsNumber - numberOfNAs, sizeof(SQL_NUMERIC_STRUCT));
+		expectedStrLenOrInd.insert(expectedStrLenOrInd.end(), numberOfNAs, SQL_NULL_DATA);
+		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
+
+		vector<SQL_NUMERIC_STRUCT> expectedParamValues = {
+			{ 38, 0, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 196, 134, 90, 168, 76, 59, 75 } },
+			{ 38, 38, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 71, 218, 213, 16, 238, 133, 7 } },
+			{ 38, 38, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 38, 19, 0, { 186, 36, 94, 229, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 28, 0, 1, { 0, 0, 0, 0, 0, 2, 37, 62, 94, 206, 79, 32, 0, 0, 0, 0 } },
+			{ 28, 28, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 28, 14, 0, { 186, 36, 94, 229, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 19, 0, 1, { 0, 0, 100, 167, 179, 182, 224, 13, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 19, 19, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 19, 9, 0, { 186, 36, 94, 229, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 9, 0, 1, { 0, 225, 245, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 9, 9, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 9, 5, 0, { 218, 220, 63, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 20, 0, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 20, 0, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 } },
+			{ }
+		};
+
+		vector<SQLULEN> precisionAsParamSize(paramsNumber, 0);
+		vector<SQLSMALLINT> decimalDigits(paramsNumber, 0);
+		for (int paramNumber = 0; paramNumber < paramsNumber; ++paramNumber)
+		{
+			precisionAsParamSize[paramNumber] = expectedParamValues[paramNumber].precision;
+			decimalDigits[paramNumber] = expectedParamValues[paramNumber].scale;
+		}
+
+		// Initialize with a Session that executes the above script
+		// that sets output parameters.
+		//
+		InitializeSession(
+			0,            // inputSchemaColumnsNumber
+			scriptString,
+			paramsNumber);
+
+		InitNumericParam(
+			initParamValues,
+			expectedStrLenOrInd,
+			inputOutputTypes,
+			precisionAsParamSize,
+			decimalDigits);
+
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
+		SQLRETURN result = (*sm_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,       // rowsNumber
+			nullptr, // dataSet
+			nullptr, // strLen_or_Ind
+			&outputSchemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+		// Verify that the parameters we get back are what we expect
+		//
+		GetNumericOutputParam(
+			expectedParamValues,
+			expectedStrLenOrInd);
+	}
+
+	//----------------------------------------------------------------------------------------------
 	// Name: GetInvalidOutputParamTest
 	//
 	// Description:
@@ -1328,6 +1461,56 @@ namespace ExtensionApiTest
 					EXPECT_EQ(expectedParamValue.minute, actualValue.minute);
 					EXPECT_EQ(expectedParamValue.second, actualValue.second);
 					EXPECT_EQ(expectedParamValue.fraction, actualValue.fraction);
+				}
+			}
+			else
+			{
+				EXPECT_EQ(paramValue, nullptr);
+			}
+		}
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::GetNumericOutputParam
+	//
+	// Description:
+	//  Tests numeric output param value and strLenOrInd are as expected.
+	//
+	void RExtensionApiTests::GetNumericOutputParam(
+		vector<SQL_NUMERIC_STRUCT> expectedParamValues,
+		vector<SQLINTEGER>         expectedStrLenOrInd)
+	{
+		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
+		for (SQLULEN paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		{
+			SQL_NUMERIC_STRUCT expectedParamValue = expectedParamValues[paramNumber];
+
+			SQLPOINTER paramValue = nullptr;
+			SQLINTEGER strLen_or_Ind = 0;
+			SQLRETURN result = SQL_ERROR;
+			result = (*sm_getOutputParamFuncPtr)(
+				*m_sessionId,
+				m_taskId,
+				paramNumber,
+				&paramValue,
+				&strLen_or_Ind);
+
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			ASSERT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+			if (expectedStrLenOrInd[paramNumber] != SQL_NULL_DATA)
+			{
+				EXPECT_NE(paramValue, nullptr);
+				SQL_NUMERIC_STRUCT actualValue = *(static_cast<SQL_NUMERIC_STRUCT *>(paramValue));
+
+				EXPECT_EQ(expectedParamValue.precision, actualValue.precision);
+				EXPECT_EQ(expectedParamValue.scale, actualValue.scale);
+				EXPECT_EQ(expectedParamValue.sign, actualValue.sign);
+				for (SQLSMALLINT byte = 0; byte < SQL_MAX_NUMERIC_LEN; ++byte)
+				{
+					EXPECT_EQ(expectedParamValue.val[byte], actualValue.val[byte]);
 				}
 			}
 			else

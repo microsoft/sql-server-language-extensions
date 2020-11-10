@@ -75,14 +75,7 @@ void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
-	if (REnvironment::EmbeddedREnvironment() != nullptr)
-	{
-		Rprintf(msgWithTimestamp.c_str());
-	}
-	else
-	{
-		cout << msgWithTimestamp;
-	}
+	cout << msgWithTimestamp;
 #endif
 }
 
@@ -146,12 +139,5 @@ const char* Logger::GetCurrentTimestamp()
 //
 void Logger::LogToStdErr(const string &errorMsgWithTimestamp)
 {
-	if (REnvironment::EmbeddedREnvironment() != nullptr)
-	{
-		REprintf(errorMsgWithTimestamp.c_str());
-	}
-	else
-	{
-		cerr << errorMsgWithTimestamp;
-	}
+	cerr << errorMsgWithTimestamp;
 }

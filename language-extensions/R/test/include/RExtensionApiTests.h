@@ -254,6 +254,16 @@ namespace ExtensionApiTest
 			std::vector<SQLSMALLINT> inputOutputTypes,
 			bool                     validate = true);
 
+		// Testing if InitParam is implemented correctly for the decimal/numeric dataTypes.
+		//
+		void InitNumericParam(
+			std::vector<SQL_NUMERIC_STRUCT> initParamValues,
+			std::vector<SQLINTEGER>         strLenOrInd,
+			std::vector<SQLSMALLINT>        inputOutputTypes,
+			std::vector<SQLULEN>            precisionAsParamSize,
+			std::vector<SQLSMALLINT>        decimalDigits,
+			std::vector<double>             expectedParamValues = std::vector<double>(0));
+
 		// Fill a contiguous array columnData with members from the given columnVector
 		// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
 		//
@@ -431,6 +441,12 @@ namespace ExtensionApiTest
 		void GetDateTimeOutputParam(
 			std::vector<SQLType>    expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
+
+		// Tests numeric output param value and strLenOrInd are as expected.
+		//
+		void GetNumericOutputParam(
+			std::vector<SQL_NUMERIC_STRUCT> expectedParamValues,
+			std::vector<SQLINTEGER>         expectedStrLenOrInd);
 
 		// Objects declared here can be used by all tests in the test suite.
 		//

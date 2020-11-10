@@ -67,6 +67,27 @@ public:
 		SQLINTEGER  *strLen_or_Ind,
 		SQLSMALLINT nullable);
 
+	// Creates a numeric vector in R corresponding to the data of type SQL_NUMERIC_STRUCT.
+	//
+	static Rcpp::NumericVector CreateNumericVector(
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data,
+		SQLINTEGER  *strLen_or_Ind,
+		SQLSMALLINT decimalDigits,
+		SQLSMALLINT nullable);
+
+	// Given a little endian byte array of max length SQL_MAX_NUMERIC_LEN,
+	// converts it into a double value of base 10.
+	//
+	static double ConvertBytesToDouble(const SQLCHAR *leBytesArray);
+
+	// Given a double value, convert it and store it as a little endian byte
+	// array of size SQL_MAX_NUMERIC_LEN
+	//
+	static void ConvertDoubleToBytes(
+		double   value,
+		SQLCHAR *leBytesArray);
+
 	// Given the vectorInR, copies its content into the given std::vector pointed to by data.
 	//
 	template<class SQLType, class RVectorType, SQLSMALLINT DataType>
@@ -113,10 +134,21 @@ public:
 	template<class SQLType, class RVectorType, class DateTimeTypeInR>
 	static void FillDataFromDateTimeVector(
 		SQLULEN              rowsNumber,
-		RVectorType                vectorInR,
+		RVectorType          vectorInR,
 		std::vector<SQLType> *data,
 		SQLINTEGER           *strLenOrInd,
 		SQLSMALLINT          &nullable);
+
+	// Given the vectorInR, copies its content into the given std::vector pointed to by data.
+	//
+	static void FillDataFromNumericVector(
+		SQLULEN                         rowsNumber,
+		Rcpp::NumericVector             vectorInR,
+		std::vector<SQL_NUMERIC_STRUCT> *data,
+		SQLINTEGER                      *strLenOrInd,
+		SQLSMALLINT                     &nullable,
+		SQLSMALLINT                     decimalDigits,
+		SQLCHAR                         precision);
 
 	// Maps to store the ODBC C type to NA value mapping
 	//

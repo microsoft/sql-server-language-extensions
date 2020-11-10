@@ -49,6 +49,11 @@ public:
 	//
 	static RInside* EmbeddedREnvironment()
 	{
+		if (sm_embeddedREnvPtr == nullptr)
+		{
+			throw std::runtime_error("Embedded R environment has not been initialized.");
+		}
+
 		return sm_embeddedREnvPtr.get();
 	}
 
