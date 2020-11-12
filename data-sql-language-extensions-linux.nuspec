@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package >
+    <metadata minClientVersion="2.5">
+        <id>data-sql-language-extensions-linux</id>
+        <version>1.0</version>
+        <authors>extclrcommitters</authors>
+        <owners>extclrcommitters</owners>
+        <description>SQL Language Extensions Linux Packages</description>
+    </metadata>
+    <files>
+        <!-- The current path is "build" for artifacts -->
+        <!-- Copy build files, such as dlls and symbols, to the build\languagename\debug or release folder -->
+        <file src=".\**\debug\**\*.*" target="build" />
+        <file src=".\**\release\**\*.*" target="build" />
+        <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
+        <!-- Java extension is not shipped from this repo, it is shipped from mssql-server. To avoid confusion, do not
+             include it with this nuget package -->
+        <file src="..\..\package\out\pythonextension\packages\debug\python-lang-extension.zip" target="build\pythonextension\debug" />
+        <file src="..\..\package\out\pythonextension\packages\release\python-lang-extension.zip" target="build\pythonextension\release" />
+        <file src="..\..\package\out\RExtension\packages\debug\R-lang-extension.zip" target="build\RExtension\debug" />
+        <file src="..\..\package\out\RExtension\packages\release\R-lang-extension.zip" target="build\RExtension\release" />
+    </files>
+</package>

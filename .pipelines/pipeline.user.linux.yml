@@ -162,6 +162,17 @@ build:
                                                                 # future, will be associated with metrics, timelines, journal etc.
       command: 'language-extensions/python/test/build/linux/build-pythonextension-test.sh' # A root relative path to the script to execute. Any console output
       arguments:  'debug release'
+    # Copy the linux nuget package spec 
+    - !!buildcommand
+      name: 'Copy nuspec'
+      command: 'empty-script.sh'
+      artifacts:
+        - from: '.'
+          to: 'out'
+          include:
+            - 'data-sql-language-extensions-linux.nuspec'
+          signing_options:
+            profile: 'none'
 
 # An optional user defined stage for performing packaging. This exists as a separate stage because some build processes do a
 # compile-sign-package-sign model. For example, Windows based builds use this model. Linux builds typically follow a
