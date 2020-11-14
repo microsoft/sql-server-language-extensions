@@ -162,7 +162,7 @@ build:
                                                                 # future, will be associated with metrics, timelines, journal etc.
       command: 'language-extensions/python/test/build/linux/build-pythonextension-test.sh' # A root relative path to the script to execute. Any console output
       arguments:  'debug release'
-    # Copy the linux nuget package spec 
+    # Copy the nuget package spec 
     - !!buildcommand
       name: 'Copy nuspec'
       command: 'empty-script.sh'
@@ -170,7 +170,7 @@ build:
         - from: '.'
           to: 'out'
           include:
-            - 'data-sql-language-extensions-linux.nuspec'
+            - 'data-sql-language-extensions.nuspec'
           signing_options:
             profile: 'none'
 

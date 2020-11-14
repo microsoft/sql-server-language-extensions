@@ -13,11 +13,21 @@
         <file src=".\**\debug\**\*.*" target="build" />
         <file src=".\**\release\**\*.*" target="build" />
         <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
+        <!-- Windows packages-->
         <file src="..\..\package\out\java-extension\packages\debug\java-lang-extension.zip" target="build\java-extension\debug" />
         <file src="..\..\package\out\java-extension\packages\release\java-lang-extension.zip" target="build\java-extension\release" />
         <file src="..\..\package\out\pythonextension\packages\debug\python-lang-extension.zip" target="build\pythonextension\debug" />
         <file src="..\..\package\out\pythonextension\packages\release\python-lang-extension.zip" target="build\pythonextension\release" />
         <file src="..\..\package\out\RExtension\packages\debug\R-lang-extension.zip" target="build\RExtension\debug" />
         <file src="..\..\package\out\RExtension\packages\release\R-lang-extension.zip" target="build\RExtension\release" />
+
+        <!-- Linux packages-->
+        <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
+        <!-- Java extension is not shipped from this repo, it is shipped from mssql-server. To avoid confusion, do not
+             include it with this nuget package -->
+        <file src="..\..\package\out\pythonextension\packages\debug\python-lang-extension-linux.zip" target="build\pythonextension\debug" />
+        <file src="..\..\package\out\pythonextension\packages\release\python-lang-extension-linux.zip" target="build\pythonextension\release" />
+        <file src="..\..\package\out\RExtension\packages\debug\R-lang-extension-linux.zip" target="build\RExtension\debug" />
+        <file src="..\..\package\out\RExtension\packages\release\R-lang-extension-linux.zip" target="build\RExtension\release" />
     </files>
 </package>
