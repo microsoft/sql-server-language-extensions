@@ -188,6 +188,13 @@ private:
 		SQLULEN     rowsNumber,
 		SQLPOINTER  data);
 
+	// Adds a single column of numeric values into the R DataFrame.
+	//
+	void AddNumericColumnToDataFrame(
+		SQLSMALLINT columnNumber,
+		SQLULEN     rowsNumber,
+		SQLPOINTER  data);
+
 	using fnAddColumn = void (RInputDataSet::*)(
 		SQLSMALLINT columnNumber,
 		SQLULEN     rowsNumber,

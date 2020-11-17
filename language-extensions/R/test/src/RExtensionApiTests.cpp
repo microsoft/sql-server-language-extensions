@@ -577,11 +577,26 @@ namespace ExtensionApiTest
 		SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
 		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
 		{
-			InitializeColumn(columnNumber,
-				columnInfo->m_columnNames[columnNumber],
-				dataType,
-				sizeof(SQLType),
-				columnInfo->m_nullable[columnNumber]);
+			if constexpr (is_same_v<SQLType, SQL_NUMERIC_STRUCT>)
+			{
+				SQL_NUMERIC_STRUCT *columnData =
+					static_cast<SQL_NUMERIC_STRUCT*>(columnInfo->m_dataSet[columnNumber]);
+				InitializeColumn(columnNumber,
+					columnInfo->m_columnNames[columnNumber],
+					dataType,
+					sizeof(SQLType),
+					columnData[0].scale, // decimalDigits
+					columnInfo->m_nullable[columnNumber]);
+			}
+			else
+			{
+				InitializeColumn(columnNumber,
+					columnInfo->m_columnNames[columnNumber],
+					dataType,
+					sizeof(SQLType),
+					0, // decimalDigits
+					columnInfo->m_nullable[columnNumber]);
+			}
 		}
 	}
 
@@ -605,6 +620,8 @@ namespace ExtensionApiTest
 		ColumnInfo<SQL_DATE_STRUCT> *ColumnInfo);
 	template void RExtensionApiTests::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 		ColumnInfo<SQL_TIMESTAMP_STRUCT> *ColumnInfo);
+	template void RExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+		ColumnInfo<SQL_NUMERIC_STRUCT> *ColumnInfo);
 
 	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::RExtensionApiTestInitializeColumn
@@ -617,6 +634,7 @@ namespace ExtensionApiTest
 		string      columnNameString,
 		SQLSMALLINT dataType,
 		SQLULEN     columnSize,
+		SQLSMALLINT decimalDigits,
 		SQLSMALLINT nullable)
 	{
 		SQLCHAR *columnName = static_cast<SQLCHAR *>(
@@ -633,7 +651,7 @@ namespace ExtensionApiTest
 				columnNameString.length(),
 				dataType,
 				columnSize,
-				0,         // decimalDigits
+				decimalDigits,
 				nullable,  // nullable
 				-1,        // partitionByNumber
 				-1);       // orderByNumber
@@ -965,4 +983,15 @@ namespace ExtensionApiTest
 
 		m_nullable = nullable;
 	}
+
+	// Template instantiation
+	//
+	template ColumnInfo<SQL_NUMERIC_STRUCT>::ColumnInfo(
+		string column1Name,
+		vector<SQL_NUMERIC_STRUCT> column1,
+		vector<SQLINTEGER> col1StrLenOrInd,
+		string column2Name,
+		vector<SQL_NUMERIC_STRUCT> column2,
+		vector<SQLINTEGER> col2StrLenOrInd,
+		vector<SQLSMALLINT> nullable);
 }

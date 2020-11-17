@@ -72,6 +72,8 @@ const RInputDataSet::AddColumnFnMap RInputDataSet::sm_FnAddColumnMap =
 	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),        // DATETIME, DATETIME2
 		static_cast<fnAddColumn>(&RInputDataSet::AddDateTimeColumnToDataFrame
 		<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>)},
+	{static_cast<SQLSMALLINT>(SQL_C_NUMERIC),               // DECIMAL(p,s), NUMERIC(p,s)
+		static_cast<fnAddColumn>(&RInputDataSet::AddNumericColumnToDataFrame)}
 };
 
 // Map of function pointers for getting a column information.
@@ -387,6 +389,38 @@ void RInputDataSet::AddDateTimeColumnToDataFrame(
 		data,
 		strLen_or_Ind,
 		nullable);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: RInputDataSet::AddNumericColumnToDataFrame
+//
+// Description:
+//  Adds a single column of numeric values into the R DataFrame.
+//
+void RInputDataSet::AddNumericColumnToDataFrame(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data)
+{
+	LOG("RInputDataSet::AddNumericColumnToDataFrame");
+
+	if (m_columns[columnNumber] == nullptr)
+	{
+		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
+	}
+
+	string name = m_columns[columnNumber].get()->Name();
+	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+	SQLSMALLINT decimalDigits = m_columns[columnNumber].get()->DecimalDigits();
+	SQLSMALLINT nullable = m_columns[columnNumber].get()->Nullable();
+
+	m_dataFrame[name.c_str()]
+		= RTypeUtils::CreateNumericVector(
+			rowsNumber,
+			data,
+			strLen_or_Ind,
+			decimalDigits,
+			nullable);
 }
 
 //--------------------------------------------------------------------------------------------------

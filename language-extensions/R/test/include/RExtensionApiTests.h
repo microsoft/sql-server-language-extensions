@@ -205,6 +205,7 @@ namespace ExtensionApiTest
 			std::string columnNameString,
 			SQLSMALLINT dataType,
 			SQLULEN     columnSize,
+			SQLSMALLINT decimalDigits,
 			SQLSMALLINT nullable);
 
 		// Templatized function to call InitializeColumn for all columns in ColumnInfo.
@@ -344,6 +345,15 @@ namespace ExtensionApiTest
 			std::vector<std::string> columnNames,
 			bool                     validate = true);
 
+		// Test Execute with default script for numeric/decimal input columns.
+		//
+		void ExecuteNumeric(
+			SQLULEN                             rowsNumber,
+			void                                **dataSet,
+			SQLINTEGER                          **strLen_or_Ind,
+			std::vector<std::string>            columnNames,
+			std::vector<std::vector<SQLDOUBLE>> expectedDataSet);
+
 		// Test GetResultColumn to verify the expected result column information.
 		//
 		void GetResultColumn(
@@ -433,7 +443,6 @@ namespace ExtensionApiTest
 		void GetRawOutputParam(
 			std::vector<SQLCHAR*>   expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
-
 
 		// Test date/datetime output param values and strLenOrInd are as expected.
 		//
