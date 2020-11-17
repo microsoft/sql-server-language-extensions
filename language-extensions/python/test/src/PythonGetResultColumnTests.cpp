@@ -572,16 +572,20 @@ namespace ExtensionApiTest
 			(*m_dateTimeInfo).m_columnNames,
 			false);
 
+		// 7 is the max precision value for DateTime2 in SQL
+		//
+		int decimalDigits = 7;
+
 		TestGetResultColumn(0,    // columnNumber
 			SQL_C_TYPE_TIMESTAMP, // dataType
 			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
+			decimalDigits,        // decimalDigits
 			SQL_NO_NULLS);        // nullable
 
 		TestGetResultColumn(1,    // columnNumber
 			SQL_C_TYPE_TIMESTAMP, // dataType
 			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
+			decimalDigits,        // decimalDigits
 			SQL_NULLABLE);        // nullable
 	}
 

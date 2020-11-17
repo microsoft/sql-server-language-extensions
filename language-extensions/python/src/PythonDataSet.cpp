@@ -504,9 +504,9 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 
 	string name = m_columns[columnNumber].get()->Name();
 
-	CharType *strArray = reinterpret_cast<CharType*>(data);
+	char *strArray = reinterpret_cast<char*>(data);
 
-	int length = 0;
+	int lengthInBytes = 0;
 
 	// Create an empty numpy array of type python object
 	//
@@ -523,19 +523,38 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 		}
 		else
 		{
-			CharType *str = strArray + length;
-			Py_ssize_t strlen = strLen_or_Ind[row] / sizeof(CharType);
+			PyObject *pyObj = nullptr;
+			char *str = strArray + lengthInBytes;
+			SQLINTEGER strlenInBytes = strLen_or_Ind[row];
 
 			// Create a string PyObject from the str and strLen.
 			// This DOES copy the underlying string into a new buffer and null terminates it.
 			// Then, convert to a boost object so that boost handles ref counting.
 			//
-			bp::object strObj = bp::object(bp::handle<>(
-				PyUnicode_FromKindAndData(sizeof(CharType), str, strlen)
-			));
+			if constexpr (is_same_v<CharType, char>)
+			{
+				pyObj = PyUnicode_DecodeUTF8(
+					str,           // char * version of string
+					strlenInBytes, // len of string in bytes
+					nullptr);      // special error handling options, we don't need any
+			}
+			else
+			{
+				int byteOrder = -1; // -1: little endian
+				pyObj = PyUnicode_DecodeUTF16(
+					str,            // char * version of string
+					strlenInBytes,  // len of string in bytes
+					nullptr,        // special error handling options, we don't need any
+					&byteOrder);    // byte order to parse UTF-16. SQL Server uses little-endian.
+			}
 
-			nArray[row] = strObj;
-			length += strlen;
+			if (pyObj == nullptr)
+			{
+				throw runtime_error("Error decoding string parameter");
+			}
+
+			nArray[row] = bp::object(bp::handle<>(pyObj));
+			lengthInBytes += strlenInBytes;
 		}
 	}
 
@@ -985,11 +1004,11 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 {
 	LOG("PythonOutputDataSet::RetrieveStringColumnFromDataFrame");
 
-	vector<SQLCHAR> *columnData = nullptr;
+	vector<char> *columnData = nullptr;
 	SQLINTEGER *strLenOrNullMap = nullptr;
 	if (m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLCHAR>();
+		columnData = new vector<char>();
 		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
 	}
 
@@ -1000,39 +1019,38 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 
 	// Insert the string column into the columnData vector contiguously.
 	//
-	SQLINTEGER maxLen = sizeof(SQLCHAR);
+	SQLINTEGER maxLen = sizeof(char);
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bp::object pyObj = column[row];
 
-		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
+		// Make sure the iterator is not pointing at Python None and 
+		// that it is a PyUnicode (string) object or else it will crash when we extract
 		//
-		if (!pyObj.is_none())
+		if (!pyObj.is_none() && PyUnicode_Check(pyObj.ptr()))
 		{
-			bp::extract<string> extractedData(pyObj);
-
-			// Check to make sure the extracted data exists and is of the correct type
+			// Interpret the PyUnicode as UTF8 bytes
 			//
-			if (extractedData.check())
-			{
-				string data = extractedData;
-				strLenOrNullMap[row] = data.length();
+			PyObject *utf8Bytes = PyUnicode_AsUTF8String(pyObj.ptr());
 
-				// Concatenate the string data into the full column data
-				//
-				columnData->insert(columnData->end(), data.begin(), data.end());
+			// Get length of the bytes and set strLen to that size 
+			//
+			int size = PyBytes_Size(utf8Bytes);
+			strLenOrNullMap[row] = size;
 
-				// Store the maximum length to find the widest the column needs to be
-				//
-				if (maxLen < strLenOrNullMap[row])
-				{
-					maxLen = strLenOrNullMap[row];
-				}
-			}
-			else
+			// Get a char * of the string
+			//
+			char *encoded = PyBytes_AsString(utf8Bytes);
+
+			// Concatenate the string data into the full column data
+			//
+			columnData->insert(columnData->end(), encoded, encoded + size);
+
+			// Store the maximum length to find the widest the column needs to be
+			//
+			if (maxLen < strLenOrNullMap[row])
 			{
-				strLenOrNullMap[row] = SQL_NULL_DATA;
-				nullable = SQL_NULLABLE;
+				maxLen = strLenOrNullMap[row];
 			}
 		}
 		else
@@ -1159,7 +1177,16 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 	}
 
 	decimalDigits = 0;
+	if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
+	{
+		// Max datetime2 precision 
+		// https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime2-transact-sql
+		//
+		decimalDigits = 7;
+	}
+
 	nullable = SQL_NO_NULLS;
+	columnSize = sizeof(DateTimeStruct);
 	
 	// Get the column as a list of Timestamp objects.
 	//
@@ -1197,7 +1224,6 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 		}
 	}
 
-	columnSize = sizeof(DateTimeStruct);
 	if (m_rowsNumber > 0)
 	{
 		m_data.push_back(static_cast<SQLPOINTER>(columnData));

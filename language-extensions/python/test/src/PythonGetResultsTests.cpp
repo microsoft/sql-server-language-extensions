@@ -251,9 +251,11 @@ namespace ExtensionApiTest
 
 		string stringColumn3Name = "StringColumn3";
 		InitializeColumn(2, stringColumn3Name, SQL_C_CHAR, m_CharSize);
-
+		
+		string goodUTF8 = string("a") + "\xE2" + "\x82" + "\xAC";
+		
 		vector<const char*> stringCol1{ "Hello", "test", "data", "World", "-123" };
-		vector<const char*> stringCol2{ "", 0, nullptr, "verify", "-1" };
+		vector<const char*> stringCol2{ "", 0, nullptr, u8"абвг", goodUTF8.c_str() };
 
 		int rowsNumber = stringCol1.size();
 
@@ -326,8 +328,16 @@ namespace ExtensionApiTest
 		string wstringColumn3Name = "WstringColumn3";
 		InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
 
+		// Test NCHAR with self-constructed UTF-16 char (𐐷)
+		// https://en.wikipedia.org/wiki/UTF-16#Examples
+		// We need to use u16string here because wstring doesn't 
+		// handle multibyte characters well in Linux with the -fshort-wchar option.
+		//
+		u16string goodUTF16 = u16string(u"a") + u"\xd801\xdc37" + u"b";
+
 		vector<const wchar_t*> wstringCol1{ L"Hello", L"test", L"data", L"World", L"你好" };
-		vector<const wchar_t*> wstringCol2{ L"", 0, nullptr, L"verify", L"-1" };
+		vector<const wchar_t*> wstringCol2{ L"", 0, nullptr, L"абвг", 
+			reinterpret_cast<const wchar_t *>(goodUTF16.c_str()) };
 
 		int rowsNumber = wstringCol1.size();
 
@@ -339,8 +349,8 @@ namespace ExtensionApiTest
 		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
 		vector<SQLINTEGER> strLenOrIndCol2 =
 		{ 0, SQL_NULL_DATA, SQL_NULL_DATA,
-		  static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
-		  static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+		  static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+		  static_cast<SQLINTEGER>(goodUTF16.size() * sizeof(wchar_t)) };
 		vector<SQLINTEGER> strLenOrIndCol3(rowsNumber, SQL_NULL_DATA);
 
 		vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
@@ -374,14 +384,9 @@ namespace ExtensionApiTest
 		// instead of wchar_t.
 		// Since we are retrieving UTF-8 strings, we also need to redo strLenOrInd.
 		//
-
-		// Construct the bytes that correspond to 你好
-		//
-		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
-		string chineseString = string(chineseBytes.data(), 6);
-
-		vector<const char*> stringCol1{ "Hello", "test", "data", "World", chineseString.c_str() };
-		vector<const char*> stringCol2{ "", 0, nullptr, "verify", "-1" };
+		
+		vector<const char*> stringCol1{ "Hello", "test", "data", "World", u8"你好" };
+		vector<const char*> stringCol2{ "", 0, nullptr, u8"абвг", u8"a𐐷b" };
 
 		strLenOrIndCol1 =
 		{ static_cast<SQLINTEGER>(strlen(stringCol1[0])),
@@ -1036,11 +1041,15 @@ namespace ExtensionApiTest
 
 				if (columnStrLenOrInd[index] != SQL_NULL_DATA)
 				{
-					string expectedString(expectedColumnData + cumulativeLength,
-						expectedColumnStrLenOrInd[index]);
-					string testString(columnData + cumulativeLength,
-						columnStrLenOrInd[index]);
-					EXPECT_EQ(testString, expectedString);
+					// Compare the two strings byte by byte  
+					// because encoded strings mess up EXPECT_EQ
+					//
+					for (int strIndex = 0; strIndex < columnStrLenOrInd[index]; ++strIndex)
+					{
+						EXPECT_EQ((expectedColumnData + cumulativeLength)[strIndex], 
+							(columnData + cumulativeLength)[strIndex]);
+					}
+
 					cumulativeLength += expectedColumnStrLenOrInd[index];
 				}
 			}
