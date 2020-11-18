@@ -11,10 +11,10 @@
         <!-- The current path is "build\out" for artifacts, with two builds (linux, windows) it choses the first artifact downloaded. Use full paths -->
 
         <!-- Copy build files, such as dlls and symbols, to the build\languagename\debug or release folder -->
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\build\**\debug\**\*.*" target="build" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\build\**\release\**\*.*" target="build" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\**\debug\**\*.*" target="build" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\**\release\**\*.*" target="build" />
+        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\build\out\**\debug\**\*.*" target="build" />
+        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\build\out\**\release\**\*.*" target="build" />
+        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\out\**\debug\**\*.*" target="build" />
+        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\out\**\release\**\*.*" target="build" />
 
         <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
         <!-- Windows packages-->
