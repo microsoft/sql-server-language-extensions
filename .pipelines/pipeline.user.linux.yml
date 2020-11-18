@@ -189,11 +189,11 @@ package:
         - from: 'build-output/java-extension/linux/debug/packages'
           to: 'out/java-extension/packages/debug'
           include:
-            - 'java-lang-extension.zip'
+            - 'java-lang-extension-linux.zip'
         - from: 'build-output/java-extension/linux/release/packages'
           to: 'out/java-extension/packages/release'
           include:
-            - 'java-lang-extension.zip'
+            - 'java-lang-extension-linux.zip'
     - !!buildcommand
       name: 'Create RExtension zip'
       command: 'language-extensions/R/build/linux/create-RExtension-zip.sh'
@@ -202,11 +202,11 @@ package:
         - from: 'build-output/RExtension/linux/debug/packages'
           to: 'out/RExtension/packages/debug'
           include:
-            - 'R-lang-extension.zip'
+            - 'R-lang-extension-linux.zip'
         - from: 'build-output/RExtension/linux/release/packages'
           to: 'out/RExtension/packages/release'
           include:
-            - 'R-lang-extension.zip'
+            - 'R-lang-extension-linux.zip'
     - !!buildcommand
       name: 'Create Python Extension zip'
       command: 'language-extensions/python/build/linux/create-python-extension-zip.sh'
@@ -215,11 +215,11 @@ package:
         - from: 'build-output/pythonextension/linux/debug/packages'
           to: 'out/pythonextension/packages/debug'
           include:
-            - 'python-lang-extension.zip'
+            - 'python-lang-extension-linux.zip'
         - from: 'build-output/pythonextension/linux/release/packages'
           to: 'out/pythonextension/packages/release'
           include:
-            - 'python-lang-extension.zip'
+            - 'python-lang-extension-linux.zip'
 
 # An optional user defined stage for running tests that need network access. Note that unit tests and others that do not need network access
 # can be run in build or package stages itself. Any artifacts built in this stage will be separated out and will not be signed.
