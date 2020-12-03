@@ -42,11 +42,12 @@ namespace ExtensionApiTest
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
 
-		// Returns most generic int type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
 		TestGetResultColumn(1,  // columnNumber
-			SQL_C_SBIGINT,      // dataType
-			m_BigIntSize,       // columnSize
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
 			0,                  // decimalDigits
 			SQL_NULLABLE);      // nullable
 	}
@@ -81,8 +82,8 @@ namespace ExtensionApiTest
 			SQL_NO_NULLS);     // nullable
 
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_BIT,         // dataType
-			m_BooleanSize,     // columnSize
+			SQL_C_CHAR,        // dataType - since there is a NULL, we return SQL_C_CHAR
+			5,                 // columnSize - length of the word "False"
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -116,13 +117,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		// Returns most generic float type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			m_DoubleSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetDoubleResultColumnsTest
@@ -190,11 +192,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
+		//
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetSmallIntResultColumnsTest
@@ -226,13 +231,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		// Returns most generic int type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetTinyIntResultColumnsTest
@@ -264,13 +270,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		// Returns most generic int type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetStringResultColumnsTest
@@ -531,19 +538,19 @@ namespace ExtensionApiTest
 			false);
 
 		TestGetResultColumn(0, // columnNumber
-			SQL_C_BINARY,      // dataType
+			SQL_C_CHAR,        // dataType
 			maxCol1Len,        // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_BINARY,      // dataType
+			SQL_C_CHAR,        // dataType
 			maxCol2Len,        // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 
 		TestGetResultColumn(2, // columnNumber
-			SQL_C_CHAR,        // dataType; since the whole column is None, we use CHAR NoneType
+			SQL_C_CHAR,        // dataType
 			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
@@ -571,22 +578,22 @@ namespace ExtensionApiTest
 			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
 			(*m_dateTimeInfo).m_columnNames,
 			false);
-
-		// 7 is the max precision value for DateTime2 in SQL
+		
+		// datetimes are stored in python as an object column which is return as SQL_C_CHAR
+		// A datetime like "9021-08-25 19:11:40.123456" has 26 chars
 		//
-		int decimalDigits = 7;
-
+		SQLSMALLINT sizeOfDateTimeString = 26;
 		TestGetResultColumn(0,    // columnNumber
-			SQL_C_TYPE_TIMESTAMP, // dataType
-			m_DateTimeSize,       // columnSize
-			decimalDigits,        // decimalDigits
-			SQL_NO_NULLS);        // nullable
+			SQL_C_CHAR,           // expectedDataType
+			sizeOfDateTimeString, // expectedColumnSize
+			0,                    // expectedDecimalDigits
+			SQL_NO_NULLS);        // expectedNullable
 
 		TestGetResultColumn(1,    // columnNumber
-			SQL_C_TYPE_TIMESTAMP, // dataType
-			m_DateTimeSize,       // columnSize
-			decimalDigits,        // decimalDigits
-			SQL_NULLABLE);        // nullable
+			SQL_C_CHAR,           // expectedDataType
+			sizeOfDateTimeString, // expectedColumnSize
+			0,                    // expectedDecimalDigits
+			SQL_NULLABLE);        // expectedNullable
 	}
 
 	// Name: GetDateResultColumnsTest
@@ -612,17 +619,21 @@ namespace ExtensionApiTest
 			(*m_dateInfo).m_columnNames,
 			false);
 
+		// dates are stored in python as an object column which is return as SQL_C_CHAR
+		// A date like "9021-08-25" has 10 chars
+		//
+		SQLSMALLINT sizeOfDateString = 10;
 		TestGetResultColumn(0, // columnNumber
-			SQL_C_TYPE_DATE,   // dataType
-			m_DateSize,        // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_CHAR,        // expectedDataType
+			sizeOfDateString,  // expectedColumnSize
+			0,                 // expectedDeci malDigits
+			SQL_NO_NULLS);     // expectedNullable
 
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_TYPE_DATE,   // dataType
-			m_DateSize,        // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_CHAR,        // expectedDataType
+			sizeOfDateString,  // expectedColumnSize
+			0,                 // expectedDecimalDigits
+			SQL_NULLABLE);     // expectedNullable
 	}
 
 	// Name: GetDifferentResultColumnsTest
@@ -680,11 +691,14 @@ namespace ExtensionApiTest
 			&outputschemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		TestGetResultColumn(0, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
+		//
+		TestGetResultColumn(0,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 
 		TestGetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType

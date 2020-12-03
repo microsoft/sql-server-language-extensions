@@ -19,6 +19,7 @@
 //
 #include <datetime.h>
 #include <sqlext.h>
+#include <regex>
 
 using namespace std;
 namespace bp = boost::python;
@@ -230,6 +231,63 @@ void PythonDataSet::Cleanup()
 }
 
 //-------------------------------------------------------------------------------------------------
+// Name: PythonDataSet::ExtractTimestampFromPyObject
+//
+// Description:
+//  Extract all the time stamp data from a PyObject and return a TIMESTAMP_STRUCT.
+//  Because TIMESTAMP is the most general, we return TIMESTAMP even for Date objects,
+//  with default values.
+//
+SQL_TIMESTAMP_STRUCT PythonDataSet::ExtractTimestampFromPyObject(const PyObject *dateObject)
+{
+	// Import the PyDateTime API
+	//
+	PyDateTime_IMPORT;
+
+	// Make sure this PyObject is in the PyDateTime family so that we can extract data
+	//
+	if (!PyDate_Check(dateObject) &&
+		!PyDateTime_Check(dateObject))
+	{
+		throw runtime_error("Failed to extract timestamp from python object");
+	}
+
+	// Set default values (in case of DATE object) to the python epoch time
+	//
+	SQLSMALLINT year = 1970;
+	SQLUSMALLINT month = 1;
+	SQLUSMALLINT day = 1;
+	SQLUSMALLINT hour = 0;
+	SQLUSMALLINT minute = 0;
+	SQLUSMALLINT second = 0;
+	SQLUINTEGER usec = 0;
+
+	// If this is a PyDate, we only need year/month/day values.
+	// PyDateTime is also a PyDate so will return true on this check.
+	//
+	if (PyDate_Check(dateObject))
+	{
+		year = PyDateTime_GET_YEAR(dateObject);
+		month = PyDateTime_GET_MONTH(dateObject);
+		day = PyDateTime_GET_DAY(dateObject);
+	}
+
+	// If dateObject is a Datetime (not Date) then we need the time values as well.
+	//
+	if (PyDateTime_Check(dateObject))
+	{
+		hour = PyDateTime_DATE_GET_HOUR(dateObject);
+		minute = PyDateTime_DATE_GET_MINUTE(dateObject);
+		second = PyDateTime_DATE_GET_SECOND(dateObject);
+		usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
+	}
+
+	// TIMESTAMP_STRUCT stores "fraction" as nanoseconds, so multiply microseconds by 1000
+	//
+	return { year, month, day, hour, minute, second, usec * 1000 };
+}
+
+//-------------------------------------------------------------------------------------------------
 // Name: PythonInputDataSet::InitColumn
 //
 // Description:
@@ -338,7 +396,7 @@ void PythonInputDataSet::AddColumnsToDictionary(
 //
 // Description:
 //  Adds a column to the python dictionary that will be the DataFrame.
-//  Works for simple types like numbers and boolean
+//  Works for simple types like numbers
 //
 template<class SQLType>
 void PythonInputDataSet::AddColumnToDictionary(
@@ -374,7 +432,7 @@ void PythonInputDataSet::AddColumnToDictionary(
 	// If there are no NULLs in the input data, then we can use a more memory efficient way
 	// of constructing the numpy array.
 	// If there ARE NULLs, then we need to create python objects for each value
-	// and use None for the NULLs
+	// and use NaN (Not a Number) for the NULLs
 	//
 	if(!hasNulls)
 	{
@@ -386,15 +444,15 @@ void PythonInputDataSet::AddColumnToDictionary(
 	}
 	else
 	{
-		np::ndarray nArray = np::empty(shape, m_ObjType);
+		np::ndarray nArray = np::empty(shape, np::dtype::get_builtin<double>());
 
 		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
 			if (strLen_or_Ind[row] == SQL_NULL_DATA)
 			{
-				// Use None object for NULLs
+				// Use NaN object for NULL numbers
 				//
-				nArray[row] = bp::object();
+				nArray[row] = NAN;
 			}
 			else
 			{
@@ -466,13 +524,13 @@ void PythonInputDataSet::AddBooleanColumnToDictionary(
 	}
 	else
 	{
-		np::ndarray nArray = np::empty(shape, m_ObjType);
+		np::ndarray nArray = np::empty(shape, np::dtype(bp::object("O")));
 
 		for (SQLULEN row = 0; row < rowsNumber; ++row)
 		{
 			if (strLen_or_Ind[row] == SQL_NULL_DATA)
 			{
-				// Use None object for NULLs
+				// Use None for NULLs.
 				//
 				nArray[row] = bp::object();
 			}
@@ -511,7 +569,7 @@ void PythonInputDataSet::AddStringColumnToDictionary(
 	// Create an empty numpy array of type python object
 	//
 	bp::tuple shape = bp::make_tuple(rowsNumber);
-	np::ndarray nArray = np::empty(shape, m_ObjType);
+	np::ndarray nArray = np::empty(shape, np::dtype(bp::object("O")));
 
 	for (SQLULEN row = 0; row < rowsNumber; ++row)
 	{
@@ -587,7 +645,7 @@ void PythonInputDataSet::AddRawColumnToDictionary(
 	// Create an empty numpy array of type python object
 	//
 	bp::tuple shape = bp::make_tuple(rowsNumber);
-	np::ndarray nArray = np::empty(shape, m_ObjType);
+	np::ndarray nArray = np::empty(shape, np::dtype(bp::object("O")));
 
 	for (SQLULEN row = 0; row < rowsNumber; ++row)
 	{
@@ -643,7 +701,7 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 	// Create an empty numpy array of type python object
 	//
 	bp::tuple shape = bp::make_tuple(rowsNumber);
-	np::ndarray nArray = np::empty(shape, m_ObjType);
+	np::ndarray nArray = np::empty(shape, np::dtype(bp::object("O")));
 
 	bool nullable = m_columns[columnNumber].get()->Nullable() == SQL_NULLABLE;
 
@@ -1027,24 +1085,35 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 		// Make sure the iterator is not pointing at Python None and 
 		// that it is a PyUnicode (string) object or else it will crash when we extract
 		//
-		if (!pyObj.is_none() && PyUnicode_Check(pyObj.ptr()))
+		if (!pyObj.is_none())
 		{
-			// Interpret the PyUnicode as UTF8 bytes
+			// If we have a bytes object we want to take only the bytes, not the b'' around them
 			//
-			PyObject *utf8Bytes = PyUnicode_AsUTF8String(pyObj.ptr());
+			if (PyBytes_Check(pyObj.ptr()))
+			{
+				// Extract the size and bytes of the pyObj
+				//
+				PyObject *baseObj = pyObj.ptr();
 
-			// Get length of the bytes and set strLen to that size 
-			//
-			int size = PyBytes_Size(utf8Bytes);
-			strLenOrNullMap[row] = size;
+				int size = PyBytes_Size(baseObj);
+				SQLCHAR *bytes = static_cast<SQLCHAR *>(
+					static_cast<void *>(PyBytes_AsString(baseObj)));
+				strLenOrNullMap[row] = size;
 
-			// Get a char * of the string
-			//
-			char *encoded = PyBytes_AsString(utf8Bytes);
-
-			// Concatenate the string data into the full column data
-			//
-			columnData->insert(columnData->end(), encoded, encoded + size);
+				// Concatenate the string data into the full column data
+				//
+				columnData->insert(columnData->end(), bytes, bytes+size);
+			}
+			else
+			{
+				// Extract a utf-8 encoded version of the string
+				//
+				string encoded = bp::extract<string>(bp::str(pyObj).encode("utf-8"));
+				strLenOrNullMap[row] = encoded.size();
+				// Concatenate the string data into the full column data
+				//
+				columnData->insert(columnData->end(), encoded.begin(), encoded.end());
+			}
 
 			// Store the maximum length to find the widest the column needs to be
 			//
@@ -1179,10 +1248,10 @@ void PythonOutputDataSet::RetrieveDateTimeColumnFromDataFrame(
 	decimalDigits = 0;
 	if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 	{
-		// Max datetime2 precision 
+		// Max datetime2 precision is 7 but python only supports up to microseconds
 		// https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime2-transact-sql
 		//
-		decimalDigits = 7;
+		decimalDigits = 6;
 	}
 
 	nullable = SQL_NO_NULLS;
@@ -1250,63 +1319,6 @@ np::ndarray PythonOutputDataSet::ExtractArrayFromDataFrame(const string columnNa
 }
 
 //-------------------------------------------------------------------------------------------------
-// Name: PythonOutputDataSet::ExtractTimestampFromPyObject
-//
-// Description:
-//  Extract all the time stamp data from a PyObject and return a TIMESTAMP_STRUCT.
-//  Because TIMESTAMP is the most general, we return TIMESTAMP even for Date objects,
-//  with default values.
-//
-SQL_TIMESTAMP_STRUCT PythonOutputDataSet::ExtractTimestampFromPyObject(const PyObject *dateObject)
-{
-	// Import the PyDateTime API
-	//
-	PyDateTime_IMPORT;
-
-	// Make sure this PyObject is in the PyDateTime family so that we can extract data
-	//
-	if (!PyDate_Check(dateObject) &&
-		!PyDateTime_Check(dateObject))
-	{
-		throw runtime_error("Failed to extract timestamp from python object");
-	}
-
-	// Set default values in case of DATE object
-	//
-	SQLSMALLINT year = 1970;
-	SQLUSMALLINT month = 1;
-	SQLUSMALLINT day = 1;
-	SQLUSMALLINT hour = 0;
-	SQLUSMALLINT minute = 0;
-	SQLUSMALLINT second = 0;
-	SQLUINTEGER usec = 0;
-
-	// If this is a PyDate, we only need year/month/day values.
-	// PyDateTime is also a PyDate so will return true on this check.
-	//
-	if (PyDate_Check(dateObject))
-	{
-		year = PyDateTime_GET_YEAR(dateObject);
-		month = PyDateTime_GET_MONTH(dateObject);
-		day = PyDateTime_GET_DAY(dateObject);
-	}
-	
-	// If dateObject is a Date (not DateTime) then we can't extract the time values.
-	//
-	if (PyDateTime_Check(dateObject))
-	{
-		hour = PyDateTime_DATE_GET_HOUR(dateObject);
-		minute = PyDateTime_DATE_GET_MINUTE(dateObject);
-		second = PyDateTime_DATE_GET_SECOND(dateObject);
-		usec = PyDateTime_DATE_GET_MICROSECOND(dateObject);
-	}
-
-	// TIMESTAMP_STRUCT stores "fraction" as nanoseconds, so multiply microseconds by 1000
-	//
-	return { year, month, day, hour, minute, second, usec * 1000 };
-}
-
-//-------------------------------------------------------------------------------------------------
 // Name: PythonOutputDataSet::PopulateColumnsDataType
 //
 // Description:
@@ -1316,13 +1328,16 @@ void PythonOutputDataSet::PopulateColumnsDataType()
 {
 	LOG("PythonOutputDataSet::PopulateColumnsDataType");
 
-	SQLUSMALLINT numberOfCols = GetDataFrameColumnsNumber();
-
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
+	if (m_columnsDataType.empty())
 	{
-		SQLSMALLINT dataType = PopulateColumnDataType(columnNumber);
+		SQLUSMALLINT numberOfCols = GetDataFrameColumnsNumber();
 
-		m_columnsDataType.push_back(dataType);
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < numberOfCols; ++columnNumber)
+		{
+			SQLSMALLINT dataType = PopulateColumnDataType(columnNumber);
+
+			m_columnsDataType.push_back(dataType);
+		}
 	}
 }
 
@@ -1337,29 +1352,22 @@ SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumbe
 {
 	LOG("PythonOutputDataSet::PopulateColumnDataType");
 
-	string getColumnString = "np.array(" + m_name + "[" + m_name + ".columns[" +
-		to_string(columnNumber) + "]], copy=False)";
+	string getDTypeString = m_name + ".dtypes.iloc[" + to_string(columnNumber) + "]";
 
-	np::ndarray column = bp::extract<np::ndarray>(
-		bp::eval(getColumnString.c_str(), m_mainNamespace));
+	np::dtype dType = bp::extract<np::dtype>(
+		bp::eval(getDTypeString.c_str(), m_mainNamespace));
 
-	np::dtype dType = column.get_dtype();
 	string type = "NoneType";
 
-	if(!np::equivalent(dType, m_ObjType))
+	// For byte type objects, the dtype is formatted "bytes##" or "|S##"
+	// where ## is length of string in bytes) we need to standardize the type to "bytes".
+	//
+	if(!np::equivalent(dType, np::dtype(bp::object("O"))))
 	{
 		type = bp::extract<string>(bp::str(dType));
-	}
-	else
-	{
-		// Create an iterator over the column values.
-		// The uninitialized "end" iterator is equivalent to the end of the list.
-		//
-		bp::stl_input_iterator<bp::object> itVal(column), end;
-		while (type == "NoneType" && itVal != end)
+		if (regex_match(type, regex("(.S|bytes)[0-9]*")))
 		{
-			type = itVal->ptr()->ob_type->tp_name;
-			++itVal;
+			type = "bytes";
 		}
 	}
 

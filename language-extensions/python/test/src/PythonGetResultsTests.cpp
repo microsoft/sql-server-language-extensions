@@ -70,9 +70,14 @@ namespace ExtensionApiTest
 			(*m_booleanInfo).m_columnNames,
 			false);  // validate
 
+		vector<void *> expectedReturnData = {  };
+		expectedReturnData.push_back((m_booleanInfo->m_dataSet[0]));
+		string result = "TrueTrueFalse";
+		expectedReturnData.push_back(const_cast<char*>(result.c_str()));
+
 		TestGetResults<SQLCHAR, bool, SQL_C_BIT>(
 			ColumnInfo<SQLCHAR>::sm_rowsNumber,
-			(*m_booleanInfo).m_dataSet.data(),
+			expectedReturnData.data(),
 			(*m_booleanInfo).m_strLen_or_Ind.data(),
 			(*m_booleanInfo).m_columnNames);
 	}
@@ -524,8 +529,7 @@ namespace ExtensionApiTest
 			ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber,
 			(*m_dateTimeInfo).m_dataSet.data(),
 			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
-			(*m_dateTimeInfo).m_columnNames,
-			false);
+			(*m_dateTimeInfo).m_columnNames);
 
 		TestGetDateTimeResults<SQL_TIMESTAMP_STRUCT>(
 			ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber,
@@ -680,13 +684,16 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(rowsNumber, expectedRowsNumber);
 
+		vector<SQLINTEGER> outputStrLenOrIndCol1 = { m_DoubleSize, m_DoubleSize, SQL_NULL_DATA,
+			SQL_NULL_DATA, m_DoubleSize };
+
 		// Test the data returned.
 		//
-		CheckColumnDataEqualityForNullable<SQLINTEGER, SQLBIGINT>(
+		CheckColumnDataEqualityForNullable<SQLINTEGER, SQLDOUBLE>(
 			rowsNumber,
 			static_cast<SQLINTEGER*>(expectedData[0]),
 			static_cast<SQLINTEGER*>(data[0]),
-			expectedStrLen_or_Ind[0],
+			outputStrLenOrIndCol1.data(),
 			strLen_or_Ind[0]);
 
 		CheckColumnDataEquality<SQLDOUBLE>(
@@ -712,7 +719,7 @@ namespace ExtensionApiTest
 		EXPECT_EQ(outputschemaColumnsNumber, bp::len(outputDataSet.keys()));
 
 		bp::dict intColumn = bp::extract<bp::dict>(outputDataSet[integerColumnName]);
-		CheckColumnEquality<SQLBIGINT>(
+		CheckColumnEquality<SQLDOUBLE>(
 			rowsNumber,
 			intColumn,
 			data[0],
@@ -810,9 +817,9 @@ namespace ExtensionApiTest
 			SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
 
 			bool hasNulls = false;
-			for (SQLULEN i=0; i<rowsNumber; ++i)
+			for (SQLULEN i = 0; i < rowsNumber; ++i)
 			{
-				if(expectedColumnStrLenOrInd[i] == SQL_NULL_DATA)
+				if (expectedColumnStrLenOrInd[i] == SQL_NULL_DATA)
 				{
 					hasNulls = true;
 					break;
@@ -822,7 +829,7 @@ namespace ExtensionApiTest
 			SQLType *expectedColumnData = static_cast<SQLType *>(expectedData[columnNumber]);
 			SQLType *columnData = static_cast<SQLType *>(data[columnNumber]);
 
-			if (!(hasNulls) || is_same_v<InputCType, bool>)
+			if (!(hasNulls))
 			{
 				CheckColumnDataEquality<SQLType>(
 					rowsNumber,
@@ -845,38 +852,35 @@ namespace ExtensionApiTest
 					columnData,
 					columnStrLenOrInd);
 			}
+			else if (is_same_v<InputCType, bool>)
+			{
+				CheckColumnDataEquality<SQLType>(
+					rowsNumber,
+					expectedColumnData,
+					columnData,
+					expectedColumnStrLenOrInd,
+					columnStrLenOrInd);
+
+				CheckStringColumnEquality(
+					rowsNumber,
+					column,
+					columnData,
+					columnStrLenOrInd);
+			}
 			else
 			{
-				if constexpr (is_same_v<InputCType, int>)
-				{
-					CheckColumnDataEqualityForNullable<SQLType, SQLBIGINT>(
-						rowsNumber,
-						expectedColumnData,
-						columnData,
-						expectedColumnStrLenOrInd,
-						columnStrLenOrInd);
+				CheckColumnDataEqualityForNullable<SQLType, SQLDOUBLE>(
+					rowsNumber,
+					expectedColumnData,
+					columnData,
+					expectedColumnStrLenOrInd,
+					columnStrLenOrInd);
 
-					CheckColumnEquality<SQLBIGINT>(
-						rowsNumber,
-						column,
-						columnData,
-						columnStrLenOrInd);
-				}
-				else
-				{
-					CheckColumnDataEqualityForNullable<SQLType, SQLDOUBLE>(
-						rowsNumber,
-						expectedColumnData,
-						columnData,
-						expectedColumnStrLenOrInd,
-						columnStrLenOrInd);
-
-					CheckColumnEquality<SQLDOUBLE>(
-						rowsNumber,
-						column,
-						columnData,
-						columnStrLenOrInd);
-				}
+				CheckColumnEquality<SQLDOUBLE>(
+					rowsNumber,
+					column,
+					columnData,
+					columnStrLenOrInd);
 			}
 		}
 	}
@@ -1044,7 +1048,7 @@ namespace ExtensionApiTest
 					// Compare the two strings byte by byte  
 					// because encoded strings mess up EXPECT_EQ
 					//
-					for (int strIndex = 0; strIndex < columnStrLenOrInd[index]; ++strIndex)
+					for (SQLINTEGER strIndex = 0; strIndex < columnStrLenOrInd[index]; ++strIndex)
 					{
 						EXPECT_EQ((expectedColumnData + cumulativeLength)[strIndex], 
 							(columnData + cumulativeLength)[strIndex]);
@@ -1200,20 +1204,80 @@ namespace ExtensionApiTest
 			SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
 			
 			DateTimeStruct *expectedColumnData = static_cast<DateTimeStruct *>(expectedData[columnNumber]);
-			DateTimeStruct *columnData = static_cast<DateTimeStruct *>(data[columnNumber]);
+			char *columnData = static_cast<char *>(data[columnNumber]);
+			vector<DateTimeStruct> results;
+			StringToDateTimeColumn<DateTimeStruct>(rowsNumber, columnData, columnStrLenOrInd, &results);
+
 
 			CheckDateTimeDataEquality<DateTimeStruct>(
 				rowsNumber,
 				expectedColumnData,
-				columnData,
+				results.data(),
 				expectedColumnStrLenOrInd,
 				columnStrLenOrInd);
 
 			CheckDateTimeColumnEquality<DateTimeStruct>(
 				rowsNumber,
 				column,
-				columnData,
+				results.data(),
 				columnStrLenOrInd);
+		}
+	}
+
+	// Name: StringToDateTimeColumn
+	//
+	// Description:
+	//  Convert a datetime string to a Date/Timestamp struct.
+	//  Datetime strings should be YYYY-MM-DD hh:mm:ss.fraction.
+	//
+	template<class DateTimeStruct>
+	void PythonExtensionApiTests::StringToDateTimeColumn(
+		SQLULEN                rowsNumber,
+		char                   *columnData,
+		SQLINTEGER             *columnStrLenOrInd,
+		vector<DateTimeStruct> *results)
+	{
+		int len = 0;
+
+		for (SQLULEN row=0; row < rowsNumber; ++row) 
+		{
+			DateTimeStruct value = {};
+			if (columnStrLenOrInd[row] != SQL_NULL_DATA)
+			{
+				string stringDate = string(columnData + len, columnStrLenOrInd[row]);
+
+				vector<char *> out;
+				PythonTestUtilities::Tokenize(const_cast<char *>(stringDate.c_str()), " ", &out);
+
+				vector<char *> date;
+				PythonTestUtilities::Tokenize(out[0], "-", &date);
+
+				value.year = stoi(date[0]);
+				value.month = stoi(date[1]);
+				value.day = stoi(date[2]);
+
+				if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
+				{
+					vector<char *> time;
+					PythonTestUtilities::Tokenize(out[1], ":", &time);
+
+					value.hour = stoi(time[0]);
+					value.minute = stoi(time[1]);
+					value.second = stoi(time[2]);
+
+					vector<char *> fraction;
+					PythonTestUtilities::Tokenize(time[2], ".", &fraction);
+
+					if (fraction.size() == 2)
+					{
+						value.fraction = stoi(fraction[1]) * 1000;
+					}
+				}
+
+				len += columnStrLenOrInd[row];
+			}
+
+			(*results).push_back(value);
 		}
 	}
 

@@ -110,7 +110,7 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::sm_rowsNumber, m_IntSize),
 			"IntegerColumn2",
 			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, 0, 0, -1 },
-			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize });
+			vector<SQLINTEGER>{ m_DoubleSize, m_DoubleSize, SQL_NULL_DATA, SQL_NULL_DATA, m_DoubleSize });
 
 		m_booleanInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"BooleanColumn1",
@@ -118,7 +118,7 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_BooleanSize),
 			"BooleanColumn2",
 			vector<SQLCHAR>{ '\0', '2', '1', '0', '\0' },
-			vector<SQLINTEGER>{ SQL_NULL_DATA, m_BooleanSize, m_BooleanSize, m_BooleanSize, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ SQL_NULL_DATA, 4, 4, 5, SQL_NULL_DATA }); // 4 for True, 5 for False
 
 		m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
 			"RealColumn1",
@@ -126,7 +126,7 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQLREAL>::sm_rowsNumber, m_RealSize),
 			"RealColumn2",
 			vector<SQLREAL>{  0, -1, NAN, NAN, NAN },
-			vector<SQLINTEGER>{ m_RealSize, m_RealSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
+			vector<SQLINTEGER>{ m_DoubleSize, m_DoubleSize, SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
 		m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
 			"DoubleColumn1",
@@ -143,7 +143,7 @@ namespace ExtensionApiTest
 			"BigIntColumn2",
 			vector<SQLBIGINT>{0, 0, 0, 12341512213, -12341512213 },
 			vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
-			SQL_NULL_DATA, m_BigIntSize, m_BigIntSize });
+			SQL_NULL_DATA, m_DoubleSize, m_DoubleSize });
 
 		m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
 			"SmallIntColumn1",
@@ -151,8 +151,8 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_SmallIntSize),
 			"SmallIntColumn2",
 			vector<SQLSMALLINT>{ m_MaxSmallInt, m_MinSmallInt, 0, 0, 3'276 },
-			vector<SQLINTEGER>{ m_SmallIntSize, m_SmallIntSize,
-			SQL_NULL_DATA, SQL_NULL_DATA, m_SmallIntSize });
+			vector<SQLINTEGER>{ m_DoubleSize, m_DoubleSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, m_DoubleSize });
 
 		m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
 			"TinyIntColumn1",
@@ -160,8 +160,8 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_TinyIntSize),
 			"TinyIntColumn2",
 			vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 0, 0, 128 },
-			vector<SQLINTEGER>{ m_TinyIntSize, m_TinyIntSize,
-			SQL_NULL_DATA, SQL_NULL_DATA, m_TinyIntSize });
+			vector<SQLINTEGER>{ m_DoubleSize, m_DoubleSize,
+			SQL_NULL_DATA, SQL_NULL_DATA, m_DoubleSize });
 
 		m_dateTimeInfo = make_unique<ColumnInfo<SQL_TIMESTAMP_STRUCT>>(
 			"DateTimeColumn1",
@@ -172,7 +172,7 @@ namespace ExtensionApiTest
 				{ 2020, 4, 16, 15, 5, 12, 169012000 },
 				{ 231, 2, 14, 22, 36, 18, 489102000 },
 			},
-			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber, m_DateTimeSize),
+			vector<SQLINTEGER>(ColumnInfo<SQL_TIMESTAMP_STRUCT>::sm_rowsNumber, 26),
 			"DateTimeColumn2",
 			vector<SQL_TIMESTAMP_STRUCT>{
 				{ 9999, 12, 31, 23, 59, 59, 999999000 },
@@ -181,7 +181,7 @@ namespace ExtensionApiTest
 				{},
 				{}
 			},
-			vector<SQLINTEGER>{ m_DateTimeSize, m_DateTimeSize,
+			vector<SQLINTEGER>{ 26, 19,
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
 		m_dateInfo = make_unique<ColumnInfo<SQL_DATE_STRUCT>>(
@@ -193,7 +193,7 @@ namespace ExtensionApiTest
 				{ 2020, 4, 16 },
 				{ 231, 2, 14, },
 			},
-			vector<SQLINTEGER>(ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber, m_DateSize),
+			vector<SQLINTEGER>(ColumnInfo<SQL_DATE_STRUCT>::sm_rowsNumber, 10),
 			"DateColumn2",
 			vector<SQL_DATE_STRUCT>{
 				{ 9999, 12, 31 },
@@ -202,7 +202,7 @@ namespace ExtensionApiTest
 				{},
 				{}
 			},
-			vector<SQLINTEGER>{ m_DateSize, m_DateSize,
+			vector<SQLINTEGER>{ 10, 10,
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
 		try
@@ -443,11 +443,12 @@ namespace ExtensionApiTest
 		return distance;
 	}
 
-	// Name: ColumnInfo
+	//----------------------------------------------------------------------------------------------
+	// Name: ColumnInfo::ColumnInfo
 	//
 	// Description:
-	//  Template constructor for the type information.
-	//  Useful for ColumnInfo of integer, basic numeric and boolean types.
+	// Template constructor for the type information.
+	// Useful for ColumnInfo of integer, basic numeric, logical and date(time) types.
 	//
 	template<class SQLType>
 	ColumnInfo<SQLType>::ColumnInfo(
@@ -477,7 +478,6 @@ namespace ExtensionApiTest
 		{
 			m_strLen_or_Ind.push_back(m_col2StrLenOrInd.data());
 		}
-
 	}
 
 	// Name: CheckColumnEquality
@@ -496,17 +496,22 @@ namespace ExtensionApiTest
 
 		for (SQLULEN index = 0; index < expectedRowsNumber; ++index)
 		{
-			bp::object val = columnToTest[index];
+			if (strLen_or_Ind != nullptr)
+			{
+				// Because the column becomes type "SQLDOUBLE" if there are any NULL values,
+				// we always extract as double for comparison with the expected values.
+				//
+				SQLDOUBLE doubleVal = bp::extract<SQLDOUBLE>(columnToTest[index]);
 
-			if (strLen_or_Ind != nullptr && strLen_or_Ind[index] == SQL_NULL_DATA)
-			{
-				EXPECT_TRUE(val.is_none());
-			}
-			else
-			{
-				SQLType typeVal = bp::extract<SQLType>(val);
-				SQLType expectedValue = static_cast<SQLType*>(expectedColumn)[index];
-				EXPECT_EQ(typeVal, expectedValue);
+				if (strLen_or_Ind[index] != SQL_NULL_DATA)
+				{
+					SQLType expectedValue = static_cast<SQLType *>(expectedColumn)[index];
+					EXPECT_EQ(doubleVal, expectedValue);
+				}
+				else
+				{
+					EXPECT_TRUE(isnan(doubleVal));
+				}
 			}
 		}
 	}
@@ -568,7 +573,7 @@ namespace ExtensionApiTest
 			}
 			else
 			{
-				string typeVal = bp::extract<string>(val);
+				string typeVal = bp::extract<string>(bp::str(val));
 				string expectedString = string(
 					static_cast<char*>(expectedColumn) + cumulativeLength,
 					strLen_or_Ind[index]);

@@ -12,6 +12,7 @@
 //*************************************************************************************************
 #pragma once
 #include "Common.h"
+#include "PythonTestUtilities.h"
 #include <unordered_map>
 
 namespace ExtensionApiTest
@@ -204,7 +205,7 @@ namespace ExtensionApiTest
 			SQLSMALLINT  expectedNullable);
 
 		// Test GetResults to verify the expected results are obtained.
-		// For numeric, boolean and integer types.
+		// For numeric and integer types.
 		//
 		template<class SQLType, class InputCType, SQLSMALLINT dataType>
 		void TestGetResults(
@@ -278,6 +279,17 @@ namespace ExtensionApiTest
 			SQLCHAR    *columnData,
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
+
+		// Convert a datetime string to a Date/Timestamp struct.
+		// Datetime strings should be YYYY-MM-DD hh:mm:ss.fraction.
+		//
+		template<class DateTimeStruct>
+		void StringToDateTimeColumn(
+			SQLULEN                     rowsNumber,
+			char                        *columnData,
+			SQLINTEGER                  *columnStrLenOrInd,
+			std::vector<DateTimeStruct> *results
+		);
 
 		// Compare the given datetime column data and nullMap for equality.
 		//
@@ -432,7 +444,7 @@ namespace ExtensionApiTest
 	};
 
 	// ColumnInfo template class to store information
-	// about integer, basic numeric and boolean columns.
+	// about integer, basic numeric, logical and date(time) columns.
 	// This assumes two columns and five rows.
 	//
 	template<class SQLType>
@@ -454,9 +466,9 @@ namespace ExtensionApiTest
 		std::vector<std::string> m_columnNames;
 		std::vector<SQLType> m_column1;
 		std::vector<SQLType> m_column2;
-		std::vector<void*> m_dataSet;
+		std::vector<void *> m_dataSet;
 		std::vector<SQLINTEGER> m_col1StrLenOrInd;
 		std::vector<SQLINTEGER> m_col2StrLenOrInd;
-		std::vector<SQLINTEGER*> m_strLen_or_Ind;
+		std::vector<SQLINTEGER *> m_strLen_or_Ind;
 	};
 }

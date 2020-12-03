@@ -70,6 +70,10 @@ public:
 		return m_columnNullMap.data();
 	}
 
+	// Extract all the time stamp data from a Date / DateTime PyObject and return a TIMESTAMP_STRUCT.
+	//
+	SQL_TIMESTAMP_STRUCT ExtractTimestampFromPyObject(const PyObject *dateObject);
+
 protected:
 
 	// A protected constructor to stop instantiation of PythonDataSet
@@ -78,11 +82,6 @@ protected:
 	PythonDataSet()
 	{
 	}
-
-	// data type of simple python objects
-	//
-	const boost::python::numpy::dtype m_ObjType =
-		boost::python::numpy::array(boost::python::object()).get_dtype();
 
 	// Maps the ODBC C type to python type
 	//
@@ -242,10 +241,6 @@ public:
 	// Get one of the columns from the underlying pandas DataFrame
 	//
 	boost::python::numpy::ndarray ExtractArrayFromDataFrame(const std::string columnName);
-
-	// Extract all the time stamp data from a Date / DateTime PyObject and return a TIMESTAMP_STRUCT.
-	//
-	SQL_TIMESTAMP_STRUCT ExtractTimestampFromPyObject(const PyObject *dateObject);
 
 	// Finds the data type of all columns in the DataFrame.
 	//
