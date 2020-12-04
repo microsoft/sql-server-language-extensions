@@ -11,7 +11,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore common nuget packages." 
 
 REM Set DEFAULT_R_HOME
 REM
-SET R_VERSION=4.0.2
+SET R_VERSION=4.0.3
 SET R_INSTALLER=R-%R_VERSION%-win.exe
 SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-%R_VERSION%-win
 
@@ -20,7 +20,7 @@ IF "%R_HOME%" == "" (
 	REM
 	SET R_HOME=%DEFAULT_R_HOME%
 	MKDIR %DEFAULT_R_HOME%
-	powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/base/%R_INSTALLER%  -OutFile %DEFAULT_R_HOME%\%R_INSTALLER%"
+	powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/base/old/%R_VERSION%/%R_INSTALLER%  -OutFile %DEFAULT_R_HOME%\%R_INSTALLER%"
 	CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download R-%R_VERSION%." || EXIT /b %ERRORLEVEL%
 	%DEFAULT_R_HOME%\%R_INSTALLER% /VERYSILENT /DIR=%DEFAULT_R_HOME%
 	CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install R-%R_VERSION%." || EXIT /b %ERRORLEVEL%
