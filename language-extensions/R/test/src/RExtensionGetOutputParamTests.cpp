@@ -1447,25 +1447,18 @@ namespace ExtensionApiTest
 
 			ASSERT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
 
-			if (expectedStrLenOrInd[paramNumber] != SQL_NULL_DATA)
-			{
-				EXPECT_NE(paramValue, nullptr);
-				SQLType actualValue = *(static_cast<SQLType *>(paramValue));
+			EXPECT_NE(paramValue, nullptr);
+			SQLType actualValue = *(static_cast<SQLType *>(paramValue));
 
-				EXPECT_EQ(expectedParamValue.year, actualValue.year);
-				EXPECT_EQ(expectedParamValue.month, actualValue.month);
-				EXPECT_EQ(expectedParamValue.day, actualValue.day);
-				if constexpr (is_same_v<SQLType, SQL_TIMESTAMP_STRUCT>)
-				{
-					EXPECT_EQ(expectedParamValue.hour, actualValue.hour);
-					EXPECT_EQ(expectedParamValue.minute, actualValue.minute);
-					EXPECT_EQ(expectedParamValue.second, actualValue.second);
-					EXPECT_EQ(expectedParamValue.fraction, actualValue.fraction);
-				}
-			}
-			else
+			EXPECT_EQ(expectedParamValue.year, actualValue.year);
+			EXPECT_EQ(expectedParamValue.month, actualValue.month);
+			EXPECT_EQ(expectedParamValue.day, actualValue.day);
+			if constexpr (is_same_v<SQLType, SQL_TIMESTAMP_STRUCT>)
 			{
-				EXPECT_EQ(paramValue, nullptr);
+				EXPECT_EQ(expectedParamValue.hour, actualValue.hour);
+				EXPECT_EQ(expectedParamValue.minute, actualValue.minute);
+				EXPECT_EQ(expectedParamValue.second, actualValue.second);
+				EXPECT_EQ(expectedParamValue.fraction, actualValue.fraction);
 			}
 		}
 	}

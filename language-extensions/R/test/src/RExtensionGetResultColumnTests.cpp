@@ -650,13 +650,13 @@ namespace ExtensionApiTest
 		GetResultColumn(0,        // columnNumber
 			SQL_C_TYPE_TIMESTAMP, // dataType
 			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
+			6,                    // decimalDigits
 			SQL_NO_NULLS);        // nullable
 
 		GetResultColumn(1,        // columnNumber
 			SQL_C_TYPE_TIMESTAMP, // dataType
 			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
+			6,                    // decimalDigits
 			SQL_NULLABLE);        // nullable
 	}
 

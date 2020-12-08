@@ -653,8 +653,8 @@ void RTypeUtils::FillDataFromRawVector(
 //  Copies the content only as far as the rowsNumber indicates.
 //  The cells in the strLenOrInd array are set to the size of the SQL data type if the
 //  corresponding rows in the vectorInR are not NA.
-//  Otherwise if they are NA, sets nullable to true and the corresponding cells in
-//  the array strLenOrInd to SQL_NULL_DATA.
+//  Otherwise if they are NA, sets nullable to true, pushes back an empty zeroed struct
+//  into data, and sets the corresponding cells in the array strLenOrInd to SQL_NULL_DATA.
 //
 template<class SQLType, class RVectorType, class DateTimeTypeInR>
 void RTypeUtils::FillDataFromDateTimeVector(
@@ -696,6 +696,15 @@ void RTypeUtils::FillDataFromDateTimeVector(
 		}
 		else
 		{
+			// Add zeroed value for the null placeholder.
+			// The ODBC protocol used for exchange of data between Exthost and the extension expects
+			// empty value for null if the type is fixed and date/datetime/datetime2 are all
+			// fixed types.
+			//
+			SQLType value;
+			memset(&value, 0, sizeof(SQLType));
+			data->push_back(value);
+
 			strLenOrInd[index] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
 		}

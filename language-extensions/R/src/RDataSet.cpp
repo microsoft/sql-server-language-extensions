@@ -689,6 +689,17 @@ void ROutputDataSet::GetDateTimeColumnFromDataFrame(
 	LOG("ROutputDataSet::GetDateTimeColumnFromDataFrame");
 
 	decimalDigits = 0;
+	if constexpr (is_same_v<SQLType, SQL_TIMESTAMP_STRUCT>)
+	{
+		// Max DateTime2 precision is "7":
+		// https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime2-transact-sql
+		// However, R runtime can be precise only up to microseconds which is 6.
+		// It rounds the nanosecond portion, and thus the R value mismatches with 
+		// SQL DateTime beyond 6.
+		//
+		decimalDigits = 6;
+	}
+
 	nullable = SQL_NO_NULLS;
 	columnSize = sizeof(SQLType);
 
