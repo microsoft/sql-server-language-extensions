@@ -197,9 +197,10 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 //  Creates a raw Rcpp vector in R encapsulating SEXP pointers to the equivalent R raw objects
 //  with the given data. rowsNumber indicates the number of elements to be added in the data.
 //  Each cell in a non-null strLen_or_Ind array indicates the length of each element.
-//  Iterates over data and for each element, over each byte to push_back the value to the vector.
-//  If at any index strLen_or_Ind is SQL_NULL_DATA, it pushes back an empty raw(0) element.
-//  If strLen_or_Ind is nullptr, we push raw(0) for all the rows in the data.
+//  If strLen_or_Ind is nullptr, returns an empty RawVector,
+//  Otherwise, iterates over data and for each element, if strLen_or_Ind at any index is not 
+//  SQL_NULL_DATA, go over each of its byte to push_back the value to the vector.
+//  If strLen_or_Ind at any index is SQL_NULL_DATA, does not push_back anything.
 //
 Rcpp::RawVector RTypeUtils::CreateRawVector(
 	SQLULEN    rowsNumber,
@@ -211,26 +212,22 @@ Rcpp::RawVector RTypeUtils::CreateRawVector(
 	Rcpp::RawVector rawVector = Rcpp::RawVector::create();
 	SQLCHAR* baseRawData = static_cast<SQLCHAR *>(data);
 	int cumulativeRawDataLength = 0;
-
-	for (SQLULEN index = 0; index < rowsNumber; ++index)
+	
+	if (strLen_or_Ind != nullptr)
 	{
-		if (strLen_or_Ind == nullptr || strLen_or_Ind[index] == SQL_NULL_DATA)
+		for (SQLULEN index = 0; index < rowsNumber; ++index)
 		{
-			// For raw, 0 (the nul byte) represents NA.
-			// https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/raw
-			//
-			rawVector.push_back(0);
-		}
-		else
-		{
-			SQLCHAR *rawData = static_cast<SQLCHAR *>(baseRawData) + cumulativeRawDataLength;
-			for(int rawByteIndex = 0; rawByteIndex < strLen_or_Ind[index]; ++rawByteIndex)
+			if (strLen_or_Ind[index] != SQL_NULL_DATA)
 			{
-				SQLCHAR value = *(rawData + rawByteIndex);
-				rawVector.push_back(value);
-			}
+				SQLCHAR *rawData = static_cast<SQLCHAR *>(baseRawData) + cumulativeRawDataLength;
+				for(int rawByteIndex = 0; rawByteIndex < strLen_or_Ind[index]; ++rawByteIndex)
+				{
+					SQLCHAR value = *(rawData + rawByteIndex);
+					rawVector.push_back(value);
+				}
 
-			cumulativeRawDataLength += strLen_or_Ind[index];
+				cumulativeRawDataLength += strLen_or_Ind[index];
+			}
 		}
 	}
 

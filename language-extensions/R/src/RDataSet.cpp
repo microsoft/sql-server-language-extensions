@@ -639,19 +639,29 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 	nullable = SQL_NO_NULLS;
 
 	vector<SQLCHAR> *columnData = nullptr;
-	SQLINTEGER *strLenOrInd = nullptr;
+	SQLINTEGER* strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 	Rcpp::RawVector column = m_dataFrame[columnNumber];
-	columnSize = column.size();
 
-	if (m_rowsNumber > 0)
+	// If there is no row in the DataFrame, column.size() is zero.
+	// In case of XVT_VARBYTES, ExthostExtensionManager expects to
+	// get a column.size() > 0, otherwise, GetOdbcCTypeInfo considers it
+	// as an invalid column and raises E_INVALID_PROTOCOL_FORMAT.
+	//
+	columnSize = column.size() > 0 ? column.size() : sizeof(SQLCHAR);
+
+	// For raw, m_rowsNumber was always set to 1 since:
+	// 1) if there are rows in the DataFrame (i.e. GetDataFrameRowsNumber() > 0),
+	// they are all grouped together in a single row; and
+	// 2) if there is no row (i.e. raw(0)), a single NULL value should still
+	// be returned.
+	//
+	if (GetDataFrameRowsNumber() > 0)
 	{
 		// If there are rows in the DataFrame, they are all grouped together in
 		// a single row for raw column i.e. m_rowsNumber = 1.
-		// And if m_rowsNumber > 0, it means columnSize > 0
 		//
 		columnData = new vector<SQLCHAR>();
-		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RTypeUtils::FillDataFromRawVector(
 			column,
@@ -663,6 +673,10 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 	}
 	else
 	{
+		// strLenOrInd indicates that there is a value but it is SQL_NULL_DATA.
+		//
+		strLenOrInd[0] = SQL_NULL_DATA;
+		
 		m_data.push_back(nullptr);
 		nullable = SQL_NULLABLE;
 	}
@@ -807,8 +821,9 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 //
 // Description:
 //  Set the number of rows from the underlying DataFrame.
-//  If there is a binary raw column, number of rows is set to 1 even if the underlying DataFrame
-//  has more rows since all the bytes are returned in a single row.
+//  If there is a binary raw column, number of rows is always set to 1 even if
+//  the underlying DataFrame has more or less rows since all the bytes are returned
+//  in a single row.
 //
 void ROutputDataSet::PopulateRowsNumber()
 {
@@ -823,10 +838,10 @@ void ROutputDataSet::PopulateRowsNumber()
 		//
 		m_rowsNumber = GetDataFrameRowsNumber();
 	}
-	else if(GetDataFrameRowsNumber() > 0)
+	else
 	{
 		// Raw binary column found; set number of rows of ROutputDatSet = 1
-		// only if DataFrame has at least 1 row.
+		// even if DataFrame has no row or more than one row.
 		//
 		m_rowsNumber = 1;
 	}

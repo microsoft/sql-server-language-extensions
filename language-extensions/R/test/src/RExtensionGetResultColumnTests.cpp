@@ -535,17 +535,17 @@ namespace ExtensionApiTest
 			0,             // inputSchemaColumnsNumber
 			scriptString);
 
-		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
 		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
 			nullptr,
 			nullptr,
-			&outputschemaColumnsNumber);
+			&outputSchemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		EXPECT_EQ(outputschemaColumnsNumber, 1);
+		EXPECT_EQ(outputSchemaColumnsNumber, 1);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_BINARY,  // dataType
@@ -566,21 +566,21 @@ namespace ExtensionApiTest
 			0,             // inputSchemaColumnsNumber
 			scriptString);
 
-		outputschemaColumnsNumber = 0;
+		outputSchemaColumnsNumber = 0;
 		result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
 			nullptr,
 			nullptr,
-			&outputschemaColumnsNumber);
+			&outputSchemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		EXPECT_EQ(outputschemaColumnsNumber, 1);
+		EXPECT_EQ(outputSchemaColumnsNumber, 1);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_BINARY,  // dataType
-			0,             // columnSize
+			1,             // columnSize
 			0,             // decimalDigits
 			SQL_NULLABLE); // nullable
 	}

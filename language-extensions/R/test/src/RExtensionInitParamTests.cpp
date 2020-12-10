@@ -950,7 +950,10 @@ namespace ExtensionApiTest
 				}
 				else
 				{
-					EXPECT_EQ(param[0], 0);
+					// If expectedParamValue is NULL, the size of param
+					// should be 0.
+					//
+					EXPECT_EQ(param.size(), 0);
 				}
 			}
 		}

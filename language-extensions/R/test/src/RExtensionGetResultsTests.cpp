@@ -554,9 +554,9 @@ namespace ExtensionApiTest
 			&strLen_or_Ind);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		EXPECT_EQ(rowsNumber, static_cast<SQLULEN>(0));
+		EXPECT_EQ(rowsNumber, static_cast<SQLULEN>(1));
 		EXPECT_EQ(data[0], nullptr);
-		EXPECT_EQ(strLen_or_Ind[0], nullptr);
+		EXPECT_EQ(strLen_or_Ind[0][0], SQL_NULL_DATA);
 	}
 
 	//----------------------------------------------------------------------------------------------
