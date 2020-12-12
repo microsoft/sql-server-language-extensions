@@ -197,11 +197,14 @@ void REnvironment::Cleanup()
 {
 	LOG("REnvironment::Cleanup");
 
-	string restoreLibPathsScript = RLibrarySession::GenerateScriptToSetLibPath(
-		*sm_originalPath,
-		false); // isLastElementLibPaths
+	if (sm_originalPath != nullptr)
+	{
+		string restoreLibPathsScript = RLibrarySession::GenerateScriptToSetLibPath(
+			*sm_originalPath,
+			false); // isLastElementLibPaths
 
-	// Execute restoration of library paths script.
-	//
-	ExecuteScript(restoreLibPathsScript);
+		// Execute restoration of library paths script.
+		//
+		ExecuteScript(restoreLibPathsScript);
+	}
 }
