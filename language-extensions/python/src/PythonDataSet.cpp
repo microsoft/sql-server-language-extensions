@@ -1062,11 +1062,11 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 {
 	LOG("PythonOutputDataSet::RetrieveStringColumnFromDataFrame");
 
-	vector<char> *columnData = nullptr;
+	vector<string> columnData;
 	SQLINTEGER *strLenOrNullMap = nullptr;
 	if (m_rowsNumber > 0)
 	{
-		columnData = new vector<char>();
+		columnData.reserve(m_rowsNumber);
 		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
 	}
 
@@ -1074,19 +1074,21 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 	nullable = SQL_NO_NULLS;
 
 	np::ndarray column = ExtractArrayFromDataFrame(columnName);
+	string dType = bp::extract<string>(bp::str(column.get_dtype()));
 
-	// Insert the string column into the columnData vector contiguously.
+	// Store the data in a vector (columnData) while we calculate the total size we need 
+	// for the contiguous char data.
 	//
 	SQLINTEGER maxLen = sizeof(char);
+	int fullSize = 0;
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bp::object pyObj = column[row];
 
-		// Make sure the iterator is not pointing at Python None and 
-		// that it is a PyUnicode (string) object or else it will crash when we extract
-		//
 		if (!pyObj.is_none())
 		{
+			string stringToAdd = "";
+
 			// If we have a bytes object we want to take only the bytes, not the b'' around them
 			//
 			if (PyBytes_Check(pyObj.ptr()))
@@ -1096,43 +1098,60 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 				PyObject *baseObj = pyObj.ptr();
 
 				int size = PyBytes_Size(baseObj);
-				SQLCHAR *bytes = static_cast<SQLCHAR *>(
+				char *bytes = static_cast<char *>(
 					static_cast<void *>(PyBytes_AsString(baseObj)));
-				strLenOrNullMap[row] = size;
 
-				// Concatenate the string data into the full column data
-				//
-				columnData->insert(columnData->end(), bytes, bytes+size);
+				stringToAdd = string(bytes, size);
 			}
 			else
 			{
 				// Extract a utf-8 encoded version of the string
 				//
-				string encoded = bp::extract<string>(bp::str(pyObj).encode("utf-8"));
-				strLenOrNullMap[row] = encoded.size();
-				// Concatenate the string data into the full column data
-				//
-				columnData->insert(columnData->end(), encoded.begin(), encoded.end());
+				stringToAdd = bp::extract<string>(bp::str(pyObj).encode("utf-8"));
 			}
 
-			// Store the maximum length to find the widest the column needs to be
-			//
-			if (maxLen < strLenOrNullMap[row])
-			{
-				maxLen = strLenOrNullMap[row];
-			}
+			fullSize += stringToAdd.size();
+			strLenOrNullMap[row] = stringToAdd.size();
+			columnData.push_back(stringToAdd);
 		}
 		else
 		{
 			strLenOrNullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
+			columnData.push_back("");
+		}
+
+		// Store the maximum length to find the widest the column needs to be
+		//
+		if (maxLen < strLenOrNullMap[row])
+		{
+			maxLen = strLenOrNullMap[row];
+		}
+	}
+
+	// Create a single block of memory that will hold all the data contiguously.
+	//
+	unique_ptr<char[]> dataPtr(new char[fullSize]);
+
+	// Copy our data from the vector of strings to the single chunk of memory.
+	//
+	char *copyIterator = dataPtr.get();
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
+	{
+		int size = strLenOrNullMap[row];
+		if (size != SQL_NULL_DATA)
+		{
+			memcpy(copyIterator, columnData[row].data(), size);
+			copyIterator += size;
 		}
 	}
 
 	columnSize = maxLen;
 	if (m_rowsNumber > 0)
 	{
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		// Add the memory block to the m_data and give the memory handling job to m_data.
+		//
+		m_data.push_back(static_cast<SQLPOINTER>(dataPtr.release()));
 	}
 	else
 	{
@@ -1157,11 +1176,11 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 {
 	LOG("PythonOutputDataSet::RetrieveRawColumnFromDataFrame");
 
-	vector<SQLCHAR> *columnData = nullptr;
+	vector<string> columnData;
 	SQLINTEGER *strLenOrNullMap = nullptr;
 	if (m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLCHAR>();
+		columnData.reserve(m_rowsNumber);
 		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
 	}
 
@@ -1170,15 +1189,15 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 
 	np::ndarray column = ExtractArrayFromDataFrame(columnName);
 
-	// Insert the raw column into the columnData vector contiguously.
+	// Store the data in a vector (columnData) while we calculate the total size we need 
+	// for the contiguous char data.
 	//
-	SQLINTEGER maxLen = sizeof(SQLCHAR);
+	SQLINTEGER maxLen = sizeof(char);
+	int fullSize = 0;
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
 		bp::object pyObj = column[row];
 
-		// Make sure the iterator is not pointing at Python None, or else it will crash on extract
-		//
 		if (!pyObj.is_none())
 		{
 			// Extract the size and bytes of the pyObj
@@ -1186,32 +1205,52 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 			PyObject *baseObj = pyObj.ptr();
 
 			int size = PyBytes_Size(baseObj);
-			SQLCHAR *bytes = static_cast<SQLCHAR*>(static_cast<void*>(PyBytes_AsString(baseObj)));
+			char *bytes = static_cast<char *>(
+				static_cast<void *>(PyBytes_AsString(baseObj)));
 
+			fullSize += size;
 			strLenOrNullMap[row] = size;
 
-			// Append the bytes data into the full column data
-			//
-			columnData->insert(columnData->end(), bytes, bytes + size);
-
-			// Store the maximum length to find the widest the column needs to be
-			//
-			if (maxLen < strLenOrNullMap[row])
-			{
-				maxLen = strLenOrNullMap[row];
-			}
+			columnData.push_back(string(bytes, size));
 		}
 		else
 		{
 			strLenOrNullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
+			columnData.push_back("");
+		}
+
+		// Store the maximum length to find the widest the column needs to be
+		//
+		if (maxLen < strLenOrNullMap[row])
+		{
+			maxLen = strLenOrNullMap[row];
+		}
+	}
+
+	// Create a single block of memory that will hold all the data contiguously.
+	//
+	unique_ptr<char[]> dataPtr(new char[fullSize]);
+
+	// Copy our data from the vector of strings to the single chunk of memory.
+	//
+	char *copyIterator = dataPtr.get();
+	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
+	{
+		int size = strLenOrNullMap[row];
+		if (size != SQL_NULL_DATA)
+		{
+			memcpy(copyIterator, columnData[row].data(), size);
+			copyIterator += size;
 		}
 	}
 
 	columnSize = maxLen;
 	if (m_rowsNumber > 0)
 	{
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		// Add the memory block to the m_data and give the memory handling job to m_data.
+		//
+		m_data.push_back(static_cast<SQLPOINTER>(dataPtr.release()));
 	}
 	else
 	{

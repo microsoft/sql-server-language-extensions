@@ -353,6 +353,8 @@ private:
 	//
 	boost::python::list m_columnNames;
 
+	// Number of columns in the DataSet.
+	//
 	SQLULEN m_columnsNumber = 0;
 
 	// Number of rows in the DataSet.
