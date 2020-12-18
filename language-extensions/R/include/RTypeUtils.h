@@ -150,6 +150,12 @@ public:
 		SQLSMALLINT                     decimalDigits,
 		SQLCHAR                         precision);
 
+	// Given a SQLType vector, copy it into a unique pointer to SQLType array
+	// and return the unique pointer.
+	//
+	template<class SQLType>
+	static std::unique_ptr<SQLType[]> CopySQLTypeVector(const std::vector<SQLType> &src);
+
 	// Maps to store the ODBC C type to NA value mapping
 	//
 	static const std::unordered_map<SQLSMALLINT, SQLPOINTER> sm_dataTypeToNAMap;

@@ -819,6 +819,25 @@ void RTypeUtils::ConvertDoubleToBytes(
 	}
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: RTypeUtils::CopySQLTypeVector
+//
+// Description:
+// Given a SQLType vector, copy it into a unique pointer to SQLType array
+// and return the unique pointer.
+//
+template<class SQLType>
+unique_ptr<SQLType[]> RTypeUtils::CopySQLTypeVector(const vector<SQLType> &src)
+{
+	// The size of vector data in bytes:
+	//
+	int vectorSizeInBytes = sizeof(SQLType) * src.size();
+
+	unique_ptr<SQLType[]> dataPtr(new SQLType[src.size()]);
+	memcpy(dataPtr.get(), src.data(), vectorSizeInBytes);
+	return dataPtr;
+}
+
 // Do explicit template instantiations, so that object code is generated for these
 // and the linker is able to find their definitions even after instantiations are in different
 // translation units (i.e. CreateVector instantiation is in RParam.cpp)
@@ -971,3 +990,18 @@ template void RTypeUtils::FillDataFromDateTimeVector
 		vector<SQL_TIMESTAMP_STRUCT> *data,
 		SQLINTEGER                   *strLenOrInd,
 		SQLSMALLINT                  &nullable);
+
+template unique_ptr<SQLCHAR[]> RTypeUtils::CopySQLTypeVector
+	<SQLCHAR>(const vector<SQLCHAR> &src);
+
+template unique_ptr<SQLDOUBLE[]> RTypeUtils::CopySQLTypeVector
+	<SQLDOUBLE>(const vector<SQLDOUBLE> &src);
+
+template unique_ptr<SQLINTEGER[]> RTypeUtils::CopySQLTypeVector
+	<SQLINTEGER>(const vector<SQLINTEGER> &src);
+
+template unique_ptr<SQL_DATE_STRUCT[]> RTypeUtils::CopySQLTypeVector
+	<SQL_DATE_STRUCT>(const vector<SQL_DATE_STRUCT> &src);
+
+template unique_ptr<SQL_TIMESTAMP_STRUCT[]> RTypeUtils::CopySQLTypeVector
+	<SQL_TIMESTAMP_STRUCT>(const vector<SQL_TIMESTAMP_STRUCT> &src);

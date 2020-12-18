@@ -537,22 +537,21 @@ void ROutputDataSet::GetColumnFromDataFrame(
 	nullable = SQL_NO_NULLS;
 	columnSize = sizeof(SQLType);
 
-	vector<SQLType> *columnData = nullptr;
+	vector<SQLType> columnData;
 	SQLINTEGER *strLenOrInd = nullptr;
 
 	if(m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLType>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RVectorType column = m_dataFrame[columnNumber];
 		RTypeUtils::FillDataFromRVector<SQLType, RVectorType, DataType>(
 			m_rowsNumber,
 			column,
-			columnData,
+			&columnData,
 			strLenOrInd,
 			nullable);
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLType>(columnData).release());
 	}
 	else
 	{
@@ -580,7 +579,7 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
 
-	vector<SQLCHAR> *columnData = nullptr;
+	vector<SQLCHAR> columnData;
 	SQLINTEGER *strLenOrInd = nullptr;
 
 	// maxLen determines the columnSize, which is a property of this column's data type
@@ -591,7 +590,6 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 
 	if(m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLCHAR>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		Rcpp::CharacterVector column = m_dataFrame[columnNumber];
@@ -604,12 +602,12 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 			m_rowsNumber,
 			column,
 			numeric_limits<SQLULEN>::max(),
-			columnData,
+			&columnData,
 			strLenOrInd,
 			nullable,
 			maxLen);
 
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLCHAR>(columnData).release());
 	}
 	else
 	{
@@ -638,7 +636,7 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
 
-	vector<SQLCHAR> *columnData = nullptr;
+	vector<SQLCHAR> columnData;
 	SQLINTEGER* strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 	Rcpp::RawVector column = m_dataFrame[columnNumber];
@@ -661,15 +659,13 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 		// If there are rows in the DataFrame, they are all grouped together in
 		// a single row for raw column i.e. m_rowsNumber = 1.
 		//
-		columnData = new vector<SQLCHAR>();
-
 		RTypeUtils::FillDataFromRawVector(
 			column,
 			numeric_limits<SQLULEN>::max(),
-			columnData,
+			&columnData,
 			strLenOrInd);
 
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLCHAR>(columnData).release());
 	}
 	else
 	{
@@ -717,22 +713,21 @@ void ROutputDataSet::GetDateTimeColumnFromDataFrame(
 	nullable = SQL_NO_NULLS;
 	columnSize = sizeof(SQLType);
 
-	vector<SQLType> *columnData = nullptr;
+	vector<SQLType> columnData;
 	SQLINTEGER *strLenOrInd = nullptr;
 
 	if(m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLType>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RVectorType column = m_dataFrame[columnNumber];
 		RTypeUtils::FillDataFromDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 			m_rowsNumber,
 			column,
-			columnData,
+			&columnData,
 			strLenOrInd,
 			nullable);
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLType>(columnData).release());
 	}
 	else
 	{
