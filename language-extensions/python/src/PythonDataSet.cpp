@@ -38,13 +38,41 @@ const unordered_map<string, SQLSMALLINT> PythonDataSet::sm_pythonToOdbcTypeMap =
 	{"float64", SQL_C_DOUBLE},
 	{"str", SQL_C_CHAR},
 	{"bytes", SQL_C_BINARY},
+	// We return TIMESTAMP for all date/time types so we can use NaT
+	// and SQL can auto convert from timestamp to narrower types.
+	//
 	{"datetime64[ns]", SQL_C_TYPE_TIMESTAMP},
 	{"datetime.datetime", SQL_C_TYPE_TIMESTAMP},
-	{"datetime.date", SQL_C_TYPE_DATE},
+	{"datetime.date", SQL_C_TYPE_TIMESTAMP},
 
 	// Default types for when the array dtype is "object"
 	//
 	{"int", SQL_C_SBIGINT},
+	{"float", SQL_C_DOUBLE},
+	{"NoneType", SQL_C_CHAR}
+};
+
+// When streaming, we need to map all types to the broadest possible type.
+// This is because we don't know if later chunks will have broader 
+// values than the current chunk, so we want to accommodate when we guess the SQL type.
+//
+const unordered_map<string, SQLSMALLINT> PythonDataSet::sm_pythonToOdbcStreamingTypeMap =
+{
+	{"bool", SQL_C_BIT},
+	{"uint8", SQL_C_DOUBLE},
+	{"int16", SQL_C_DOUBLE},
+	{"int32", SQL_C_DOUBLE},
+	{"int64", SQL_C_DOUBLE},
+	{"float32", SQL_C_DOUBLE},
+	{"float64", SQL_C_DOUBLE},
+	{"str", SQL_C_CHAR},
+	{"bytes", SQL_C_BINARY},
+	{"datetime64[ns]", SQL_C_TYPE_TIMESTAMP},
+	{"datetime.datetime", SQL_C_TYPE_TIMESTAMP},
+	{"datetime.date", SQL_C_TYPE_TIMESTAMP},
+	// Default types for when the array dtype is "object"
+	//
+	{"int", SQL_C_DOUBLE},
 	{"float", SQL_C_DOUBLE},
 	{"NoneType", SQL_C_CHAR}
 };
@@ -722,7 +750,7 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 			PyDateTime_IMPORT;
 			PyObject *dtObject = Py_None;
 
-			if constexpr(is_same_v<DateTimeStruct, SQL_DATE_STRUCT>)
+			if constexpr (is_same_v<DateTimeStruct, SQL_DATE_STRUCT>)
 			{
 				SQL_DATE_STRUCT dateParam = dateData[row];
 
@@ -730,7 +758,7 @@ void PythonInputDataSet::AddDateTimeColumnToDictionary(
 				//
 				dtObject = PyDate_FromDate(dateParam.year, dateParam.month, dateParam.day);
 			}
-			else if constexpr(is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
+			else if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 			{
 				SQL_TIMESTAMP_STRUCT timeStampParam = dateData[row];
 
@@ -876,6 +904,14 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 			decimalDigits,
 			nullable);
 
+		// We can only send the output schema to SQL once per column. Since in streaming we don't
+		// know if later batches will have NULLs, we set all columns to NULLABLE.
+		//
+		if (m_isStreaming)
+		{
+			nullable = SQL_NULLABLE;
+		}
+
 		// Store the column information obtained above in m_columns.
 		//
 		const SQLCHAR *unsignedColumnName = static_cast<const SQLCHAR*>(
@@ -907,7 +943,6 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 	SQLSMALLINT  &nullable)
 {
 	LOG("PythonOutputDataSet::RetrieveColumnFromDataFrame");
-
 	SQLType *columnData = nullptr;
 	SQLINTEGER *nullMap = nullptr;
 	NullType valueForNull = *(static_cast<const NullType*>(
@@ -923,9 +958,10 @@ void PythonOutputDataSet::RetrieveColumnFromDataFrame(
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
 
-	// Get the column of values
+	// Get the column of values, as the type we expect to extract
 	//
-	np::ndarray column = ExtractArrayFromDataFrame(columnName);
+	np::ndarray column = 
+		ExtractArrayFromDataFrame(columnName).astype(np::dtype::get_builtin<SQLType>());
 
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
@@ -1062,11 +1098,10 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 {
 	LOG("PythonOutputDataSet::RetrieveStringColumnFromDataFrame");
 
-	vector<string> columnData;
+	vector<char> columnData;
 	SQLINTEGER *strLenOrNullMap = nullptr;
 	if (m_rowsNumber > 0)
 	{
-		columnData.reserve(m_rowsNumber);
 		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
 	}
 
@@ -1083,11 +1118,13 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 	int fullSize = 0;
 	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
 	{
+		string stringToAdd = "";
 		bp::object pyObj = column[row];
+		bool null = true;
 
 		if (!pyObj.is_none())
 		{
-			string stringToAdd = "";
+			null = false;
 
 			// If we have a bytes object we want to take only the bytes, not the b'' around them
 			//
@@ -1108,17 +1145,62 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 				// Extract a utf-8 encoded version of the string
 				//
 				stringToAdd = bp::extract<string>(bp::str(pyObj).encode("utf-8"));
-			}
+				
+				// If we are dealing with date types in a streaming case, 
+				// we have to clean up the datetime string so that SQL can convert properly
+				//
+				if (m_isStreaming && regex_match(dType, regex(".*date.*")))
+				{
+					// NaT counts as None / NULL for date types
+					//
+					if (stringToAdd.compare("NaT") == 0)
+					{
+						null = true;
+					}
+					else 
+					{
+						// Python Datetimes will look like this: YYYY-MM-DDThh:mm:ss.fffffffff
+						// We trim trailing 0s in the fractional part of the timestamp 
+						// (and the "." if the fraction is all 0) so SQL can auto-convert 
+						// from string to the date type. 
+						// Lower precision date types cannot handle trailing zeroes.
+						//
+						smatch matches;
+						string trimmedDate;
 
+						if (regex_search(stringToAdd, matches, regex("((.*)([.].*?))(0+)$"))) 
+						{
+							// "matches" will have this by index:
+							// 0. YYYY-MM-DDThh:mm:ss.fffff0000
+							// 1. YYYY-MM-DDThh:mm:ss.fffff
+							// 2. YYYY-MM-DDThh:mm:ss
+							// 3. .fffff
+							// If there is no fractional second then #3 is just ".", and #1 will
+							// have the trailing "." which we don't want, so we use #2 instead.
+							// 
+							trimmedDate = matches[1].str();
+							if (matches[3].str() == ".") 
+							{
+								trimmedDate = matches[2].str();
+							}
+
+							stringToAdd = trimmedDate;
+						}
+					}
+				}
+			}
+		}
+
+		if (!null)
+		{
 			fullSize += stringToAdd.size();
 			strLenOrNullMap[row] = stringToAdd.size();
-			columnData.push_back(stringToAdd);
+			columnData.insert(columnData.end(), stringToAdd.begin(), stringToAdd.end());
 		}
 		else
 		{
 			strLenOrNullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
-			columnData.push_back("");
 		}
 
 		// Store the maximum length to find the widest the column needs to be
@@ -1135,16 +1217,7 @@ void PythonOutputDataSet::RetrieveStringColumnFromDataFrame(
 
 	// Copy our data from the vector of strings to the single chunk of memory.
 	//
-	char *copyIterator = dataPtr.get();
-	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
-	{
-		int size = strLenOrNullMap[row];
-		if (size != SQL_NULL_DATA)
-		{
-			memcpy(copyIterator, columnData[row].data(), size);
-			copyIterator += size;
-		}
-	}
+	memcpy(dataPtr.get(), columnData.data(), fullSize);
 
 	columnSize = maxLen;
 	if (m_rowsNumber > 0)
@@ -1176,11 +1249,10 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 {
 	LOG("PythonOutputDataSet::RetrieveRawColumnFromDataFrame");
 
-	vector<string> columnData;
+	vector<char> columnData;
 	SQLINTEGER *strLenOrNullMap = nullptr;
 	if (m_rowsNumber > 0)
 	{
-		columnData.reserve(m_rowsNumber);
 		strLenOrNullMap = new SQLINTEGER[m_rowsNumber];
 	}
 
@@ -1211,13 +1283,12 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 			fullSize += size;
 			strLenOrNullMap[row] = size;
 
-			columnData.push_back(string(bytes, size));
+			columnData.insert(columnData.end(), bytes, bytes+size);
 		}
 		else
 		{
 			strLenOrNullMap[row] = SQL_NULL_DATA;
 			nullable = SQL_NULLABLE;
-			columnData.push_back("");
 		}
 
 		// Store the maximum length to find the widest the column needs to be
@@ -1234,16 +1305,7 @@ void PythonOutputDataSet::RetrieveRawColumnFromDataFrame(
 
 	// Copy our data from the vector of strings to the single chunk of memory.
 	//
-	char *copyIterator = dataPtr.get();
-	for (SQLULEN row = 0; row < m_rowsNumber; ++row)
-	{
-		int size = strLenOrNullMap[row];
-		if (size != SQL_NULL_DATA)
-		{
-			memcpy(copyIterator, columnData[row].data(), size);
-			copyIterator += size;
-		}
-	}
+	memcpy(dataPtr.get(), columnData.data(), fullSize);
 
 	columnSize = maxLen;
 	if (m_rowsNumber > 0)
@@ -1410,16 +1472,33 @@ SQLSMALLINT PythonOutputDataSet::PopulateColumnDataType(SQLUSMALLINT columnNumbe
 		}
 	}
 
-	PythonDataSet::pythonToOdbcTypeMap::const_iterator it =
-		PythonDataSet::sm_pythonToOdbcTypeMap.find(type);
-
-	if (it == PythonDataSet::sm_pythonToOdbcTypeMap.end())
+	SQLSMALLINT dataType;
+	if (m_isStreaming)
 	{
-		throw invalid_argument("Unsupported data type " + type + " in output data for column # "
-			+ to_string(columnNumber) + ".");
-	}
+		PythonDataSet::pythonToOdbcStreamingTypeMap::const_iterator it =
+			PythonDataSet::sm_pythonToOdbcStreamingTypeMap.find(type);
 
-	SQLSMALLINT dataType = it->second;
+		if (it == PythonDataSet::sm_pythonToOdbcStreamingTypeMap.end())
+		{
+			throw invalid_argument("Unsupported data type " + type + " in output data for column # "
+				+ to_string(columnNumber) + ".");
+		}
+
+		dataType = it->second;
+	}
+	else
+	{
+		PythonDataSet::pythonToOdbcTypeMap::const_iterator it =
+			PythonDataSet::sm_pythonToOdbcTypeMap.find(type);
+
+		if (it == PythonDataSet::sm_pythonToOdbcTypeMap.end())
+		{
+			throw invalid_argument("Unsupported data type " + type + " in output data for column # "
+				+ to_string(columnNumber) + ".");
+		}
+
+		dataType = it->second;
+	}
 
 	return dataType;
 }
@@ -1463,6 +1542,10 @@ void PythonOutputDataSet::CleanupColumns()
 
 		(this->*it->second)(columnNumber);
 	}
+
+	m_data.clear();
+	m_columnNullMap.clear();
+	m_columns.clear();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1479,7 +1562,7 @@ void PythonOutputDataSet::CleanupColumn(SQLUSMALLINT columnNumber)
 
 	if (m_data[columnNumber] != nullptr)
 	{
-		delete[] reinterpret_cast<SQLType*>(m_data[columnNumber]);
+		delete[] reinterpret_cast<SQLType *>(m_data[columnNumber]);
 		m_data[columnNumber] = nullptr;
 	}
 

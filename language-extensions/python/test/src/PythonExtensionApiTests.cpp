@@ -721,7 +721,7 @@ namespace ExtensionApiTest
 
 				if constexpr (is_same_v<DateTimeStruct, SQL_TIMESTAMP_STRUCT>)
 				{
-					EXPECT_TRUE(PyDateTime_CheckExact(dateObject));
+					EXPECT_TRUE(PyDateTime_Check(dateObject));
 					SQLUSMALLINT hour = PyDateTime_DATE_GET_HOUR(dateObject);
 					SQLUSMALLINT minute = PyDateTime_DATE_GET_MINUTE(dateObject);
 					SQLUSMALLINT second = PyDateTime_DATE_GET_SECOND(dateObject);
@@ -737,7 +737,7 @@ namespace ExtensionApiTest
 				}
 				else
 				{
-					EXPECT_TRUE(PyDate_CheckExact(dateObject));
+					EXPECT_TRUE(PyDate_Check(dateObject));
 
 					EXPECT_EQ(expectedValue.year, year);
 					EXPECT_EQ(expectedValue.month, month);

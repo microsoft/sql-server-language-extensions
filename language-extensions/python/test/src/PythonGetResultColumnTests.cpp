@@ -800,6 +800,75 @@ namespace ExtensionApiTest
 			SQL_NO_NULLS);      // nullable
 	}
 
+	//----------------------------------------------------------------------------------------------
+	// Name: GetStreamIntegerResultColumnsTest
+	//
+	// Description:
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  When `r_rowsPerRead` parameter is set (streaming), both nullable and non-nullable
+	//  columns must return as nullable (since in streaming, it is not predictable
+	//  whether the upcoming chunks of data will contain nulls).
+	//
+	TEST_F(PythonExtensionApiTests, GetStreamIntegerResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(1, // parametersNumber
+			(*m_integerInfo).GetColumnsNumber(), 
+			m_scriptString);
+
+		// Initialize @r_rowsPerRead input param which sets session as streaming mode
+		//
+		SQLCHAR *paramName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_streamingParamName.c_str())));
+
+		// chunk size, # of rows per chunk
+		//
+		SQLINTEGER paramValue = 1;
+
+		SQLRETURN result = SQL_ERROR;
+		result = InitParam(
+			*m_sessionId,
+			m_taskId,
+			0,
+			paramName,                     // paramName
+			m_streamingParamName.length(), // paramSize
+			SQL_C_SLONG,                   // dataType
+			sizeof(SQLINTEGER),            // size of dataType
+			0,                             // decimalDigits
+			&paramValue,                   // chunkSize (@r_rowsPerRead)
+			0,                             // strLenOrInd
+			SQL_PARAM_INPUT);              // input output type
+
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
+
+		TestExecute<SQLINTEGER, SQL_C_SLONG>(
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
+			(*m_bigIntInfo).m_dataSet.data(),
+			(*m_bigIntInfo).m_strLen_or_Ind.data(),
+			(*m_bigIntInfo).m_columnNames,
+			false); // validate
+
+		// When streaming, we return a broader type because we don't know if later 
+		// values will have bigger values than those in the first chunk.
+		//
+		TestGetResultColumn(0, // columnNumber
+			SQL_C_DOUBLE,      // dataType
+			m_DoubleSize,      // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
+
+		TestGetResultColumn(1, // columnNumber
+			SQL_C_DOUBLE,      // dataType
+			m_DoubleSize,      // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
+	}
+
 	// Name: AllNonesColumnTest
 	//
 	// Description:

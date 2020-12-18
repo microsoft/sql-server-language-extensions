@@ -88,6 +88,11 @@ protected:
 	static const std::unordered_map<std::string, SQLSMALLINT> sm_pythonToOdbcTypeMap;
 	typedef std::unordered_map<std::string, SQLSMALLINT> pythonToOdbcTypeMap;
 
+	// Maps the ODBC C type to python type in the streaming scenario
+	//
+	static const std::unordered_map<std::string, SQLSMALLINT> sm_pythonToOdbcStreamingTypeMap;
+	typedef std::unordered_map<std::string, SQLSMALLINT> pythonToOdbcStreamingTypeMap;
+
 	// The underlying boost::python namespace, which contains all the python variables.
 	// We execute any python scripts on this namespace.
 	//
@@ -250,6 +255,13 @@ public:
 	//
 	void PopulateNumberOfRows();
 
+	// Setter for isStreaming.
+	//
+	void IsStreaming(bool isStreaming)
+	{
+		m_isStreaming = isStreaming;
+	}
+
 	// Getter for numberOfRows.
 	//
 	SQLULEN RowsNumber() const
@@ -344,6 +356,10 @@ private:
 	//
 	typedef std::unordered_map<SQLSMALLINT, fnRetrieveColumn> GetColumnFnMap;
 	typedef std::unordered_map<SQLSMALLINT, fnCleanupColumn> CleanupColumnFnMap;
+
+	// Whether this is a streaming session.
+	//
+	bool m_isStreaming = false;
 
 	// Vector of pointers to data from all columns to be sent back to ExtHost.
 	//

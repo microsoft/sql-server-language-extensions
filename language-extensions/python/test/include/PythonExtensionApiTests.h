@@ -352,6 +352,7 @@ namespace ExtensionApiTest
 		SQLSMALLINT m_outputDataNameLength;
 
 		const std::string m_printMessage = "Hello PythonExtension!";
+		const std::string m_streamingParamName = "@r_rowsPerRead";
 
 		// A value of 2'147'483'648
 		//

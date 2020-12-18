@@ -88,6 +88,17 @@ void PythonSession::InitColumn(
 {
 	LOG("PythonSession::InitColumn #" + to_string(columnNumber));
 
+	// Check if we are streaming. 
+	// If partitionByNumber is set, we are in the partitioning case, 
+	// which works the same way as streaming - each partition comes in as a separate
+	// chunk and we need to clear the output data set in between each.
+	//
+	if (!m_isStreaming && partitionByNumber != -1)
+	{
+		m_isStreaming = true;
+		m_outputDataSet.IsStreaming(true);
+	}
+
 	m_inputDataSet.InitColumn(
 		columnNumber,
 		columnName,
@@ -124,6 +135,16 @@ void PythonSession::InitParam(
 	else if (paramNumber >= m_paramContainer.GetSize())
 	{
 		throw invalid_argument("Invalid input param id supplied: " + to_string(paramNumber));
+	}
+
+	// Check if we are streaming. 
+	// If the input param "r_rowsPerRead" is set, we are in the streaming case.
+	//
+	if (!m_isStreaming && 
+		strcmp(reinterpret_cast<const char *>(paramName), m_streamingParamName.c_str()) == 0)
+	{
+		m_isStreaming = true;
+		m_outputDataSet.IsStreaming(true);
 	}
 
 	// Add parameter to the container and boost::python nameSpace.
@@ -195,7 +216,10 @@ void PythonSession::ExecuteWorkflow(
 
 	// In case of streaming clean up the previous stream batch's output buffers
 	//
-	m_outputDataSet.CleanupColumns();
+	if (m_isStreaming)
+	{
+		m_outputDataSet.CleanupColumns();
+	}
 
 	// Get the column number from the underlying DataFrame
 	// and set it to be the outputSchemaColumnsNumber.
