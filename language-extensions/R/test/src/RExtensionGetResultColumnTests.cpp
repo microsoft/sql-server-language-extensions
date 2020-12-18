@@ -847,6 +847,119 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
+	// Name: GetStreamIntegerResultColumnsTest
+	//
+	// Description:
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  When `r_rowsPerRead` parameter is set (streaming), both nullable and non-nullable
+	//  columns must return as nullable (since in streaming, it is not predictable
+	//  if the upcoming chunks of data will contain nulls).
+	//
+	TEST_F(RExtensionApiTests, GetStreamIntegerResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			(*m_integerInfo).GetColumnsNumber(), // inputSchemaColumnsNumber
+			m_scriptString,
+			1                                    // parametersNumber
+			);
+
+
+		// Initialize r_rowsPerRead parameter to set streaming mode
+		//
+		SQLCHAR *paramName = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char *>(m_streamingParamName.c_str())));
+
+		// chunkSize (number of rows to send in each chunk)
+		//
+		SQLINTEGER paramValue = 1;
+
+		SQLRETURN result = SQL_ERROR;
+		result = (*sm_initParamFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,
+			paramName,                     // paramName
+			m_streamingParamName.length(), // paramSize
+			SQL_C_SLONG,                   // dataType
+			sizeof(SQLINTEGER),            // size of dataType
+			0,                             // decimalDigits
+			&paramValue,                   // chunkSize (@r_rowsPerRead)
+			0,                             // strLenOrInd
+			SQL_PARAM_INPUT);              // input output type
+
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
+
+		Execute<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
+			(*m_integerInfo).m_dataSet.data(),
+			(*m_integerInfo).m_strLen_or_Ind.data(),
+			(*m_integerInfo).m_columnNames,
+			false);  // validate
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,	   // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // must be verified as nullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,	   // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: GetPartitioningIntegerResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  When partitionByNumber is set, we are in the partitioning case,
+	//  which works the same way as streaming - each partition comes in a separate
+	//  chunk. Both nullable and non-nullable columns must return as nullable.
+	//  This is because it is not predictable if the upcoming partition of data will contain nulls.
+	//
+	TEST_F(RExtensionApiTests, GetPartitioningIntegerResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			(*m_integerInfo).GetColumnsNumber(), // inputSchemaColumnsNumber
+			m_scriptString
+			);
+
+		// Turning partitioning on for a non-nullable column of integers.
+		//
+		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_partition_integerInfo.get());
+
+		Execute<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
+			(*m_partition_integerInfo).m_dataSet.data(),
+			(*m_partition_integerInfo).m_strLen_or_Ind.data(),
+			(*m_partition_integerInfo).m_columnNames,
+			false);  // validate
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // must be verified as nullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
 	// Name: GetResultColumn
 	//
 	// Description:

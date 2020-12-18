@@ -235,6 +235,13 @@ public:
 	//
 	void PopulateRowsNumber();
 
+	// Setter for isStreaming.
+	//
+	void IsStreaming(bool isStreaming)
+	{
+		m_isStreaming = isStreaming;
+	}
+
 	// Getter for number of rows
 	//
 	SQLULEN RowsNumber() const
@@ -307,6 +314,10 @@ private:
 	// Number of rows in the DataSet.
 	//
 	SQLULEN m_rowsNumber = 0;
+
+	// Whether this is a streaming session.
+	//
+	bool m_isStreaming = false;
 
 	// A vector of ODBC C data type of all columns.
 	//

@@ -501,6 +501,15 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 			decimalDigits,
 			nullable);
 
+		// We send the output schema to SQL server only once. 
+		// In the streaming case, we do not know if we will have null values later on. 
+		// So, we need to set the column to nullable to allow for null values in later batches.
+		//
+		if (m_isStreaming)
+		{
+			nullable = SQL_NULLABLE;
+		}
+
 		// Store the column information obtained above in m_columns.
 		//
 		auto *unsignedColumnName = static_cast<const SQLCHAR*>(
@@ -868,6 +877,10 @@ void ROutputDataSet::CleanupColumns()
 
 		(this->*it->second)(columnNumber);
 	}
+
+	m_data.clear();
+	m_columnNullMap.clear();
+	m_columns.clear();
 }
 
 //--------------------------------------------------------------------------------------------------

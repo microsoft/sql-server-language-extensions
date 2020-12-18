@@ -206,7 +206,8 @@ namespace ExtensionApiTest
 			SQLSMALLINT dataType,
 			SQLULEN     columnSize,
 			SQLSMALLINT decimalDigits,
-			SQLSMALLINT nullable);
+			SQLSMALLINT nullable,
+			SQLSMALLINT partitionByNumber = -1);
 
 		// Templatized function to call InitializeColumn for all columns in ColumnInfo.
 		//
@@ -481,6 +482,8 @@ namespace ExtensionApiTest
 
 		const std::string m_printMessage = "Hello RExtension!";
 
+		const std::string m_streamingParamName = "@r_rowsPerRead";
+
 		// A value of 2'147'483'647
 		//
 		const SQLINTEGER m_MaxInt = std::numeric_limits<SQLINTEGER>::max();
@@ -549,6 +552,10 @@ namespace ExtensionApiTest
 		std::unique_ptr<ColumnInfo<SQL_DATE_STRUCT>> m_dateInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQL_TIMESTAMP_STRUCT>> m_dateTimeInfo = nullptr;
 
+		// Used for partitioning test
+		//
+		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_partition_integerInfo = nullptr;
+		
 		// R global environment
 		//
 		Rcpp::Environment m_globalEnvironment;
@@ -630,7 +637,8 @@ namespace ExtensionApiTest
 			std::vector<SQLINTEGER> col1StrLenOrInd,
 			std::string column2Name, std::vector<SQLType> column2,
 			std::vector<SQLINTEGER> col2StrLenOrInd,
-			std::vector<SQLSMALLINT> nullable);
+			std::vector<SQLSMALLINT> nullable,
+			std::vector<SQLSMALLINT> partitionByIndexes = {-1, -1});
 
 		SQLUSMALLINT GetColumnsNumber() const
 		{
@@ -646,5 +654,6 @@ namespace ExtensionApiTest
 		std::vector<SQLINTEGER> m_col2StrLenOrInd;
 		std::vector<SQLINTEGER*> m_strLen_or_Ind;
 		std::vector<SQLSMALLINT> m_nullable;
+		std::vector<SQLSMALLINT> m_partitionByIndexes;
 	};
 }

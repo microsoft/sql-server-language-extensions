@@ -148,6 +148,11 @@ private:
 	//
 	RParamContainer m_paramContainer;
 
+	// r_rowsPerRead is a reserved input param that starts a streaming session.
+	//
+	const std::string m_streamingParamName = "@r_rowsPerRead";
+	bool m_isStreaming = false;
+
 	std::vector<SQLSMALLINT> m_partitionByIndexes;
 	std::vector<SQLSMALLINT> m_orderByIndexes;
 
