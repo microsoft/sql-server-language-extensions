@@ -106,14 +106,10 @@ build:
           to: 'out/java-extension/debug'
           include:
             - 'libjavaextension.so.1.0'
-          signing_options:
-            profile: '135020002'
         - from: 'build-output/java-extension/linux/release'
           to: 'out/java-extension/release'
           include:
             - 'libjavaextension.so.1.0'
-          signing_options:
-            profile: '135020002'
     - !!buildcommand                                                   # buildcommand --- run a build script, collect artifacts, specify
                                                                        #                  files to sign and logs.
       name: 'Build RExtension'                                         # This is name for this step. The step name will be in logs and in the
@@ -125,14 +121,10 @@ build:
           to: 'out/RExtension/debug'
           include:
             - 'libRExtension.so.1.0'
-          signing_options:
-            profile: '135020002'
         - from: 'build-output/RExtension/linux/release'
           to: 'out/RExtension/release'
           include:
             - 'libRExtension.so.1.0'
-          signing_options:
-            profile: '135020002'
     - !!buildcommand                                                    # buildcommand --- run a build script, collect artifacts, specify
                                                                         #                  files to sign and logs.
       name: 'Build Python Extension'                                    # This is name for this step. The step name will be in logs and in the
@@ -144,14 +136,10 @@ build:
           to: 'out/pythonextension/debug'
           include:
             - 'libPythonExtension.so.1.0'
-          signing_options:
-            profile: '135020002'
         - from: 'build-output/pythonextension/linux/release'
           to: 'out/pythonextension/release'
           include:
             - 'libPythonExtension.so.1.0'
-          signing_options:
-            profile: '135020002'
     - !!defaultcommand
       name: 'Build RExtension test'                             # This is name for this step. The step name will be in logs and in the
                                                                 # future, will be associated with metrics, timelines, journal etc.
@@ -171,8 +159,6 @@ build:
           to: 'out'
           include:
             - 'data-sql-language-extensions.nuspec'
-          signing_options:
-            profile: 'none'
 
 # An optional user defined stage for performing packaging. This exists as a separate stage because some build processes do a
 # compile-sign-package-sign model. For example, Windows based builds use this model. Linux builds typically follow a
