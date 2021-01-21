@@ -101,17 +101,36 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 
 	string pathToPython = PythonExtensionUtils::GetPathToPython();
 
-	string installScript = "import subprocess;pipresult = subprocess.run(['" + pathToPython +
+	// Set the TMPDIR so that pip uses our destination as temp. This allows us to use a
+	// non-default instance.
+	// Without this, TMPDIR will have MSSQL##$INSTANCE in the path, and the $ causes problems
+	// with pip because they interpret $INSTANCE as a variable, not part of the path.
+	//
+	string setTemp = "import os;oldtemp = os.environ['TMPDIR'] if 'TMPDIR' in os.environ else None;"
+		"os.environ['TMPDIR'] = '" + tempFolder + "'";
+	bp::exec(setTemp.c_str(), m_mainNamespace);
+
+	string installScript = 
+		"import subprocess;pipresult = subprocess.run(['" + pathToPython +
 		"', '-m', 'pip', 'install', '" + installPath +
-		"', '--no-deps', '--ignore-installed', '--no-cache-dir', '-t', '" + installDir + "']).returncode";
+		"', '--no-deps', '--ignore-installed', '--no-cache-dir'"
+		", '-t', '" + installDir + "']).returncode";
 
 	bp::exec(installScript.c_str(), m_mainNamespace);
 
 	int pipResult = bp::extract<int>(m_mainNamespace["pipresult"]);
 
+	string resetTemp =  "if oldtemp: \n"
+						"    os.environ['TMPDIR'] = oldtemp\n"
+						"else:\n"
+						"    del os.environ['TMPDIR']";
+	bp::exec(resetTemp.c_str(), m_mainNamespace);
+
+
 	if (pipResult != 0)
 	{
-		throw runtime_error("Pip failed to install the package with exit code " + to_string(pipResult));
+		throw runtime_error("Pip failed to install the package with exit code " +
+			to_string(pipResult));
 	}
 
 	result = SQL_SUCCESS;
@@ -143,7 +162,8 @@ SQLRETURN PythonLibrarySession::UninstallLibrary(
 
 	string libName = string(reinterpret_cast<char *>(libraryName), libraryNameLength);
 
-	string installDir = string(reinterpret_cast<char *>(libraryInstallDirectory), libraryInstallDirectoryLength);
+	string installDir = string(reinterpret_cast<char *>(libraryInstallDirectory),
+		libraryInstallDirectoryLength);
 	installDir = PythonExtensionUtils::NormalizePathString(installDir);
 
 	try
@@ -172,7 +192,8 @@ SQLRETURN PythonLibrarySession::UninstallLibrary(
 		}
 		else
 		{
-			throw runtime_error("Pip failed to fully uninstall the package with exit code " + to_string(pipResult));
+			throw runtime_error("Pip failed to fully uninstall the package with exit code " +
+				to_string(pipResult));
 		}
 	}
 	catch (const exception & ex)
@@ -255,8 +276,8 @@ vector<fs::directory_entry> PythonLibrarySession::GetTopLevel(string libName, st
 			{
 				artifacts.push_back(entry);
 
-				// The top_level.txt file tells us what items this package put into the installation directory
-				// that we will need to delete to uninstall.
+				// The top_level.txt file tells us what items this package put into the 
+				// installation directory that we will need to delete to uninstall.
 				//
 				fs::path topLevelPath = entry.path();
 				topLevelPath = topLevelPath.append("top_level.txt");
