@@ -205,6 +205,19 @@ namespace ExtensionApiTest
 			vector<SQLINTEGER>{ 10, 10,
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA });
 
+		// Turn on partitioning by setting partitionByNumber, the column index to be partitionBy,
+		// to 0 (the non-nullable column).
+		//
+		m_partition_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
+			"PartitionByColumn1",
+			vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::sm_rowsNumber, m_IntSize),
+			"NonPartitionByColumn2",
+			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, 0, 0, -1 },
+			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA,
+			SQL_NULL_DATA, m_IntSize },
+			vector<SQLSMALLINT>{ 0, -1 });
+
 		try
 		{
 			m_mainModule = bp::import("__main__");
@@ -292,15 +305,16 @@ namespace ExtensionApiTest
 	//  Template function to call InitializeColumn for all columns.
 	//
 	template<class SQLType, SQLSMALLINT dataType>
-	void PythonExtensionApiTests::InitializeColumns(ColumnInfo<SQLType> *ColumnInfo)
+	void PythonExtensionApiTests::InitializeColumns(ColumnInfo<SQLType> *columnInfo)
 	{
-		SQLUSMALLINT inputSchemaColumnsNumber = ColumnInfo->GetColumnsNumber();
+		SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
 		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
 		{
 			InitializeColumn(columnNumber,
-				ColumnInfo->m_columnNames[columnNumber],
+				columnInfo->m_columnNames[columnNumber],
 				dataType,
-				sizeof(SQLType));
+				sizeof(SQLType),
+				columnInfo->m_partitionByIndexes[columnNumber]);
 		}
 	}
 
@@ -334,7 +348,8 @@ namespace ExtensionApiTest
 		SQLSMALLINT columnNumber,
 		string      columnNameString,
 		SQLSMALLINT dataType,
-		SQLULEN     columnSize)
+		SQLULEN     columnSize,
+		SQLSMALLINT partitionByNumber)
 	{
 		SQLCHAR *columnName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(columnNameString.c_str()))
@@ -350,10 +365,10 @@ namespace ExtensionApiTest
 			columnNameString.length(),
 			dataType,
 			columnSize,
-			0,         // decimalDigits
-			1,         // nullable
-			-1,        // partitionByNumber
-			-1);       // orderByNumber
+			0,                 // decimalDigits
+			1,                 // nullable
+			partitionByNumber, // partitionByNumber
+			-1);               // orderByNumber
 
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
@@ -453,7 +468,8 @@ namespace ExtensionApiTest
 	template<class SQLType>
 	ColumnInfo<SQLType>::ColumnInfo(
 		string column1Name, vector<SQLType> column1, vector<SQLINTEGER> col1StrLenOrInd,
-		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd)
+		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd,
+		vector<SQLSMALLINT> partitionByIndexes)
 	{
 		m_columnNames = { column1Name, column2Name };
 		m_column1 = column1;
@@ -478,6 +494,8 @@ namespace ExtensionApiTest
 		{
 			m_strLen_or_Ind.push_back(m_col2StrLenOrInd.data());
 		}
+
+		m_partitionByIndexes = partitionByIndexes;
 	}
 
 	// Name: CheckColumnEquality

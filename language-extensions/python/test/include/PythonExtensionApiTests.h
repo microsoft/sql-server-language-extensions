@@ -51,7 +51,8 @@ namespace ExtensionApiTest
 			SQLSMALLINT columnNumber,
 			std::string columnNameString,
 			SQLSMALLINT dataType,
-			SQLULEN     columnSize);
+			SQLULEN     columnSize,
+			SQLSMALLINT partitionByNumber = -1);
 
 		// Get max length of all strings from strLenOrInd.
 		//
@@ -418,6 +419,10 @@ namespace ExtensionApiTest
 		std::unique_ptr<ColumnInfo<SQL_TIMESTAMP_STRUCT>> m_dateTimeInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQL_DATE_STRUCT>> m_dateInfo = nullptr;
 
+		// Used for partitioning test
+		//
+		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_partition_integerInfo = nullptr;
+
 		const float m_floatNull = NAN;
 		const int m_intNull = 0;
 		const bool m_boolNull = false;
@@ -456,7 +461,8 @@ namespace ExtensionApiTest
 			std::string column1Name, std::vector<SQLType> column1,
 			std::vector<SQLINTEGER> col1StrLenOrInd,
 			std::string column2Name, std::vector<SQLType> column2,
-			std::vector<SQLINTEGER> col2StrLenOrInd);
+			std::vector<SQLINTEGER> col2StrLenOrInd,
+			std::vector<SQLSMALLINT> partitionByIndexes = { -1, -1 });
 
 		SQLUSMALLINT GetColumnsNumber() const
 		{
@@ -470,6 +476,7 @@ namespace ExtensionApiTest
 		std::vector<void *> m_dataSet;
 		std::vector<SQLINTEGER> m_col1StrLenOrInd;
 		std::vector<SQLINTEGER> m_col2StrLenOrInd;
-		std::vector<SQLINTEGER *> m_strLen_or_Ind;
+		std::vector<SQLINTEGER*> m_strLen_or_Ind;
+		std::vector<SQLSMALLINT> m_partitionByIndexes;
 	};
 }
