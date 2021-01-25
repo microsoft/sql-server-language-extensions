@@ -421,3 +421,79 @@ private:
 	//
 	RVectorType m_RcppVector = RVectorType(1);
 };
+
+//--------------------------------------------------------------------------------------------------
+// Name: RNumericParam
+//
+// Description:
+//  Class representing a numeric(p,s) or decimal(p,s) parameter stored in a Rcpp::NumericVector.
+//
+//  Note: Although double or real SQL parameter types also map to the R 'numeric' class
+//  and are also stored in an Rcpp::NumericVector, this class is not used for those types.
+//  Rather an instantiation of RParamTemplate is used for them.
+//
+class RNumericParam : public RParam
+{
+public:
+
+	// Constructor to initialize the members
+	//
+	RNumericParam(
+		SQLUSMALLINT  paramNumber,
+		const SQLCHAR *paramName,
+		SQLSMALLINT   paramNameLength,
+		SQLSMALLINT   dataType,
+		SQLULEN       paramSize,
+		SQLSMALLINT   decimalDigits,
+		SQLPOINTER    paramValue,
+		SQLINTEGER    strLen_or_Ind,
+		SQLSMALLINT   inputOutputType);
+
+	// Retrieves data from m_RcppVector, fill it in m_value
+	// and set m_strLenOrInd accordingly
+	//
+	void RetrieveValueAndStrLenInd() override;
+
+	// Gets m_RcppVector
+	//
+	Rcpp::NumericVector& RcppVector()
+	{
+		return m_RcppVector;
+	}
+
+	// Gets the data underlying m_value vector
+	//
+	SQLPOINTER Value() const override
+	{
+		if (m_value.size() > 0)
+		{
+			return static_cast<SQLPOINTER>(
+				const_cast<SQL_NUMERIC_STRUCT*>(m_value.data()));
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+private:
+
+	// Sets the RcppVector by creating a numeric vector in R with given value.
+	//
+	void SetRcppVector(SQLPOINTER paramValue);
+
+	// The Rcpp::NumericVector encapsulating the SEXP pointer
+	// pointing to the R object with the param value.
+	//
+	Rcpp::NumericVector m_RcppVector;
+
+	// Vector holding the value of the parameter as retrieved from embedded R environment,
+	// holding the contents before sending them back to ExtHost
+	// Only useful for output parameter types.
+	//
+	std::vector<SQL_NUMERIC_STRUCT> m_value;
+
+	// Store the precision so it can be used for sending back the output parameter.
+	//
+	SQLCHAR m_precision = 0;
+};

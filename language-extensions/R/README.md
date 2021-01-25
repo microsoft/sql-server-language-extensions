@@ -5,7 +5,7 @@ Language Extensions is a feature of SQL Server used for executing external code.
 
 For more information about SQL Server Language Extensions, refer to this [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sql-server-ver15).
 
-The RExtension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates R in SQL Server and works with R >= v3.3, however it is strongly recommended to use the latest stable version. At the time of this writing, it is R v4.0.2.
+The RExtension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates R in SQL Server and works with R >= v3.3, however it is strongly recommended to use the latest stable version. At the time of this writing, it is R v4.0.3.
 
 To use this released R-language-extension.zip package, follow [this tutorial](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-r?view=sql-server-ver15). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
 

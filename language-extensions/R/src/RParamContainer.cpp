@@ -70,6 +70,8 @@ const RParamContainer::CreateParamFnMap RParamContainer::sm_FnCreateParamMap =
 	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),
 		static_cast<fnCreateParam>(&RParamContainer::CreateParam
 		<RDateTimeParam<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>>)},
+	{static_cast<SQLSMALLINT>(SQL_C_NUMERIC),
+		static_cast<fnCreateParam>(&RParamContainer::CreateParam<RNumericParam>)},
 };
 
 //--------------------------------------------------------------------------------------------------

@@ -452,6 +452,20 @@ namespace ExtensionApiTest
 			SQL_NULL_DATA, SQL_NULL_DATA, SQL_NULL_DATA },
 			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
+		// Turn on partitioning via setting partitionByNumber to the partitionBy column index,
+		// the non-nullable column with index 0.
+		//
+		m_partition_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
+			"PartitionByColumn1",
+			vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
+			vector<SQLINTEGER>(ColumnInfo<SQLINTEGER>::sm_rowsNumber, m_IntSize),
+			"NonPartitionByColumn2",
+			vector<SQLINTEGER>{ m_MaxInt, m_MinInt, NA_INTEGER, NA_INTEGER, -1 },
+			vector<SQLINTEGER>{ m_IntSize, m_IntSize, SQL_NULL_DATA,
+				SQL_NULL_DATA, m_IntSize },
+			vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE },
+			vector<SQLSMALLINT>{ 0, -1 });
+
 		// Retrieve the global environment
 		//
 		m_globalEnvironment = Rcpp::Environment::global_env();
@@ -577,11 +591,28 @@ namespace ExtensionApiTest
 		SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
 		for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
 		{
-			InitializeColumn(columnNumber,
-				columnInfo->m_columnNames[columnNumber],
-				dataType,
-				sizeof(SQLType),
-				columnInfo->m_nullable[columnNumber]);
+			if constexpr (is_same_v<SQLType, SQL_NUMERIC_STRUCT>)
+			{
+				SQL_NUMERIC_STRUCT *columnData =
+					static_cast<SQL_NUMERIC_STRUCT*>(columnInfo->m_dataSet[columnNumber]);
+				InitializeColumn(columnNumber,
+					columnInfo->m_columnNames[columnNumber],
+					dataType,
+					sizeof(SQLType),
+					columnData[0].scale, // decimalDigits
+					columnInfo->m_nullable[columnNumber],
+					columnInfo->m_partitionByIndexes[columnNumber]);
+			}
+			else
+			{
+				InitializeColumn(columnNumber,
+					columnInfo->m_columnNames[columnNumber],
+					dataType,
+					sizeof(SQLType),
+					0, // decimalDigits
+					columnInfo->m_nullable[columnNumber],
+					columnInfo->m_partitionByIndexes[columnNumber]);
+			}
 		}
 	}
 
@@ -605,6 +636,8 @@ namespace ExtensionApiTest
 		ColumnInfo<SQL_DATE_STRUCT> *ColumnInfo);
 	template void RExtensionApiTests::InitializeColumns<SQL_TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>(
 		ColumnInfo<SQL_TIMESTAMP_STRUCT> *ColumnInfo);
+	template void RExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+		ColumnInfo<SQL_NUMERIC_STRUCT> *ColumnInfo);
 
 	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::RExtensionApiTestInitializeColumn
@@ -617,7 +650,9 @@ namespace ExtensionApiTest
 		string      columnNameString,
 		SQLSMALLINT dataType,
 		SQLULEN     columnSize,
-		SQLSMALLINT nullable)
+		SQLSMALLINT decimalDigits,
+		SQLSMALLINT nullable,
+		SQLSMALLINT partitionByNumber)
 	{
 		SQLCHAR *columnName = static_cast<SQLCHAR *>(
 			static_cast<void *>(const_cast<char *>(columnNameString.c_str()))
@@ -633,10 +668,10 @@ namespace ExtensionApiTest
 				columnNameString.length(),
 				dataType,
 				columnSize,
-				0,         // decimalDigits
-				nullable,  // nullable
-				-1,        // partitionByNumber
-				-1);       // orderByNumber
+				decimalDigits,
+				nullable,                 // nullable
+				partitionByNumber,        // partitionByNumber
+				-1);                      // orderByNumber
 		EXPECT_EQ(result, SQL_SUCCESS);
 	}
 
@@ -937,7 +972,8 @@ namespace ExtensionApiTest
 	ColumnInfo<SQLType>::ColumnInfo(
 		string column1Name, vector<SQLType> column1, vector<SQLINTEGER> col1StrLenOrInd,
 		string column2Name, vector<SQLType> column2, vector<SQLINTEGER> col2StrLenOrInd,
-		vector<SQLSMALLINT> nullable)
+		vector<SQLSMALLINT> nullable,
+		vector<SQLSMALLINT> partitionByIndexes)
 	{
 		m_columnNames = { column1Name, column2Name };
 		m_column1 = column1;
@@ -964,5 +1000,18 @@ namespace ExtensionApiTest
 		}
 
 		m_nullable = nullable;
+		m_partitionByIndexes = partitionByIndexes;
 	}
+
+	// Template instantiation
+	//
+	template ColumnInfo<SQL_NUMERIC_STRUCT>::ColumnInfo(
+		string column1Name,
+		vector<SQL_NUMERIC_STRUCT> column1,
+		vector<SQLINTEGER> col1StrLenOrInd,
+		string column2Name,
+		vector<SQL_NUMERIC_STRUCT> column2,
+		vector<SQLINTEGER> col2StrLenOrInd,
+		vector<SQLSMALLINT> nullable,
+		vector<SQLSMALLINT> partitionByIndexes);
 }

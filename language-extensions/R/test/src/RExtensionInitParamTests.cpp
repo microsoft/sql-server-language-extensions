@@ -534,6 +534,115 @@ namespace ExtensionApiTest
 			inputOutputTypes);
 	}
 
+	//----------------------------------------------------------------------------------------------
+	// Name: InitNumericParamTest
+	//
+	// Description:
+	//  Tests multiple numeric values with varying precision and scale for all
+	//  the following storage classes:
+	//  Precision  Storage bytes
+	//    1 - 9      5
+	//    10-19      9
+	//    20-28      13
+	//    29-38      17
+	//
+	TEST_F(RExtensionApiTests, InitNumericParamTest)
+	{
+		SQLUSMALLINT parametersNumber = 16;
+		InitializeSession(
+			0,  // inputSchemaColumnsNumber
+			"", // scriptString
+			parametersNumber); // parametersNumber
+
+		vector<SQL_NUMERIC_STRUCT> inputNumericValues = {
+			{ 38, 0, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 196, 134, 90, 168, 76, 59, 75 } },
+			{ 38, 38, 1, { 4, 100, 27, 105, 247, 121, 172, 24, 247, 70, 218, 213, 16, 238, 133, 7 } },
+			{ 38, 38, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 38, 19, 0, { 186, 36, 94, 229, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 28, 0, 1, { 0, 0, 0, 0, 0, 2, 37, 62, 94, 206, 79, 32, 0, 0, 0, 0 } },
+			{ 28, 27, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 28, 14, 0, { 186, 36, 94, 229, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 19, 0, 1, { 0, 0, 100, 167, 179, 182, 224, 13, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 19, 19, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 19, 9, 0, { 186, 36, 94, 229, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 9, 0, 1, { 0, 225, 245, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 9, 9, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 9, 5, 0, { 218, 220, 63, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 20, 0, 1, { 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0 } },
+			{ 20, 0, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 } },
+			{}
+		};
+
+		vector<SQLULEN> precisionAsParamSize(parametersNumber, 0);
+		vector<SQLSMALLINT> decimalDigits(parametersNumber, 0);
+		for (int paramNumber = 0; paramNumber < parametersNumber; ++paramNumber)
+		{
+			precisionAsParamSize[paramNumber] = inputNumericValues[paramNumber].precision;
+			decimalDigits[paramNumber] = inputNumericValues[paramNumber].scale;
+		}
+
+		vector<double> expectedParamValues = {
+			// Test numeric(38, 0)
+			//
+			1e38,
+			// Test max value for numeric (38, 38)
+			//
+			9999999999999999999999999999999999999e-38,
+			// Test min numeric(38, 38)
+			//
+			1e-38,
+			// Test numeric(38, 19)
+			//
+			-5578989.33434e-14,
+			// Test numeric(28, 0)
+			//
+			1e28,
+			// Test numeric(28, 27)
+			//
+			1e-27,
+			// Test numeric(28, 14)
+			//
+			-5578989.33434e-9,
+			// Test numeric(19, 0)
+			//
+			1e18,
+			// Test numeric(19, 19)
+			//
+			1e-19,
+			// Test numeric(19, 9)
+			//
+			-5578989.33434e-4,
+			// Test numeric(9, 0)
+			//
+			1e8,
+			// Test numeric(9, 9)
+			//
+			1e-9,
+			// Test numeric(9, 5)
+			//
+			-5578.33434,
+			// Test ULLONG_MAX
+			//
+			18446744073709551615.0,
+			// Test ULLONG_MAX + 1
+			//
+			18446744073709551616.0
+		};
+
+		vector<SQLINTEGER> strLenOrInd(inputNumericValues.size(), sizeof(SQL_NUMERIC_STRUCT));
+		strLenOrInd[inputNumericValues.size() - 1] = SQL_NULL_DATA;
+
+		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
+
+		InitNumericParam(
+			inputNumericValues,
+			strLenOrInd,
+			inputOutputTypes,
+			precisionAsParamSize,
+			decimalDigits,
+			expectedParamValues);
+	}
+
 	//
 	// Negative tests
 	//
@@ -841,7 +950,10 @@ namespace ExtensionApiTest
 				}
 				else
 				{
-					EXPECT_EQ(param[0], 0);
+					// If expectedParamValue is NULL, the size of param
+					// should be 0.
+					//
+					EXPECT_EQ(param.size(), 0);
 				}
 			}
 		}
@@ -893,6 +1005,59 @@ namespace ExtensionApiTest
 					param,
 					&expectedParamValue,
 					&strLenOrInd[paramNumber]);
+			}
+		}
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::InitNumericParam
+	//
+	// Description:
+	//  Testing if InitParam is implemented correctly for the decimal/numeric dataTypes.
+	//
+	void RExtensionApiTests::InitNumericParam(
+		vector<SQL_NUMERIC_STRUCT> initParamValues,
+		vector<SQLINTEGER>         strLenOrInd,
+		vector<SQLSMALLINT>        inputOutputTypes,
+		vector<SQLULEN>            precisionAsParamSize,
+		vector<SQLSMALLINT>        decimalDigits,
+		vector<double>             expectedParamValues)
+	{
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < initParamValues.size(); ++paramNumber)
+		{
+			string paramNameString = string("@param" + to_string(paramNumber + 1));
+			SQLCHAR *paramName = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char *>(paramNameString.c_str())));
+
+			SQLRETURN result = SQL_ERROR;
+			result = (*sm_initParamFuncPtr)(
+					*m_sessionId,
+					m_taskId,
+					paramNumber,
+					paramName,
+					paramNameString.length(),
+					SQL_C_NUMERIC,
+					precisionAsParamSize[paramNumber],
+					decimalDigits[paramNumber],
+					&initParamValues[paramNumber],
+					strLenOrInd[paramNumber],
+					inputOutputTypes[paramNumber]);
+			ASSERT_EQ(result, SQL_SUCCESS);
+
+			if (expectedParamValues.size() > 0)
+			{
+				// Do + 1 to skip the @ from the paramName
+				//
+				Rcpp::NumericVector param = m_globalEnvironment[paramNameString.c_str() + 1];
+				if (strLenOrInd[paramNumber] != SQL_NULL_DATA)
+				{
+					double expectedParamValue = expectedParamValues[paramNumber];
+					EXPECT_EQ(param[0], expectedParamValue);
+				}
+				else
+				{
+					EXPECT_TRUE(Rcpp::NumericVector::is_na(param[0]));
+				}
 			}
 		}
 	}

@@ -72,6 +72,8 @@ const RInputDataSet::AddColumnFnMap RInputDataSet::sm_FnAddColumnMap =
 	{static_cast<SQLSMALLINT>(SQL_C_TYPE_TIMESTAMP),        // DATETIME, DATETIME2
 		static_cast<fnAddColumn>(&RInputDataSet::AddDateTimeColumnToDataFrame
 		<SQL_TIMESTAMP_STRUCT, Rcpp::DatetimeVector, Rcpp::Datetime>)},
+	{static_cast<SQLSMALLINT>(SQL_C_NUMERIC),               // DECIMAL(p,s), NUMERIC(p,s)
+		static_cast<fnAddColumn>(&RInputDataSet::AddNumericColumnToDataFrame)}
 };
 
 // Map of function pointers for getting a column information.
@@ -390,6 +392,38 @@ void RInputDataSet::AddDateTimeColumnToDataFrame(
 }
 
 //--------------------------------------------------------------------------------------------------
+// Name: RInputDataSet::AddNumericColumnToDataFrame
+//
+// Description:
+//  Adds a single column of numeric values into the R DataFrame.
+//
+void RInputDataSet::AddNumericColumnToDataFrame(
+	SQLSMALLINT columnNumber,
+	SQLULEN     rowsNumber,
+	SQLPOINTER  data)
+{
+	LOG("RInputDataSet::AddNumericColumnToDataFrame");
+
+	if (m_columns[columnNumber] == nullptr)
+	{
+		throw runtime_error("InitColumn not called for column #" + to_string(columnNumber));
+	}
+
+	string name = m_columns[columnNumber].get()->Name();
+	SQLINTEGER *strLen_or_Ind = m_columnNullMap[columnNumber];
+	SQLSMALLINT decimalDigits = m_columns[columnNumber].get()->DecimalDigits();
+	SQLSMALLINT nullable = m_columns[columnNumber].get()->Nullable();
+
+	m_dataFrame[name.c_str()]
+		= RTypeUtils::CreateNumericVector(
+			rowsNumber,
+			data,
+			strLen_or_Ind,
+			decimalDigits,
+			nullable);
+}
+
+//--------------------------------------------------------------------------------------------------
 // Name: RInputDataSet::AddDataFrameToEmbeddedR
 //
 // Description:
@@ -467,6 +501,15 @@ void ROutputDataSet::GetColumnsFromDataFrame()
 			decimalDigits,
 			nullable);
 
+		// We send the output schema to SQL server only once. 
+		// In the streaming case, we do not know if we will have null values later on. 
+		// So, we need to set the column to nullable to allow for null values in later batches.
+		//
+		if (m_isStreaming)
+		{
+			nullable = SQL_NULLABLE;
+		}
+
 		// Store the column information obtained above in m_columns.
 		//
 		auto *unsignedColumnName = static_cast<const SQLCHAR*>(
@@ -503,22 +546,21 @@ void ROutputDataSet::GetColumnFromDataFrame(
 	nullable = SQL_NO_NULLS;
 	columnSize = sizeof(SQLType);
 
-	vector<SQLType> *columnData = nullptr;
+	vector<SQLType> columnData;
 	SQLINTEGER *strLenOrInd = nullptr;
 
 	if(m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLType>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RVectorType column = m_dataFrame[columnNumber];
 		RTypeUtils::FillDataFromRVector<SQLType, RVectorType, DataType>(
 			m_rowsNumber,
 			column,
-			columnData,
+			&columnData,
 			strLenOrInd,
 			nullable);
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLType>(columnData).release());
 	}
 	else
 	{
@@ -546,13 +588,17 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
 
-	vector<SQLCHAR> *columnData = nullptr;
+	vector<SQLCHAR> columnData;
 	SQLINTEGER *strLenOrInd = nullptr;
-	SQLULEN maxLen = 0;
+
+	// maxLen determines the columnSize, which is a property of this column's data type
+	// i.e. the n in char(n) is char(columnSize).
+	// Since char(0) is an illegal data type, columnSize has to be at least sizeof(SQLCHAR).
+	//
+	SQLULEN maxLen = sizeof(SQLCHAR);
 
 	if(m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLCHAR>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		Rcpp::CharacterVector column = m_dataFrame[columnNumber];
@@ -565,12 +611,12 @@ void ROutputDataSet::GetCharacterColumnFromDataFrame(
 			m_rowsNumber,
 			column,
 			numeric_limits<SQLULEN>::max(),
-			columnData,
+			&columnData,
 			strLenOrInd,
 			nullable,
 			maxLen);
 
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLCHAR>(columnData).release());
 	}
 	else
 	{
@@ -599,31 +645,43 @@ void ROutputDataSet::GetRawColumnFromDataFrame(
 	decimalDigits = 0;
 	nullable = SQL_NO_NULLS;
 
-	vector<SQLCHAR> *columnData = nullptr;
-	SQLINTEGER *strLenOrInd = nullptr;
+	vector<SQLCHAR> columnData;
+	SQLINTEGER* strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 	Rcpp::RawVector column = m_dataFrame[columnNumber];
-	columnSize = column.size();
 
-	if (m_rowsNumber > 0)
+	// If there is no row in the DataFrame, column.size() is zero.
+	// In case of XVT_VARBYTES, ExthostExtensionManager expects to
+	// get a column.size() > 0, otherwise, GetOdbcCTypeInfo considers it
+	// as an invalid column and raises E_INVALID_PROTOCOL_FORMAT.
+	//
+	columnSize = column.size() > 0 ? column.size() : sizeof(SQLCHAR);
+
+	// For raw, m_rowsNumber was always set to 1 since:
+	// 1) if there are rows in the DataFrame (i.e. GetDataFrameRowsNumber() > 0),
+	// they are all grouped together in a single row; and
+	// 2) if there is no row (i.e. raw(0)), a single NULL value should still
+	// be returned.
+	//
+	if (GetDataFrameRowsNumber() > 0)
 	{
 		// If there are rows in the DataFrame, they are all grouped together in
 		// a single row for raw column i.e. m_rowsNumber = 1.
-		// And if m_rowsNumber > 0, it means columnSize > 0
 		//
-		columnData = new vector<SQLCHAR>();
-		strLenOrInd = new SQLINTEGER[m_rowsNumber];
-
 		RTypeUtils::FillDataFromRawVector(
 			column,
 			numeric_limits<SQLULEN>::max(),
-			columnData,
+			&columnData,
 			strLenOrInd);
 
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLCHAR>(columnData).release());
 	}
 	else
 	{
+		// strLenOrInd indicates that there is a value but it is SQL_NULL_DATA.
+		//
+		strLenOrInd[0] = SQL_NULL_DATA;
+		
 		m_data.push_back(nullptr);
 		nullable = SQL_NULLABLE;
 	}
@@ -650,25 +708,35 @@ void ROutputDataSet::GetDateTimeColumnFromDataFrame(
 	LOG("ROutputDataSet::GetDateTimeColumnFromDataFrame");
 
 	decimalDigits = 0;
+	if constexpr (is_same_v<SQLType, SQL_TIMESTAMP_STRUCT>)
+	{
+		// Max DateTime2 precision is "7":
+		// https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime2-transact-sql
+		// However, R runtime can be precise only up to microseconds which is 6.
+		// It rounds the nanosecond portion, and thus the R value mismatches with 
+		// SQL DateTime beyond 6.
+		//
+		decimalDigits = 6;
+	}
+
 	nullable = SQL_NO_NULLS;
 	columnSize = sizeof(SQLType);
 
-	vector<SQLType> *columnData = nullptr;
+	vector<SQLType> columnData;
 	SQLINTEGER *strLenOrInd = nullptr;
 
 	if(m_rowsNumber > 0)
 	{
-		columnData = new vector<SQLType>();
 		strLenOrInd = new SQLINTEGER[m_rowsNumber];
 
 		RVectorType column = m_dataFrame[columnNumber];
 		RTypeUtils::FillDataFromDateTimeVector<SQLType, RVectorType, DateTimeTypeInR>(
 			m_rowsNumber,
 			column,
-			columnData,
+			&columnData,
 			strLenOrInd,
 			nullable);
-		m_data.push_back(static_cast<SQLPOINTER>(columnData->data()));
+		m_data.push_back(RTypeUtils::CopySQLTypeVector<SQLType>(columnData).release());
 	}
 	else
 	{
@@ -757,8 +825,9 @@ SQLSMALLINT ROutputDataSet::GetColumnDataType(SQLUSMALLINT columnNumber)
 //
 // Description:
 //  Set the number of rows from the underlying DataFrame.
-//  If there is a binary raw column, number of rows is set to 1 even if the underlying DataFrame
-//  has more rows since all the bytes are returned in a single row.
+//  If there is a binary raw column, number of rows is always set to 1 even if
+//  the underlying DataFrame has more or less rows since all the bytes are returned
+//  in a single row.
 //
 void ROutputDataSet::PopulateRowsNumber()
 {
@@ -773,10 +842,10 @@ void ROutputDataSet::PopulateRowsNumber()
 		//
 		m_rowsNumber = GetDataFrameRowsNumber();
 	}
-	else if(GetDataFrameRowsNumber() > 0)
+	else
 	{
 		// Raw binary column found; set number of rows of ROutputDatSet = 1
-		// only if DataFrame has at least 1 row.
+		// even if DataFrame has no row or more than one row.
 		//
 		m_rowsNumber = 1;
 	}
@@ -808,6 +877,10 @@ void ROutputDataSet::CleanupColumns()
 
 		(this->*it->second)(columnNumber);
 	}
+
+	m_data.clear();
+	m_columnNullMap.clear();
+	m_columns.clear();
 }
 
 //--------------------------------------------------------------------------------------------------

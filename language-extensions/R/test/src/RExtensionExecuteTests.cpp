@@ -219,6 +219,7 @@ namespace ExtensionApiTest
 			charColumn1Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string charColumn2Name = "CharColumn2";
@@ -226,6 +227,7 @@ namespace ExtensionApiTest
 			charColumn2Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string charColumn3Name = "CharColumn3";
@@ -233,6 +235,7 @@ namespace ExtensionApiTest
 			charColumn3Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		SQLULEN rowsNumber = 5;
@@ -289,6 +292,7 @@ namespace ExtensionApiTest
 			ncharColumn1Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string ncharColumn2Name = "NCharColumn2";
@@ -296,6 +300,7 @@ namespace ExtensionApiTest
 			ncharColumn2Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string ncharColumn3Name = "NCharColumn3";
@@ -303,6 +308,7 @@ namespace ExtensionApiTest
 			ncharColumn3Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
@@ -366,6 +372,7 @@ namespace ExtensionApiTest
 			integerColumnName,
 			SQL_C_SLONG,
 			m_IntSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string doubleColumnName = "DoubleColumn";
@@ -373,6 +380,7 @@ namespace ExtensionApiTest
 			doubleColumnName,
 			SQL_C_DOUBLE,
 			m_DoubleSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string charColumnName = "CharColumn";
@@ -380,6 +388,7 @@ namespace ExtensionApiTest
 			charColumnName,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		SQLULEN rowsNumber = 5;
@@ -514,6 +523,60 @@ namespace ExtensionApiTest
 			(*m_dateTimeInfo).m_dataSet.data(),
 			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
 			(*m_dateTimeInfo).m_columnNames);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: ExecuteNumericColumnsTest
+	//
+	// Description:
+	//  Tests Execute with default script using an InputDataSet of numeric columns.
+	//
+	TEST_F(RExtensionApiTests, ExecuteNumericColumnsTest)
+	{
+		unique_ptr<ColumnInfo<SQL_NUMERIC_STRUCT>> numericInfo =
+			make_unique<ColumnInfo<SQL_NUMERIC_STRUCT>>(
+				"NumericColumn1",
+				vector<SQL_NUMERIC_STRUCT>{
+					{ 38, 0, 1, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 196, 134, 90, 168, 76, 59, 75 } },
+					{ 38, 0, 0, { 0, 0, 0, 0, 0, 2, 37, 62, 94, 206, 79, 32, 0, 0, 0, 0 } },
+					{ 38, 0, 1, { 0, 0, 100, 167, 179, 182, 224, 13, 0, 0, 0, 0, 0, 0, 0, 0 } },
+					{ 38, 0, 1, { 0, 225, 245, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+					{ 38, 0, 1, { 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0 } },
+				},
+				vector<SQLINTEGER>{ 38, 38, 38, 38, 38 },
+				"NumericColumn2",
+				vector<SQL_NUMERIC_STRUCT>{
+					{ 38, 19, 1, { 56, 0, 100, 167, 179, 182, 224, 13, 0, 0, 0, 0, 0, 0, 0, 0 } },
+					{ 38, 19, 1, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+					{ 38, 19, 0, { 64, 80, 202, 198, 156, 52, 198, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+					{ 38, 19, 1, { 0, 0, 176, 116, 212, 184, 7, 112, 46, 1, 0, 0, 0, 0, 0, 0 } },
+					{}
+				},
+				vector<SQLINTEGER>{ 38, 38, 38, 38, SQL_NULL_DATA },
+				vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
+
+		// Expected numeric columns in the input dataset.
+		//
+		vector<vector<SQLDOUBLE>> expectedDataSet = {
+			{ 1e38, -1e28, 1e18, 1e8, 18446744073709551616.0 },
+			{ 999999999999999999e-19, 1e-19, -0.0055789893343400000, 557.8989334339999760384, 0 }
+		};
+
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(numericInfo->GetColumnsNumber(),
+			m_scriptString,
+			0); // parametersNumber
+
+		InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(numericInfo.get());
+
+		ExecuteNumeric(
+			ColumnInfo<SQL_NUMERIC_STRUCT>::sm_rowsNumber,
+			numericInfo->m_dataSet.data(),
+			numericInfo->m_strLen_or_Ind.data(),
+			numericInfo->m_columnNames,
+			expectedDataSet);
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -721,6 +784,65 @@ namespace ExtensionApiTest
 				outputDataSet,
 				inputDataSet);
 		}
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: RExtensionApiTest::ExecuteNumeric
+	//
+	// Description:
+	//  Calls Execute with default script that assigns Input to Output for numeric/decimal types.
+	//  It checks the correctness of the:
+	//   1. Executed script,
+	//   2. InputDataSet and
+	//   3. OutputDataSet
+	//
+	void RExtensionApiTests::ExecuteNumeric(
+		SQLULEN                   rowsNumber,
+		void                      **dataSet,
+		SQLINTEGER                **strLen_or_Ind,
+		vector<string>            columnNames,
+		vector<vector<SQLDOUBLE>> expectedDataSet)
+	{
+		testing::internal::CaptureStdout();
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = (*sm_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			rowsNumber,
+			dataSet,
+			strLen_or_Ind,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		string output = testing::internal::GetCapturedStdout();
+		cout << output;
+
+		// Test print message was printed correctly
+		//
+		ASSERT_TRUE(output.find(m_printMessage) != string::npos);
+
+		// Test InputDataSet
+		//
+		Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
+
+		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		{
+			Rcpp::NumericVector column = inputDataSet[columnNames[columnNumber].c_str()];
+			CheckRVectorColumnDataEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
+				rowsNumber,
+				column,
+				expectedDataSet[columnNumber].data(),
+				strLen_or_Ind[columnNumber]);
+		}
+
+		// Test OutputDataSet
+		//
+		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
+		EXPECT_EQ(outputschemaColumnsNumber, outputDataSet.size());
+		CheckDataFrameEquality<Rcpp::NumericVector>(
+			outputDataSet,
+			inputDataSet);
 	}
 
 	//----------------------------------------------------------------------------------------------
