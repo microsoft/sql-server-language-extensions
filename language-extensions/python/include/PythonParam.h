@@ -128,13 +128,13 @@ protected:
 	//     value   |  m_strLenOrInd                                |  m_size
 	//----------------------------------------------------------------------------
 	//     NULL    |  SQL_NULL_DATA                                |  n
-	//     Non-NULL|  n*sizeof(char16_t))                          |  n
+	//     Non-NULL|  n*sizeof(wchar_t))                           |  n
 	//
 	// For nvarchar(n) type,
 	//     value   |  m_strLenOrInd                                |  m_size
 	//----------------------------------------------------------------------------
 	//     NULL    |  SQL_NULL_DATA                                |  n
-	//     Non-NULL|  actualNumberOfBytes(length*sizeof(char16_t)) |  n
+	//     Non-NULL|  actualNumberOfBytes(length*sizeof(wchar_t))  |  n
 	//
 	SQLINTEGER m_strLenOrInd;
 

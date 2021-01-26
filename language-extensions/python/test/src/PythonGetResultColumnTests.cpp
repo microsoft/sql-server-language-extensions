@@ -42,11 +42,12 @@ namespace ExtensionApiTest
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
 
-		// Returns most generic int type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
 		TestGetResultColumn(1,  // columnNumber
-			SQL_C_SBIGINT,      // dataType
-			m_BigIntSize,       // columnSize
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
 			0,                  // decimalDigits
 			SQL_NULLABLE);      // nullable
 	}
@@ -81,8 +82,8 @@ namespace ExtensionApiTest
 			SQL_NO_NULLS);     // nullable
 
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_BIT,         // dataType
-			m_BooleanSize,     // columnSize
+			SQL_C_CHAR,        // dataType - since there is a NULL, we return SQL_C_CHAR
+			5,                 // columnSize - length of the word "False"
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -116,13 +117,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		// Returns most generic float type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_DOUBLE,      // dataType
-			m_DoubleSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetDoubleResultColumnsTest
@@ -190,11 +192,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
+		//
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetSmallIntResultColumnsTest
@@ -226,13 +231,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		// Returns most generic int type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetTinyIntResultColumnsTest
@@ -264,13 +270,14 @@ namespace ExtensionApiTest
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
-		// Returns most generic int type because NULLs change the column to object
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
 		//
-		TestGetResultColumn(1, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		TestGetResultColumn(1,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: GetStringResultColumnsTest
@@ -353,7 +360,7 @@ namespace ExtensionApiTest
 
 		TestGetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // dataType
-			0,                 // columnSize
+			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -446,7 +453,7 @@ namespace ExtensionApiTest
 
 		TestGetResultColumn(2, // columnNumber
 			SQL_C_CHAR,        // expectedDataType
-			0,                 // expectedColumnSize
+			sizeof(SQLCHAR),   // expectedColumnSize
 			0,                 // expectedDecimalDigits
 			SQL_NULLABLE);     // expectedNullable
 	}
@@ -531,20 +538,20 @@ namespace ExtensionApiTest
 			false);
 
 		TestGetResultColumn(0, // columnNumber
-			SQL_C_BINARY,      // dataType
+			SQL_C_CHAR,        // dataType
 			maxCol1Len,        // columnSize
 			0,                 // decimalDigits
 			SQL_NO_NULLS);     // nullable
 
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_BINARY,      // dataType
+			SQL_C_CHAR,        // dataType
 			maxCol2Len,        // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 
 		TestGetResultColumn(2, // columnNumber
-			SQL_C_CHAR,        // dataType; since the whole column is None, we use CHAR NoneType
-			0,                 // columnSize
+			SQL_C_CHAR,        // dataType
+			sizeof(SQLCHAR),   // columnSize
 			0,                 // decimalDigits
 			SQL_NULLABLE);     // nullable
 	}
@@ -571,18 +578,22 @@ namespace ExtensionApiTest
 			(*m_dateTimeInfo).m_strLen_or_Ind.data(),
 			(*m_dateTimeInfo).m_columnNames,
 			false);
-
+		
+		// datetimes are stored in python as an object column which is return as SQL_C_CHAR
+		// A datetime like "9021-08-25 19:11:40.123456" has 26 chars
+		//
+		SQLSMALLINT sizeOfDateTimeString = 26;
 		TestGetResultColumn(0,    // columnNumber
-			SQL_C_TYPE_TIMESTAMP, // dataType
-			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
-			SQL_NO_NULLS);        // nullable
+			SQL_C_CHAR,           // expectedDataType
+			sizeOfDateTimeString, // expectedColumnSize
+			0,                    // expectedDecimalDigits
+			SQL_NO_NULLS);        // expectedNullable
 
 		TestGetResultColumn(1,    // columnNumber
-			SQL_C_TYPE_TIMESTAMP, // dataType
-			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
-			SQL_NULLABLE);        // nullable
+			SQL_C_CHAR,           // expectedDataType
+			sizeOfDateTimeString, // expectedColumnSize
+			0,                    // expectedDecimalDigits
+			SQL_NULLABLE);        // expectedNullable
 	}
 
 	// Name: GetDateResultColumnsTest
@@ -608,17 +619,21 @@ namespace ExtensionApiTest
 			(*m_dateInfo).m_columnNames,
 			false);
 
+		// dates are stored in python as an object column which is return as SQL_C_CHAR
+		// A date like "9021-08-25" has 10 chars
+		//
+		SQLSMALLINT sizeOfDateString = 10;
 		TestGetResultColumn(0, // columnNumber
-			SQL_C_TYPE_DATE,   // dataType
-			m_DateSize,        // columnSize
-			0,                 // decimalDigits
-			SQL_NO_NULLS);     // nullable
+			SQL_C_CHAR,        // expectedDataType
+			sizeOfDateString,  // expectedColumnSize
+			0,                 // expectedDeci malDigits
+			SQL_NO_NULLS);     // expectedNullable
 
 		TestGetResultColumn(1, // columnNumber
-			SQL_C_TYPE_DATE,   // dataType
-			m_DateSize,        // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+			SQL_C_CHAR,        // expectedDataType
+			sizeOfDateString,  // expectedColumnSize
+			0,                 // expectedDecimalDigits
+			SQL_NULLABLE);     // expectedNullable
 	}
 
 	// Name: GetDifferentResultColumnsTest
@@ -676,11 +691,14 @@ namespace ExtensionApiTest
 			&outputschemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		TestGetResultColumn(0, // columnNumber
-			SQL_C_SBIGINT,     // dataType
-			m_BigIntSize,      // columnSize
-			0,                 // decimalDigits
-			SQL_NULLABLE);     // nullable
+		// Returns double type because NULLs get changed to NaN 
+		// and column changes to float64
+		//
+		TestGetResultColumn(0,  // columnNumber
+			SQL_C_DOUBLE,       // dataType
+			m_DoubleSize,       // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 
 		TestGetResultColumn(1, // columnNumber
 			SQL_C_DOUBLE,      // dataType
@@ -780,6 +798,115 @@ namespace ExtensionApiTest
 			m_BigIntSize,       // columnSize
 			0,                  // decimalDigits
 			SQL_NO_NULLS);      // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: GetStreamIntegerResultColumnsTest
+	//
+	// Description:
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  When `r_rowsPerRead` parameter is set (streaming), both nullable and non-nullable
+	//  columns must return as nullable (since in streaming, it is not predictable
+	//  whether the upcoming chunks of data will contain nulls).
+	//
+	TEST_F(PythonExtensionApiTests, GetStreamIntegerResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello PythonExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(1, // parametersNumber
+			(*m_integerInfo).GetColumnsNumber(), 
+			m_scriptString);
+
+		// Initialize @r_rowsPerRead input param which sets session as streaming mode
+		//
+		SQLCHAR *paramName = static_cast<SQLCHAR *>(
+			static_cast<void *>(const_cast<char *>(m_streamingParamName.c_str())));
+
+		// chunk size, # of rows per chunk
+		//
+		SQLINTEGER paramValue = 1;
+
+		SQLRETURN result = SQL_ERROR;
+		result = InitParam(
+			*m_sessionId,
+			m_taskId,
+			0,
+			paramName,                     // paramName
+			m_streamingParamName.length(), // paramSize
+			SQL_C_SLONG,                   // dataType
+			sizeof(SQLINTEGER),            // size of dataType
+			0,                             // decimalDigits
+			&paramValue,                   // chunkSize (@r_rowsPerRead)
+			0,                             // strLenOrInd
+			SQL_PARAM_INPUT);              // input output type
+
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
+
+		TestExecute<SQLINTEGER, SQL_C_SLONG>(
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
+			(*m_bigIntInfo).m_dataSet.data(),
+			(*m_bigIntInfo).m_strLen_or_Ind.data(),
+			(*m_bigIntInfo).m_columnNames,
+			false); // validate
+
+		// When streaming, we return a broader type because we don't know if later 
+		// values will have bigger values than those in the first chunk.
+		//
+		TestGetResultColumn(0, // columnNumber
+			SQL_C_DOUBLE,      // dataType
+			m_DoubleSize,      // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
+
+		TestGetResultColumn(1, // columnNumber
+			SQL_C_DOUBLE,      // dataType
+			m_DoubleSize,      // columnSize
+			0,                 // decimalDigits
+			SQL_NULLABLE);     // nullable
+	}
+
+	// Name: AllNonesColumnTest
+	//
+	// Description:
+	//  Test GetResultColumn with a script that returns a dataset with a column of all Nones.
+	//  We expect the output to be of type CHAR and have the minimum columnSize of 1.
+	//
+	TEST_F(PythonExtensionApiTests, AllNonesColumnTest)
+	{
+		// With this script, we create a DataFrame with column of Nones.
+		//
+		string scriptString = "from pandas import DataFrame;"
+			"OutputDataSet = DataFrame({'noneColumn': [None, None, None, None, None]});"
+			"print(OutputDataSet)";
+
+		// Initialize with a Session that executes the above script
+		// that creates an OutputDataSet with column of Nones.
+		//
+		InitializeSession(0, // parametersNumber
+			0,               // inputSchemaColumnsNumber
+			scriptString);
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = Execute(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr,
+			nullptr,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputschemaColumnsNumber, 1);
+
+		TestGetResultColumn(0,  // columnNumber
+			SQL_C_CHAR,         // dataType
+			sizeof(SQLCHAR),    // columnSize
+			0,                  // decimalDigits
+			SQL_NULLABLE);      // nullable
 	}
 
 	// Name: TestGetResultColumn

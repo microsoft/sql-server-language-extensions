@@ -25,6 +25,8 @@ Note that the Python Extension released in the current repository works with Pyt
 
 1. Modify [**CMakeLists.txt**](src/CMakeLists.txt). Change each `find_library` call to point to your custom python and boost libraries. 
 
+1. Modify [**PythonExtension.cpp**](src/PythonExtension.cpp). Change the value of `x_PythonSoFile` on line 37 to the name of your python so library file.
+
 1. Run [**build-python-extension.cmd**](build/windows/build-python-extension.cmd) which will generate: \
 		- PATH\TO\ENLISTMENT\build-output\pythonextension\windows\release\release\pythonextension.dll 
 		
@@ -42,8 +44,6 @@ Note that the Python Extension released in the current repository works with Pyt
 1. Set PYTHONHOME and BOOST_ROOT to point to your python installation and boost build folder respectively.
 
 1. Modify [**CMakeLists.txt**](src/CMakeLists.txt). Change each `find_library` call to point to your custom python and boost libraries. 
-
-1. Modify [**PythonExtension.cpp**](src/PythonExtension.cpp). Change the value of `x_PythonSoFile` on line 37 to the name of your python so library file.
 
 1. Run [**build-python-extension.sh**](build/linux/build-python-extension.sh) which will generate: \
 		- PATH/TO/ENLISTMENT/build-output/pythonextension/linux/release/libPythonExtension.so.1.0 

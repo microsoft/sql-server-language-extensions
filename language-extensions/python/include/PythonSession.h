@@ -108,6 +108,11 @@ private:
 	//
 	boost::python::object m_mainNamespace;
 
+	// r_rowsPerRead is a reserved input param that starts a streaming session.
+	//
+	const std::string m_streamingParamName = "@r_rowsPerRead"; 
+	bool m_isStreaming = false;
+
 	SQLGUID m_sessionId{ 0, 0, 0, {0} };
 	SQLUSMALLINT m_taskId = 0;
 	SQLUSMALLINT m_numTasks = 0;

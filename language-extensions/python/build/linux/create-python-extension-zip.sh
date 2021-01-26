@@ -21,7 +21,7 @@ function build {
 
 	mkdir -p ${BUILD_OUTPUT}/packages
 	cd ${BUILD_OUTPUT}
-	zip packages/python-lang-extension libPythonExtension.so.1.0
+	zip packages/python-lang-extension-linux libPythonExtension.so.1.0
 	check_exit_code  ${BUILD_CONFIGURATION}
 }
 

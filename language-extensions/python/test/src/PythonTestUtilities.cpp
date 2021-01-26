@@ -153,3 +153,32 @@ string PythonTestUtilities::ExtractString(bp::object handle)
 
 	return ret;
 }
+
+//--------------------------------------------------------------------------------------------------
+// Name: Utilities::Tokenize
+//
+// Description:
+//  Splits the given character string using the delimiter and
+//  adds the tokens to the input vector.
+// Remarks:
+//  If the input is invalid and unable to be parsed,
+//  token will be nullptr and we add nothing to the vector
+//
+// Returns:
+//  nothing.
+//
+void PythonTestUtilities::Tokenize(
+	char           *input,
+	const char     *delimiter,
+	vector<char *> *tokens)
+{
+	char *token = strtok(input, delimiter);
+
+	// Use strtok iteratively to do the tokenization.
+	//
+	while (token != nullptr)
+	{
+		(*tokens).push_back(token);
+		token = strtok(nullptr, delimiter);
+	}
+}
