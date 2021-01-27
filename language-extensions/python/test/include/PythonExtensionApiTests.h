@@ -12,6 +12,7 @@
 //*************************************************************************************************
 #pragma once
 #include "Common.h"
+#include "PythonTestUtilities.h"
 #include <unordered_map>
 
 namespace ExtensionApiTest
@@ -50,7 +51,8 @@ namespace ExtensionApiTest
 			SQLSMALLINT columnNumber,
 			std::string columnNameString,
 			SQLSMALLINT dataType,
-			SQLULEN     columnSize);
+			SQLULEN     columnSize,
+			SQLSMALLINT partitionByNumber = -1);
 
 		// Get max length of all strings from strLenOrInd.
 		//
@@ -58,7 +60,7 @@ namespace ExtensionApiTest
 
 		// Get length of a wstring
 		//
-		SQLULEN GetWStringLength(const wchar_t *str);
+		SQLINTEGER GetWStringLength(const wchar_t *str);
 
 		template<class SQLType, SQLSMALLINT dataType>
 		void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
@@ -100,17 +102,19 @@ namespace ExtensionApiTest
 			SQLULEN     paramSize,
 			bool        isFixedType,
 			SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-			bool        validate = true);
+			bool        validate = true,
+			bool        expectSuccess = true);
 
 		// Test a wstring parameter
 		//
 		void TestWStringParameter(
 			int           paramNumber,
 			const wchar_t *paramValue,
-			SQLULEN       paramSize,
+			SQLINTEGER    paramSize,
 			bool          isFixedType,
 			SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-			bool          validate = true);
+			bool          validate = true,
+			bool          expectSuccess = true);
 
 		// Test a binary parameter
 		//
@@ -202,7 +206,7 @@ namespace ExtensionApiTest
 			SQLSMALLINT  expectedNullable);
 
 		// Test GetResults to verify the expected results are obtained.
-		// For numeric, boolean and integer types.
+		// For numeric and integer types.
 		//
 		template<class SQLType, class InputCType, SQLSMALLINT dataType>
 		void TestGetResults(
@@ -277,6 +281,17 @@ namespace ExtensionApiTest
 			SQLINTEGER *expectedColumnStrLenOrInd,
 			SQLINTEGER *columnStrLenOrInd);
 
+		// Convert a datetime string to a Date/Timestamp struct.
+		// Datetime strings should be YYYY-MM-DD hh:mm:ss.fraction.
+		//
+		template<class DateTimeStruct>
+		void StringToDateTimeColumn(
+			SQLULEN                     rowsNumber,
+			char                        *columnData,
+			SQLINTEGER                  *columnStrLenOrInd,
+			std::vector<DateTimeStruct> *results
+		);
+
 		// Compare the given datetime column data and nullMap for equality.
 		//
 		template<class DateTimeStruct>
@@ -338,6 +353,7 @@ namespace ExtensionApiTest
 		SQLSMALLINT m_outputDataNameLength;
 
 		const std::string m_printMessage = "Hello PythonExtension!";
+		const std::string m_streamingParamName = "@r_rowsPerRead";
 
 		// A value of 2'147'483'648
 		//
@@ -403,6 +419,10 @@ namespace ExtensionApiTest
 		std::unique_ptr<ColumnInfo<SQL_TIMESTAMP_STRUCT>> m_dateTimeInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQL_DATE_STRUCT>> m_dateInfo = nullptr;
 
+		// Used for partitioning test
+		//
+		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_partition_integerInfo = nullptr;
+
 		const float m_floatNull = NAN;
 		const int m_intNull = 0;
 		const bool m_boolNull = false;
@@ -430,7 +450,7 @@ namespace ExtensionApiTest
 	};
 
 	// ColumnInfo template class to store information
-	// about integer, basic numeric and boolean columns.
+	// about integer, basic numeric, logical and date(time) columns.
 	// This assumes two columns and five rows.
 	//
 	template<class SQLType>
@@ -441,7 +461,8 @@ namespace ExtensionApiTest
 			std::string column1Name, std::vector<SQLType> column1,
 			std::vector<SQLINTEGER> col1StrLenOrInd,
 			std::string column2Name, std::vector<SQLType> column2,
-			std::vector<SQLINTEGER> col2StrLenOrInd);
+			std::vector<SQLINTEGER> col2StrLenOrInd,
+			std::vector<SQLSMALLINT> partitionByIndexes = { -1, -1 });
 
 		SQLUSMALLINT GetColumnsNumber() const
 		{
@@ -452,9 +473,10 @@ namespace ExtensionApiTest
 		std::vector<std::string> m_columnNames;
 		std::vector<SQLType> m_column1;
 		std::vector<SQLType> m_column2;
-		std::vector<void*> m_dataSet;
+		std::vector<void *> m_dataSet;
 		std::vector<SQLINTEGER> m_col1StrLenOrInd;
 		std::vector<SQLINTEGER> m_col2StrLenOrInd;
 		std::vector<SQLINTEGER*> m_strLen_or_Ind;
+		std::vector<SQLSMALLINT> m_partitionByIndexes;
 	};
 }
