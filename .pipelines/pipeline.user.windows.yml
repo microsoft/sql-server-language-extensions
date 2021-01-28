@@ -30,8 +30,6 @@ signing_options:
 
 package_sources:
   nuget:
-    feeds:
-      Nuget: https://api.nuget.org/v3/index.json
     config_files:                               # A list of glob patterns specifying the configuration files. Use this if you already have NuGet.Config files in your repository.
           - include:                            # Configuration files to include for automatic inference.
             - "NuGet.Config"
