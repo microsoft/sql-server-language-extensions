@@ -173,12 +173,25 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 			CharType *str = baseCharData + cumulativeLength;
 			SQLINTEGER strlen = strLen_or_Ind[index] / sizeof(CharType);
 			string value;
+
+			// If there are bad characters w.r.t CharType
+			// throws an error
+			//
 			if constexpr (is_same_v<CharType, char16_t>)
 			{
-				estd::ToUtf8(str, strlen, value);
+				estd::ToUtf8(str, strlen, value, true /*throwOnError*/);
 			}
 			else
-			{
+			{	
+				// Check if string is a valid UTF8
+				//
+				bool isValidUTF8 = estd::IsValidUTF8(str, strlen);
+
+				if(!isValidUTF8)
+				{
+					throw std::invalid_argument("There is a bad UTF-8 character");
+				}
+	
 				value = string(str, strlen);
 			}
 

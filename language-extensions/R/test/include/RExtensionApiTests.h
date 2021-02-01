@@ -236,7 +236,8 @@ namespace ExtensionApiTest
 			std::vector<SQLULEN>         paramSizes,
 			std::vector<bool>            isFixedType,
 			std::vector<SQLSMALLINT>     inputOutputTypes,
-			bool                         validate = true);
+			bool                         validate = true,
+			bool                         expectSuccess = true);
 
 		// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 		//

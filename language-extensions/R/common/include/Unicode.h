@@ -42,7 +42,7 @@ namespace estd
 	void ToUtf16(const std::string &u8, std::u16string &u16);
 	void ToUtf8(const std::u16string &str, std::string &u8);
 	void ToUtf16(const char *s, size_t len, std::u16string &u16);
-	void ToUtf8(const char16_t *s, size_t len, std::string &u8);
+	void ToUtf8(const char16_t *s, size_t len, std::string &u8, bool throwOnError = false);
 
 	// Returns the number of chars (bytes) in the string
 	//
@@ -61,4 +61,8 @@ namespace estd
 	//
 	size_t Utf16Size(const std::string &str);
 	size_t Utf16Size(const char *s, size_t l);
+
+	// Returns True if the string is a valid UTF8, false otherwise.
+	//
+	bool IsValidUTF8(const std::string &str, int strlen);
 }
