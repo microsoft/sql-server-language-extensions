@@ -120,11 +120,11 @@ build:
         - from: 'build-output/RExtension/linux/debug'
           to: 'out/RExtension/debug'
           include:
-            - 'libRExtension.so.1.0'
+            - 'libRExtension.so.1.1'
         - from: 'build-output/RExtension/linux/release'
           to: 'out/RExtension/release'
           include:
-            - 'libRExtension.so.1.0'
+            - 'libRExtension.so.1.1'
     - !!buildcommand                                                    # buildcommand --- run a build script, collect artifacts, specify
                                                                         #                  files to sign and logs.
       name: 'Build Python Extension'                                    # This is name for this step. The step name will be in logs and in the
@@ -135,11 +135,11 @@ build:
         - from: 'build-output/pythonextension/linux/debug'
           to: 'out/pythonextension/debug'
           include:
-            - 'libPythonExtension.so.1.0'
+            - 'libPythonExtension.so.1.1'
         - from: 'build-output/pythonextension/linux/release'
           to: 'out/pythonextension/release'
           include:
-            - 'libPythonExtension.so.1.0'
+            - 'libPythonExtension.so.1.1'
     - !!defaultcommand
       name: 'Build RExtension test'                             # This is name for this step. The step name will be in logs and in the
                                                                 # future, will be associated with metrics, timelines, journal etc.

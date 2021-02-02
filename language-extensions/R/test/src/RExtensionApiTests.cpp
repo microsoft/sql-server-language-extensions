@@ -37,7 +37,7 @@ namespace fs = experimental::filesystem;
 #ifdef _WIN64
 	const string x_RExtensionLibName = "libRExtension.dll";
 #else
-	const string x_RExtensionLibName = "libRExtension.so.1.0";
+	const string x_RExtensionLibName = "libRExtension.so.1.1";
 #endif // _WIN64
 
 extern int g_argc;

@@ -19,7 +19,7 @@ function build {
 
 	pushd ${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION}
 	# Move the generated libs to configuration folder
-	cp ${REXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libRExtension.so.1.0 .
+	cp ${REXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libRExtension.so.1.1 .
 	./RExtension-test --gtest_output=xml:${ENL_ROOT}/out/TestReport_RExtension-test.xml
 
 	# Check the exit code of the tests.
