@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cassert>
 #include <string>
+#include <stdexcept>
 
 #ifdef _WIN64
 #include <Windows.h>
@@ -351,7 +352,12 @@ GetChar16Len(char32_t char32)
 //  Converts a UTF16 character to UTF32 and return the number of char16s in len.
 //
 static inline void
-GetChar32(const char16_t *char16, size_t char16Len, char32_t *char32, size_t *len)
+GetChar32(
+	const char16_t   *char16,
+	size_t           char16Len,
+	char32_t         *char32,
+	size_t           *len,
+	bool             throwOnError = false)
 {
 	if (*char16 <= 0xd7ff || *char16 >= 0xe000)
 	{
@@ -365,6 +371,10 @@ GetChar32(const char16_t *char16, size_t char16Len, char32_t *char32, size_t *le
 			(((static_cast<char32_t>(char16[0]) - 0xd800) << 10) |
 			(static_cast<char32_t>(char16[1]) - 0xdc00));
 		*len = TwoChar16Len;
+	}
+	else if (throwOnError)
+	{
+		throw std::invalid_argument("There is a bad UTF-16 character");
 	}
 	else
 	{
@@ -628,7 +638,7 @@ GetChar8(char32_t char32, char *char8, size_t *charLen) noexcept
 // Description:
 //  Converts the given char16_t to an utf-8 encoded string
 //
-void ToUtf8(const char16_t *s, size_t len, std::string &ans)
+void ToUtf8(const char16_t *s, size_t len, std::string &ans, bool throwOnError)
 {
 	ans.resize(Utf8Size(s, len));
 	size_t i = 0;
@@ -638,7 +648,7 @@ void ToUtf8(const char16_t *s, size_t len, std::string &ans)
 		char32_t char32;
 		size_t char16Len;
 
-		GetChar32(s+i, len-i, &char32, &char16Len);
+		GetChar32(s+i, len-i, &char32, &char16Len, throwOnError);
 		i += char16Len;
 
 		size_t char8Len;
@@ -863,4 +873,70 @@ size_t Utf16Size(const std::string &str)
 	return Utf16Size(str.data(), str.size());
 }
 
+// -------------------------------------------------------------------------------------------------
+// Name: IsValidUTF8
+//
+// Description:
+// Returns True if the string is a valid UTF8, false otherwise.
+//
+bool IsValidUTF8(const std::string &str, int numberOfBytesInStr)
+{
+	int trailingBytesToValidate = 0;
+	
+	for (int i = 0; i < numberOfBytesInStr; ++i)
+	{
+		int c = (unsigned char) str[i];
+		if (0x00 <= c && c <= 0x7f) 
+		{
+			// 0xxxxxxx -> One byte
+			//
+			trailingBytesToValidate = OneChar8Len - 1;
+		}
+		else if ((c & 0xE0) == 0xC0)
+		{
+			// 110xxxxx -> Two bytes
+			//
+			trailingBytesToValidate = TwoChar8Len - 1;
+		}
+		else if ((c & 0xF0) == 0xE0)
+		{
+			// 1110xxxx -> Three bytes
+			//
+			trailingBytesToValidate = ThreeChar8Len - 1;
+		}
+		else if ((c & 0xF8) == 0xF0)
+		{
+			// 11110xxx -> Four bytes
+			//
+			trailingBytesToValidate = FourChar8Len - 1;
+		}
+		else 
+		{
+			return false;
+		}
+		
+		// trailingBytesToValidate bytes should match 10xxxxxx
+		//
+		for (int j = 0; j < trailingBytesToValidate && i < numberOfBytesInStr; ++j)
+		{
+			++i;
+
+			// Expect to have trailingBytesToValidate bytes, but ended soon.
+			//
+			if (i == numberOfBytesInStr)
+			{
+				return false;
+			}
+
+			// If following byte does not match 10xxxxxx
+			//
+			if (((unsigned char)str[i] & 0xC0) != 0x80)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
 } // namespace estd

@@ -275,7 +275,18 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
 			"", // scriptString
-			10); // parametersNumber
+			12); // parametersNumber
+
+		// Test VARCHAR(8) value with UTF-8 encoded string (with cyrillic)
+		// while actual utfstring length is 4.
+		//
+		string utfstring = u8"абвг";
+
+		// Test CHAR(4) value with paramSize same as length.
+		// A UTF-8 self-constructed encoded character (Euro sign)
+		// https://en.wikipedia.org/wiki/UTF-8#Examples
+		//
+		string goodUTF8 = string("a") + "\xE2" + "\x82" + "\xAC";
 
 		vector<const char*> expectedParamValues = {
 			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
@@ -307,12 +318,22 @@ namespace ExtensionApiTest
 			nullptr,
 			// Test 0 length VARCHAR(6) value
 			//
-			""};
+			"",
+			// Test VARCHAR(8) value with UTF-8 encoded string (with cyrillic)
+			// while actual utfstring length is 4. 
+			//
+			utfstring.c_str(),
+			// Test CHAR(4) value with paramSize same as length.
+			// A UTF-8 self-constructed encoded character (Euro sign)
+			// https://en.wikipedia.org/wiki/UTF-8#Examples
+			//
+			goodUTF8.c_str()
+		};
 
-		vector<SQLULEN> paramSizes = { 5, 6, 6, 5, 5, 6, 8, 6, 5, 6 };
+		vector<SQLULEN> paramSizes = { 5, 6, 6, 5, 5, 6, 8, 6, 5, 6, 8, 4 };
 
 		vector<bool> isFixedType = { true, true, true, true, true,
-			false, false, false, false, false };
+			false, false, false, false, false, false, true };
 		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
 		InitCharParam<char, SQL_C_CHAR>(
@@ -333,7 +354,14 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,  // inputSchemaColumnsNumber
 			"", // scriptString
-			12); // parametersNumber
+			14); // parametersNumber
+
+		// Test NCHAR with self-constructed UTF-16 char (𐐷)
+		// https://en.wikipedia.org/wiki/UTF-16#Examples
+		// We need to use u16string here because wstring doesn't 
+		// handle multibyte characters well in Linux with the -fshort-wchar option.
+		//
+		u16string goodUTF16 = u16string(u"a") + u"\xd801\xdc37" + u"b";
 
 		vector<const wchar_t*> expectedParamValues = {
 			// Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
@@ -371,13 +399,22 @@ namespace ExtensionApiTest
 			L"",
 			// Test Unicode NVARCHAR(6) value
 			//
-			L"你好"
+			L"你好",
+			// Test Unicode NVARCHAR value (with cyrillic)
+			//
+			L"абвг",
+			// Test NCHAR with self-constructed UTF-16 char (𐐷)
+			// https://en.wikipedia.org/wiki/UTF-16#Examples
+			// We need to use u16string here because wstring doesn't 
+			// handle multibyte characters well in Linux with the -fshort-wchar option.
+			//
+			reinterpret_cast<const wchar_t*>(goodUTF16.c_str())
 		};
 
-		vector<SQLULEN> paramSizes = { 5, 6, 6, 5, 5, 2, 6, 8, 6, 5, 6, 6 };
+		vector<SQLULEN> paramSizes = { 5, 6, 6, 5, 5, 2, 6, 8, 6, 5, 6, 6, 10, 4 };
 
 		vector<bool> isFixedType = { true, true, true, true, true, true,
-			false, false, false, false, false, false };
+			false, false, false, false, false, false, false, true };
 		vector<SQLSMALLINT> inputOutputTypes(expectedParamValues.size(), SQL_PARAM_INPUT);
 
 		InitCharParam<wchar_t, SQL_C_WCHAR>(
@@ -715,6 +752,70 @@ namespace ExtensionApiTest
 	}
 
 	//----------------------------------------------------------------------------------------------
+	// Name: InitBadEncodingParamTest
+	//
+	// Description:
+	//  Test InitParam() API with bad strings (out of encoding range)
+	//
+	TEST_F(RExtensionApiTests, InitBadEncodingParamTest)
+	{
+		// Testing a bad UTF-8 string
+		//
+		InitializeSession(
+			0,	// inputSchemaColumnsNumber
+			"", // scriptString
+			1); // parametersNumber
+
+		// Construct a bad UTF-8 string:
+		// https://en.wikipedia.org/wiki/UTF-8#Encoding
+		// 0xF7 defines a 4-byte character and expects three more chars of range 0x80-0xBF
+		//
+		string badUTF8 = string("a") + "\xF7" + "\xFF" + "b";
+
+		vector<const char*> expectedParamValues = {
+			badUTF8.c_str()
+		};
+
+		vector<SQLULEN> paramSizes = { badUTF8.length() };
+		vector<bool> isFixedType = { true };
+		vector<SQLSMALLINT> inputOutputTypes = { SQL_PARAM_INPUT_OUTPUT };
+
+		InitCharParam<char, SQL_C_CHAR>(
+			expectedParamValues,
+			paramSizes,
+			isFixedType,
+			inputOutputTypes,
+			false,
+			false);
+
+		// Testing a bad UTF-16 string
+		//
+		// Construct a bad UTF-16 string:
+		// https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF
+		// 0xd800 (high surrogate) expects a low surrogate afterwards (0xdc00-0xdfff)
+		// We need to use u16string here because wstring doesn't 
+		// handle multibyte characters well in Linux with the -fshort-wchar option.
+		//
+		u16string badUTF16 = u16string(u"a") + u"\xd800\xd800" + u"b";
+
+		vector<const wchar_t*> expectedWideParamValues = {
+			reinterpret_cast<const wchar_t*>(badUTF16.c_str())
+		};
+
+		paramSizes = { badUTF16.size() };
+		isFixedType = { true };
+		inputOutputTypes = { SQL_PARAM_INPUT_OUTPUT };
+
+		InitCharParam<wchar_t, SQL_C_WCHAR>(
+			expectedWideParamValues,
+			paramSizes,
+			isFixedType,
+			inputOutputTypes,
+			false,
+			false);
+	}
+
+	//----------------------------------------------------------------------------------------------
 	// Name: RExtensionApiTest::InitParam
 	//
 	// Description:
@@ -790,7 +891,8 @@ namespace ExtensionApiTest
 		vector<SQLULEN>         paramSizes,
 		vector<bool>            isFixedType,
 		vector<SQLSMALLINT>     inputOutputTypes,
-		bool                    validate)
+		bool                    validate,
+		bool                    expectSuccess)
 	{
 		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
@@ -861,37 +963,44 @@ namespace ExtensionApiTest
 					strLenOrInd,
 					inputOutputTypes[paramNumber]);
 
-			ASSERT_EQ(result, SQL_SUCCESS);
-
-			if (validate)
+			if(!expectSuccess)
 			{
-				// Do + 1 to skip the @ from the paramName
-				//
-				Rcpp::CharacterVector param = m_globalEnvironment[paramNameString.c_str() + 1];
-				if (expectedParamValues[paramNumber] != nullptr)
+				ASSERT_EQ(result, SQL_ERROR);
+			}
+			else
+			{
+				ASSERT_EQ(result, SQL_SUCCESS);
+				
+				if (validate)
 				{
-					const char *actualParam = param[0];
-					string expectedParamUtf8;
-					if constexpr (is_same_v<CharType, wchar_t>)
+					// Do + 1 to skip the @ from the paramName
+					//
+					Rcpp::CharacterVector param = m_globalEnvironment[paramNameString.c_str() + 1];
+					if (expectedParamValues[paramNumber] != nullptr)
 					{
-						estd::ToUtf8(
-							reinterpret_cast<char16_t*>(expectedParamValue),
-							paramLengthAfterTruncationIfAny,
-							expectedParamUtf8);
+						const char *actualParam = param[0];
+						string expectedParamUtf8;
+						if constexpr (is_same_v<CharType, wchar_t>)
+						{
+							estd::ToUtf8(
+								reinterpret_cast<char16_t*>(expectedParamValue),
+								paramLengthAfterTruncationIfAny,
+								expectedParamUtf8);
+						}
+						else
+						{
+							expectedParamUtf8 = string(expectedParamValue, paramLengthAfterTruncationIfAny);
+						}
+
+						for (SQLULEN index = 0; index < paramLengthAfterTruncationIfAny; ++index)
+						{
+							EXPECT_EQ(actualParam[index], expectedParamUtf8[index]);
+						}
 					}
 					else
 					{
-						expectedParamUtf8 = string(expectedParamValue, paramLengthAfterTruncationIfAny);
+						EXPECT_EQ(param[0], NA_STRING);
 					}
-
-					for (SQLULEN index = 0; index < paramLengthAfterTruncationIfAny; ++index)
-					{
-						EXPECT_EQ(actualParam[index], expectedParamUtf8[index]);
-					}
-				}
-				else
-				{
-					EXPECT_EQ(param[0], NA_STRING);
 				}
 			}
 		}
