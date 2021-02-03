@@ -27,4 +27,5 @@ public:
 	//
 	static std::string ExtractString(PyObject * pObj);
 	static std::string ExtractString(boost::python::object handle);
+	static void Tokenize(char *input, const char *delimiter, std::vector<char *> *tokens);
 };

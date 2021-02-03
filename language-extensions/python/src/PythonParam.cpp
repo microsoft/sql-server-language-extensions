@@ -255,15 +255,33 @@ PythonStringParam<CharType>::PythonStringParam(
 {
 	if (strLen_or_Ind != SQL_NULL_DATA)
 	{
-		SQLINTEGER strlen = strLen_or_Ind / sizeof(CharType);
+		PyObject *pyObj = nullptr;
+		SQLINTEGER strlen = strLen_or_Ind;
+
+		char *str = reinterpret_cast<char *>(paramValue);
 
 		// Create a string PyObject from the str and strLen.
 		// This DOES copy the underlying string into a new buffer and null terminates it.
 		// Then, convert to a boost object so that boost handles ref counting.
 		//
-		m_pyObject = bp::object(bp::handle<>(
-			PyUnicode_FromKindAndData(sizeof(CharType), paramValue, strlen)
-		));
+		if constexpr (is_same_v<CharType, char>)
+		{
+			pyObj = PyUnicode_DecodeUTF8(
+				str,      // char * version of string
+				strlen,   // len of string in bytes
+				nullptr); // special error handling options, we don't need any
+		}
+		else
+		{
+			int byteOrder = -1; // -1: little endian
+			pyObj = PyUnicode_DecodeUTF16(
+				str,         // char * version of string
+				strlen,      // len of string in bytes
+				nullptr,     // special error handling options, we don't need any
+				&byteOrder); // byte order to parse UTF-16. SQL Server uses little-endian.
+		}
+
+		m_pyObject = bp::object(bp::handle<>(pyObj));
 	}
 	else
 	{
@@ -302,7 +320,15 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(bp::object mainNames
 					// Extract and copy the string characters into the vector.
 					//
 					string value = extractedObj;
-					m_value = vector<CharType>(value.begin(), value.end());
+					if (!value.empty())
+					{
+						m_value = vector<CharType>(value.begin(), value.end());
+					}
+					else
+					{
+						m_value.push_back('\0');
+						m_strLenOrInd = 0;
+					}
 				}
 			}
 			else
@@ -311,18 +337,26 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(bp::object mainNames
 				//
 				int size = PyUnicode_GET_LENGTH(tempObj.ptr());
 
-				// Get a byte representation of the string as UTF16.
-				// PyUnicode_AsUTF16String adds a BOM to the front of every string.
-				//
-				char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(tempObj.ptr()));
+				if (size > 0)
+				{
+					// Get a byte representation of the string as UTF16.
+					// PyUnicode_AsUTF16String adds a BOM to the front of every string.
+					//
+					char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(tempObj.ptr()));
 
-				// Reinterpret the bytes as wchar_t *, which we will return.
-				//
-				CharType *wData = reinterpret_cast<CharType*>(utf16str);
+					// Reinterpret the bytes as wchar_t *, which we will return.
+					//
+					CharType *wData = reinterpret_cast<CharType *>(utf16str);
 
-				// Ignore 2 byte BOM at front of wData that was added by PyUnicode_AsUTF16String
-				//
-				m_value = vector<CharType>(wData + 1, wData + 1 + size);
+					// Ignore 2 byte BOM at front of wData that was added by PyUnicode_AsUTF16String
+					//
+					m_value = vector<CharType>(wData + 1, wData + 1 + size);
+				}
+				else
+				{
+					m_value.push_back(L'\0');
+					m_strLenOrInd = 0;
+				}
 			}
 
 			// Truncate the return data to only be the size specified when creating
@@ -333,7 +367,10 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(bp::object mainNames
 				m_value.shrink_to_fit();
 			}
 
-			m_strLenOrInd = m_value.size() * sizeof(CharType);
+			if (m_strLenOrInd == SQL_NULL_DATA)
+			{
+				m_strLenOrInd = m_value.size() * sizeof(CharType);
+			}
 		}
 	}
 }
@@ -410,6 +447,12 @@ void PythonRawParam::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 			//
 			m_value = vector<SQLCHAR>(begin, end);
 
+			if (m_value.empty()) 
+			{
+				m_value.push_back(L'\0');
+				m_strLenOrInd = 0;
+			}
+
 			// Truncate the return data to only be the size specified when creating
 			//
 			if (m_value.size() > m_size)
@@ -418,7 +461,10 @@ void PythonRawParam::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 				m_value.shrink_to_fit();
 			}
 
-			m_strLenOrInd = m_value.size();
+			if (m_strLenOrInd == SQL_NULL_DATA)
+			{
+				m_strLenOrInd = m_value.size();
+			}
 		}
 	}
 }

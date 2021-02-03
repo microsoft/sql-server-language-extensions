@@ -623,10 +623,12 @@ SQLRETURN InstallExternalLibrary(
 
 	string errorString;
 
-	string installDir = string(reinterpret_cast<char *>(libraryInstallDirectory), libraryInstallDirectoryLength);
+	string installDir = string(reinterpret_cast<char *>(libraryInstallDirectory), 
+		libraryInstallDirectoryLength);
 	installDir = PythonExtensionUtils::NormalizePathString(installDir);
 
-	string tempFolder = PythonExtensionUtils::NormalizePathString(fs::path(installDir).append("tmp").string());
+	string tempFolder = PythonExtensionUtils::NormalizePathString(
+		fs::path(installDir).append("tmp").string());
 
 	try
 	{
@@ -752,7 +754,8 @@ SQLRETURN UninstallExternalLibrary(
 		*libraryErrorLength = errorString.length();
 
 		string *pError = new string(errorString);
-		SQLCHAR *error = const_cast<SQLCHAR *>(reinterpret_cast<const SQLCHAR *>(pError->c_str()));
+		SQLCHAR *error = const_cast<SQLCHAR *>(
+			reinterpret_cast<const SQLCHAR *>(pError->c_str()));
 
 		*libraryError = error;
 	}
