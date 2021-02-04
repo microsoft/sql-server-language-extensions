@@ -20,7 +20,7 @@ function build {
 
 	mkdir -p ${BUILD_OUTPUT}/packages
 	cd ${BUILD_OUTPUT}
-	zip packages/R-lang-extension libRExtension.so.1.0
+	zip packages/R-lang-extension-linux libRExtension.so.1.1
 	check_exit_code  ${BUILD_CONFIGURATION}
 }
 

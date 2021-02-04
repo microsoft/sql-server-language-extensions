@@ -270,6 +270,7 @@ namespace ExtensionApiTest
 			charColumn1Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string charColumn2Name = "CharColumn2";
@@ -277,6 +278,7 @@ namespace ExtensionApiTest
 			charColumn2Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string charColumn3Name = "CharColumn3";
@@ -284,6 +286,7 @@ namespace ExtensionApiTest
 			charColumn3Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		SQLULEN rowsNumber = 5;
@@ -349,6 +352,7 @@ namespace ExtensionApiTest
 			ncharColumn1Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string ncharColumn2Name = "NCharColumn2";
@@ -356,6 +360,7 @@ namespace ExtensionApiTest
 			ncharColumn2Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string ncharColumn3Name = "NCharColumn3";
@@ -363,6 +368,7 @@ namespace ExtensionApiTest
 			ncharColumn3Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
@@ -548,9 +554,9 @@ namespace ExtensionApiTest
 			&strLen_or_Ind);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		EXPECT_EQ(rowsNumber, static_cast<SQLULEN>(0));
+		EXPECT_EQ(rowsNumber, static_cast<SQLULEN>(1));
 		EXPECT_EQ(data[0], nullptr);
-		EXPECT_EQ(strLen_or_Ind[0], nullptr);
+		EXPECT_EQ(strLen_or_Ind[0][0], SQL_NULL_DATA);
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -636,6 +642,7 @@ namespace ExtensionApiTest
 			integerColumnName,
 			SQL_C_SLONG,
 			m_IntSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string doubleColumnName = "DoubleColumn";
@@ -643,6 +650,7 @@ namespace ExtensionApiTest
 			doubleColumnName,
 			SQL_C_DOUBLE,
 			m_DoubleSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string charColumnName = "CharColumn";
@@ -650,6 +658,7 @@ namespace ExtensionApiTest
 			charColumnName,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		SQLULEN expectedRowsNumber = 5;

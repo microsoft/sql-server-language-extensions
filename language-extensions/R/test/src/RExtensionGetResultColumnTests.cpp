@@ -313,6 +313,7 @@ namespace ExtensionApiTest
 			charColumn1Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string charColumn2Name = "CharColumn2";
@@ -320,6 +321,7 @@ namespace ExtensionApiTest
 			charColumn2Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string charColumn3Name = "CharColumn3";
@@ -327,6 +329,7 @@ namespace ExtensionApiTest
 			charColumn3Name,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		SQLULEN rowsNumber = 5;
@@ -378,7 +381,7 @@ namespace ExtensionApiTest
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,    // dataType
-			0,             // columnSize
+			m_CharSize,    // columnSize
 			0,             // decimalDigits
 			SQL_NULLABLE); // nullable
 	}
@@ -405,6 +408,7 @@ namespace ExtensionApiTest
 			ncharColumn1Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string ncharColumn2Name = "NCharColumn2";
@@ -412,6 +416,7 @@ namespace ExtensionApiTest
 			ncharColumn2Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string ncharColumn3Name = "NCharColumn3";
@@ -419,6 +424,7 @@ namespace ExtensionApiTest
 			ncharColumn3Name,
 			SQL_C_WCHAR,
 			m_NCharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		vector<const wchar_t *> ncharCol1{ L"Hello", L"test", L"data", L"World你好", L"你好" };
@@ -505,7 +511,7 @@ namespace ExtensionApiTest
 
 		GetResultColumn(2, // columnNumber
 			SQL_C_CHAR,    // expectedDataType
-			0,             // expectedColumnSize
+			m_CharSize,    // expectedColumnSize
 			0,             // expectedDecimalDigits
 			SQL_NULLABLE); // expectedNullable
 	}
@@ -529,17 +535,17 @@ namespace ExtensionApiTest
 			0,             // inputSchemaColumnsNumber
 			scriptString);
 
-		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLUSMALLINT outputSchemaColumnsNumber = 0;
 		SQLRETURN result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
 			nullptr,
 			nullptr,
-			&outputschemaColumnsNumber);
+			&outputSchemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		EXPECT_EQ(outputschemaColumnsNumber, 1);
+		EXPECT_EQ(outputSchemaColumnsNumber, 1);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_BINARY,  // dataType
@@ -560,21 +566,21 @@ namespace ExtensionApiTest
 			0,             // inputSchemaColumnsNumber
 			scriptString);
 
-		outputschemaColumnsNumber = 0;
+		outputSchemaColumnsNumber = 0;
 		result = (*sm_executeFuncPtr)(
 			*m_sessionId,
 			m_taskId,
 			0,
 			nullptr,
 			nullptr,
-			&outputschemaColumnsNumber);
+			&outputSchemaColumnsNumber);
 		ASSERT_EQ(result, SQL_SUCCESS);
 
-		EXPECT_EQ(outputschemaColumnsNumber, 1);
+		EXPECT_EQ(outputSchemaColumnsNumber, 1);
 
 		GetResultColumn(0, // columnNumber
 			SQL_C_BINARY,  // dataType
-			0,             // columnSize
+			1,             // columnSize
 			0,             // decimalDigits
 			SQL_NULLABLE); // nullable
 	}
@@ -644,13 +650,13 @@ namespace ExtensionApiTest
 		GetResultColumn(0,        // columnNumber
 			SQL_C_TYPE_TIMESTAMP, // dataType
 			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
+			6,                    // decimalDigits
 			SQL_NO_NULLS);        // nullable
 
 		GetResultColumn(1,        // columnNumber
 			SQL_C_TYPE_TIMESTAMP, // dataType
 			m_DateTimeSize,       // columnSize
-			0,                    // decimalDigits
+			6,                    // decimalDigits
 			SQL_NULLABLE);        // nullable
 	}
 
@@ -674,6 +680,7 @@ namespace ExtensionApiTest
 			integerColumnName,
 			SQL_C_SLONG,
 			m_IntSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		string doubleColumnName = "DoubleColumn";
@@ -681,6 +688,7 @@ namespace ExtensionApiTest
 			doubleColumnName,
 			SQL_C_DOUBLE,
 			m_DoubleSize,
+			0,              // decimalDigits
 			SQL_NO_NULLS);
 
 		string charColumnName = "CharColumn";
@@ -688,6 +696,7 @@ namespace ExtensionApiTest
 			charColumnName,
 			SQL_C_CHAR,
 			m_CharSize,
+			0,              // decimalDigits
 			SQL_NULLABLE);
 
 		SQLULEN rowsNumber = 5;
@@ -775,6 +784,179 @@ namespace ExtensionApiTest
 			m_IntSize,     // columnSize
 			0,             // decimalDigits
 			SQL_NO_NULLS); // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: GetNAOrEmptyCharResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with a script that returns a dataset with
+	//  a default column of all NAs, a character column of all NAs,
+	//  and a character column of all empty strings.
+	//  In the result columns, we expect default NA column to be of type SQL_C_BIT and
+	//  the character columns to be of type SQL_C_CHAR with the minimum columnSize of 1.
+	//
+	TEST_F(RExtensionApiTests, GetNAOrEmptyCharResultColumnsTest)
+	{
+		// With this script, we create a DataFrame with 3 columns
+		// 1. a default column of all NAs.
+		// 2. a character column of all NAs.
+		// 3. a character column of all empty strings.
+		//
+		string scriptString =
+			"OutputDataSet <- data.frame(logicalNA = c(NA,NA),"
+				" charNA = as.character(c(NA,NA)), emptyChar = as.character(c('', '')));"
+			"print(OutputDataSet);";
+
+		// Initialize with a Session that executes the above script
+		// that creates an OutputDataSet with 2 columns of all NAs.
+		//
+		InitializeSession(
+			0,             // inputSchemaColumnsNumber
+			scriptString);
+
+		SQLUSMALLINT outputschemaColumnsNumber = 0;
+		SQLRETURN result = (*sm_executeFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,
+			nullptr,
+			nullptr,
+			&outputschemaColumnsNumber);
+		ASSERT_EQ(result, SQL_SUCCESS);
+
+		EXPECT_EQ(outputschemaColumnsNumber, 3);
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_BIT,     // dataType
+			m_LogicalSize, // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_CHAR,    // dataType
+			m_CharSize,    // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+
+		GetResultColumn(2, // columnNumber
+			SQL_C_CHAR,    // dataType
+			m_CharSize,    // columnSize
+			0,             // decimalDigits
+			SQL_NO_NULLS); // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: GetStreamIntegerResultColumnsTest
+	//
+	// Description:
+	//  Tests GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  When `r_rowsPerRead` parameter is set (streaming), both nullable and non-nullable
+	//  columns must return as nullable (since in streaming, it is not predictable
+	//  if the upcoming chunks of data will contain nulls).
+	//
+	TEST_F(RExtensionApiTests, GetStreamIntegerResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			(*m_integerInfo).GetColumnsNumber(), // inputSchemaColumnsNumber
+			m_scriptString,
+			1                                    // parametersNumber
+			);
+
+
+		// Initialize r_rowsPerRead parameter to set streaming mode
+		//
+		SQLCHAR *paramName = static_cast<SQLCHAR*>(
+			static_cast<void*>(const_cast<char *>(m_streamingParamName.c_str())));
+
+		// chunkSize (number of rows to send in each chunk)
+		//
+		SQLINTEGER paramValue = 1;
+
+		SQLRETURN result = SQL_ERROR;
+		result = (*sm_initParamFuncPtr)(
+			*m_sessionId,
+			m_taskId,
+			0,
+			paramName,                     // paramName
+			m_streamingParamName.length(), // paramSize
+			SQL_C_SLONG,                   // dataType
+			sizeof(SQLINTEGER),            // size of dataType
+			0,                             // decimalDigits
+			&paramValue,                   // chunkSize (@r_rowsPerRead)
+			0,                             // strLenOrInd
+			SQL_PARAM_INPUT);              // input output type
+
+
+		EXPECT_EQ(result, SQL_SUCCESS);
+
+		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
+
+		Execute<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
+			(*m_integerInfo).m_dataSet.data(),
+			(*m_integerInfo).m_strLen_or_Ind.data(),
+			(*m_integerInfo).m_columnNames,
+			false);  // validate
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,	   // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // must be verified as nullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,	   // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// Name: GetPartitioningIntegerResultColumnsTest
+	//
+	// Description:
+	//  Test GetResultColumn with default script expecting an OutputDataSet of Integer columns.
+	//  When partitionByNumber is set, we are in the partitioning case,
+	//  which works the same way as streaming - each partition comes in a separate
+	//  chunk. Both nullable and non-nullable columns must return as nullable.
+	//  This is because it is not predictable if the upcoming partition of data will contain nulls.
+	//
+	TEST_F(RExtensionApiTests, GetPartitioningIntegerResultColumnsTest)
+	{
+		// Initialize with a default Session that prints Hello RExtension
+		// and assigns InputDataSet to OutputDataSet
+		//
+		InitializeSession(
+			(*m_integerInfo).GetColumnsNumber(), // inputSchemaColumnsNumber
+			m_scriptString
+			);
+
+		// Turning partitioning on for a non-nullable column of integers.
+		//
+		InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_partition_integerInfo.get());
+
+		Execute<SQLINTEGER, Rcpp::IntegerVector, SQL_C_SLONG>(
+			ColumnInfo<SQLINTEGER>::sm_rowsNumber,
+			(*m_partition_integerInfo).m_dataSet.data(),
+			(*m_partition_integerInfo).m_strLen_or_Ind.data(),
+			(*m_partition_integerInfo).m_columnNames,
+			false);  // validate
+
+		GetResultColumn(0, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // must be verified as nullable
+
+		GetResultColumn(1, // columnNumber
+			SQL_C_SLONG,   // dataType
+			m_IntSize,     // columnSize
+			0,             // decimalDigits
+			SQL_NULLABLE); // nullable
 	}
 
 	//----------------------------------------------------------------------------------------------

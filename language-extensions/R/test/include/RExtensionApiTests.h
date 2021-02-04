@@ -205,7 +205,9 @@ namespace ExtensionApiTest
 			std::string columnNameString,
 			SQLSMALLINT dataType,
 			SQLULEN     columnSize,
-			SQLSMALLINT nullable);
+			SQLSMALLINT decimalDigits,
+			SQLSMALLINT nullable,
+			SQLSMALLINT partitionByNumber = -1);
 
 		// Templatized function to call InitializeColumn for all columns in ColumnInfo.
 		//
@@ -234,7 +236,8 @@ namespace ExtensionApiTest
 			std::vector<SQLULEN>         paramSizes,
 			std::vector<bool>            isFixedType,
 			std::vector<SQLSMALLINT>     inputOutputTypes,
-			bool                         validate = true);
+			bool                         validate = true,
+			bool                         expectSuccess = true);
 
 		// Testing if InitParam is implemented correctly for the binary/varbinary dataType.
 		//
@@ -253,6 +256,16 @@ namespace ExtensionApiTest
 			std::vector<SQLINTEGER>  strLenOrInd,
 			std::vector<SQLSMALLINT> inputOutputTypes,
 			bool                     validate = true);
+
+		// Testing if InitParam is implemented correctly for the decimal/numeric dataTypes.
+		//
+		void InitNumericParam(
+			std::vector<SQL_NUMERIC_STRUCT> initParamValues,
+			std::vector<SQLINTEGER>         strLenOrInd,
+			std::vector<SQLSMALLINT>        inputOutputTypes,
+			std::vector<SQLULEN>            precisionAsParamSize,
+			std::vector<SQLSMALLINT>        decimalDigits,
+			std::vector<double>             expectedParamValues = std::vector<double>(0));
 
 		// Fill a contiguous array columnData with members from the given columnVector
 		// having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
@@ -333,6 +346,15 @@ namespace ExtensionApiTest
 			SQLINTEGER               **strLen_or_Ind,
 			std::vector<std::string> columnNames,
 			bool                     validate = true);
+
+		// Test Execute with default script for numeric/decimal input columns.
+		//
+		void ExecuteNumeric(
+			SQLULEN                             rowsNumber,
+			void                                **dataSet,
+			SQLINTEGER                          **strLen_or_Ind,
+			std::vector<std::string>            columnNames,
+			std::vector<std::vector<SQLDOUBLE>> expectedDataSet);
 
 		// Test GetResultColumn to verify the expected result column information.
 		//
@@ -424,13 +446,18 @@ namespace ExtensionApiTest
 			std::vector<SQLCHAR*>   expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
 
-
 		// Test date/datetime output param values and strLenOrInd are as expected.
 		//
 		template<class SQLType>
 		void GetDateTimeOutputParam(
 			std::vector<SQLType>    expectedParamValues,
 			std::vector<SQLINTEGER> expectedStrLenOrInd);
+
+		// Tests numeric output param value and strLenOrInd are as expected.
+		//
+		void GetNumericOutputParam(
+			std::vector<SQL_NUMERIC_STRUCT> expectedParamValues,
+			std::vector<SQLINTEGER>         expectedStrLenOrInd);
 
 		// Objects declared here can be used by all tests in the test suite.
 		//
@@ -455,6 +482,8 @@ namespace ExtensionApiTest
 		std::string m_outputDataNameString;
 
 		const std::string m_printMessage = "Hello RExtension!";
+
+		const std::string m_streamingParamName = "@r_rowsPerRead";
 
 		// A value of 2'147'483'647
 		//
@@ -524,6 +553,10 @@ namespace ExtensionApiTest
 		std::unique_ptr<ColumnInfo<SQL_DATE_STRUCT>> m_dateInfo = nullptr;
 		std::unique_ptr<ColumnInfo<SQL_TIMESTAMP_STRUCT>> m_dateTimeInfo = nullptr;
 
+		// Used for partitioning test
+		//
+		std::unique_ptr<ColumnInfo<SQLINTEGER>> m_partition_integerInfo = nullptr;
+		
 		// R global environment
 		//
 		Rcpp::Environment m_globalEnvironment;
@@ -605,7 +638,8 @@ namespace ExtensionApiTest
 			std::vector<SQLINTEGER> col1StrLenOrInd,
 			std::string column2Name, std::vector<SQLType> column2,
 			std::vector<SQLINTEGER> col2StrLenOrInd,
-			std::vector<SQLSMALLINT> nullable);
+			std::vector<SQLSMALLINT> nullable,
+			std::vector<SQLSMALLINT> partitionByIndexes = {-1, -1});
 
 		SQLUSMALLINT GetColumnsNumber() const
 		{
@@ -621,5 +655,6 @@ namespace ExtensionApiTest
 		std::vector<SQLINTEGER> m_col2StrLenOrInd;
 		std::vector<SQLINTEGER*> m_strLen_or_Ind;
 		std::vector<SQLSMALLINT> m_nullable;
+		std::vector<SQLSMALLINT> m_partitionByIndexes;
 	};
 }
