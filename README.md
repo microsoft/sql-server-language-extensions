@@ -68,7 +68,7 @@ The complete release pipeline does the following:
 To create a release do the following:
 1) Run an official build from master, this will perform steps 1-6) mentioned above.
 2) From the official build, create a new release which will perform step 7).
-3) Update the nuget version numbers in DS_Main_Dev and run PVS before checking in.
+3) Update the nuget version numbers in DS_Main_Dev and run PVS before checking in. You need to manually pull the nuget into the SqlUnified-MsAzure feed before SqlUnified will be able to pick it up. To do so, run the following command: `X:\corextcache>  X:\path-to-DsMainDev\Tools\Nuget\nuget install data-sql-language-extensions  -Version <version number> -Source https://msdata.pkgs.visualstudio.com/_packaging/SqlUnified-MsAzure/nuget/v3/index.json`. Once that has happened, it will be visible in the SqlUnified-MsAzure feed.  You'll then need to wait (up to 3 hours) for the next update of SqlUnified in order for it to become available on SqlUnified.
 
 # Contribute
 Contact sqlext@microsoft.com for questions and contributing.
