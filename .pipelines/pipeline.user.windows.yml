@@ -89,7 +89,7 @@ build:
     - !!buildcommand
       name: 'Build Java extension'
       command: 'language-extensions\java\build\windows\build-java-extension.cmd'
-      arguments:  'debug release'
+      arguments:  'azuljava debug release'
       artifacts:
         - from: 'build-output\java-extension\target\debug'
           to: 'out\java-extension\debug'

@@ -15,6 +15,16 @@ REM Error code 203 is ENVVAR_NOT_FOUND.
 REM
 SET ENVVAR_NOT_FOUND=203
 
+REM If first argument is "azuljava", enforce %DEFAULT_JAVA_HOME%
+REM
+IF "%~1"=="azuljava" (
+	SET JAVA_HOME=%DEFAULT_JAVA_HOME%
+
+	REM Advance arg passed to build-java-extension.cmd
+	REM
+	SHIFT
+)
+
 IF "%JAVA_HOME%" == "" (
 	IF EXIST %DEFAULT_JAVA_HOME% (
 		SET JAVA_HOME=%DEFAULT_JAVA_HOME%
@@ -83,6 +93,7 @@ dir /s /B *.java > %TARGET%\sources.txt
 
 REM Compile all the Java sources
 REM
+ECHO %JAVA_HOME% is used for compilation
 %JAVA_BIN%\javac -d %TARGET_CLASSES% @%TARGET%\sources.txt
 
 REM Restore the working directory
