@@ -13,8 +13,11 @@ apt-get update
 apt-get install -y python3.7-dev libboost-all-dev python3-pip
 
 /usr/bin/python3.7 -m pip install --upgrade pip==18.1
-/usr/bin/python3.7 -m pip install numpy -t /usr/lib/python3.7/dist-packages
-/usr/bin/python3.7 -m pip install pandas -t /usr/lib/python3.7/dist-packages
+
+# Lock versions of numpy and pandas to the versions shipped in SQL Server for compatibility
+#
+/usr/bin/python3.7 -m pip install numpy==1.15.4 -t /usr/lib/python3.7/dist-packages
+/usr/bin/python3.7 -m pip install pandas==0.23.4 -t /usr/lib/python3.7/dist-packages
 
 wget -O boost_1_69_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.69.0/boost_1_69_0.tar.gz/download
 tar xzvf boost_1_69_0.tar.gz -C /usr/lib/
