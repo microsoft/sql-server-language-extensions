@@ -50,6 +50,11 @@ out/
 *.user
 *.sln
 *.filters
+*obj*
+
+# VS Code Files
+*.code-workspace
+.vscode/
 
 # Nuget Packages
 packages/
