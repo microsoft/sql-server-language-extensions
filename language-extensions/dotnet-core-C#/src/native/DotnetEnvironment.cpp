@@ -29,9 +29,9 @@ using string_t = std::basic_string<char_t>;
 //	Constructor to initialize the members. The language path is defined as the root path.
 //
 DotnetEnvironment::DotnetEnvironment(
-    std::string language_params, 
-    std::string language_path, 
-    std::string public_library_path, 
+    std::string language_params,
+    std::string language_path,
+    std::string public_library_path,
     std::string private_library_path) : m_root_path(to_utf16_str(language_path))
 {
 }
@@ -40,7 +40,7 @@ DotnetEnvironment::DotnetEnvironment(
 // Name: DotnetEnvironment::init
 //
 // Description:
-//	Initialize the runtime by reading the runtimeconfig.json file. 
+//	Initialize the runtime by reading the runtimeconfig.json file.
 //
 short DotnetEnvironment::Init()
 {
@@ -57,7 +57,7 @@ short DotnetEnvironment::Init()
     hostfxr_handle cxt = get_dotnet(config_path.c_str());
     m_load_assembly_and_get_function_pointer = get_dotnet_load_assembly(cxt);
 
-    if (m_load_assembly_and_get_function_pointer == nullptr) 
+    if (m_load_assembly_and_get_function_pointer == nullptr)
     {
         return E_FAIL;
     }
@@ -83,7 +83,7 @@ string_t DotnetEnvironment::to_utf16_str(const std::string& utf8str)
 // Name: DotnetEnvironment::load_library
 //
 // Description:
-//	Load the library from the path 
+//	Load the library from the path
 //
 void* DotnetEnvironment::load_library(const char_t *path)
 {
