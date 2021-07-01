@@ -5,7 +5,7 @@
 // @File: nativecsharpextension.cpp
 //
 // Purpose:
-//  Implement the native extensibility APIs
+//  Implement the native language extensions APIs
 //
 //*********************************************************************
 #include <stdio.h>

@@ -5,7 +5,7 @@
 // @File: ExceptionUtils.cs
 //
 // Purpose:
-//  Handle the exceptions from managed extensibility APIs
+//  Handle the exceptions from managed language extensions APIs
 //
 //*********************************************************************
 using System;
@@ -14,7 +14,7 @@ using static Microsoft.SqlServer.CSharpExtension.Sql;
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class handles the exceptions from managed extensibility APIs and
+    /// This class handles the exceptions from managed language extensions APIs and
     /// logs the error messages to the stderr
     /// </summary>
     class ExceptionUtils
@@ -23,7 +23,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method calls the APIs and handles exceptions
         /// </summary>
         /// <param name="func">
-        /// Managed extensibility APIs fucntion
+        /// Managed language extensions APIs fucntion
         /// </param>
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)

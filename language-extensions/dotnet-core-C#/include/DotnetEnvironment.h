@@ -47,9 +47,9 @@ public:
         //
         const string_t ManagedExtensionName = STR("Microsoft.SqlServer.CSharpExtension");
         const string_t ManagedExtensionPath = m_root_path + STR("\\") + ManagedExtensionName + STR(".dll");
-        const string_t ManagedExtensionType = ManagedExtensionName + STR(".ManagedExtension, ") + ManagedExtensionName;
+        const string_t ManagedExtensionType = ManagedExtensionName + STR(".CSharpExtension, ") + ManagedExtensionName;
         const string_t ManagedExtensionMethod = to_utf16_str(method_name);
-        const string_t DelegateTypeName = ManagedExtensionName + STR(".ManagedExtension+") + to_utf16_str(method_name) + STR("Delegate, ") + ManagedExtensionName;
+        const string_t DelegateTypeName = ManagedExtensionName + STR(".CSharpExtension+") + to_utf16_str(method_name) + STR("Delegate, ") + ManagedExtensionName;
         int rc = m_load_assembly_and_get_function_pointer(
             ManagedExtensionPath.c_str(),
             ManagedExtensionType.c_str(),

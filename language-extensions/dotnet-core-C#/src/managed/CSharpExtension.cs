@@ -2,10 +2,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-// @File: ManagedExtension.cs
+// @File: CSharpExtension.cs
 //
 // Purpose:
-//  Implement the managed extensibility APIs
+//  Implement the managed language extensions APIs
 //
 //*********************************************************************
 using System;
@@ -17,12 +17,37 @@ using static Microsoft.SqlServer.CSharpExtension.Sql;
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class implements all extensibility APIs and returns results to native host
+    /// This class implements all language extensions APIs and returns results to native host
     /// </summary>
-    public static unsafe class ManagedExtension
+    public static unsafe class CSharpExtension
     {
         /// <summary>
-        /// This declares the delegate type of Init
+        /// The CSharpSession object tracking information of the current session.
+        /// </summary>
+        private static CSharpSession _currentSession;
+
+        /// <summary>
+        /// The absolute path to the installation directory of the extension.
+        /// </summary>
+        private static string _languagePath;
+
+        /// <summary>
+        /// The absolute path to the installation directory of the extension.
+        /// </summary>
+        private static string _publicLibraryPath;
+
+        /// <summary>
+        /// The absolute path to the public external libraries directory for this external language.
+        /// </summary>
+        private static string _privateLibraryPath;
+
+        /// <summary>
+        /// The absolute path to the private external libraries directory for this external language.
+        /// </summary>
+        private static string _languageParams;
+
+        /// <summary>
+        /// This delegate declares the delegate type of Init
         /// </summary>
         public delegate short InitDelegate(
             char  *languageParams,
@@ -88,7 +113,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This declares the delegate type of InitSession
+        /// This delegate declares the delegate type of InitSession
         /// </summary>
         public delegate short InitSessionDelegate(
             Guid   sessionId,
@@ -122,7 +147,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// Length in bytes of ScriptScript (excluding the null termination character).
         /// </param>
         /// <param name="inputSchemaColumnsNumber">
-        /// Length in bytes of PublicLibraryPath (excluding the null termination character).
+        /// Number of columns in the result set from @input_data_1 in sp_execute_external_script.
         /// </param>
         /// <param name="parametersNumber">
         /// Number of input parameters from @params in sp_execute_external_script.
@@ -161,7 +186,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 var inputDataNameStr = Interop.UTF8PtrToStr(inputDataName, inputDataNameLength);
                 var outputDataNameStr = Interop.UTF8PtrToStr(outputDataName, outputDataNameLength);
 
-                _currentSession = new Session(
+                _currentSession = new CSharpSession(
                     sessionId: sessionId,
                     taskId: taskId,
                     numTasks: numTasks,
@@ -173,6 +198,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             });
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of InitColumn
+        /// </summary>
         public delegate short InitColumnDelegate(
             Guid   sessionId,
             ushort taskId,
@@ -186,6 +214,48 @@ namespace Microsoft.SqlServer.CSharpExtension
             short  partitionByNumber,
             short  orderByNumber);
 
+        /// <summary>
+        /// This method initializes column-specific data. We store the name
+        /// and the data type of the column here.
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
+        /// </param>
+        /// <param name="columnNumber">
+        /// An integer identifying the index of this column in the input schema.
+        /// Columns are numbered sequentially in increasing order starting at 0.
+        /// </param>
+        /// <param name="columnName">
+        /// Null-terminated UTF-8 string containing the column's name.
+        /// </param>
+        /// <param name="columnNameLength">
+        /// Length in bytes of ColumnName (excluding the null termination character).
+        /// </param>
+        /// <param name="dataType">
+        /// The ODBC C type identifying this column's data type.
+        /// </param>
+        /// <param name="columnSize">
+        /// The maximum size in bytes of the underlying data in this column.
+        /// </param>
+        /// <param name="decimalDigits">
+        /// The decimal digits of underlying data in this column, as defined by Decimal Digits.
+        /// </param>
+        /// <param name="nullable">
+        /// A value that indicates whether this column may contain NULL values.
+        /// </param>
+        /// <param name="partitionByNumber">
+        /// A value that indicates the index of this column in the
+        /// @input_data_1_partition_by_columns sequence in sp_execute_external_script.
+        /// </param>
+        /// <param name="orderByNumber">
+        /// A value that indicates the index of this column in the
+        /// @input_data_1_order_by_columns sequence in sp_execute_external_script.
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short InitColumn(
             Guid   sessionId,
             ushort taskId,
@@ -204,7 +274,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 _currentSession.InitInputColumn(
                     columnNumber: columnNumber,
                     columnName: Interop.UTF8PtrToStr(columnName, (ulong)columnNameLength),
-                    dataType: dataType,
+                    dataType: ToDataType(dataType),
                     decimalDigits: decimalDigits,
                     nullable: nullable,
                     columnSize: columnSize);
@@ -218,9 +288,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             char   *paramName,
             short  paramNameLength,
             short  dataType,
-            ulong  argSize,
+            ulong  paramSize,
             short  decimalDigits,
-            void   *argValue,
+            void   *paramValue,
             int    strLenOrNullMap,
             short  inputOutputType);
 
@@ -240,14 +310,14 @@ namespace Microsoft.SqlServer.CSharpExtension
             return ExceptionUtils.WrapError(() =>
             {
                 _currentSession.InitParam(
-                paramNumber: paramNumber,
-                paramName: Interop.UTF8PtrToStr(paramName, (ulong)paramNameLength),
-                dataType: dataType,
-                paramSize: paramSize,
-                decimalDigits: decimalDigits,
-                paramValue: paramValue,
-                strLenOrNullMap: strLenOrNullMap,
-                inputOutputType: inputOutputType);
+                    paramNumber: paramNumber,
+                    paramName: Interop.UTF8PtrToStr(paramName, (ulong)paramNameLength),
+                    dataType: dataType,
+                    paramSize: paramSize,
+                    decimalDigits: decimalDigits,
+                    paramValue: paramValue,
+                    strLenOrNullMap: strLenOrNullMap,
+                    inputOutputType: inputOutputType);
             });
         }
 
@@ -341,11 +411,5 @@ namespace Microsoft.SqlServer.CSharpExtension
                 _currentSession = null;
             });
         }
-
-        private static Session _currentSession = null;
-        private static string _languagePath = null;
-        private static string _publicLibraryPath = null;
-        private static string _privateLibraryPath = null;
-        private static string _languageParams = null;
     }
 }

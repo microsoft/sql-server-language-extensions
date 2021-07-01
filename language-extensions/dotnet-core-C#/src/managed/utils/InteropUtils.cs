@@ -20,8 +20,8 @@ namespace Microsoft.SqlServer.CSharpExtension
     public static unsafe class Interop
     {
         /// <summary>
-        /// Allocates a managed System.String and copies a specified number of bytes from
-        /// an unmanaged null-terminated UTF8 string into it.
+        /// This method allocates a managed System.String and copies a specified
+        /// number of bytes from an unmanaged null-terminated UTF8 string into it.
         /// </summary>
         /// <param name="str">
         /// The address of the first character of the unmanaged string.
@@ -36,7 +36,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// Allocates a managed System.String and copies a specified number of bytes from
+        /// This method allocates a managed System.String and copies a specified number of bytes from
         /// an unmanaged null-terminated UTF8 string into it.
         /// </summary>
         /// <param name="str">

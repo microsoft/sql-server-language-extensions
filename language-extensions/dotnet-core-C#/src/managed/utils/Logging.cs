@@ -21,7 +21,7 @@ namespace Microsoft.SqlServer.CSharpExtension
     class Logging
     {
         /// <summary>
-        /// Log a message to stdout
+        /// This method logs a message to stdout
         /// </summary>
         /// <param name="message">
         /// Trace message
@@ -32,7 +32,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// Log an error to stderr
+        /// This method logs an error to stderr
         /// </summary>
         /// <param name="message">
         /// Error message
