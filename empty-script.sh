@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "Copying nuget spec"
+echo $1

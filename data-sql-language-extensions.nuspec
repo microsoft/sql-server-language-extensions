@@ -18,6 +18,8 @@
 
         <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
         <!-- Windows packages-->
+        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\dotnetcore-C#-extension\packages\debug\dotnetcore-C#-lang-extension.zip" target="build\dotnetcore-C#-extension\debug" />
+        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\dotnetcore-C#-extension\packages\release\dotnetcore-C#-lang-extension.zip" target="build\dotnetcore-C#-extension\release" />
         <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\java-extension\packages\debug\java-lang-extension.zip" target="build\java-extension\debug" />
         <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\java-extension\packages\release\java-lang-extension.zip" target="build\java-extension\release" />
         <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\pythonextension\packages\debug\python-lang-extension.zip" target="build\pythonextension\debug" />

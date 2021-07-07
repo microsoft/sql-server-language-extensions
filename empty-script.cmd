@@ -1,1 +1,1 @@
-echo Copying nuspec file
+echo %1

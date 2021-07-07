@@ -188,6 +188,7 @@ build:
     - !!buildcommand
       name: 'Copy nuspec'
       command: 'empty-script.cmd'
+      arguments: '"Copying nuget spec file."'
       artifacts:
         - from: '.'
           to: 'out'
