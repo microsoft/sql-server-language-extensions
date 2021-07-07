@@ -45,6 +45,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             short       nullable,
             short       decimalDigits)
         {
+            Logging.Trace("CSharpDataSet::InitColumn");
             _columns[columnNumber] = new CSharpColumn
             {
                 Name = columnName,

@@ -32,17 +32,17 @@ namespace Microsoft.SqlServer.CSharpExtension
         private static string _languagePath;
 
         /// <summary>
-        /// The absolute path to the installation directory of the extension.
+        /// The absolute path to the public external libraries directory for this external language.
         /// </summary>
         private static string _publicLibraryPath;
 
         /// <summary>
-        /// The absolute path to the public external libraries directory for this external language.
+        /// The absolute path to the private external libraries directory for this external language.
         /// </summary>
         private static string _privateLibraryPath;
 
         /// <summary>
-        /// The absolute path to the private external libraries directory for this external language.
+        /// PARAMETERS value provided during CREATE EXTERNAL LANGUAGE or ALTER EXTERNAL LANGUAGE.
         /// </summary>
         private static string _languageParams;
 
@@ -103,6 +103,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             char  *privateLibraryPath,
             ulong privateLibraryPathLen)
         {
+            Logging.Trace("CSharpExtension::Init");
             return ExceptionUtils.WrapError(() =>
             {
                 _languageParams = (languageParams == null) ? "" : Interop.UTF8PtrToStr(languageParams, languageParamsLen);
@@ -180,6 +181,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             char   *outputDataName,
             ushort outputDataNameLength)
         {
+            Logging.Trace("CSharpExtension::InitSession");
             return ExceptionUtils.WrapError(() =>
             {
                 var scriptStr = Interop.UTF8PtrToStr(script, scriptLength);
@@ -249,10 +251,14 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="partitionByNumber">
         /// A value that indicates the index of this column in the
         /// @input_data_1_partition_by_columns sequence in sp_execute_external_script.
+        /// Columns are numbered sequentially in increasing order starting at 0.
+        /// If this column is not included in the sequence, the value is -1.
         /// </param>
         /// <param name="orderByNumber">
         /// A value that indicates the index of this column in the
         /// @input_data_1_order_by_columns sequence in sp_execute_external_script.
+        /// Columns are numbered sequentially in increasing order starting at 0. 
+        /// If this column is not included in the sequence, the value is -1.
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)
         /// </returns>
@@ -269,6 +275,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             short  partitionByNumber,
             short  orderByNumber)
         {
+            Logging.Trace("CSharpExtension::InitColumn");
             return ExceptionUtils.WrapError(() =>
             {
                 _currentSession.InitInputColumn(
@@ -281,6 +288,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             });
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of InitParam
+        /// </summary>
         public delegate short InitParamDelegate(
             Guid   sessionId,
             ushort taskId,
@@ -294,6 +304,47 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    strLenOrNullMap,
             short  inputOutputType);
 
+        /// <summary>
+        /// This method implements InitParam API
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
+        /// </param>
+        /// <param name="paramNumber">
+        /// An integer identifying the index of this parameter. Parameters
+        /// are numbered sequentially in increasing order starting at 0.
+        /// </param>
+        /// <param name="paramName">
+        /// Null-terminated UTF-8 string containing the parameter's name.
+        /// </param>
+        /// <param name="paramNameLength">
+        /// Length in bytes of ParamName (excluding the null termination character).
+        /// </param>
+        /// <param name="dataType">
+        /// The ODBC C type identifying this parameter's data type.
+        /// </param>
+        /// <param name="paramSize">
+        /// The maximum size in bytes of the underlying data in this parameter.
+        /// </param>
+        /// <param name="decimalDigits">
+        /// The decimal digits of underlying data in this parameter, as defined by Decimal Digits.
+        /// </param>
+        /// <param name="paramValue">
+        /// A pointer to a buffer containing the parameter's value.
+        /// </param>
+        /// <param name="strLenOrNullMap">
+        /// An integer value indicating the length in bytes of ParamValue,
+        /// or SQL_NULL_DATA to indicate that the data is NULL.
+        /// </param>
+        /// <param name="inputOutputType">
+        /// The type of the parameter.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short InitParam(
             Guid   sessionId,
             ushort taskId,
@@ -307,12 +358,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    strLenOrNullMap,
             short  inputOutputType)
         {
+            Logging.Trace("CSharpExtension::InitParam");
             return ExceptionUtils.WrapError(() =>
             {
                 _currentSession.InitParam(
                     paramNumber: paramNumber,
                     paramName: Interop.UTF8PtrToStr(paramName, (ulong)paramNameLength),
-                    dataType: dataType,
+                    dataType: ToDataType(dataType),
                     paramSize: paramSize,
                     decimalDigits: decimalDigits,
                     paramValue: paramValue,

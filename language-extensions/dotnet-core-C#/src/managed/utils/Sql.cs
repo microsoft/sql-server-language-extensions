@@ -19,8 +19,8 @@ namespace Microsoft.SqlServer.CSharpExtension
     /// </summary>
     public class Sql
     {
-        public static readonly short SQL_SUCCESS = 0;
-        public static readonly short SQL_ERROR = -1;
+        public const short SQL_SUCCESS = 0;
+        public const short SQL_ERROR = -1;
         public const short SQL_UNSIGNED_OFFSET = -22;
         public const short SQL_SIGNED_OFFSET = -20;
         public enum SqlDataType: short

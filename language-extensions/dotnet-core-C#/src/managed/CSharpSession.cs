@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 using static Microsoft.SqlServer.CSharpExtension.CSharpDataSet;
+using static Microsoft.SqlServer.CSharpExtension.CSharpParamContainer;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -48,6 +49,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary> Input DataSet containing input columns </summary>
         private CSharpInputDataSet _inputDataSet;
 
+        /// <summary> Parameter containter containing intput/output parameters </summary>
+        private CSharpParamContainer _paramContainer;
+
         /// <summary>
         /// This method initializes the session with constructor
         /// </summary>
@@ -61,6 +65,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             string inputDataName,
             string outputDataName)
         {
+            Logging.Trace("CSharpSession::CSharpSession");
             _sessionId = sessionId;
             _taskId = taskId;
             _numTasks = numTasks;
@@ -74,6 +79,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                 Name = inputDataName,
                 ColumnsNumber = inputSchemaColumnsNumber
             };
+
+            _paramContainer = new CSharpParamContainer(parametersNumber);
         }
 
         /// <summary>
@@ -87,6 +94,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             short        nullable,
             short        decimalDigits)
         {
+            Logging.Trace("CSharpSession::InitInputColumn");
             _inputDataSet.InitColumn(
                 columnNumber,
                 columnName,
@@ -101,15 +109,26 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method initializes the parameter for this session
         /// </summary>
         public void InitParam(
-            ushort paramNumber,
-            string paramName,
-            short  dataType,
-            ulong  paramSize,
-            short  decimalDigits,
-            void   *paramValue,
-            int    strLenOrNullMap,
-            short  inputOutputType)
+            ushort       paramNumber,
+            string       paramName,
+            SqlDataType  dataType,
+            ulong        paramSize,
+            short        decimalDigits,
+            void         *paramValue,
+            int          strLenOrNullMap,
+            short        inputOutputType)
         {
+            Logging.Trace("CSharpSession::InitParam");
+            _paramContainer.AddParam(
+                paramNumber,
+                paramName,
+                dataType,
+                paramSize,
+                decimalDigits,
+                paramValue,
+                strLenOrNullMap,
+                inputOutputType
+            );
         }
 
         /// <summary>
