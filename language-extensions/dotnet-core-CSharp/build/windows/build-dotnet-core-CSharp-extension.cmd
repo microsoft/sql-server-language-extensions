@@ -4,8 +4,8 @@ SETLOCAL
 REM
 REM
 SET ENL_ROOT=%~dp0..\..\..\..
-SET DOTNET_EXTENSION_HOME=%ENL_ROOT%\language-extensions\dotnet-core-C#
-SET DOTNET_EXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-C#-extension\windows
+SET DOTNET_EXTENSION_HOME=%ENL_ROOT%\language-extensions\dotnet-core-CSharp
+SET DOTNET_EXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-CSharp-extension\windows
 
 IF EXIST %DOTNET_EXTENSION_WORKING_DIR% (RMDIR /s /q %DOTNET_EXTENSION_WORKING_DIR%)
 MKDIR %DOTNET_EXTENSION_WORKING_DIR%
@@ -23,7 +23,7 @@ IF /I NOT %BUILD_CONFIGURATION%==debug (SET BUILD_CONFIGURATION=release)
 
 REM Output directory and output dll name
 REM
-SET TARGET="%ENL_ROOT%\build-output\dotnet-core-C#-extension\target\%BUILD_CONFIGURATION%"
+SET TARGET="%ENL_ROOT%\build-output\dotnet-core-CSharp-extension\target\%BUILD_CONFIGURATION%"
 
 REM Delete the output directory if exists
 REM
@@ -45,7 +45,7 @@ REM otherwise, it will default to %USERPROFILE%\Source
 REM
 SET VSCMD_START_DIR=%ENL_ROOT%
 
-ECHO "[Info] Building dotnet-core-C#-extension nativecsharpextension dll..."
+ECHO "[Info] Building dotnet-core-CSharp-extension nativecsharpextension dll..."
 
 SET BUILD_OUTPUT=%DOTNET_EXTENSION_WORKING_DIR%\%BUILD_CONFIGURATION%
 RMDIR /S %BUILD_OUTPUT% /q
@@ -66,9 +66,9 @@ ECHO "[Info] Building Microsoft.SqlServer.CSharpExtension dll..."
 SET DOTNET_MANAGED_SRC=%DOTNET_EXTENSION_HOME%\src\managed
 dotnet build %DOTNET_MANAGED_SRC%\Microsoft.SqlServer.CSharpExtension.csproj /m /p:Configuration=%BUILD_CONFIGURATION%;OutDir=%BUILD_OUTPUT% --no-dependencies
 
-ECHO "Success: Built dotnet-core-C#-extension for %BUILD_CONFIGURATION% configuration."
+ECHO "Success: Built dotnet-core-CSharp-extension for %BUILD_CONFIGURATION% configuration."
 
-REM REM Advance arg passed to build-dotnet-core-C#-extension.cmd
+REM REM Advance arg passed to build-dotnet-core-CSharp-extension.cmd
 REM
 SHIFT
 REM Continue building using more configs until argv has been exhausted

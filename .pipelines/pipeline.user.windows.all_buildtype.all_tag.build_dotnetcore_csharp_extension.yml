@@ -78,77 +78,77 @@ build:
   commands:                                                             # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Build .NET Core C Sharp extension'
-      command: 'language-extensions\dotnet-core-C#\build\windows\build-dotnet-core-CSharp-extension.cmd'
+      command: 'language-extensions\dotnet-core-CSharp\build\windows\build-dotnet-core-CSharp-extension.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug'
-          to: 'out\dotnet-core-C#-extension\debug'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug'
-          to: 'out\dotnet-core-C#-extension\debug\symbols'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug\symbols'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.pdb'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug'
-          to: 'out\dotnet-core-C#-extension\debug'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug'
           include:
             - 'nativecsharpextension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug'
-          to: 'out\dotnet-core-C#-extension\debug\symbols'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug\symbols'
           include:
             - 'nativecsharpextension.pdb'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug'
-          to: 'out\dotnet-core-C#-extension\debug'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug'
           include:
             - 'hostfxr.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug'
-          to: 'out\dotnet-core-C#-extension\debug'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.runtimeconfig.json'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release'
-          to: 'out\dotnet-core-C#-extension\release'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release'
-          to: 'out\dotnet-core-C#-extension\release\symbols'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release\symbols'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.pdb'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release'
-          to: 'out\dotnet-core-C#-extension\release'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release'
           include:
             - 'nativecsharpextension.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release'
-          to: 'out\dotnet-core-C#-extension\release\symbols'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release\symbols'
           include:
             - 'nativecsharpextension.pdb'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release'
-          to: 'out\dotnet-core-C#-extension\release'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release'
           include:
             - 'hostfxr.dll'
           signing_options:
             profile: '135020002'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release'
-          to: 'out\dotnet-core-C#-extension\release'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.runtimeconfig.json'
           signing_options:
@@ -169,17 +169,17 @@ package:
   commands:                                      # This is a sequence of script files to be executed one after another
     - !!buildcommand
       name: 'Create .NET Core C Sharp extension zip'
-      command: 'language-extensions\dotnet-core-C#\build\windows\create-dotnet-core-CSharp-extension-zip.cmd'
+      command: 'language-extensions\dotnet-core-CSharp\build\windows\create-dotnet-core-CSharp-extension-zip.cmd'
       arguments:  'debug release'
       artifacts:
-        - from: 'build-output\dotnet-core-C#-extension\windows\debug\packages'
-          to: 'out\dotnet-core-C#-extension\packages\debug'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\debug\packages'
+          to: 'out\dotnet-core-CSharp-extension\packages\debug'
           include:
-            - 'dotnet-core-C#-lang-extension.zip'
-        - from: 'build-output\dotnet-core-C#-extension\windows\release\packages'
-          to: 'out\dotnet-core-C#-extension\packages\release'
+            - 'dotnet-core-CSharp-lang-extension.zip'
+        - from: 'build-output\dotnet-core-CSharp-extension\windows\release\packages'
+          to: 'out\dotnet-core-CSharp-extension\packages\release'
           include:
-            - 'dotnet-core-C#-lang-extension.zip'
+            - 'dotnet-core-CSharp-lang-extension.zip'
 
 # An optional user defined stage for running tests that need network access. Note that unit tests and others that do not
 # need network access can be run in build or package stages itself. Any artifacts built in this stage will be separated
@@ -197,8 +197,8 @@ test:
 static_analysis_options:
   fxcop_options:
     files_to_scan:
-      - from: 'out\dotnetcore-C#-extension\release\'
-      - from: 'out\dotnetcore-C#-extension\debug\'
+      - from: 'out\dotnetcore-CSharp-extension\release\'
+      - from: 'out\dotnetcore-CSharp-extension\debug\'
   policheck_options:                                # OPTIONAL: If you want to add options for PoliCheck.
     files_to_scan:
         - exclude:
@@ -207,5 +207,5 @@ static_analysis_options:
     disable_tool_scan: true
   binskim_options:
     files_to_scan:
-      - from: 'out\dotnetcore-C#-extension\release\'
-      - from: 'out\dotnetcore-C#-extension\debug\'
+      - from: 'out\dotnetcore-CSharp-extension\release\'
+      - from: 'out\dotnetcore-CSharp-extension\debug\'

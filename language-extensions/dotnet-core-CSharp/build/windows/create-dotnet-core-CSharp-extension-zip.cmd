@@ -2,7 +2,7 @@
 SETLOCAL
 
 SET ENL_ROOT=%~dp0..\..\..\..
-SET DOTNET_EXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-C#-extension\windows
+SET DOTNET_EXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-CSharp-extension\windows
 
 :LOOP
 
@@ -25,10 +25,10 @@ POPD
 
 REM Package the signed binaries.
 REM
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\* -DestinationPath %BUILD_OUTPUT%\packages\dotnet-core-C#-lang-extension.zip"
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for dotnet-core-C#-extension for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
+powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\* -DestinationPath %BUILD_OUTPUT%\packages\dotnet-core-CSharp-lang-extension.zip"
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for dotnet-core-CSharp-extension for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-ECHO "Success: Compressed dotnet-core-C#-extension for %BUILD_CONFIGURATION% configuration."
+ECHO "Success: Compressed dotnet-core-CSharp-extension for %BUILD_CONFIGURATION% configuration."
 
 REM REM Advance arg passed to create-dotnet-core-CSharp-extension-zip.cmd
 REM
