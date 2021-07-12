@@ -36,10 +36,9 @@ package_sources:
 
 restore:
   commands:
-    - !!defaultcommand
-      name: 'No op script'
-      command: 'empty-script.cmd'
-      arguments: '"No operation placeholder script."'
+    - !!defaultcommand                                                                     # Any of the documented commands may be used, but !!defaultcommand is the most useful.
+      name: 'Restore DotNetCore CSharp Packages'                                           # A user defined name for this step.
+      command: 'language-extensions\dotnet-core-CSharp\build\windows\restore-packages.cmd' # The repository relative path to the script to run for restoring packages.
 
 # The following is a metadata section that describes the versioning scheme and basic version datacenter to use. This data will be used to
 # generate content in the .version folder for use by your custom versioning steps.
@@ -153,6 +152,10 @@ build:
             - 'Microsoft.SqlServer.CSharpExtension.runtimeconfig.json'
           signing_options:
             profile: '135020002'
+    - !!defaultcommand
+      name: 'Build DotNetCore CSharp Extension Test'
+      command: 'language-extensions\dotnet-core-CSharp\test\build\windows\build-dotnet-core-CSharp-extension-test.cmd'
+      arguments:  'debug release'
     - !!buildcommand
       name: 'Copy nuspec'
       command: 'empty-script.cmd'
@@ -187,11 +190,18 @@ package:
 # Eventually, we may even skip test artifacts completely.
 
 test:
-  commands:
-    - !!defaultcommand
-      name: 'No op script'
-      command: 'empty-script.cmd'
-      arguments:  '"No operation placeholder script."'
+  commands:                                 # This is a sequence of script files to be executed one after another in the order they appear here.
+    - !!testcommand
+      name: 'Test DotNetCore CSharp Extension' # If your test run does not have a name, this will be used.
+      command: 'language-extensions\dotnet-core-CSharp\test\build\windows\run-dotnet-core-CSharp-extension-test.cmd'  # Script that runs tests.
+      arguments:  'debug release'
+      fail_on_stderr: false                      # Force pipeline to fail if the task writes to standard error stream; default is true.
+      skip_on_developer_box: true                # If running locally on a developer host instead of the pipeline managed hosts, skip this task. Default is false.
+      testresults:                               # Sequence of entries indicating which test results files to collect.
+        - title: 'All Tests'                     # Test run title. Used by VSTS.
+          type: 'JUnit'                          # Test engine type. Used by VSTS. Supported values are JUnit, NUnit, VSTest and xUnit.
+          include:                               # Sequence of glob patterns indicating which test results file to associate with this test run.
+            - 'out\TestReport*.xml'
 
 # There are no dlls to perform static analysis yet
 static_analysis_options:
