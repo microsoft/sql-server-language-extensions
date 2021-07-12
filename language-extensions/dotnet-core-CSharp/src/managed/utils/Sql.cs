@@ -15,7 +15,7 @@ using System.Text;
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class includes SqlDataType and Sql related values
+    /// This class includes SqlDataType and Sql related values.
     /// </summary>
     public class Sql
     {
@@ -49,7 +49,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         };
 
         /// <summary>
-        /// This method converts datatype from short to enum SqlDataType
+        /// This method converts datatype from short to enum SqlDataType.
         /// </summary>
         /// <param name="satelliteDataType">
         /// datatype in short

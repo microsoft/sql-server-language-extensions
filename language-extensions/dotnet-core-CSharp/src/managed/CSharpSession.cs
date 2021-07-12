@@ -11,59 +11,84 @@
 using System;
 using System.Collections.Generic;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
-using static Microsoft.SqlServer.CSharpExtension.CSharpDataSet;
-using static Microsoft.SqlServer.CSharpExtension.CSharpParamContainer;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
     /// This class pertain data to a session and encapsulate
-    /// operations performed per session
+    /// operations performed per session.
     /// </summary>
     unsafe class CSharpSession
     {
-        /// <summary> GUID uniquely identifying this script session. </summary>
+        /// <summary>
+        /// GUID uniquely identifying this script session.
+        /// </summary>
         private Guid   _sessionId;
 
-        /// <summary> An integer uniquely identifying this execution process. </summary>
+        /// <summary>
+        /// An integer uniquely identifying this execution process.
+        /// </summary>
         private ushort _taskId;
 
-        /// <summary> Number of tasks for this session. </summary>
+        /// <summary>
+        /// Number of tasks for this session.
+        /// </summary>
         private ushort _numTasks;
 
-        /// <summary> Null-terminated UTF-8 string containing the @script in sp_execute_external_script. </summary>
+        /// <summary>
+        /// Null-terminated UTF-8 string containing the @script in sp_execute_external_script.
+        /// </summary>
         private string _script;
 
-        /// <summary> Number of columns in the result set from @input_data_1 in sp_execute_external_script. </summary>
+        /// <summary>
+        /// Number of columns in the result set from @input_data_1 in sp_execute_external_script.
+        /// </summary>
         private ushort _inputSchemaColumnsNumber;
 
-        /// <summary> Number of input parameters from @params in sp_execute_external_script. </summary>
+        /// <summary>
+        /// Number of input parameters from @params in sp_execute_external_script.
+        /// </summary>
         private ushort _parametersNumber;
 
-        /// <summary> Null-terminated UTF-8 string containing the @input_data_1_name in sp_execute_external_script. </summary>
+        /// <summary>
+        /// Null-terminated UTF-8 string containing the @input_data_1_name in sp_execute_external_script.
+        /// </summary>
         private string _inputDataName;
 
-        /// <summary> Null-terminated UTF-8 string containing the @output_data_1_name in sp_execute_external_script. </summary>
+        /// <summary>
+        /// Null-terminated UTF-8 string containing the @output_data_1_name in sp_execute_external_script.
+        /// </summary>
         private string _outputDataName;
 
-        /// <summary> Input DataSet containing input columns </summary>
+        /// <summary>
+        /// Input DataSet containing input columns
+        /// </summary>
         private CSharpInputDataSet _inputDataSet;
 
-        /// <summary> Parameter containter containing intput/output parameters </summary>
+        /// <summary>
+        /// Parameter containter containing intput/output parameters
+        /// </summary>
         private CSharpParamContainer _paramContainer;
 
         /// <summary>
-        /// This method initializes the session with constructor
+        /// User Dll containing namespace and path.
+        /// The user dll is expected to implement the SDK.
+        /// </summary>
+        private CSharpUserDll _userDll;
+
+        /// <summary>
+        /// This method initializes the session with constructor.
         /// </summary>
         public CSharpSession(
-            Guid   sessionId,
-            ushort taskId,
-            ushort numTasks,
-            string script,
-            ushort inputSchemaColumnsNumber,
-            ushort parametersNumber,
-            string inputDataName,
-            string outputDataName)
+            Guid          sessionId,
+            ushort        taskId,
+            ushort        numTasks,
+            string        script,
+            ushort        inputSchemaColumnsNumber,
+            ushort        parametersNumber,
+            string        inputDataName,
+            string        outputDataName,
+            CSharpUserDll userDll)
         {
             Logging.Trace("CSharpSession::CSharpSession");
             _sessionId = sessionId;
@@ -74,6 +99,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             _parametersNumber = parametersNumber;
             _inputDataName = inputDataName;
             _outputDataName = outputDataName;
+            _userDll = userDll;
             _inputDataSet = new CSharpInputDataSet
             {
                 Name = inputDataName,
@@ -84,7 +110,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method initializes the input column for this session
+        /// This method initializes the input column for this session.
         /// </summary>
         public void InitInputColumn(
             ushort       columnNumber,
@@ -106,7 +132,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method initializes the parameter for this session
+        /// This method initializes the parameter for this session.
         /// </summary>
         public void InitParam(
             ushort       paramNumber,
@@ -132,7 +158,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method executes the workflow for the session
+        /// This method executes the workflow for the session.
         /// </summary>
         public void Execute(
             ulong  rowsNumber,
@@ -140,10 +166,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    **strLenOrNullMap,
             ushort *outputSchemaColumnsNumber)
         {
+            Logging.Trace("CSharpSession::Execute");
+            _userDll.InstantiateUserExecutor();
         }
 
         /// <summary>
-        /// This method returns information about the output column
+        /// This method returns information about the output column.
         /// </summary>
         public short GetResultColumn(
             ushort columnNumber,
@@ -156,7 +184,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method returns the data and size of the output parameter
+        /// This method returns the data and size of the output parameter.
         /// </summary>
         public short GetOutputParam(
             ushort paramNumber,

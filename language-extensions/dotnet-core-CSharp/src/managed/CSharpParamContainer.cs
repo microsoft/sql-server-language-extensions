@@ -11,20 +11,21 @@
 using System;
 using System.Collections.Generic;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
-using static Microsoft.SqlServer.CSharpExtension.CSharpParam;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class stores input/output parameter
+    /// This class stores input/output parameter.
     /// </summary>
     public class CSharpParamContainer
     {
-        /// <summary> This Dictionary stores parameter number as key and CSharpParam object as value. </summary>
+        /// <summary>
+        /// This Dictionary stores parameter number as key and CSharpParam object as value.
+        /// </summary>
         private Dictionary<ushort, CSharpParam> _params = new Dictionary<ushort, CSharpParam>();
 
         /// <summary>
-        /// This constructor initializes the UserParams with an empty dictionary and stores TotalParams
+        /// This constructor initializes the UserParams with an empty dictionary and stores TotalParams.
         /// </summary>
         public CSharpParamContainer(ushort parametersNumber)
         {
@@ -32,7 +33,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             UserParams = new Dictionary<string, dynamic>();
         }
 
-        /// <summary> Number of input parameters from @params in sp_execute_external_script. </summary>
+        /// <summary>
+        /// Number of input parameters from @params in sp_execute_external_script.
+        /// </summary>
         public ushort TotalParams { get; private set; }
 
         /// <summary>
@@ -43,7 +46,7 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method adds a CSharpParam to the container
-        /// and adds to user parameter dictionary as well
+        /// and adds to user parameter dictionary as well.
         /// </summary>
         public unsafe void AddParam(
             ushort paramNumber,

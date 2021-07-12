@@ -15,12 +15,12 @@ namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
     /// This class handles the exceptions from managed language extensions APIs and
-    /// logs the error messages to the stderr
+    /// logs the error messages to the stderr.
     /// </summary>
     class ExceptionUtils
     {
         /// <summary>
-        /// This method calls the APIs and handles exceptions
+        /// This method calls the APIs and handles exceptions.
         /// </summary>
         /// <param name="func">
         /// Managed language extensions APIs fucntion

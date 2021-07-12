@@ -15,26 +15,38 @@ using static Microsoft.SqlServer.CSharpExtension.Sql;
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class stores input/output parameter
+    /// This class stores input/output parameter.
     /// </summary>
     public class CSharpParam
     {
-        /// <summary> An integer identifying the index of this parameter. </summary>
+        /// <summary>
+        /// An integer identifying the index of this parameter.
+        /// </summary>
         public ushort Number { get; set; }
 
-        /// <summary> Null-terminated UTF-8 string containing the parameter's name. </summary>
+        /// <summary>
+        /// Null-terminated UTF-8 string containing the parameter's name.
+        /// </summary>
         public string Name { get; set; }
 
-        /// <summary> The maximum size in bytes of the underlying data in this parameter. </summary>
+        /// <summary>
+        /// The maximum size in bytes of the underlying data in this parameter.
+        /// </summary>
         public ulong Size { get; set; }
 
-        /// <summary> The Sql data type identifying this parameter's data type. </summary>
+        /// <summary>
+        /// The Sql data type identifying this parameter's data type.
+        /// </summary>
         public SqlDataType DataType { get; set; }
 
-        /// <summary> The parameter's value. </summary>
+        /// <summary>
+        /// The parameter's value.
+        /// </summary>
         public dynamic Value { get; set; }
 
-        /// <summary> The decimal digits of underlying data in this parameter </summary>
+        /// <summary>
+        /// The decimal digits of underlying data in this parameter
+        /// </summary>
         public short DecimalDigits { get; set; }
 
         /// <summary>
@@ -43,7 +55,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         public int StrLenOrNullMap { get; set; }
 
-        /// <summary> The type of the parameter. </summary>
+        /// <summary>
+        /// The type of the parameter.
+        /// </summary>
         public short InputOutputType { get; set; }
     }
 }

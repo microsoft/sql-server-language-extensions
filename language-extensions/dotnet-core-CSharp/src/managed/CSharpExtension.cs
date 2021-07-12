@@ -17,7 +17,7 @@ using static Microsoft.SqlServer.CSharpExtension.Sql;
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class implements all language extensions APIs and returns results to native host
+    /// This class implements all language extensions APIs and returns results to native host.
     /// </summary>
     public static unsafe class CSharpExtension
     {
@@ -47,7 +47,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         private static string _languageParams;
 
         /// <summary>
-        /// This delegate declares the delegate type of Init
+        /// This delegate declares the delegate type of Init.
         /// </summary>
         public delegate short InitDelegate(
             char  *languageParams,
@@ -114,7 +114,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This delegate declares the delegate type of InitSession
+        /// This delegate declares the delegate type of InitSession.
         /// </summary>
         public delegate short InitSessionDelegate(
             Guid   sessionId,
@@ -184,9 +184,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             Logging.Trace("CSharpExtension::InitSession");
             return ExceptionUtils.WrapError(() =>
             {
-                var scriptStr = Interop.UTF8PtrToStr(script, scriptLength);
-                var inputDataNameStr = Interop.UTF8PtrToStr(inputDataName, inputDataNameLength);
-                var outputDataNameStr = Interop.UTF8PtrToStr(outputDataName, outputDataNameLength);
+                string scriptStr = Interop.UTF8PtrToStr(script, scriptLength);
+                string inputDataNameStr = Interop.UTF8PtrToStr(inputDataName, inputDataNameLength);
+                string outputDataNameStr = Interop.UTF8PtrToStr(outputDataName, outputDataNameLength);
+                CSharpUserDll userDll = new CSharpUserDll(
+                    publicPath: _publicLibraryPath,
+                    privatePath: _privateLibraryPath,
+                    userNamespace: scriptStr);
 
                 _currentSession = new CSharpSession(
                     sessionId: sessionId,
@@ -196,12 +200,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     inputSchemaColumnsNumber: inputSchemaColumnsNumber,
                     parametersNumber: parametersNumber,
                     inputDataName: inputDataNameStr,
-                    outputDataName: outputDataNameStr);
+                    outputDataName: outputDataNameStr,
+                    userDll: userDll);
             });
         }
 
         /// <summary>
-        /// This delegate declares the delegate type of InitColumn
+        /// This delegate declares the delegate type of InitColumn.
         /// </summary>
         public delegate short InitColumnDelegate(
             Guid   sessionId,
@@ -257,7 +262,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="orderByNumber">
         /// A value that indicates the index of this column in the
         /// @input_data_1_order_by_columns sequence in sp_execute_external_script.
-        /// Columns are numbered sequentially in increasing order starting at 0. 
+        /// Columns are numbered sequentially in increasing order starting at 0.
         /// If this column is not included in the sequence, the value is -1.
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)
@@ -289,7 +294,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This delegate declares the delegate type of InitParam
+        /// This delegate declares the delegate type of InitParam.
         /// </summary>
         public delegate short InitParamDelegate(
             Guid   sessionId,
@@ -373,6 +378,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             });
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of Execute.
+        /// </summary>
         public delegate short ExecuteDelegate(
             Guid   sessionId,
             ushort taskId,
@@ -381,6 +389,34 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    **strLenOrNullMap,
             ushort *outputSchemaColumnsNumber);
 
+        /// <summary>
+        /// This method implements Execute API.
+        /// Execute the @script in sp_execute_external_script.
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
+        /// </param>
+        /// <param name="rowsNumber">
+        /// The number of rows in the Data.
+        /// </param>
+        /// <param name="data">
+        /// A two-dimensional array that contains the result set of @input_data_1
+        /// in sp_execute_external_script.
+        /// </param>
+        /// <param name="strLenOrNullMap">
+        /// An integer value indicating the length in bytes of ParamValue,
+        /// or SQL_NULL_DATA to indicate that the data is NULL.
+        /// </param>
+        /// <param name="outputSchemaColumnsNumber">
+        /// Pointer to a buffer in which to return the number of columns in the
+        /// expected result set of the @script in sp_execute_external_script.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short Execute(
             Guid   sessionId,
             ushort taskId,
@@ -389,6 +425,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    **strLenOrNullMap,
             ushort *outputSchemaColumnsNumber)
         {
+            Logging.Trace("CSharpExtension::Execute");
             return ExceptionUtils.WrapError(() =>
             {
                 _currentSession.Execute(rowsNumber, data, strLenOrNullMap, outputSchemaColumnsNumber);

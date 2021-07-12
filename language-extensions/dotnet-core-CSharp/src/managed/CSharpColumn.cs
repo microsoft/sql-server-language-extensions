@@ -25,13 +25,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         public ushort Id { get; set; }
 
-        /// <summary> The name of this column. </summary>
+        /// <summary>
+        /// The name of this column.
+        /// </summary>
         public string Name { get; set; }
 
-        /// <summary> The maximum size in bytes of the underlying data in this column.. </summary>
+        /// <summary>
+        /// The maximum size in bytes of the underlying data in this column.
+        /// </summary>
         public ulong Size { get; set; }
 
-        /// <summary> The Sql data type of this column. </summary>
+        /// <summary>
+        /// The Sql data type of this column.
+        /// </summary>
         public SqlDataType DataType { get; set; }
 
         /// <summary>
@@ -41,7 +47,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         public short Nullable { get; set; }
 
-        /// <summary> The decimal digits of underlying data in this column. </summary>
+        /// <summary>
+        /// The decimal digits of underlying data in this column.
+        /// </summary>
         public short DecimalDigits { get; set; }
     }
 }
