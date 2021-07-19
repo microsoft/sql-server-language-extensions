@@ -63,6 +63,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 throw new ArgumentException("Invalid input parameter name supplied");
             }
+
             else if (paramNumber >= TotalParams || paramNumber < 0)
             {
                 throw new ArgumentException("Invalid input parameter id supplied: " + paramNumber.ToString());

@@ -105,6 +105,16 @@ namespace ExtensionApiTest
     {
     protected:
 
+        // Per-test-suite set-up.
+        // Called before the first test in this test suite.
+        //
+        static void SetUpTestCase();
+
+        // Per-test-suite tear-down.
+        // Called after the last test in this test suite.
+        //
+        static void TearDownTestCase();
+
         // Code here will be called immediately after the constructor (right
         // before each test).
         //
@@ -124,14 +134,30 @@ namespace ExtensionApiTest
         //
         static void GetHandles();
 
-        // Call Cleanup on the .NET Core CSharpExtension.
+        // Do Init where .NET runtime is initialized - can be called only once in the validate suite.
+        // Testing if Init is implemented correctly.
+        //
+        static void DoInit();
+
+        // Cleanup a valid session.
+        //
+        void SessionCleanup();
+
+        // Set the extension path variables.
+        //
+        static void SetUpPath();
+
+        // Call Cleanup on the CSharpExtension.
         // Testing if Cleanup is implemented correctly.
         //
-        void DoCleanup();
+        static void DoCleanup();
 
-        // Objects declared here can be used by all tests in the test suite.
+        // Initialize a valid session.
         //
-        SQLSMALLINT m_extensionPathLength;
+        void InitializeSession(
+            SQLUSMALLINT inputSchemaColumnsNumber = 0,
+            SQLUSMALLINT parametersNumber = 0,
+            std::string  scriptString = "");
 
         std::shared_ptr<SQLGUID> m_sessionId;
         SQLUSMALLINT m_taskId;
@@ -154,6 +180,8 @@ namespace ExtensionApiTest
 
         SQLUSMALLINT m_inputSchemaColumnsNumber;
         SQLUSMALLINT m_parametersNumber;
+
+        const SQLINTEGER m_IntSize = sizeof(SQLINTEGER);
 
         // Path of .NET Core CSharp Extension
         //

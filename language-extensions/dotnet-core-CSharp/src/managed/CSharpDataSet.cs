@@ -45,6 +45,16 @@ namespace Microsoft.SqlServer.CSharpExtension
             short       decimalDigits)
         {
             Logging.Trace("CSharpInputDataSet::InitColumn");
+            if (columnName == null)
+            {
+                throw new ArgumentException("Invalid input column name supplied");
+            }
+
+            else if (columnNumber >= ColumnsNumber || columnNumber < 0)
+            {
+                throw new ArgumentException("Invalid input column id supplied: " + columnNumber.ToString());
+            }
+
             _columns[columnNumber] = new CSharpColumn
             {
                 Name = columnName,

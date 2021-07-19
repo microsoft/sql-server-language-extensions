@@ -31,6 +31,34 @@ namespace ExtensionApiTest
     FN_cleanupSession *CSharpExtensionApiTests::sm_cleanupSessionFuncPtr = nullptr;
     FN_cleanup *CSharpExtensionApiTests::sm_cleanupFuncPtr = nullptr;
 
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::SetUpTestCase
+    //
+    // Description:
+    //  Per-test-suite set-up. Called before the first test in every test suite.
+    //  But we want to execute this only once in the entire test run before the first test case.
+    //  since .NET can be initialized only once.
+    //
+    void CSharpExtensionApiTests::SetUpTestCase()
+    {
+        SetUpPath();
+        GetHandles();
+        DoInit();
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::TearDownTestCase
+    //
+    // Description:
+    //  Per-test-suite tear-down. Called after the last test in every test suite.
+    //  But we want to execute this only once in the entire test run after the last test case
+    //  since .NET can be torn down only once.
+    //
+    void CSharpExtensionApiTests::TearDownTestCase()
+    {
+        DoCleanup();
+    }
+
     // Name: CSharpExtensionApiTest::SetUp
     //
     // Description:
@@ -40,7 +68,6 @@ namespace ExtensionApiTest
     void CSharpExtensionApiTests::SetUp()
     {
         SetupVariables();
-        GetHandles();
     }
 
     // Name: CSharpExtensionApiTest::TearDown
@@ -51,23 +78,35 @@ namespace ExtensionApiTest
     //
     void CSharpExtensionApiTests::TearDown()
     {
-        DoCleanup();
+        SessionCleanup();
     }
 
-    // Name: CSharpExtensionApiTest::SetupVariables
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::SetUpPath
     //
     // Description:
-    //  Set up default, valid variables for use in tests
+    //  Sets the extension path variables.
     //
-    void CSharpExtensionApiTests::SetupVariables()
+    void CSharpExtensionApiTests::SetUpPath()
     {
         char path[MAX_PATH+1] = {0};
         GetModuleFileName(NULL, path, MAX_PATH);
         fs::path exePath = path;
         fs::path buildOutputPath = exePath.parent_path().parent_path().parent_path().parent_path();
+    #if defined(_DEBUG)
         sm_extensionPath = (buildOutputPath / "dotnet-core-CSharp-extension/windows/debug").string();
-        m_extensionPathLength = sm_extensionPath.length();
+    #else
+        sm_extensionPath = (buildOutputPath / "dotnet-core-CSharp-extension/windows/release").string();
+    #endif
+    }
 
+    // Name: CSharpExtensionApiTest::SetupVariables
+    //
+    // Description:
+    //  Sets up default, valid variables for use in tests
+    //
+    void CSharpExtensionApiTests::SetupVariables()
+    {
         shared_ptr<SQLGUID> sessionId(new SQLGUID());
         m_sessionId = move(sessionId);
         m_taskId = 0;
@@ -133,6 +172,74 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::DoInit
+    //
+    // Description:
+    //  Does Init where embedded .NET is initialized - can be called only once in the test suite.
+    //  Testing if Init api is implemented correctly.
+    //
+    void CSharpExtensionApiTests::DoInit()
+    {
+        SQLCHAR *unsignedExtensionPath = static_cast<SQLCHAR *>(
+            static_cast<void *>(const_cast<char *>(sm_extensionPath.c_str())));
+
+        SQLRETURN result = (*sm_initFuncPtr)(
+            nullptr,                   // Extension Params
+            0,                         // Extension Params Length
+            unsignedExtensionPath,     // Extension Path
+            sm_extensionPath.length(), // Extension Path Length
+            unsignedExtensionPath,     // Public Library Path
+            sm_extensionPath.length(), // Public Library Path Length
+            nullptr,                   // Private Library Path
+            0                          // Private Library Path Length
+        );
+
+        EXPECT_EQ(result, SQL_SUCCESS);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::InitializeSession
+    //
+    // Description:
+    //  Initializes a valid, default session for later tests
+    //
+    void CSharpExtensionApiTests::InitializeSession(
+        SQLUSMALLINT inputSchemaColumnsNumber,
+        SQLUSMALLINT parametersNumber,
+        string       scriptString)
+    {
+        SQLCHAR *script = static_cast<SQLCHAR*>(
+            static_cast<void*>(const_cast<char*>(scriptString.c_str())));
+
+        SQLRETURN result = (*sm_initSessionFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            m_numTasks,
+            script,
+            scriptString.length(),
+            inputSchemaColumnsNumber,
+            parametersNumber,
+            m_inputDataName,
+            m_inputDataNameString.length(),
+            m_outputDataName,
+            m_outputDataNameString.length());
+
+        EXPECT_EQ(result, SQL_SUCCESS);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::SessionCleanup
+    //
+    // Description:
+    //  Cleans up a valid, default session for later tests
+    //
+    void CSharpExtensionApiTests::SessionCleanup()
+    {
+        SQLRETURN result = (*sm_cleanupSessionFuncPtr)(*m_sessionId, m_taskId);
+        EXPECT_EQ(result, SQL_SUCCESS);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: CSharpExtensionApiTest::DoCleanup
     //
     // Description:
@@ -141,12 +248,7 @@ namespace ExtensionApiTest
     //
     void CSharpExtensionApiTests::DoCleanup()
     {
-        SQLRETURN result = SQL_ERROR;
-
-        result = (*sm_cleanupSessionFuncPtr)(*m_sessionId, m_taskId);
-        EXPECT_EQ(result, SQL_SUCCESS);
-
-        result = (*sm_cleanupFuncPtr)();
+        SQLRETURN result = (*sm_cleanupFuncPtr)();
         EXPECT_EQ(result, SQL_SUCCESS);
     }
 }
