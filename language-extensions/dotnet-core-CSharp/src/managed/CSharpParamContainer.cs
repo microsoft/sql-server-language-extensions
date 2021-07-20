@@ -9,7 +9,9 @@
 //
 //*************************************************************************************************
 using System;
+using System.Text;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -79,6 +81,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                 StrLenOrNullMap = strLenOrNullMap
             };
 
+            if (strLenOrNullMap == SQL_NULL_DATA)
+            {
+                return;
+            }
+
             switch(dataType)
             {
                 case SqlDataType.DotNetInteger:
@@ -109,6 +116,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                     _params[paramNumber].Value = *(double*)paramValue;
                     break;
                 case SqlDataType.DotNetFloat:
+                    _params[paramNumber].Value = *(double*)paramValue;
+                    break;
+                case SqlDataType.DotNetReal:
                     _params[paramNumber].Value = *(float*)paramValue;
                     break;
                 case SqlDataType.DotNetBit:
@@ -117,9 +127,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
                     break;
-                case SqlDataType.DotNetWChar:
-                    _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
-                    break;
+                default:
+                    throw new NotImplementedException("Parameter type for " + dataType.ToString() + " has not been implemented yet");
             }
 
             UserParams[paramName] = _params[paramNumber].Value;

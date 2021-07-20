@@ -139,6 +139,10 @@ namespace ExtensionApiTest
         //
         static void DoInit();
 
+        // Get length of a wstring
+        //
+        SQLINTEGER GetWStringLength(const wchar_t *str);
+
         // Cleanup a valid session.
         //
         void SessionCleanup();
@@ -159,6 +163,38 @@ namespace ExtensionApiTest
             SQLUSMALLINT parametersNumber = 0,
             std::string  scriptString = "");
 
+        // Template to test all input parameter data types
+        //
+        template<class SQLType, SQLSMALLINT dataType>
+        void TestParameter(
+            int         paramNumber,
+            SQLType     paramValue,
+            bool        isNull = false,
+            SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+            SQLRETURN   SQLResult = 0);
+
+        // Test a string parameter
+        //
+        void TestStringParameter(
+            int         paramNumber,
+            const char  *paramValue,
+            SQLULEN     paramSize,
+            bool        isFixedType,
+            SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+            SQLRETURN   SQLResult = 0);
+
+        // Test a string parameter
+        //
+        void TestWStringParameter(
+            int           paramNumber,
+            const wchar_t *paramValue,
+            SQLINTEGER    paramSize,
+            bool          isFixedType,
+            SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+            SQLRETURN     SQLResult = 0);
+
+        // Objects declared here can be used by all tests in the test suite.
+        //
         std::shared_ptr<SQLGUID> m_sessionId;
         SQLUSMALLINT m_taskId;
         SQLUSMALLINT m_numTasks;

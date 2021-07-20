@@ -8,7 +8,7 @@
 //  Test the .NET Core CSharp extension columns using the Extension API
 //
 //*********************************************************************
-#include "CsharpExtensionApiTests.h"
+#include "CSharpExtensionApiTests.h"
 
 using namespace std;
 
