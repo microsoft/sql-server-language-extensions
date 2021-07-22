@@ -91,7 +91,7 @@ build:
           include:
             - 'Microsoft.SqlServer.CSharpExtension.pdb'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
           to: 'out\dotnet-core-CSharp-extension\debug'
           include:
@@ -103,19 +103,19 @@ build:
           include:
             - 'nativecsharpextension.pdb'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
           to: 'out\dotnet-core-CSharp-extension\debug'
           include:
             - 'hostfxr.dll'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\debug'
           to: 'out\dotnet-core-CSharp-extension\debug'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.runtimeconfig.json'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
           to: 'out\dotnet-core-CSharp-extension\release'
           include:
@@ -127,7 +127,7 @@ build:
           include:
             - 'Microsoft.SqlServer.CSharpExtension.pdb'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
           to: 'out\dotnet-core-CSharp-extension\release'
           include:
@@ -139,19 +139,19 @@ build:
           include:
             - 'nativecsharpextension.pdb'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
           to: 'out\dotnet-core-CSharp-extension\release'
           include:
             - 'hostfxr.dll'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
         - from: 'build-output\dotnet-core-CSharp-extension\windows\release'
           to: 'out\dotnet-core-CSharp-extension\release'
           include:
             - 'Microsoft.SqlServer.CSharpExtension.runtimeconfig.json'
           signing_options:
-            profile: '135020002'
+            profile: 'none'
     - !!defaultcommand
       name: 'Build DotNetCore CSharp Extension Test'
       command: 'language-extensions\dotnet-core-CSharp\test\build\windows\build-dotnet-core-CSharp-extension-test.cmd'
