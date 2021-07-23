@@ -10,12 +10,13 @@
 //*********************************************************************
 using System;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// This class manages conversions of different types and objects
+    /// This class is used for Interop between managed and unmanaged (native) interaction.
     /// </summary>
     public static unsafe class Interop
     {
@@ -52,6 +53,31 @@ namespace Microsoft.SqlServer.CSharpExtension
         public static string UTF8PtrToStr(char* str, ulong length)
         {
             return Marshal.PtrToStringUTF8((IntPtr)str, (int) length);
+        }
+
+        /// <summary>
+        /// This method copies the contents of one block of memory to a managed int array.
+        /// </summary>
+        /// <param name="source">
+        /// Source of the block of memory
+        /// </param>
+        /// <param name="destination">
+        /// The array that stores the values from the block of memory
+        /// </param>
+        /// <param name="startIndex">
+        /// The start index of the block of memory
+        /// </param>
+        /// <param name="length">
+        /// The length of the block of memory
+        /// </param>
+        public static void Copy(int* source, int[] destination, int startIndex, int length)
+        {
+            if(source == null)
+            {
+                return;
+            }
+
+            Marshal.Copy((IntPtr)source, destination, startIndex, length);
         }
     }
 }

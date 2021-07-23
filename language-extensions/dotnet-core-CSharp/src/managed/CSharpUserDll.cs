@@ -32,7 +32,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// The namespace of user dll
         /// </summary>
-        private string _userNamespace;
+        private string _userClassName;
 
         /// <summary>
         /// This constructor creates CSharpUserDll class with public/private external
@@ -44,14 +44,14 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="privatePath">
         /// The absolute path to the private library folder
         /// </param>
-        /// <param name="userNamespace">
-        /// The namespace of the user class
+        /// <param name="userClassName">
+        /// The full name of the user class in the form of namespace.classname
         /// </param>
-        public CSharpUserDll(string publicPath, string privatePath, string userNamespace)
+        public CSharpUserDll(string publicPath, string privatePath, string userClassName)
         {
             _publicPath = publicPath;
             _privatePath = privatePath;
-            _userNamespace = userNamespace;
+            _userClassName = userClassName;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             Logging.Trace("CSharpUserDll::InstantiateUserExecutor");
             List<string> dllList = DllUtils.CreateDllList(_publicPath, _privatePath);
-            Type userExecutorClass = DllUtils.GetUserDll(_userNamespace, dllList);
+            Type userExecutorClass = DllUtils.GetUserDll(_userClassName, dllList);
             return (AbstractSqlServerExtensionExecutor)Activator.CreateInstance(userExecutorClass);
         }
     }

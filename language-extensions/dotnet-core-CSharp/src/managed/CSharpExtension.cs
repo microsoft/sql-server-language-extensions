@@ -190,7 +190,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 CSharpUserDll userDll = new CSharpUserDll(
                     publicPath: _publicLibraryPath,
                     privatePath: _privateLibraryPath,
-                    userNamespace: scriptStr);
+                    userClassName: scriptStr);
 
                 _currentSession = new CSharpSession(
                     sessionId: sessionId,

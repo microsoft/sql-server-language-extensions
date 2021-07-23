@@ -10,6 +10,8 @@
 //*********************************************************************
 using System;
 using System.Collections.Generic;
+using Microsoft.Data.Analysis;
+using Microsoft.SqlServer.CSharpExtension.SDK;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -167,7 +169,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             ushort *outputSchemaColumnsNumber)
         {
             Logging.Trace("CSharpSession::Execute");
-            _userDll.InstantiateUserExecutor();
+            _inputDataSet.AddColumns(rowsNumber, data, strLenOrNullMap);
+            AbstractSqlServerExtensionExecutor userExecutor = _userDll.InstantiateUserExecutor();
+            DataFrame outputDataFrame = userExecutor.Execute(_inputDataSet.InputDataFrame, _paramContainer.UserParams);
         }
 
         /// <summary>

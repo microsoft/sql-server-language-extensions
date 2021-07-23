@@ -5,6 +5,7 @@ REM Set environment variables
 REM
 SET ENL_ROOT=%~dp0..\..\..\..\..
 SET DOTNETCORE_CSHARP_EXTENSION_TEST_HOME=%ENL_ROOT%\language-extensions\dotnet-core-CSharp\test
+SET DOTNETCORE_CSHARP_EXTENSION_TEST_LIB=%DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\lib
 SET DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-CSharp-extension-test\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
@@ -64,10 +65,19 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
 	-DPLATFORM=windows ^
-	"%DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\src"
+	"%DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\src\native"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[INFO] Building dotnet-core-CSharp-extension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+
+REM Call dotnet build
+REM
+dotnet build %DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\src\managed\Microsoft.SqlServer.CSharpExtensionTest.csproj /m /p:Configuration=%CMAKE_CONFIGURATION%;OutDir=%BUILD_OUTPUT% --no-dependencies
+
+REM Delete Microsoft.SqlServer.CSharpExtension.dll to avoid test executor referencing it instead of the extension itself
+REM
+DEL /S /Q %BUILD_OUTPUT%\Microsoft.SqlServer.CSharpExtension.dll
+
 
 REM Call cmake build
 REM

@@ -117,7 +117,7 @@ namespace ExtensionApiTest
         SQLRETURN result = (*sm_initColumnFuncPtr)(
             *m_sessionId,     // Session ID
             m_taskId,         // Task ID
-            -1,               // Column number greater than initialized columns
+            -1,               // Negative Column number
             columnName,       // Column Name
             columnNameLength, // Column Name Length
             SQL_C_SLONG,      // Data Type

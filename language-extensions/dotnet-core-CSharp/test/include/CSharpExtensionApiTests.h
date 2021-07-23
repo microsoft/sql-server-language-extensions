@@ -101,6 +101,11 @@ typedef SQLRETURN FN_cleanup();
 
 namespace ExtensionApiTest
 {
+    // Forward declaration
+    //
+    template<class SQLType>
+    class ColumnInfo;
+
     class CSharpExtensionApiTests : public ::testing::Test
     {
     protected:
@@ -163,6 +168,21 @@ namespace ExtensionApiTest
             SQLUSMALLINT parametersNumber = 0,
             std::string  scriptString = "");
 
+        // Initialize a valid column
+        //
+        void InitializeColumn(
+            SQLSMALLINT columnNumber,
+            string      columnNameString,
+            SQLSMALLINT dataType,
+            SQLULEN     columnSize,
+            SQLSMALLINT partitionByNumber = -1
+        );
+
+        // Template to initialize columns
+        //
+        template<class SQLType, SQLSMALLINT dataType>
+        void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
+
         // Template to test all input parameter data types
         //
         template<class SQLType, SQLSMALLINT dataType>
@@ -171,7 +191,7 @@ namespace ExtensionApiTest
             SQLType     paramValue,
             bool        isNull = false,
             SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-            SQLRETURN   SQLResult = 0);
+            SQLRETURN   SQLResult = SQL_SUCCESS);
 
         // Test a string parameter
         //
@@ -181,7 +201,7 @@ namespace ExtensionApiTest
             SQLULEN     paramSize,
             bool        isFixedType,
             SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-            SQLRETURN   SQLResult = 0);
+            SQLRETURN   SQLResult = SQL_SUCCESS);
 
         // Test a string parameter
         //
@@ -191,7 +211,25 @@ namespace ExtensionApiTest
             SQLINTEGER    paramSize,
             bool          isFixedType,
             SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-            SQLRETURN     SQLResult = 0);
+            SQLRETURN     SQLResult = SQL_SUCCESS);
+
+        // Template function to Test Execute with script that contains user executor class full name
+        //
+        template<class SQLType, SQLSMALLINT dataType>
+        void TestExecute(
+            SQLULEN                  rowsNumber,
+            void                     **dataSet,
+            SQLINTEGER               **strLen_or_Ind,
+            std::vector<std::string> columnNames,
+            SQLRETURN                SQLResult = SQL_SUCCESS);
+
+        // Fill a contiguous array columnData with members from the given columnVector
+        // having lengths defined in strLenOrInd, unless it is SQL_NULL_DATA.
+        //
+        template<class SQLType>
+        std::vector<SQLType> GenerateContiguousData(
+            std::vector<const SQLType*> columnVector,
+            SQLINTEGER                  *strLenOrInd);
 
         // Objects declared here can be used by all tests in the test suite.
         //
@@ -217,11 +255,73 @@ namespace ExtensionApiTest
         SQLUSMALLINT m_inputSchemaColumnsNumber;
         SQLUSMALLINT m_parametersNumber;
 
+        std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLCHAR>> m_booleanInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLREAL>> m_realInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLDOUBLE>> m_doubleInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLBIGINT>> m_bigIntInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLSMALLINT>> m_smallIntInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLCHAR>> m_tinyIntInfo = nullptr;
+        std::unique_ptr<ColumnInfo<SQLCHAR>> m_charInfo = nullptr;
+
+        // Size of each datatype
+        //
         const SQLINTEGER m_IntSize = sizeof(SQLINTEGER);
+        const SQLINTEGER m_BooleanSize = sizeof(SQLCHAR);
+        const SQLINTEGER m_RealSize = sizeof(SQLREAL);
+        const SQLINTEGER m_DoubleSize = sizeof(SQLDOUBLE);
+        const SQLINTEGER m_BigIntSize = sizeof(SQLBIGINT);
+        const SQLINTEGER m_SmallIntSize = sizeof(SQLSMALLINT);
+        const SQLINTEGER m_TinyIntSize = sizeof(SQLCHAR);
+        const SQLINTEGER m_CharSize = sizeof(SQLCHAR);
+
+        // A value of 2'147'483'648
+        //
+        const SQLINTEGER m_MaxInt = (std::numeric_limits<SQLINTEGER>::max)();
+
+        // A value of -2'147'483'648
+        //
+        const SQLINTEGER m_MinInt = (std::numeric_limits<SQLINTEGER>::min)();
+
+        // A value of 9'223'372'036'854'775'807LL
+        //
+        const SQLBIGINT m_MaxBigInt = (std::numeric_limits<SQLBIGINT>::max)();
+
+        // A value of -9'223'372'036'854'775'808LL
+        //
+        const SQLBIGINT m_MinBigInt = (std::numeric_limits<SQLBIGINT>::min)();
+
+        // A value of 32'767
+        //
+        const SQLSMALLINT m_MaxSmallInt = (std::numeric_limits<SQLSMALLINT>::max)();
+
+        // A value of -32'768
+        //
+        const SQLSMALLINT m_MinSmallInt = (std::numeric_limits<SQLSMALLINT>::min)();
+
+        // A value of 255
+        //
+        const SQLCHAR m_MaxTinyInt = (std::numeric_limits<SQLCHAR>::max)();
+
+        // A value of 0
+        //
+        const SQLCHAR m_MinTinyInt = (std::numeric_limits<SQLCHAR>::min)();
+
+        // For floating types, not using numeric_limits because they can't be
+        // used for equality comparisons.
+        //
+        const SQLREAL m_MaxReal = 3.4e38F;
+        const SQLREAL m_MinReal = -3.4e38F;
+        const SQLDOUBLE m_MaxDouble = 1.79e308;
+        const SQLDOUBLE m_MinDouble = -1.79e308;
 
         // Path of .NET Core CSharp Extension
         //
         static std::string sm_extensionPath;
+
+        // Path of .NET Core CSharp Extension library
+        //
+        static std::string sm_libPath;
 
         // Pointer handle to the library nativecsharpextension
         //
@@ -266,5 +366,38 @@ namespace ExtensionApiTest
         // Pointer to the Cleanup function
         //
         static FN_cleanup *sm_cleanupFuncPtr;
+    };
+
+    // ColumnInfo template class to store information
+    // about integer, basic numeric, logical and date(time) columns.
+    // This assumes two columns and five rows.
+    //
+    template<class SQLType>
+    class ColumnInfo
+    {
+    public:
+        ColumnInfo(
+            std::string column1Name, std::vector<SQLType> column1,
+            std::vector<SQLINTEGER> col1StrLenOrInd,
+            std::string column2Name, std::vector<SQLType> column2,
+            std::vector<SQLINTEGER> col2StrLenOrInd,
+            std::vector<SQLSMALLINT> nullable,
+            std::vector<SQLSMALLINT> partitionByIndexes = {-1, -1});
+
+        SQLUSMALLINT GetColumnsNumber() const
+        {
+            return m_columnNames.size();
+        }
+
+        static const SQLULEN sm_rowsNumber = 5;
+        std::vector<std::string> m_columnNames;
+        std::vector<SQLType> m_column1;
+        std::vector<SQLType> m_column2;
+        std::vector<void*> m_dataSet;
+        std::vector<SQLINTEGER> m_col1StrLenOrInd;
+        std::vector<SQLINTEGER> m_col2StrLenOrInd;
+        std::vector<SQLINTEGER*> m_strLen_or_Ind;
+        std::vector<SQLSMALLINT> m_nullable;
+        std::vector<SQLSMALLINT> m_partitionByIndexes;
     };
 }

@@ -25,7 +25,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method finds the first user class that implements the executor and the correct namespace.
         /// </summary>
-        /// <param name="userNamespace">
+        /// <param name="userClassName">
         /// The namespace of User Dll
         /// </param>
         /// <param name="interfaceToImplement">
@@ -34,36 +34,49 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="types">
         /// The types of all the classes of the user dll
         /// </param>
-        private static Type GetFirstClassThatImplements(string userNamespace, Type interfaceToImplement, IEnumerable<Type> types)
+        private static Type GetClassThatImplements(string userClassName, Type interfaceToImplement, IEnumerable<Type> types)
         {
             // Looks for the class that has the same namespace as the user namespace and the implemented interface can be assignable from the user interface
-            return types.FirstOrDefault(t => t.Namespace == userNamespace && interfaceToImplement.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+            return types.FirstOrDefault(t => t.FullName == userClassName && interfaceToImplement.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
         }
 
         /// <summary>
         /// This method loops through all dll in the paths and returns the first class that implements the executor.
         /// </summary>
-        /// <param name="userNamespace">
-        /// The namespace of User Dll
+        /// <param name="userClassName">
+        /// The full name of the user class in the form of namespace.classname
         /// </param>
         /// <param name="dllList">
         /// A list containing all the dlls under the public and private library path
         /// </param>
-        public static Type GetUserDll(string userNamespace, List<string> dllList)
+        public static Type GetUserDll(string userClassName, List<string> dllList)
         {
             // AppDomain.CurrentDomain.AssemblyResolve occurs when the resolution of an assembly fails.
+            //
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
             foreach(string dllPath in dllList)
             {
-                Assembly userDll = Assembly.LoadFrom(dllPath);
-                Type userExecutorClass = DllUtils.GetFirstClassThatImplements(userNamespace, typeof(AbstractSqlServerExtensionExecutor), userDll.GetExportedTypes());
-                if (userExecutorClass != null)
+                // Catch unexpected exception while loading other dlls
+                //
+                try
                 {
-                    return userExecutorClass;
+                    Assembly userDll = Assembly.LoadFrom(dllPath);
+                    Type userExecutorClass = DllUtils.GetClassThatImplements(userClassName, typeof(AbstractSqlServerExtensionExecutor), userDll.GetExportedTypes());
+                    if (userExecutorClass != null)
+                    {
+                        return userExecutorClass;
+                    }
+                }
+                catch (Exception e)
+                {
+                    // Catch unexpected exception without throwing the exception so that
+                    // all the dlls will be loaded to find matched user executor
+                    //
+                    Logging.Error(e.StackTrace + "Error: " + e.Message);
                 }
             }
 
-            throw new Exception("Unable to find userExecutor.");
+            throw new Exception("Unable to find user class with full name: " + userClassName);
         }
 
         /// <summary>
@@ -80,12 +93,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             List<string>dllList = new List<string>();
             if (!string.IsNullOrEmpty(publicPath))
             {
-                dllList.AddRange(Directory.GetFiles(publicPath));
+                dllList.AddRange(Directory.GetFiles(publicPath).Where(s => s.EndsWith(".dll")));
             }
 
             if (!string.IsNullOrEmpty(privatePath))
             {
-                dllList.AddRange(Directory.GetFiles(privatePath));
+                dllList.AddRange(Directory.GetFiles(privatePath).Where(s => s.EndsWith(".dll")));
             }
 
             if (dllList.Count == 0)
