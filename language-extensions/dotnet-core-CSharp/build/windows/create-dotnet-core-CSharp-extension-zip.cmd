@@ -25,7 +25,11 @@ POPD
 
 REM Package the signed binaries.
 REM
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\* -DestinationPath %BUILD_OUTPUT%\packages\dotnet-core-CSharp-lang-extension.zip"
+powershell -NoProfile -ExecutionPolicy Unrestricted ^
+ -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\*.dll, %BUILD_OUTPUT%\*.pdb, `" ^
+ "%BUILD_OUTPUT%\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json, `" ^
+ "%BUILD_OUTPUT%\Microsoft.SqlServer.CSharpExtension.deps.json `" ^
+ "-DestinationPath %BUILD_OUTPUT%\packages\dotnet-core-CSharp-lang-extension.zip"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for dotnet-core-CSharp-extension for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "Success: Compressed dotnet-core-CSharp-extension for %BUILD_CONFIGURATION% configuration."
