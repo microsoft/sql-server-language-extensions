@@ -183,19 +183,19 @@ namespace ExtensionApiTest
         template<class SQLType, SQLSMALLINT dataType>
         void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
 
-        // Template to test all input parameter data types
+        // Template to int and test all input parameter numeric data types
         //
         template<class SQLType, SQLSMALLINT dataType>
-        void TestParameter(
+        void InitParam(
             int         paramNumber,
             SQLType     paramValue,
             bool        isNull = false,
             SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
             SQLRETURN   SQLResult = SQL_SUCCESS);
 
-        // Test a string parameter
+        // Init and test a string parameter
         //
-        void TestStringParameter(
+        void InitStringParameter(
             int         paramNumber,
             const char  *paramValue,
             SQLULEN     paramSize,
@@ -203,9 +203,9 @@ namespace ExtensionApiTest
             SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
             SQLRETURN   SQLResult = SQL_SUCCESS);
 
-        // Test a string parameter
+        // Init and test a string parameter
         //
-        void TestWStringParameter(
+        void InitWStringParameter(
             int           paramNumber,
             const wchar_t *paramValue,
             SQLINTEGER    paramSize,
@@ -230,6 +230,13 @@ namespace ExtensionApiTest
         std::vector<SQLType> GenerateContiguousData(
             std::vector<const SQLType*> columnVector,
             SQLINTEGER                  *strLenOrInd);
+
+        // Templatized function to test output param value and strLenOrInd are as expected.
+        //
+        template<class SQLType>
+        void TestGetOutputParam(
+            std::vector<SQLType*>   expectedParamValueVector,
+            std::vector<SQLINTEGER> expectedStrLenOrIndVector);
 
         // Objects declared here can be used by all tests in the test suite.
         //

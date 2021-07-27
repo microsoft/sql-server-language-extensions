@@ -10,6 +10,7 @@
 //*********************************************************************
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
@@ -190,12 +191,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method returns the data and size of the output parameter.
         /// </summary>
-        public short GetOutputParam(
-            ushort paramNumber,
-            void   *paramValue,
-            int    *strLenOrNullMap)
+        public void GetOutputParam(
+            ushort         paramNumber,
+            void           **paramValue,
+            int            *strLenOrNullMap,
+            List<GCHandle> handleList)
         {
-            throw new NotImplementedException();
+            _paramContainer.ReplaceParam(paramNumber, paramValue, strLenOrNullMap, handleList);
         }
     }
 }

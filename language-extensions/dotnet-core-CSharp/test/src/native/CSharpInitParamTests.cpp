@@ -28,32 +28,32 @@ namespace ExtensionApiTest
 
         // Test max INT value
         //
-        TestParameter<SQLINTEGER, SQL_C_SLONG>(
+        InitParam<SQLINTEGER, SQL_C_SLONG>(
             0,           // paramNumber
             2147483647); // max INT value
 
         // Test min INT value
         //
-        TestParameter<SQLINTEGER, SQL_C_SLONG>(
+        InitParam<SQLINTEGER, SQL_C_SLONG>(
             1,            // paramNumber
             -2147483647); // min INT value
 
         // Test a normal value
         //
-        TestParameter<SQLINTEGER, SQL_C_SLONG>(
+        InitParam<SQLINTEGER, SQL_C_SLONG>(
             2,  // paramNumber
             4); // normal int value
 
         // Test null INT value
         //
-        TestParameter<SQLINTEGER, SQL_C_SLONG>(
+        InitParam<SQLINTEGER, SQL_C_SLONG>(
             3,     // paramNumber
             0,     // paramValue
             true); // isNull
 
         // Test invalid parameter number
         //
-        TestParameter<SQLINTEGER, SQL_C_SLONG>(
+        InitParam<SQLINTEGER, SQL_C_SLONG>(
             4,                      // invalid paramNumber
             0,                      // paramValue
             false,                  // isNULL
@@ -62,7 +62,7 @@ namespace ExtensionApiTest
 
         // Test negative parameter number
         //
-        TestParameter<SQLINTEGER, SQL_C_SLONG>(
+        InitParam<SQLINTEGER, SQL_C_SLONG>(
             -1,                     // negative paramNumber
             0,                      // paramValue
             false,                  // isNULL
@@ -84,44 +84,44 @@ namespace ExtensionApiTest
 
         // Test '1' BIT value
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,    // paramNumber
             '1'); // paramValue
 
         // Test '0' BIT value
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,    // paramNumber
             '0'); // paramValue
 
         // Test 1 BIT value
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,  // paramNumber
             1); // paramValue
 
         // Test 0 BIT value
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,  // paramNumber
             0); // paramValue
 
         // Test null BIT value
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,     // paramNumber
             0,     // paramValue
             true); // isNull
 
         // Test > 1 BIT value, should be True
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,  // paramNumber
             2); // paramValue
 
         // Test != '1' and != '0' BIT value, should be True
         //
-        TestParameter<SQLCHAR, SQL_C_BIT>(
+        InitParam<SQLCHAR, SQL_C_BIT>(
             0,    // paramNumber
             '3'); // paramValue
     }
@@ -140,25 +140,25 @@ namespace ExtensionApiTest
 
         // Test max FLOAT(24) i.e. REAL value
         //
-        TestParameter<SQLREAL, SQL_C_FLOAT>(
+        InitParam<SQLREAL, SQL_C_FLOAT>(
             0,        // paramNumber
             3.4e38F); // max FLOAT value
 
         // Test min FLOAT(24) i.e. REAL value
         //
-        TestParameter<SQLREAL, SQL_C_FLOAT>(
+        InitParam<SQLREAL, SQL_C_FLOAT>(
             0,         // paramNumber
             -3.4e38F); // min FLOAT value
 
         // Test a normal FLOAT(24) value
         //
-        TestParameter<SQLREAL, SQL_C_FLOAT>(
+        InitParam<SQLREAL, SQL_C_FLOAT>(
             0,       // paramNumber
             2.3e4F); //normal FLOAT value
 
         // Test null FLOAT(24) i.e. REAL value
         //
-        TestParameter<SQLREAL, SQL_C_FLOAT>(
+        InitParam<SQLREAL, SQL_C_FLOAT>(
             0,     // paramNumber
             0,     // paramValue
             true); // isNull
@@ -178,25 +178,25 @@ namespace ExtensionApiTest
 
         // Test max FLOAT(53) i.e. DOUBLE PRECISION value
         //
-        TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
+        InitParam<SQLDOUBLE, SQL_C_DOUBLE>(
             0,         // paramNumber
             1.79e308); // max DOUBLE value
 
         // Test min FLOAT(53) i.e. DOUBLE PRECISION value
         //
-        TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
+        InitParam<SQLDOUBLE, SQL_C_DOUBLE>(
             0,          // paramNumber
             -1.79e308); // min DOUBLE value
 
         // Test normal FLOAT(53) i.e. DOUBLE PRECISION value
         //
-        TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
+        InitParam<SQLDOUBLE, SQL_C_DOUBLE>(
             0,        // paramNumber
             1.45e38); // normal DOUBLE value
 
         // Test null FLOAT(53) value
         //
-        TestParameter<SQLDOUBLE, SQL_C_DOUBLE>(
+        InitParam<SQLDOUBLE, SQL_C_DOUBLE>(
             0,     // paramNumber
             0,     // paramValue
             true); // isNull
@@ -216,25 +216,25 @@ namespace ExtensionApiTest
 
         // Test max BIGINT value
         //
-        TestParameter<SQLBIGINT, SQL_C_SBIGINT>(
+        InitParam<SQLBIGINT, SQL_C_SBIGINT>(
             0,                      // paramNumber
             9223372036854775807LL); // max BIGINT value
 
         // Test min BIGINT value : -9223372036854775808 gives compiler error
         //
-        TestParameter<SQLBIGINT, SQL_C_SBIGINT>(
+        InitParam<SQLBIGINT, SQL_C_SBIGINT>(
             0,                       // paramNumber
             -9223372036854775807LL); // min BIGINT value
 
         // Test normal BIGINT value
         //
-        TestParameter<SQLBIGINT, SQL_C_SBIGINT>(
+        InitParam<SQLBIGINT, SQL_C_SBIGINT>(
             0,                    // paramNumber
             9'372'036'854'775LL); // normal BIGINT value
 
         // Test null BIGINT value
         //
-        TestParameter<SQLBIGINT, SQL_C_SBIGINT>(
+        InitParam<SQLBIGINT, SQL_C_SBIGINT>(
             0,     // paramNumber
             0,     // paramValue
             true); // isNull
@@ -254,28 +254,28 @@ namespace ExtensionApiTest
 
         // Test max TINYINT value
         //
-        TestParameter<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
+        InitParam<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
             (numeric_limits<SQLCHAR>::max)());    // max TINYINT value
 
         // Test min TINYINT value
         //
-        TestParameter<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
+        InitParam<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
             (numeric_limits<SQLCHAR>::min)());    // min TINYINT value
 
         // Test normal TINYINT value
         //
-        TestParameter<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
+        InitParam<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
             123);                                 // normal TINYINT value
 
         // Test null TINYINT value
         //
-        TestParameter<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
+        InitParam<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
             0,                                    // paramValue
             true);                                // isNull
 
         // Test -1 TINYINT value underflows to Max TinyInt
         //
-        TestParameter<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
+        InitParam<SQLCHAR, SQL_C_UTINYINT>(0, // paramNumber
             -1);                                  // paramValue
     }
 
@@ -293,22 +293,22 @@ namespace ExtensionApiTest
 
         // Test max SMALLINT value
         //
-        TestParameter<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
+        InitParam<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
             32767);                                 // max SMALLINT value
 
         // Test min SMALLINT value
         //
-        TestParameter<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
+        InitParam<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
             -32768);                                // min SMALLINT value
 
         // Test normal SMALLINT value
         //
-        TestParameter<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
+        InitParam<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
             3'007);                                 // normal SMALLINT value
 
         // Test null SMALLINT value
         //
-        TestParameter<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
+        InitParam<SQLSMALLINT, SQL_C_SSHORT>(0, // paramNumber
             0,                                      // paramValue
             true);                                  // isNull
     }
@@ -327,7 +327,7 @@ namespace ExtensionApiTest
 
         // Test simple CHAR(5) value
         //
-        TestStringParameter(
+        InitStringParameter(
             0,       // paramNumber
             "HELLO", // paramValue
             5,       // paramSize
@@ -335,7 +335,7 @@ namespace ExtensionApiTest
 
         // Test simple CHAR(6) value with parameter length less than size - should be padded.
         //
-        TestStringParameter(
+        InitStringParameter(
             0,       // paramNumber
             "WORLD", // paramValue
             6,       // paramSize
@@ -343,7 +343,7 @@ namespace ExtensionApiTest
 
         // Test CHAR(6) value with parameter length more than size - should be truncated.
         //
-        TestStringParameter(
+        InitStringParameter(
             0,             // paramNumber
             "DOTNETEXTENSION", // paramValue
             6,             // paramSize
@@ -351,7 +351,7 @@ namespace ExtensionApiTest
 
         // Test null CHAR(5) value
         //
-        TestStringParameter(
+        InitStringParameter(
             0,       // paramNumber
             nullptr, // paramValue
             5,       // paramSize
@@ -359,7 +359,7 @@ namespace ExtensionApiTest
 
         // Test simple VARCHAR(6) value
         //
-        TestStringParameter(
+        InitStringParameter(
             0,        // paramNumber
             "WORLD!", // paramValue
             6,        // paramSize
@@ -367,7 +367,7 @@ namespace ExtensionApiTest
 
         // Test simple VARCHAR(8) value with parameter length less than size - NO padding.
         //
-        TestStringParameter(
+        InitStringParameter(
             0,       // paramNumber
             "WORLD", // paramValue
             8,       // paramSize
@@ -375,7 +375,7 @@ namespace ExtensionApiTest
 
         // Test VARCHAR(6) value with parameter length more than size - should be truncated.
         //
-        TestStringParameter(
+        InitStringParameter(
             0,             // paramNumber
             "DOTNETEXTENSION", // paramValue
             6,             // paramSize
@@ -384,7 +384,7 @@ namespace ExtensionApiTest
         // Test CHAR value with UTF-8 encoded string (with chinese)
         //
         string utfstring = u8"中文编码";
-        TestStringParameter(
+        InitStringParameter(
             0,                  // paramNumber
             utfstring.c_str(),  // paramValue
             utfstring.length(), // paramSize
@@ -393,7 +393,7 @@ namespace ExtensionApiTest
         // Test VARCHAR value with UTF-8 encoded string (with cyrillic)
         //
         utfstring = u8"абвг";
-        TestStringParameter(
+        InitStringParameter(
             0,                  // paramNumber
             utfstring.c_str(),  // paramValue
             utfstring.length(), // paramSize
@@ -401,7 +401,7 @@ namespace ExtensionApiTest
 
         // Test null VARCHAR(5) value
         //
-        TestStringParameter(
+        InitStringParameter(
             0,       // paramNumber
             nullptr, // paramValue
             5,       // paramSize
@@ -411,7 +411,7 @@ namespace ExtensionApiTest
         // https://en.wikipedia.org/wiki/UTF-8#Examples
         //
         string goodUTF8 = string("a") + "\xE2" + "\x82" + "\xAC";
-        TestStringParameter(
+        InitStringParameter(
             0,                 // paramNumber
             goodUTF8.c_str(),  // paramValue
             goodUTF8.length(), // paramSize
@@ -428,7 +428,7 @@ namespace ExtensionApiTest
     {
         // Test simple NCHAR(5) value
         //
-        TestWStringParameter(
+        InitWStringParameter(
             0,                      // paramNumber
             L"HELLO",               // paramValue
             5,                      // paramSize
@@ -438,14 +438,14 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: TestParameter
+    // Name: InitParam
     //
     // Description:
     // Templatized function to call InitParam for the given paramValue and dataType.
     // Testing if InitParam is implemented correctly for integer/numeric/boolean dataTypes.
     //
     template<class SQLType, SQLSMALLINT dataType>
-    void CSharpExtensionApiTests::TestParameter(
+    void CSharpExtensionApiTests::InitParam(
         int         paramNumber,
         SQLType     paramValue,
         bool        isNull,
@@ -483,12 +483,12 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: TestStringParameter
+    // Name: InitStringParameter
     //
     // Description:
     // Testing if InitParam is implemented correctly for the char/varchar dataType.
     //
-    void CSharpExtensionApiTests::TestStringParameter(
+    void CSharpExtensionApiTests::InitStringParameter(
         int           paramNumber,
         const char    *paramValue,
         const SQLULEN paramSize,
@@ -554,12 +554,12 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: TestWStringParameter
+    // Name: InitWStringParameter
     //
     // Description:
     // Testing if InitParam is implemented correctly for the nchar/nvarchar dataType.
     //
-    void CSharpExtensionApiTests::TestWStringParameter(
+    void CSharpExtensionApiTests::InitWStringParameter(
         int              paramNumber,
         const wchar_t    *paramValue,
         const SQLINTEGER paramSize,

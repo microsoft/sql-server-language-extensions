@@ -11,6 +11,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
@@ -45,6 +46,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// PARAMETERS value provided during CREATE EXTERNAL LANGUAGE or ALTER EXTERNAL LANGUAGE.
         /// </summary>
         private static string _languageParams;
+
+        /// <summary>
+        /// A list of handles to prevent garbage collector releasing the memory before the objects are used.
+        /// </summary>
+        public static List<GCHandle> _handleList;
 
         /// <summary>
         /// This delegate declares the delegate type of Init.
@@ -202,6 +208,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                     inputDataName: inputDataNameStr,
                     outputDataName: outputDataNameStr,
                     userDll: userDll);
+
+                _handleList = new List<GCHandle>();
             });
         }
 
@@ -470,21 +478,48 @@ namespace Microsoft.SqlServer.CSharpExtension
             return SQL_SUCCESS;
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of GetOutputParam.
+        /// </summary>
         public delegate short GetOutputParamDelegate(
             Guid   sessionId,
             ushort taskId,
             ushort paramNumber,
-            void   *paramValue,
+            void   **paramValue,
             int    *strLenOrNullMap);
 
+        /// <summary>
+        /// This method implements GetOutputParam API.
+        /// Retrieve the information regarding a given output parameter for a particular session.
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="paramNumber">
+        /// An integer identifying the index of this parameter. Parameters
+        /// are numbered sequentially in increasing order starting at 0.
+        /// </param>
+        /// <param name="paramValue">
+        /// A pointer to a buffer containing the parameter's value.
+        /// </param>
+        /// <param name="strLenOrNullMap">
+        /// A pointer to a buffer that contains an integer value indicating the length in bytes
+        /// of ParamValue, or SQL_NULL_DATA to indicate that the data is NULL.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short GetOutputParam(
             Guid   sessionId,
             ushort taskId,
             ushort paramNumber,
-            void   *paramValue,
+            void   **paramValue,
             int    *strLenOrNullMap)
         {
-            return SQL_SUCCESS;
+            return ExceptionUtils.WrapError(() =>
+            {
+                _currentSession.GetOutputParam(paramNumber, paramValue, strLenOrNullMap, _handleList);
+            });
         }
 
         public delegate short CleanupSessionDelegate(
@@ -498,6 +533,10 @@ namespace Microsoft.SqlServer.CSharpExtension
             return ExceptionUtils.WrapError(() =>
             {
                 _currentSession = null;
+                foreach(GCHandle handle in _handleList)
+                {
+                    handle.Free();
+                }
             });
         }
     }
