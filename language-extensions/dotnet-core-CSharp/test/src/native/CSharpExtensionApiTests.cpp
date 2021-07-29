@@ -154,8 +154,8 @@ namespace ExtensionApiTest
             vector<SQLINTEGER>(ColumnInfo<SQLREAL>::sm_rowsNumber, m_RealSize),
             "RealColumn2",
             vector<SQLREAL>{ m_MaxReal, NAN, m_MinReal, NAN, 0 },
-            vector<SQLINTEGER>{ m_DoubleSize, SQL_NULL_DATA, m_DoubleSize,
-                SQL_NULL_DATA, m_DoubleSize },
+            vector<SQLINTEGER>{ m_RealSize, SQL_NULL_DATA, m_RealSize,
+                SQL_NULL_DATA, m_RealSize },
             vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
         m_doubleInfo = make_unique<ColumnInfo<SQLDOUBLE>>(
@@ -175,17 +175,18 @@ namespace ExtensionApiTest
             "BigIntColumn2",
             vector<SQLBIGINT>{0, 0, 0, 12341512213, -12341512213 },
             vector<SQLINTEGER>{ SQL_NULL_DATA, SQL_NULL_DATA,
-            SQL_NULL_DATA, m_DoubleSize, m_DoubleSize },
+            SQL_NULL_DATA, m_BigIntSize, m_BigIntSize },
             vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
         m_smallIntInfo = make_unique<ColumnInfo<SQLSMALLINT>>(
             "SmallIntColumn1",
-            vector<SQLSMALLINT>{ 223, 33, 9811, -725, 6810 },
+            vector<SQLSMALLINT>{ m_MaxSmallInt, 33, 9811, m_MinSmallInt, 6810 },
             vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_SmallIntSize),
             "SmallIntColumn2",
-            vector<SQLSMALLINT>{ -1, 0, m_MaxSmallInt, m_MinSmallInt, 3'276 },
-            vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_IntSize),
-            vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NO_NULLS });
+            vector<SQLSMALLINT>{ -1, 0, SQL_NULL_DATA, -725, 3'276 },
+            vector<SQLINTEGER>{ m_SmallIntSize, SQL_NULL_DATA,
+            SQL_NULL_DATA, m_SmallIntSize,m_SmallIntSize },
+            vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
         m_tinyIntInfo = make_unique<ColumnInfo<SQLCHAR>>(
             "TinyIntColumn1",
@@ -193,8 +194,8 @@ namespace ExtensionApiTest
             vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_TinyIntSize),
             "TinyIntColumn2",
             vector<SQLCHAR>{ m_MaxTinyInt, m_MinTinyInt, 1, 0, 128 },
-            vector<SQLINTEGER>{ m_IntSize, SQL_NULL_DATA,
-                SQL_NULL_DATA, SQL_NULL_DATA, m_IntSize },
+            vector<SQLINTEGER>{ m_TinyIntSize, SQL_NULL_DATA,
+                SQL_NULL_DATA, SQL_NULL_DATA, m_TinyIntSize },
             vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
     }
 

@@ -183,7 +183,7 @@ namespace ExtensionApiTest
         template<class SQLType, SQLSMALLINT dataType>
         void InitializeColumns(ColumnInfo<SQLType> *ColumnInfo);
 
-        // Template to int and test all input parameter numeric data types
+        // Template to init and test all input parameter numeric data types
         //
         template<class SQLType, SQLSMALLINT dataType>
         void InitParam(
@@ -213,10 +213,20 @@ namespace ExtensionApiTest
             SQLSMALLINT   inputOutputType = SQL_PARAM_INPUT_OUTPUT,
             SQLRETURN     SQLResult = SQL_SUCCESS);
 
+        // Test GetResultColumn to verify the expected result column information.
+        //
+        void GetResultColumn(
+            SQLUSMALLINT columnNumber,
+            SQLSMALLINT  expectedDataType,
+            SQLULEN      expectedColumnSize,
+            SQLSMALLINT  expectedDecimalDigits,
+            SQLSMALLINT  expectedNullable,
+            SQLRETURN    SQLResult = SQL_SUCCESS);
+
         // Template function to Test Execute with script that contains user executor class full name
         //
         template<class SQLType, SQLSMALLINT dataType>
-        void TestExecute(
+        void Execute(
             SQLULEN                  rowsNumber,
             void                     **dataSet,
             SQLINTEGER               **strLen_or_Ind,
@@ -234,7 +244,7 @@ namespace ExtensionApiTest
         // Templatized function to test output param value and strLenOrInd are as expected.
         //
         template<class SQLType>
-        void TestGetOutputParam(
+        void GetOutputParam(
             std::vector<SQLType*>   expectedParamValueVector,
             std::vector<SQLINTEGER> expectedStrLenOrIndVector);
 

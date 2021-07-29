@@ -50,22 +50,75 @@ namespace Microsoft.SqlServer.CSharpExtension
         };
 
         /// <summary>
+        /// This Dictionary maps C# type to SqlDataType.
+        /// </summary>
+        public readonly static Dictionary<Type, SqlDataType> DataTypeMap = new Dictionary<Type, SqlDataType>()
+        {
+            {typeof(int), SqlDataType.DotNetInteger},
+            {typeof(uint), SqlDataType.DotNetUInteger},
+            {typeof(long), SqlDataType.DotNetBigInt},
+            {typeof(ulong), SqlDataType.DotNetUBigInt},
+            {typeof(short), SqlDataType.DotNetSmallInt},
+            {typeof(ushort), SqlDataType.DotNetUSmallInt},
+            {typeof(sbyte), SqlDataType.DotNetTinyInt},
+            {typeof(byte), SqlDataType.DotNetUTinyInt},
+            {typeof(float), SqlDataType.DotNetReal},
+            {typeof(double), SqlDataType.DotNetDouble},
+            {typeof(bool), SqlDataType.DotNetBit},
+            {typeof(string), SqlDataType.DotNetChar}
+        };
+
+        /// <summary>
+        /// This Dictionary maps SqlDataType to size in bytes.
+        /// </summary>
+        public readonly static Dictionary<SqlDataType, short> DataTypeSize = new Dictionary<SqlDataType, short>()
+        {
+            {SqlDataType.DotNetInteger, sizeof(int)},
+            {SqlDataType.DotNetUInteger, sizeof(uint)},
+            {SqlDataType.DotNetBigInt, sizeof(long)},
+            {SqlDataType.DotNetUBigInt, sizeof(ulong)},
+            {SqlDataType.DotNetSmallInt, sizeof(short)},
+            {SqlDataType.DotNetUSmallInt, sizeof(ushort)},
+            {SqlDataType.DotNetTinyInt, sizeof(sbyte)},
+            {SqlDataType.DotNetUTinyInt, sizeof(byte)},
+            {SqlDataType.DotNetReal, sizeof(float)},
+            {SqlDataType.DotNetFloat, sizeof(double)},
+            {SqlDataType.DotNetDouble, sizeof(double)},
+            {SqlDataType.DotNetBit, sizeof(bool)},
+            {SqlDataType.DotNetChar, sizeof(char)}
+        };
+
+        /// <summary>
         /// This method converts datatype from short to enum SqlDataType.
         /// </summary>
-        /// <param name="satelliteDataType">
+        /// <param name="SQLDataType">
         /// datatype in short
         /// </param>
         /// <returns>
         /// enum SqlDataType
         /// </returns>
-        public static SqlDataType ToDataType(short satelliteDataType)
+        public static SqlDataType ToManagedDataType(short SQLDataType)
         {
-            if (!Enum.IsDefined(typeof(SqlDataType), satelliteDataType))
+            if (!Enum.IsDefined(typeof(SqlDataType), SQLDataType))
             {
                 throw new Exception("Data type not found.");
             }
 
-            return (SqlDataType)satelliteDataType;
+            return (SqlDataType)SQLDataType;
+        }
+
+        /// <summary>
+        /// This method converts datatype from enum SqlDataType to short.
+        /// </summary>
+        /// <param name="dataType">
+        /// enum SqlDataType
+        /// </param>
+        /// <returns>
+        /// datatype in short
+        /// </returns>
+        public static short ToSQLDataType(SqlDataType dataType)
+        {
+            return (short)dataType;
         }
     }
 }

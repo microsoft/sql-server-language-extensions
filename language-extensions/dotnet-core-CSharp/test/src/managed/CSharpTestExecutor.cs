@@ -107,4 +107,12 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             return null;
         }
     }
+
+    public class CSharpTestExecutorResultColumn: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+            return input;
+        }
+    }
 }

@@ -294,7 +294,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 _currentSession.InitInputColumn(
                     columnNumber: columnNumber,
                     columnName: Interop.UTF8PtrToStr(columnName, (ulong)columnNameLength),
-                    dataType: ToDataType(dataType),
+                    dataType: ToManagedDataType(dataType),
                     decimalDigits: decimalDigits,
                     nullable: nullable,
                     columnSize: columnSize);
@@ -377,7 +377,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 _currentSession.InitParam(
                     paramNumber: paramNumber,
                     paramName: Interop.UTF8PtrToStr(paramName, (ulong)paramNameLength),
-                    dataType: ToDataType(dataType),
+                    dataType: ToManagedDataType(dataType),
                     paramSize: paramSize,
                     decimalDigits: decimalDigits,
                     paramValue: paramValue,
@@ -436,10 +436,17 @@ namespace Microsoft.SqlServer.CSharpExtension
             Logging.Trace("CSharpExtension::Execute");
             return ExceptionUtils.WrapError(() =>
             {
-                _currentSession.Execute(rowsNumber, data, strLenOrNullMap, outputSchemaColumnsNumber);
+                _currentSession.Execute(
+                    rowsNumber,
+                    data,
+                    strLenOrNullMap,
+                    outputSchemaColumnsNumber);
             });
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of GetResultColumn.
+        /// </summary>
         public delegate short GetResultColumnDelegate(
             Guid   sessionId,
             ushort taskId,
@@ -449,6 +456,36 @@ namespace Microsoft.SqlServer.CSharpExtension
             short  *decimalDigits,
             short  *nullable);
 
+        /// <summary>
+        /// This method implements GetResultColumn API.
+        /// Retrieve the information regarding a given output column for a particular session.
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
+        /// </param>
+        /// <param name="columnNumber">
+        /// An integer identifying the index of this column in the output schema.
+        /// Columns are numbered sequentially in increasing order starting at 0.
+        /// </param>
+        /// <param name="dataType">
+        /// A pointer to the buffer that contains the ODBC C type identifying this column's data type.
+        /// </param>
+        /// <param name="columnSize">
+        /// A pointer to a buffer that contains the maximum size in bytes of the underlying data in this column.
+        /// </param>
+        /// <param name="decimalDigits">
+        /// A pointer to a buffer that contains the decimal digits of underlying data in this column.
+        /// If the number of decimal digits cannot be determined or is not applicable, the value is discarded.
+        /// </param>
+        /// <param name="nullable">
+        /// A pointer to a buffer that contains a value, which indicates whether this column may contain NULL values.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short GetResultColumn(
             Guid   sessionId,
             ushort taskId,
@@ -458,7 +495,16 @@ namespace Microsoft.SqlServer.CSharpExtension
             short  *decimalDigits,
             short  *nullable)
         {
-            return SQL_SUCCESS;
+            Logging.Trace("CSharpExtension::GetResultColumn");
+            return ExceptionUtils.WrapError(() =>
+            {
+                _currentSession.GetResultColumn(
+                    columnNumber,
+                    dataType,
+                    columnSize,
+                    decimalDigits,
+                    nullable);
+            });
         }
 
         public delegate short GetResultsDelegate(
@@ -532,11 +578,16 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             return ExceptionUtils.WrapError(() =>
             {
-                _currentSession = null;
-                foreach(GCHandle handle in _handleList)
+                if(_handleList != null)
                 {
-                    handle.Free();
+                    foreach(GCHandle handle in _handleList)
+                    {
+                        handle.Free();
+                    }
                 }
+
+                _handleList = null;
+                _currentSession = null;
             });
         }
     }

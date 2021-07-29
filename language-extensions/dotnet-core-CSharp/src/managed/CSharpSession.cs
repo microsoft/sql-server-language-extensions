@@ -69,6 +69,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         private CSharpInputDataSet _inputDataSet;
 
         /// <summary>
+        /// Output DataSet containing output columns
+        /// </summary>
+        private CSharpOutputDataSet _outputDataSet;
+
+        /// <summary>
         /// Parameter containter containing intput/output parameters
         /// </summary>
         private CSharpParamContainer _paramContainer;
@@ -107,6 +112,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 Name = inputDataName,
                 ColumnsNumber = inputSchemaColumnsNumber
+            };
+
+            _outputDataSet = new CSharpOutputDataSet
+            {
+                Name = outputDataName,
+                ColumnsNumber = 0
             };
 
             _paramContainer = new CSharpParamContainer(parametersNumber);
@@ -172,20 +183,38 @@ namespace Microsoft.SqlServer.CSharpExtension
             Logging.Trace("CSharpSession::Execute");
             _inputDataSet.AddColumns(rowsNumber, data, strLenOrNullMap);
             AbstractSqlServerExtensionExecutor userExecutor = _userDll.InstantiateUserExecutor();
+
             DataFrame outputDataFrame = userExecutor.Execute(_inputDataSet.InputDataFrame, _paramContainer.UserParams);
+
+            if(outputDataFrame != null)
+            {
+                _outputDataSet.ColumnsNumber = (ushort)outputDataFrame.Columns.Count;
+                _outputDataSet.AddColumnsMetadata(outputDataFrame);
+            }
+
+            *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
         }
 
         /// <summary>
         /// This method returns information about the output column.
         /// </summary>
-        public short GetResultColumn(
+        public void GetResultColumn(
             ushort columnNumber,
             short  *dataType,
             ulong  *columnSize,
             short  *decimalDigits,
             short  *nullable)
         {
-            throw new NotImplementedException();
+            Logging.Trace("CSharpSession::GetResultColumn");
+            if (columnNumber >= _outputDataSet.ColumnsNumber || columnNumber < 0)
+            {
+                throw new ArgumentException("Invalid input column id supplied: " + columnNumber.ToString());
+            }
+
+            *dataType = ToSQLDataType(_outputDataSet[columnNumber].DataType);
+            *columnSize = _outputDataSet[columnNumber].Size;
+            *decimalDigits = _outputDataSet[columnNumber].DecimalDigits;
+            *nullable = _outputDataSet[columnNumber].Nullable;
         }
 
         /// <summary>
@@ -197,6 +226,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             int            *strLenOrNullMap,
             List<GCHandle> handleList)
         {
+            Logging.Trace("CSharpSession::GetOutputParam");
             _paramContainer.ReplaceParam(paramNumber, paramValue, strLenOrNullMap, handleList);
         }
     }

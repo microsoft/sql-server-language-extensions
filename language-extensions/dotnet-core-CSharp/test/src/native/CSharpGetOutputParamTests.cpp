@@ -66,7 +66,7 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLINTEGER>(
+        GetOutputParam<SQLINTEGER>(
             paramValues,
             strLenOrIndValues);
     }
@@ -123,7 +123,7 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLCHAR>(
+        GetOutputParam<SQLCHAR>(
             paramValues,
             strLenOrIndValues);
     }
@@ -180,7 +180,7 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLREAL>(
+        GetOutputParam<SQLREAL>(
             paramValues,
             strLenOrIndValues);
     }
@@ -237,7 +237,7 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLDOUBLE>(
+        GetOutputParam<SQLDOUBLE>(
             paramValues,
             strLenOrIndValues);
     }
@@ -294,7 +294,7 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLBIGINT>(
+        GetOutputParam<SQLBIGINT>(
             paramValues,
             strLenOrIndValues);
     }
@@ -351,7 +351,7 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLSMALLINT>(
+        GetOutputParam<SQLSMALLINT>(
             paramValues,
             strLenOrIndValues);
     }
@@ -408,19 +408,19 @@ namespace ExtensionApiTest
 
         // Verify that the parameters we get back are what we expect
         //
-        TestGetOutputParam<SQLCHAR>(
+        GetOutputParam<SQLCHAR>(
             paramValues,
             strLenOrIndValues);
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: CSharpExtensionApiTest::TestGetOutputParam
+    // Name: CSharpExtensionApiTest::GetOutputParam
     //
     // Description:
     //  Templatized function to test output param value and strLenOrInd is as expected.
     //
     template<class SQLType>
-    void CSharpExtensionApiTests::TestGetOutputParam(
+    void CSharpExtensionApiTests::GetOutputParam(
         vector<SQLType*>   expectedParamValueVector,
         vector<SQLINTEGER> expectedStrLenOrIndVector)
     {

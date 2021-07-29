@@ -29,7 +29,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
-        TestExecute<SQLINTEGER, SQL_C_SLONG>(
+        Execute<SQLINTEGER, SQL_C_SLONG>(
             ColumnInfo<SQLINTEGER>::sm_rowsNumber,
             (*m_integerInfo).m_dataSet.data(),
             (*m_integerInfo).m_strLen_or_Ind.data(),
@@ -51,7 +51,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
-        TestExecute<SQLINTEGER, SQL_C_SLONG>(
+        Execute<SQLINTEGER, SQL_C_SLONG>(
             ColumnInfo<SQLINTEGER>::sm_rowsNumber,
             (*m_integerInfo).m_dataSet.data(),
             (*m_integerInfo).m_strLen_or_Ind.data(),
@@ -74,7 +74,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLCHAR, SQL_C_BIT>(m_booleanInfo.get());
 
-        TestExecute<SQLCHAR, SQL_C_BIT>(
+        Execute<SQLCHAR, SQL_C_BIT>(
             ColumnInfo<SQLCHAR>::sm_rowsNumber,
             (*m_booleanInfo).m_dataSet.data(),
             (*m_booleanInfo).m_strLen_or_Ind.data(),
@@ -96,7 +96,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLREAL, SQL_C_FLOAT>(m_realInfo.get());
 
-        TestExecute<SQLREAL, SQL_C_FLOAT>(
+        Execute<SQLREAL, SQL_C_FLOAT>(
             ColumnInfo<SQLREAL>::sm_rowsNumber,
             (*m_realInfo).m_dataSet.data(),
             (*m_realInfo).m_strLen_or_Ind.data(),
@@ -118,7 +118,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(m_doubleInfo.get());
 
-        TestExecute<SQLDOUBLE, SQL_C_DOUBLE>(
+        Execute<SQLDOUBLE, SQL_C_DOUBLE>(
             ColumnInfo<SQLDOUBLE>::sm_rowsNumber,
             (*m_doubleInfo).m_dataSet.data(),
             (*m_doubleInfo).m_strLen_or_Ind.data(),
@@ -140,7 +140,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(m_bigIntInfo.get());
 
-        TestExecute<SQLBIGINT, SQL_C_SBIGINT>(
+        Execute<SQLBIGINT, SQL_C_SBIGINT>(
             ColumnInfo<SQLBIGINT>::sm_rowsNumber,
             (*m_bigIntInfo).m_dataSet.data(),
             (*m_bigIntInfo).m_strLen_or_Ind.data(),
@@ -162,7 +162,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(m_smallIntInfo.get());
 
-        TestExecute<SQLSMALLINT, SQL_C_SSHORT>(
+        Execute<SQLSMALLINT, SQL_C_SSHORT>(
             ColumnInfo<SQLSMALLINT>::sm_rowsNumber,
             (*m_smallIntInfo).m_dataSet.data(),
             (*m_smallIntInfo).m_strLen_or_Ind.data(),
@@ -184,7 +184,7 @@ namespace ExtensionApiTest
 
         InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(m_tinyIntInfo.get());
 
-        TestExecute<SQLCHAR, SQL_C_UTINYINT>(
+        Execute<SQLCHAR, SQL_C_UTINYINT>(
             ColumnInfo<SQLCHAR>::sm_rowsNumber,
             (*m_tinyIntInfo).m_dataSet.data(),
             (*m_tinyIntInfo).m_strLen_or_Ind.data(),
@@ -244,22 +244,21 @@ namespace ExtensionApiTest
 
         vector<string> columnNames{ stringColumn1Name, stringColumn2Name, stringColumn3Name };
 
-        TestExecute<SQLCHAR, SQL_C_CHAR>(
+        Execute<SQLCHAR, SQL_C_CHAR>(
             rowsNumber,
             dataSet,
             strLen_or_Ind.data(),
             columnNames);
     }
 
-
     //----------------------------------------------------------------------------------------------
-    // Name: TestExecute
+    // Name: Execute
     //
     // Description:
     //  Template function to Test Execute with script that contains user executor class full name
     //
     template<class SQLType, SQLSMALLINT dataType>
-    void CSharpExtensionApiTests::TestExecute(
+    void CSharpExtensionApiTests::Execute(
         SQLULEN        rowsNumber,
         void           **dataSet,
         SQLINTEGER     **strLen_or_Ind,
