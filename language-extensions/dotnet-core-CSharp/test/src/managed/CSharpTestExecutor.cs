@@ -20,7 +20,7 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
             Console.WriteLine("Hello .NET Core CSharpExtension!");
-            return null;
+            return input;
         }
     }
 
@@ -105,14 +105,6 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param3"] = -1;
             sqlParams["@param4"] = null;
             return null;
-        }
-    }
-
-    public class CSharpTestExecutorResultColumn: AbstractSqlServerExtensionExecutor
-    {
-        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
-            Console.WriteLine("Hello .NET Core CSharpExtension!");
-            return input;
         }
     }
 }

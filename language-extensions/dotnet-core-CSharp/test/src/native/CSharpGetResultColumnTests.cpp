@@ -22,12 +22,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetIntegerResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_integerInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
@@ -76,12 +74,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetBooleanResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_booleanInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLCHAR, SQL_C_BIT>(m_booleanInfo.get());
 
@@ -114,12 +110,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetBigIntResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_bigIntInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLBIGINT, SQL_C_SBIGINT>(m_bigIntInfo.get());
 
@@ -152,12 +146,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetSmallIntResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_smallIntInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLSMALLINT, SQL_C_SSHORT>(m_smallIntInfo.get());
 
@@ -190,12 +182,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetTinyIntResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_tinyIntInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(m_tinyIntInfo.get());
 
@@ -228,17 +218,15 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetRealResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_realInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLREAL, SQL_C_FLOAT>(m_realInfo.get());
 
         Execute<SQLREAL, SQL_C_FLOAT>(
-            ColumnInfo<SQLDOUBLE>::sm_rowsNumber,
+            ColumnInfo<SQLREAL>::sm_rowsNumber,
             (*m_realInfo).m_dataSet.data(),
             (*m_realInfo).m_strLen_or_Ind.data(),
             (*m_realInfo).m_columnNames);
@@ -266,12 +254,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetDoubleResultColumnsTest)
     {
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorResultColumn";
-
         InitializeSession(
             (*m_doubleInfo).GetColumnsNumber(),
             0, // parametersNumber
-            scriptString);
+            m_scriptString);
 
         InitializeColumns<SQLDOUBLE, SQL_C_DOUBLE>(m_doubleInfo.get());
 

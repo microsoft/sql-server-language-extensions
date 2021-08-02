@@ -28,6 +28,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         private Dictionary<ushort, CSharpParam> _params;
 
         /// <summary>
+        /// A list of parameter value handles to prevent garbage collector releasing the memory before the objects are used.
+        /// </summary>
+        private List<GCHandle> _handleList;
+
+        /// <summary>
         /// Number of input parameters from @params in sp_execute_external_script.
         /// </summary>
         public ushort TotalParams { get; private set; }
@@ -46,6 +51,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             TotalParams = parametersNumber;
             UserParams = new Dictionary<string, dynamic>();
             _params = new Dictionary<ushort, CSharpParam>();
+            _handleList = new List<GCHandle>();
         }
 
         /// <summary>
@@ -143,9 +149,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         public unsafe void ReplaceParam(
             ushort         paramNumber,
             void           **paramValue,
-            int            *strLenOrNullMap,
-            List<GCHandle> handleList)
+            int            *strLenOrNullMap)
         {
+            Logging.Trace("CSharpParamContainer::ReplaceParam");
             _params[paramNumber].Value = UserParams[_params[paramNumber].Name];
             if(_params[paramNumber].Value == null)
             {
@@ -157,41 +163,41 @@ namespace Microsoft.SqlServer.CSharpExtension
             switch(_params[paramNumber].DataType)
             {
                 case SqlDataType.DotNetInteger:
-                    ReplaceNumericParam<int>((int)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<int>((int)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetUInteger:
-                    ReplaceNumericParam<uint>((uint)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<uint>((uint)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetBigInt:
-                    ReplaceNumericParam<long>((long)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<long>((long)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetUBigInt:
-                    ReplaceNumericParam<ulong>((ulong)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<ulong>((ulong)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetTinyInt:
-                    ReplaceNumericParam<sbyte>((sbyte)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<sbyte>((sbyte)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetUTinyInt:
-                    ReplaceNumericParam<byte>((byte)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<byte>((byte)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetSmallInt:
-                    ReplaceNumericParam<short>((short)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<short>((short)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetUSmallInt:
-                    ReplaceNumericParam<ushort>((ushort)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<ushort>((ushort)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetDouble:
-                    ReplaceNumericParam<double>((double)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<double>((double)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetFloat:
-                    ReplaceNumericParam<double>((double)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<double>((double)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetReal:
-                    ReplaceNumericParam<float>((float)_params[paramNumber].Value, paramValue, handleList);
+                    ReplaceNumericParam<float>((float)_params[paramNumber].Value, paramValue);
                     break;
                 case SqlDataType.DotNetBit:
                     bool boolValue = Convert.ToBoolean(_params[paramNumber].Value);
-                    ReplaceNumericParam<bool>(boolValue, paramValue, handleList);
+                    ReplaceNumericParam<bool>(boolValue, paramValue);
                     break;
                 default:
                     throw new NotImplementedException("Parameter type for " + _params[paramNumber].DataType.ToString() + " has not been implemented yet");
@@ -203,11 +209,27 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         private unsafe void ReplaceNumericParam<T>(
             T              value,
-            void           **paramValue,
-            List<GCHandle> handleList) where T : unmanaged
+            void           **paramValue) where T : unmanaged
         {
-            handleList.Add(GCHandle.Alloc(value));
+            _handleList.Add(GCHandle.Alloc(value));
             *paramValue = &value;
+        }
+
+        /// <summary>
+        /// This method cleans up all the handles for garbage collection.
+        /// </summary>
+        public void HandleCleanup()
+        {
+            Logging.Trace("CSharpParamContainer:HandleCleanup");
+            if(_handleList != null)
+            {
+                foreach(GCHandle handle in _handleList)
+                {
+                    handle.Free();
+                }
+            }
+
+            _handleList = null;
         }
     }
 }

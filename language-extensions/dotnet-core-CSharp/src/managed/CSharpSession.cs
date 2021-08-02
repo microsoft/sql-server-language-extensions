@@ -184,12 +184,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             _inputDataSet.AddColumns(rowsNumber, data, strLenOrNullMap);
             AbstractSqlServerExtensionExecutor userExecutor = _userDll.InstantiateUserExecutor();
 
-            DataFrame outputDataFrame = userExecutor.Execute(_inputDataSet.InputDataFrame, _paramContainer.UserParams);
+            _outputDataSet.CSharpDataFrame = userExecutor.Execute(_inputDataSet.CSharpDataFrame, _paramContainer.UserParams);
 
-            if(outputDataFrame != null)
+            if(_outputDataSet.CSharpDataFrame != null)
             {
-                _outputDataSet.ColumnsNumber = (ushort)outputDataFrame.Columns.Count;
-                _outputDataSet.AddColumnsMetadata(outputDataFrame);
+                _outputDataSet.ColumnsNumber = (ushort)_outputDataSet.CSharpDataFrame.Columns.Count;
+                _outputDataSet.AddColumnsMetadata(_outputDataSet.CSharpDataFrame);
             }
 
             *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
@@ -218,16 +218,34 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// This method retrieves the result set from executing the @script in sp_execute_external_script.
+        /// </summary>
+        public void GetResults(
+            ulong    *rowsNumber,
+            void     ***data,
+            int      ***strLenOrNullMap)
+        {
+        }
+
+        /// <summary>
         /// This method returns the data and size of the output parameter.
         /// </summary>
         public void GetOutputParam(
             ushort         paramNumber,
             void           **paramValue,
-            int            *strLenOrNullMap,
-            List<GCHandle> handleList)
+            int            *strLenOrNullMap)
         {
             Logging.Trace("CSharpSession::GetOutputParam");
-            _paramContainer.ReplaceParam(paramNumber, paramValue, strLenOrNullMap, handleList);
+            _paramContainer.ReplaceParam(paramNumber, paramValue, strLenOrNullMap);
+        }
+
+        /// <summary>
+        /// This method cleans up per-session information.
+        /// </summary>
+        public void CleanupSession()
+        {
+            Logging.Trace("CSharpSession::CleanupSession");
+            _paramContainer.HandleCleanup();
         }
     }
 }

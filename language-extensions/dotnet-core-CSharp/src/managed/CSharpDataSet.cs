@@ -26,6 +26,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         public ushort ColumnsNumber { get; set; }
 
         /// <summary>
+        /// This dataframe contains input/output dataset.
+        /// </summary>
+        public DataFrame CSharpDataFrame { get; set; }
+
+        /// <summary>
         /// This property defines [] operator for CSharpDataSet.
         /// </summary>
         public CSharpColumn this[ushort columnNumber]
@@ -52,10 +57,6 @@ namespace Microsoft.SqlServer.CSharpExtension
     /// </summary>
     public class CSharpInputDataSet: CSharpDataSet
     {
-        /// <summary>
-        /// This dataframe contains input dataset.
-        /// </summary>
-        public DataFrame InputDataFrame { get; private set; }
         /// <summary>
         /// This method appends each column as a CSharpColumn object to a dictionary.
         /// </summary>
@@ -98,7 +99,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             int   **strLenOrNullMap)
         {
             Logging.Trace("CSharpInputDataSet::AddColumns");
-            InputDataFrame = new DataFrame();
+            CSharpDataFrame = new DataFrame();
             for(ushort i = 0; i < ColumnsNumber; ++i)
             {
                 AddColumn(i, rowsNumber, data[i], strLenOrNullMap[i]);
@@ -156,7 +157,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     int[] strLens = new int[rowsNumber];
                     Interop.Copy((int*)colMap, strLens, 0, (int)rowsNumber);
-                    InputDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF8PtrToStr((char*)colData), strLens)));
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF8PtrToStr((char*)colData), strLens)));
                     break;
                 default:
                     throw new NotImplementedException("Column type for " + _columns[columnNumber].DataType.ToString() + " has not been implemented yet");
@@ -179,13 +180,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             PrimitiveDataFrameColumn<T> colDataFrame = new PrimitiveDataFrameColumn<T>(_columns[columnNumber].Name, (int)rowsNumber);
             for(int i = 0; i < (int)rowsNumber; ++i)
             {
-                if(nullSpan[i] != SQL_NULL_DATA)
+                if(_columns[columnNumber].Nullable == 0 || nullSpan[i] != SQL_NULL_DATA)
                 {
                     colDataFrame[i] = colSpan[i];
                 }
             }
 
-            InputDataFrame.Columns.Add(colDataFrame);
+            CSharpDataFrame.Columns.Add(colDataFrame);
         }
     }
 
@@ -197,12 +198,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method adds each column from the dataframe supplied to the _columns.
         /// </summary>
-        public unsafe void AddColumnsMetadata(DataFrame outputDataFrame)
+        public unsafe void AddColumnsMetadata(DataFrame CSharpDataFrame)
         {
             Logging.Trace("CSharpOutputDataSet::AddColumnsMetadata");
-            for(ushort columnNumber = 0; columnNumber < outputDataFrame.Columns.Count; ++columnNumber)
+            for(ushort columnNumber = 0; columnNumber < CSharpDataFrame.Columns.Count; ++columnNumber)
             {
-                DataFrameColumn column = outputDataFrame.Columns[columnNumber];
+                DataFrameColumn column = CSharpDataFrame.Columns[columnNumber];
                 _columns[columnNumber] = new CSharpColumn
                 {
                     Name = column.Name,

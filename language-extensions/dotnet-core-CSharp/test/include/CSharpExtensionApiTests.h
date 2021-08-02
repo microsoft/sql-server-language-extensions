@@ -175,6 +175,7 @@ namespace ExtensionApiTest
             string      columnNameString,
             SQLSMALLINT dataType,
             SQLULEN     columnSize,
+            SQLSMALLINT nullable = SQL_NULLABLE,
             SQLSMALLINT partitionByNumber = -1
         );
 

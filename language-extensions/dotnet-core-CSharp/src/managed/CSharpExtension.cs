@@ -48,11 +48,6 @@ namespace Microsoft.SqlServer.CSharpExtension
         private static string _languageParams;
 
         /// <summary>
-        /// A list of handles to prevent garbage collector releasing the memory before the objects are used.
-        /// </summary>
-        public static List<GCHandle> _handleList;
-
-        /// <summary>
         /// This delegate declares the delegate type of Init.
         /// </summary>
         public delegate short InitDelegate(
@@ -208,8 +203,6 @@ namespace Microsoft.SqlServer.CSharpExtension
                     inputDataName: inputDataNameStr,
                     outputDataName: outputDataNameStr,
                     userDll: userDll);
-
-                _handleList = new List<GCHandle>();
             });
         }
 
@@ -511,7 +504,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             Guid   sessionId,
             ushort TaskId,
             ulong  *rowsNumber,
-            void   **data,
+            void   ***data,
             int    ***strLenOrNullMap);
 
         public static short GetResults(
@@ -521,6 +514,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             void   ***data,
             int    ***strLenOrNullMap)
         {
+            Logging.Trace("CSharpExtension::GetResults");
             return SQL_SUCCESS;
         }
 
@@ -540,6 +534,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         /// <param name="sessionId">
         /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
         /// </param>
         /// <param name="paramNumber">
         /// An integer identifying the index of this parameter. Parameters
@@ -562,31 +559,49 @@ namespace Microsoft.SqlServer.CSharpExtension
             void   **paramValue,
             int    *strLenOrNullMap)
         {
+            Logging.Trace("CSharpExtension::GetOutputParam");
             return ExceptionUtils.WrapError(() =>
             {
-                _currentSession.GetOutputParam(paramNumber, paramValue, strLenOrNullMap, _handleList);
+                _currentSession.GetOutputParam(
+                    paramNumber,
+                    paramValue,
+                    strLenOrNullMap);
             });
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of CleanupSession.
+        /// </summary>
         public delegate short CleanupSessionDelegate(
             Guid   sessionId,
             ushort taskId);
 
+        /// <summary>
+        /// This method implements CleanupSession API.
+        /// Clean up per-session information.
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short CleanupSession(
             Guid   sessionId,
             ushort taskId)
         {
+            Logging.Trace("CSharpExtension::CleanupSession");
             return ExceptionUtils.WrapError(() =>
             {
-                if(_handleList != null)
+                if(_currentSession != null)
                 {
-                    foreach(GCHandle handle in _handleList)
-                    {
-                        handle.Free();
-                    }
+                    _currentSession.CleanupSession();
+                    _currentSession = null;
                 }
 
-                _handleList = null;
                 _currentSession = null;
             });
         }

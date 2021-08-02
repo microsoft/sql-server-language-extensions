@@ -145,7 +145,8 @@ namespace ExtensionApiTest
             vector<SQLINTEGER>(ColumnInfo<SQLCHAR>::sm_rowsNumber, m_BooleanSize),
             "BooleanColumn2",
             vector<SQLCHAR>{ '\0', '2', '1', '0', '\0' },
-            vector<SQLINTEGER>{ SQL_NULL_DATA, 4, 4, 5, SQL_NULL_DATA }, // 4 for True, 5 for False
+            vector<SQLINTEGER>{ SQL_NULL_DATA, m_BooleanSize, m_BooleanSize,
+                m_BooleanSize, SQL_NULL_DATA },
             vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
 
         m_realInfo = make_unique<ColumnInfo<SQLREAL>>(
@@ -183,7 +184,7 @@ namespace ExtensionApiTest
             vector<SQLSMALLINT>{ m_MaxSmallInt, 33, 9811, m_MinSmallInt, 6810 },
             vector<SQLINTEGER>(ColumnInfo<SQLSMALLINT>::sm_rowsNumber, m_SmallIntSize),
             "SmallIntColumn2",
-            vector<SQLSMALLINT>{ -1, 0, SQL_NULL_DATA, -725, 3'276 },
+            vector<SQLSMALLINT>{ -1, 0, 0, -725, 3'276 },
             vector<SQLINTEGER>{ m_SmallIntSize, SQL_NULL_DATA,
             SQL_NULL_DATA, m_SmallIntSize,m_SmallIntSize },
             vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
@@ -312,6 +313,7 @@ namespace ExtensionApiTest
         string      columnNameString,
         SQLSMALLINT dataType,
         SQLULEN     columnSize,
+        SQLSMALLINT nullable,
         SQLSMALLINT partitionByNumber)
     {
         SQLCHAR *columnName = static_cast<SQLCHAR *>(
@@ -327,7 +329,7 @@ namespace ExtensionApiTest
             dataType,
             columnSize,
             0,                 // decimalDigits
-            1,                 // nullable
+            nullable,          // nullable
             partitionByNumber, // partitionByNumber
             -1);               // orderByNumber
         EXPECT_EQ(result, SQL_SUCCESS);
@@ -374,6 +376,7 @@ namespace ExtensionApiTest
                 columnInfo->m_columnNames[columnNumber],
                 dataType,
                 sizeof(SQLType),
+                columnInfo->m_nullable[columnNumber],
                 columnInfo->m_partitionByIndexes[columnNumber]);
         }
     }
