@@ -2,6 +2,7 @@
 SETLOCAL
 
 SET ENL_ROOT=%~dp0..\..\..\..
+SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
 
 REM Call the root level restore-packages
 REM
@@ -53,16 +54,17 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools3.5." || EXIT /b 
 powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/rtools40-x86_64.exe -OutFile %RTOOLS_HOME%\rtools40.exe"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools4.0." || EXIT /b %ERRORLEVEL%
 
-REM Download cv2pdb.exe 
-REM
-powershell -Command "Invoke-WebRequest https://ci.appveyor.com/api/projects/rainers/visuald/artifacts/cv2pdb.exe -OutFile %PACKAGES_ROOT%\cv2pdb.exe"
-
 REM Install RTools
 REM
 "%RTOOLS_HOME%\Rtools35.exe" /VERYSILENT /DIR="C:\Rtools\"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools3.5." || EXIT /b %ERRORLEVEL%
 "%RTOOLS_HOME%\rtools40.exe" /VERYSILENT /DIR="C:\rtools40\"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools4.0." || EXIT /b %ERRORLEVEL%
+
+REM Restore cv2pdb.exe
+REM
+nuget restore %REXTENSION_HOME%\build\windows\packages.config -PackagesDirectory %PACKAGES_ROOT%
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore cv2pdb" || EXIT /b %ERRORLEVEL%
 
 EXIT /b %ERRORLEVEL%
 
