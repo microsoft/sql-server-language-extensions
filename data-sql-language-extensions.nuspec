@@ -9,23 +9,33 @@
     </metadata>
     <files>
         <!-- The current path is "build\out" for artifacts, with two builds (linux, windows) it choses the first artifact downloaded. Use full paths -->
+        <!-- For Windows, there are 2 different phases under "drop", hence the added wildcard child directory.
+        Whereas on Linux, there is only one phase so "drop" itself has the "outputs"-->
 
         <!-- Copy build files, such as dlls and symbols, to the build\languagename\debug or release folder -->
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\build\out\**\debug\**\*.*" target="build" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\build\out\**\release\**\*.*" target="build" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\out\**\debug\**\*.*" target="build" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\out\**\release\**\*.*" target="build" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\build\out\**\debug\**\*.*" target="build" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\build\out\**\release\**\*.*" target="build" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\out\**\debug\**\*.*" target="build" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Linux-Official-master\drop\outputs\build\out\**\release\**\*.*" target="build" />
 
         <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
         <!-- Windows packages-->
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\dotnetcore-CSharp-extension\packages\debug\dotnetcore-CSharp-lang-extension.zip" target="build\dotnetcore-CSharp-extension\debug" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\dotnetcore-CSharp-extension\packages\release\dotnetcore-CSharp-lang-extension.zip" target="build\dotnetcore-CSharp-extension\release" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\java-extension\packages\debug\java-lang-extension.zip" target="build\java-extension\debug" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\java-extension\packages\release\java-lang-extension.zip" target="build\java-extension\release" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\pythonextension\packages\debug\python-lang-extension.zip" target="build\pythonextension\debug" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\pythonextension\packages\release\python-lang-extension.zip" target="build\pythonextension\release" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\RExtension\packages\debug\R-lang-extension.zip" target="build\RExtension\debug" />
-        <file src="..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\outputs\package\out\RExtension\packages\release\R-lang-extension.zip" target="build\RExtension\release" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\dotnet-core-CSharp-extension\packages\debug\dotnet-core-CSharp-lang-extension.zip"
+          target="build\dotnet-core-CSharp-extension\debug" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\dotnet-core-CSharp-extension\packages\release\dotnet-core-CSharp-lang-extension.zip"
+          target="build\dotnet-core-CSharp-extension\release" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\java-extension\packages\debug\java-lang-extension.zip"
+          target="build\java-extension\debug" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\java-extension\packages\release\java-lang-extension.zip"
+          target="build\java-extension\release" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\pythonextension\packages\debug\python-lang-extension.zip"
+          target="build\pythonextension\debug" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\pythonextension\packages\release\python-lang-extension.zip"
+          target="build\pythonextension\release" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\RExtension\packages\debug\R-lang-extension.zip"
+          target="build\RExtension\debug" />
+        <file src="..\..\..\..\..\..\_Data-SQL-Language-Extensions-Windows-Official-master\drop\**\outputs\package\out\RExtension\packages\release\R-lang-extension.zip"
+          target="build\RExtension\release" />
 
         <!-- Linux packages-->
         <!-- Copy extension zips from package pipeline artifacts to the build\languagename\debug or release folder -->
