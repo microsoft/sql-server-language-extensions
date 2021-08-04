@@ -132,17 +132,6 @@ build:
       name: 'Build DotNetCore CSharp Extension Test'
       command: 'language-extensions\dotnet-core-CSharp\test\build\windows\build-dotnet-core-CSharp-extension-test.cmd'
       arguments:  'debug release'
-    - !!buildcommand
-      name: 'Copy nuspec'
-      command: 'empty-script.cmd'
-      arguments: '"Copying nuget spec file."'
-      artifacts:
-        - from: '.'
-          to: 'out'
-          include:
-            - 'data-sql-language-extensions.nuspec'
-          signing_options:
-            profile: 'none'
 
 package:
   commands:                                      # This is a sequence of script files to be executed one after another

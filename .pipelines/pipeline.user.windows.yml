@@ -185,17 +185,6 @@ build:
             - 'pythonextension.pdb'
           signing_options:
             profile: 'none'
-    - !!buildcommand
-      name: 'Copy nuspec'
-      command: 'empty-script.cmd'
-      arguments: '"Copying nuget spec file."'
-      artifacts:
-        - from: '.'
-          to: 'out'
-          include:
-            - 'data-sql-language-extensions.nuspec'
-          signing_options:
-            profile: 'none'
     - !!defaultcommand
       name: 'Build RExtension Test'
       command: 'language-extensions\R\test\build\windows\build-RExtension-test.cmd'
