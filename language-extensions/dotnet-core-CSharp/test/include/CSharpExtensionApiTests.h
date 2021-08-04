@@ -249,6 +249,28 @@ namespace ExtensionApiTest
             std::vector<SQLType*>   expectedParamValueVector,
             std::vector<SQLINTEGER> expectedStrLenOrIndVector);
 
+        // Test GetResults to verify the expected results are obtained.
+        //
+        template<class InputSQLType, class OutputSQLType, SQLSMALLINT OutputDataType>
+        void GetResults(
+            SQLULEN                  expectedRowsNumber,
+            SQLPOINTER               *expectedData,
+            SQLINTEGER               **expectedStrLen_or_Ind,
+            std::vector<std::string> columnNames,
+            std::vector<SQLSMALLINT> nullables);
+
+        // Templatized function to compare the given column data
+        // & nullMap with rowsNumber for equality.
+        //
+        template<class InputSQLType, class OutputSQLType, SQLSMALLINT outputDataType>
+        void CheckColumnDataEquality(
+            SQLULEN        rowsNumber,
+            InputSQLType   *expectedColumnData,
+            OutputSQLType  *columnData,
+            SQLINTEGER     *expectedColumnStrLenOrInd,
+            SQLINTEGER     *columnStrLenOrInd,
+            SQLSMALLINT    nullable);
+
         // Objects declared here can be used by all tests in the test suite.
         //
         std::shared_ptr<SQLGUID> m_sessionId;

@@ -500,6 +500,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             });
         }
 
+        /// <summary>
+        /// This delegate declares the delegate type of GetResults.
+        /// </summary>
         public delegate short GetResultsDelegate(
             Guid   sessionId,
             ushort TaskId,
@@ -507,6 +510,29 @@ namespace Microsoft.SqlServer.CSharpExtension
             void   ***data,
             int    ***strLenOrNullMap);
 
+        /// <summary>
+        /// This method implements GetResults API.
+        /// Retrieve the result set from executing the @script in sp_execute_external_script.
+        /// </summary>
+        /// <param name="sessionId">
+        /// GUID uniquely identifying this script session.
+        /// </param>
+        /// <param name="taskId">
+        /// An integer uniquely identifying this execution process.
+        /// </param>
+        /// <param name="rowsNumber">
+        /// A pointer to a buffer that contains the number of rows in the Data.
+        /// </param>
+        /// <param name="data">
+        /// A pointer to a two-dimensional array allocated by the extension that
+        /// contains the result set of @script n sp_execute_external_script.
+        /// </param>
+        /// <param name="strLenOrNullMap">
+        ///  A pointer to a two-dimensional array allocated by the extension that
+        ///  contains the length/NULL indicator for each value in Data.
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
         public static short GetResults(
             Guid   sessionId,
             ushort TaskId,
@@ -515,7 +541,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    ***strLenOrNullMap)
         {
             Logging.Trace("CSharpExtension::GetResults");
-            return SQL_SUCCESS;
+            return ExceptionUtils.WrapError(() =>
+            {
+                _currentSession.GetResults(
+                    rowsNumber,
+                    data,
+                    strLenOrNullMap);
+            });
         }
 
         /// <summary>

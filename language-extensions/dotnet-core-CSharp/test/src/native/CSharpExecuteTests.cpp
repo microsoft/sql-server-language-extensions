@@ -252,6 +252,31 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: ExecuteNullColumnsTest
+    //
+    // Description:
+    //  Test Execute with default script using a null dataset.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteNullColumnsTest)
+    {
+        InitializeSession(
+            0,               // inputSchemaColumnsNumber
+            0,               // parametersNumber
+            m_scriptString); // scriptString
+
+        SQLUSMALLINT outputschemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputschemaColumnsNumber);
+
+        EXPECT_EQ(result, SQL_SUCCESS);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: Execute
     //
     // Description:

@@ -190,9 +190,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 _outputDataSet.ColumnsNumber = (ushort)_outputDataSet.CSharpDataFrame.Columns.Count;
                 _outputDataSet.AddColumnsMetadata(_outputDataSet.CSharpDataFrame);
+                *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
             }
-
-            *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
+            else
+            {
+                *outputSchemaColumnsNumber = 0;
+            }
         }
 
         /// <summary>
@@ -225,6 +228,16 @@ namespace Microsoft.SqlServer.CSharpExtension
             void     ***data,
             int      ***strLenOrNullMap)
         {
+            Logging.Trace("CSharpSession::GetResults");
+            if(_outputDataSet.CSharpDataFrame != null)
+            {
+                *rowsNumber = (ulong)_outputDataSet.CSharpDataFrame.Rows.Count;
+                _outputDataSet.RetrieveColumns(data, strLenOrNullMap);
+            }
+            else
+            {
+                *rowsNumber = 0;
+            }
         }
 
         /// <summary>
@@ -246,6 +259,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             Logging.Trace("CSharpSession::CleanupSession");
             _paramContainer.HandleCleanup();
+            _outputDataSet.HandleCleanup();
         }
     }
 }

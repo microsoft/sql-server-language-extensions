@@ -100,9 +100,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             Logging.Trace("CSharpInputDataSet::AddColumns");
             CSharpDataFrame = new DataFrame();
-            for(ushort i = 0; i < ColumnsNumber; ++i)
+            if(data != null)
             {
-                AddColumn(i, rowsNumber, data[i], strLenOrNullMap[i]);
+                for(ushort i = 0; i < ColumnsNumber; ++i)
+                {
+                    AddColumn(i, rowsNumber, data[i], strLenOrNullMap[i]);
+                }
             }
         }
 
@@ -110,10 +113,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method adds column data to DataFrameColumn for each data type.
         /// </summary>
         private unsafe void AddColumn(
-            ushort            columnNumber,
-            ulong             rowsNumber,
-            void              *colData,
-            int               *colMap)
+            ushort columnNumber,
+            ulong  rowsNumber,
+            void   *colData,
+            int    *colMap)
         {
             Logging.Trace("CSharpInputDataSet::AddColumn");
             switch(_columns[columnNumber].DataType)
@@ -169,10 +172,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// and adds the PrimitiveDataFrameColumn to the DataFrameColumn array.
         /// </summary>
         private unsafe void AddDataFrameColumn<T>(
-            ushort            columnNumber,
-            ulong             rowsNumber,
-            void              *colData,
-            int               *colMap
+            ushort columnNumber,
+            ulong  rowsNumber,
+            void   *colData,
+            int    *colMap
         ) where T : unmanaged
         {
             Span<T> colSpan = new Span<T>(colData, (int)rowsNumber);
@@ -196,12 +199,17 @@ namespace Microsoft.SqlServer.CSharpExtension
     public class CSharpOutputDataSet: CSharpDataSet
     {
         /// <summary>
+        /// A list of data array and null map handles to prevent garbage collector releasing the memory before the objects are used.
+        /// </summary>
+        private List<GCHandle> _handleList = new List<GCHandle>();
+
+        /// <summary>
         /// This method adds each column from the dataframe supplied to the _columns.
         /// </summary>
         public unsafe void AddColumnsMetadata(DataFrame CSharpDataFrame)
         {
             Logging.Trace("CSharpOutputDataSet::AddColumnsMetadata");
-            for(ushort columnNumber = 0; columnNumber < CSharpDataFrame.Columns.Count; ++columnNumber)
+            for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
                 DataFrameColumn column = CSharpDataFrame.Columns[columnNumber];
                 _columns[columnNumber] = new CSharpColumn
@@ -214,6 +222,194 @@ namespace Microsoft.SqlServer.CSharpExtension
                     Id = columnNumber
                 };
             }
+        }
+
+        /// <summary>
+        /// This method retrieves the DataFrame data from output DataSet.
+        /// </summary>
+        public unsafe void RetrieveColumns(
+            void ***data,
+            int  ***strLenOrNullMap
+        )
+        {
+            Logging.Trace("CSharpOutputDataSet::RetrieveColumns");
+            int*[] lens = new int*[ColumnsNumber];
+            void*[] ptrs = new void*[ColumnsNumber];
+
+            for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
+            {
+                RetrieveColumn(columnNumber, ptrs, lens, CSharpDataFrame.Columns[columnNumber]);
+            }
+
+            fixed (void** ptrptr = ptrs)
+            {
+                _handleList.Add(GCHandle.Alloc(ptrs));
+                *data = ptrptr;
+            }
+
+            fixed (int** ptrptr = lens)
+            {
+                _handleList.Add(GCHandle.Alloc(lens));
+                *strLenOrNullMap = ptrptr;
+            }
+        }
+
+        /// <summary>
+        /// This method retrieves each column DataFrameColumn value from output DataSet.
+        /// </summary>
+        private unsafe void RetrieveColumn(
+            ushort          columnNumber,
+            void*[]         ptrs,
+            int*[]          lens,
+            DataFrameColumn column
+        )
+        {
+            Logging.Trace("CSharpOutputDataSet::RetrieveColumn");
+            fixed(int* len = GetMap(column))
+            {
+                lens[columnNumber] = len;
+            }
+
+            switch(DataTypeMap[column.DataType])
+            {
+                case SqlDataType.DotNetInteger:
+                    fixed(void* arrayPtr = GetArray<int>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetUInteger:
+                    fixed(void* arrayPtr = GetArray<uint>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetBigInt:
+                    fixed(void* arrayPtr = GetArray<long>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetUBigInt:
+                    fixed(void* arrayPtr = GetArray<ulong>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetSmallInt:
+                    fixed(void* arrayPtr = GetArray<short>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetUSmallInt:
+                    fixed(void* arrayPtr = GetArray<ushort>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetTinyInt:
+                    fixed(void* arrayPtr = GetArray<sbyte>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetUTinyInt:
+                    fixed(void* arrayPtr = GetArray<byte>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetBit:
+                    fixed(void* arrayPtr = GetArray<bool>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetReal:
+                    fixed(void* arrayPtr = GetArray<float>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetFloat:
+                    fixed(void* arrayPtr = GetArray<double>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+                case SqlDataType.DotNetDouble:
+                    fixed(void* arrayPtr = GetArray<double>(column))
+                    {
+                        ptrs[columnNumber] = arrayPtr;
+                        break;
+                    }
+            }
+        }
+
+        /// <summary>
+        /// This method gets the array from a DataFrameColumn Column for numeric types.
+        /// </summary>
+        private T[] GetArray<T>(DataFrameColumn column) where T : unmanaged
+        {
+            T[] columnArray = new T[column.Length];
+            _handleList.Add(GCHandle.Alloc(columnArray, GCHandleType.Pinned));
+            for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if(column[rowNumber] != null)
+                {
+                    columnArray[rowNumber] = (T)column[rowNumber];
+                }
+                else if(typeof(T) == typeof(double))
+                {
+                    columnArray[rowNumber] = (T)Convert.ChangeType(Double.NaN, typeof(T));
+                }
+                else if(typeof(T) == typeof(float))
+                {
+                    columnArray[rowNumber] = (T)Convert.ChangeType(Single.NaN, typeof(T));
+                }
+            }
+
+            return columnArray;
+        }
+
+        /// <summary>
+        /// This method gets the null map from a DataFrameColumn Column for numeric types.
+        /// </summary>
+        private int[] GetMap(DataFrameColumn column)
+        {
+            int[] colMap = new int[column.Length];
+            _handleList.Add(GCHandle.Alloc(colMap, GCHandleType.Pinned));
+            for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if(column[rowNumber] != null)
+                {
+                    colMap[rowNumber] = DataTypeSize[DataTypeMap[column.DataType]];
+                }
+                else
+                {
+                    colMap[rowNumber] = SQL_NULL_DATA;
+                }
+            }
+
+            return colMap;
+        }
+
+        /// <summary>
+        /// This method cleans up all the handles for garbage collection.
+        /// </summary>
+        public void HandleCleanup()
+        {
+            Logging.Trace("CSharpOutputDataSet::HandleCleanup");
+            if(_handleList != null)
+            {
+                foreach(GCHandle handle in _handleList)
+                {
+                    handle.Free();
+                }
+            }
+
+            _handleList = null;
         }
     }
 }
