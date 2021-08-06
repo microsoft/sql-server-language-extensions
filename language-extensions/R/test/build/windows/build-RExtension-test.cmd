@@ -74,7 +74,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CO
 ECHO "[INFO] Building RExtension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 REM Call cmake build
 REM
-CALL "mingw32-make.exe" all
+CALL "mingw32-make.exe" -j all
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build RExtension-test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Advance arg passed to build-RExtension-test.cmd

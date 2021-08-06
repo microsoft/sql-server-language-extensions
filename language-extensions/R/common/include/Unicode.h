@@ -64,5 +64,5 @@ namespace estd
 
 	// Returns True if the string is a valid UTF8, false otherwise.
 	//
-	bool IsValidUTF8(const std::string &str, int strlen);
+	bool IsValidUTF8(const char* str, int strlen);
 }

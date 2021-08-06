@@ -111,7 +111,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CO
 ECHO "[INFO] Building RExtension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 REM Call cmake build
 REM
-CALL "mingw32-make.exe" all
+CALL "mingw32-make.exe" -j all
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build RExtension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM This will create the RExtension package with unsigned binaries, this is used for local development and non-release builds. Release

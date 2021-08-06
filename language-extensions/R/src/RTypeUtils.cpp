@@ -185,13 +185,13 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 			{	
 				// Check if string is a valid UTF8
 				//
-				bool isValidUTF8 = estd::IsValidUTF8(str, strlen);
+				bool isValidUTF8 = estd::IsValidUTF8(const_cast<char*>(str), strlen);
 
 				if(!isValidUTF8)
 				{
 					throw std::invalid_argument("There is a bad UTF-8 character");
 				}
-	
+
 				value = string(str, strlen);
 			}
 
