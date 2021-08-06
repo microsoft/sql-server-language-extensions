@@ -283,6 +283,91 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetStringResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn with default script expecting an OutputDataSet of String columns.
+    //
+    TEST_F(CSharpExtensionApiTests, GetStringResultColumnsTest)
+    {
+        InitializeSession(
+            3, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            m_scriptString);
+
+        string stringColumn1Name = "StringColumn1";
+        InitializeColumn(0, stringColumn1Name, SQL_C_CHAR, m_CharSize);
+
+        string stringColumn2Name = "StringColumn2";
+        InitializeColumn(1, stringColumn2Name, SQL_C_CHAR, m_CharSize);
+
+        string stringColumn3Name = "StringColumn3";
+        InitializeColumn(2, stringColumn3Name, SQL_C_CHAR, m_CharSize);
+
+        vector<const char *> stringCol1{ "Hello", "test", "data", "World", "-123" };
+        vector<const char *> stringCol2{ "", 0, nullptr, "verify", "-1" };
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(strlen(stringCol1[0])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[1])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[2])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[3])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[4])) };
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { 0, SQL_NULL_DATA, SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(strlen(stringCol2[3])),
+          static_cast<SQLINTEGER>(strlen(stringCol2[4])) };
+
+        vector<SQLINTEGER *> strLen_or_Ind{ strLenOrIndCol1.data(),
+            strLenOrIndCol2.data(), nullptr };
+
+        // Coalesce the arrays of each row of each column
+        // into a contiguous array for each column.
+        //
+        vector<char> stringCol1Data = GenerateContiguousData<char>(stringCol1, strLenOrIndCol1.data());
+        vector<char> stringCol2Data = GenerateContiguousData<char>(stringCol2, strLenOrIndCol2.data());
+
+        void *dataSet[] = { stringCol1Data.data(),
+                            stringCol2Data.data(),
+                            nullptr };
+
+        int rowsNumber = stringCol1.size();
+
+        vector<string> columnNames{ stringColumn1Name, stringColumn2Name, stringColumn3Name };
+
+        Execute<SQLCHAR, SQL_C_CHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+        SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+
+        GetResultColumn(
+            0,                 // columnNumber
+            SQL_C_CHAR,        // dataType
+            maxCol1Len,        // columnSize
+            0,                 // decimalDigits
+            SQL_NO_NULLS);     // nullable
+
+        GetResultColumn(
+            1,                 // columnNumber
+            SQL_C_CHAR,        // dataType
+            maxCol2Len,        // columnSize
+            0,                 // decimalDigits
+            SQL_NULLABLE);     // nullable
+
+        GetResultColumn(
+            2,                 // columnNumber
+            SQL_C_CHAR,        // dataType
+            sizeof(SQLCHAR),   // columnSize
+            0,                 // decimalDigits
+            SQL_NULLABLE);     // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: GetResultColumn
     //
     // Description:
@@ -318,5 +403,27 @@ namespace ExtensionApiTest
             EXPECT_EQ(decimalDigits, expectedDecimalDigits);
             EXPECT_EQ(nullable, expectedNullable);
         }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetMaxLength
+    //
+    // Description:
+    //  Get max length of all strings from strLenOrInd.
+    //
+    SQLINTEGER CSharpExtensionApiTests::GetMaxLength(
+        SQLINTEGER *strLenOrInd,
+        SQLULEN    rowsNumber)
+    {
+        SQLINTEGER maxLen = 0;
+        for (SQLULEN index = 0; index < rowsNumber; ++index)
+        {
+            if (strLenOrInd[index] != SQL_NULL_DATA && maxLen < strLenOrInd[index])
+            {
+                maxLen = strLenOrInd[index];
+            }
+        }
+
+        return maxLen;
     }
 }

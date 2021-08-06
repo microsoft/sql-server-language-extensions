@@ -24,6 +24,8 @@ namespace Microsoft.SqlServer.CSharpExtension
         public const short SQL_NULL_DATA = -1;
         public const short SQL_UNSIGNED_OFFSET = -22;
         public const short SQL_SIGNED_OFFSET = -20;
+
+        public const short MinUtf8CharSize = 1;
         public enum SqlDataType: short
         {
             DotNetBigInt = -5 + SQL_SIGNED_OFFSET, //SQL_C_SBIGINT + SQL_SIGNED_OFFSET
@@ -85,7 +87,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             {SqlDataType.DotNetFloat, sizeof(double)},
             {SqlDataType.DotNetDouble, sizeof(double)},
             {SqlDataType.DotNetBit, sizeof(bool)},
-            {SqlDataType.DotNetChar, sizeof(char)}
+            {SqlDataType.DotNetChar, MinUtf8CharSize}
         };
 
         /// <summary>

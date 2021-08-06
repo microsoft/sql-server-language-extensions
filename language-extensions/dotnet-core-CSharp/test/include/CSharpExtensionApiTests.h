@@ -224,6 +224,10 @@ namespace ExtensionApiTest
             SQLSMALLINT  expectedNullable,
             SQLRETURN    SQLResult = SQL_SUCCESS);
 
+        // Get max length of all strings from strLenOrInd.
+        //
+        SQLINTEGER GetMaxLength(SQLINTEGER *strLenOrInd, SQLULEN rowsNumber);
+
         // Template function to Test Execute with script that contains user executor class full name
         //
         template<class SQLType, SQLSMALLINT dataType>
@@ -270,6 +274,23 @@ namespace ExtensionApiTest
             SQLINTEGER     *expectedColumnStrLenOrInd,
             SQLINTEGER     *columnStrLenOrInd,
             SQLSMALLINT    nullable);
+
+        // Test GetResults to verify the expected string results are obtained.
+        //
+        void GetStringResults(
+            SQLULEN                  expectedRowsNumber,
+            SQLPOINTER               *expectedData,
+            SQLINTEGER               **expectedStrLen_or_Ind,
+            std::vector<std::string> columnNames);
+
+        // Compare the given string column data and nullMap for equality.
+        //
+        void CheckStringDataEquality(
+            SQLULEN    rowsNumber,
+            char       *expectedColumnData,
+            char       *columnData,
+            SQLINTEGER *expectedColumnStrLenOrInd,
+            SQLINTEGER *columnStrLenOrInd);
 
         // Objects declared here can be used by all tests in the test suite.
         //
