@@ -95,7 +95,7 @@ protected:
 	// Note: The length returned increases as a single new column is added to the DataFrame,
 	// then stays the same for further addition of columns.
 	//
-	SQLUSMALLINT GetDataFrameRowsNumber() const
+	SQLULEN GetDataFrameRowsNumber() const
 	{
 		return m_dataFrame.nrows();
 	}
