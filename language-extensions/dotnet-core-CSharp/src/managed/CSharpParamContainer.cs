@@ -152,6 +152,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             int            *strLenOrNullMap)
         {
             Logging.Trace("CSharpParamContainer::ReplaceParam");
+            if(!UserParams.ContainsKey(_params[paramNumber].Name))
+            {
+                *strLenOrNullMap = SQL_NULL_DATA;
+                return;
+            }
+
             _params[paramNumber].Value = UserParams[_params[paramNumber].Name];
             if(_params[paramNumber].Value == null)
             {

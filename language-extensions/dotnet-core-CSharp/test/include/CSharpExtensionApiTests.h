@@ -325,6 +325,13 @@ namespace ExtensionApiTest
         std::unique_ptr<ColumnInfo<SQLCHAR>> m_tinyIntInfo = nullptr;
         std::unique_ptr<ColumnInfo<SQLCHAR>> m_charInfo = nullptr;
 
+        // User library name and class full name
+        // The name of the library is same as the dll file name.
+        //
+        const std::string m_UserLibName = "Microsoft.SqlServer.CSharpExtensionTest.dll";;
+        const std::string m_UserClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutor";
+        const std::string m_Separator = ";";
+
         // Size of each datatype
         //
         const SQLINTEGER m_IntSize = sizeof(SQLINTEGER);

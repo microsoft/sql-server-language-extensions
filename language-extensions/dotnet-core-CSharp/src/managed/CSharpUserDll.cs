@@ -30,13 +30,23 @@ namespace Microsoft.SqlServer.CSharpExtension
         private string _privatePath;
 
         /// <summary>
-        /// The namespace of user dll
+        /// The file name of user dll
         /// </summary>
-        private string _userClassName;
+        private string _userLibName;
+
+        /// <summary>
+        /// The full name of user class
+        /// </summary>
+        private string _userClassFullName;
+
+        /// <summary>
+        /// The user executor extending AbstractSqlServerExtensionExecutor
+        /// </summary>
+        public AbstractSqlServerExtensionExecutor UserExecutor { get; set; }
 
         /// <summary>
         /// This constructor creates CSharpUserDll class with public/private external
-        /// library path and the namespace of the user dll
+        /// library path and the user dll file name and full class name.
         /// </summary>
         /// <param name="publicPath">
         /// The absolute path to the public library folder
@@ -44,14 +54,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="privatePath">
         /// The absolute path to the private library folder
         /// </param>
-        /// <param name="userClassName">
-        /// The full name of the user class in the form of namespace.classname
+        /// <param name="userScriptFullName">
+        /// The full name of the user class in the form of filename;namespace.classname or namespace.classname
         /// </param>
-        public CSharpUserDll(string publicPath, string privatePath, string userClassName)
+        public CSharpUserDll(string publicPath, string privatePath, string userScriptFullName)
         {
             _publicPath = publicPath;
             _privatePath = privatePath;
-            _userClassName = userClassName;
+            if(!string.IsNullOrEmpty(userScriptFullName))
+            {
+                string[] subStr = userScriptFullName.Split(';');
+                _userLibName = (subStr.Length == 2) ? subStr[0] : string.Empty;
+                _userClassFullName = (subStr.Length == 2) ? subStr[1] : userScriptFullName;
+            }
         }
 
         /// <summary>
@@ -60,8 +75,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         public AbstractSqlServerExtensionExecutor InstantiateUserExecutor()
         {
             Logging.Trace("CSharpUserDll::InstantiateUserExecutor");
-            List<string> dllList = DllUtils.CreateDllList(_publicPath, _privatePath);
-            Type userExecutorClass = DllUtils.GetUserDll(_userClassName, dllList);
+            if(string.IsNullOrEmpty(_userClassFullName) && string.IsNullOrEmpty(_userLibName))
+            {
+                return null;
+            }
+
+            List<string> dllList = DllUtils.CreateDllList(_publicPath, _privatePath, _userLibName);
+            Type userExecutorClass = DllUtils.GetUserDll(_userClassFullName, dllList);
             return (AbstractSqlServerExtensionExecutor)Activator.CreateInstance(userExecutorClass);
         }
     }

@@ -115,7 +115,7 @@ namespace ExtensionApiTest
         m_numTasks = 1;
         m_inputSchemaColumnsNumber = 1;
         m_parametersNumber = 0;
-        m_scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutor";
+        m_scriptString = m_UserLibName + m_Separator + m_UserClassFullName;
         m_script = static_cast<SQLCHAR *>(static_cast<void *>(const_cast<char *>(m_scriptString.c_str())));
         m_scriptLength = m_scriptString.length();
 

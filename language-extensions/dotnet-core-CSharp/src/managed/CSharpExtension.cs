@@ -185,13 +185,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             Logging.Trace("CSharpExtension::InitSession");
             return ExceptionUtils.WrapError(() =>
             {
-                string scriptStr = Interop.UTF8PtrToStr(script, scriptLength);
+                string scriptStr = (script != null) ? Interop.UTF8PtrToStr(script, scriptLength) : string.Empty;
                 string inputDataNameStr = Interop.UTF8PtrToStr(inputDataName, inputDataNameLength);
                 string outputDataNameStr = Interop.UTF8PtrToStr(outputDataName, outputDataNameLength);
                 CSharpUserDll userDll = new CSharpUserDll(
                     publicPath: _publicLibraryPath,
                     privatePath: _privateLibraryPath,
-                    userClassName: scriptStr);
+                    userScriptFullName: scriptStr);
 
                 _currentSession = new CSharpSession(
                     sessionId: sessionId,

@@ -23,24 +23,6 @@ namespace Microsoft.SqlServer.CSharpExtension
     internal class DllUtils
     {
         /// <summary>
-        /// This method finds the first user class that implements the executor and the correct namespace.
-        /// </summary>
-        /// <param name="userClassName">
-        /// The namespace of User Dll
-        /// </param>
-        /// <param name="interfaceToImplement">
-        /// The type of the base interface that implemented by the user dll
-        /// </param>
-        /// <param name="types">
-        /// The types of all the classes of the user dll
-        /// </param>
-        private static Type GetClassThatImplements(string userClassName, Type interfaceToImplement, IEnumerable<Type> types)
-        {
-            // Looks for the class that has the same namespace as the user namespace and the implemented interface can be assignable from the user interface
-            return types.FirstOrDefault(t => t.FullName == userClassName && interfaceToImplement.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
-        }
-
-        /// <summary>
         /// This method loops through all dll in the paths and returns the first class that implements the executor.
         /// </summary>
         /// <param name="userClassName">
@@ -61,7 +43,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 try
                 {
                     Assembly userDll = Assembly.LoadFrom(dllPath);
-                    Type userExecutorClass = DllUtils.GetClassThatImplements(userClassName, typeof(AbstractSqlServerExtensionExecutor), userDll.GetExportedTypes());
+                    Type userExecutorClass = userDll.GetType(userClassName);
                     if (userExecutorClass != null)
                     {
                         return userExecutorClass;
@@ -76,7 +58,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
             }
 
-            throw new Exception("Unable to find user class with full name: " + userClassName);
+            string msg = "Unable to find user class with full name: " + userClassName + "\nPlease provide user class in the form of LibraryName;Namespace.Classname or Namespace.Classname";
+            throw new Exception(msg);
         }
 
         /// <summary>
@@ -88,17 +71,35 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="privatePath">
         /// Private external library path
         /// </param>
-        public static List<string> CreateDllList(string publicPath, string privatePath)
+        public static List<string> CreateDllList(
+            string publicPath,
+            string privatePath,
+            string userLibName)
         {
             List<string>dllList = new List<string>();
-            if (!string.IsNullOrEmpty(publicPath))
+            if(string.IsNullOrEmpty(userLibName))
             {
-                dllList.AddRange(Directory.GetFiles(publicPath).Where(s => s.EndsWith(".dll")));
-            }
+                if (!string.IsNullOrEmpty(privatePath))
+                {
+                    dllList.AddRange(Directory.GetFiles(privatePath));
+                }
 
-            if (!string.IsNullOrEmpty(privatePath))
+                if (!string.IsNullOrEmpty(publicPath))
+                {
+                    dllList.AddRange(Directory.GetFiles(publicPath));
+                }
+            }
+            else
             {
-                dllList.AddRange(Directory.GetFiles(privatePath).Where(s => s.EndsWith(".dll")));
+                if (!string.IsNullOrEmpty(privatePath))
+                {
+                    dllList.AddRange(Directory.GetFiles(privatePath, userLibName));
+                }
+
+                if (!string.IsNullOrEmpty(publicPath))
+                {
+                    dllList.AddRange(Directory.GetFiles(publicPath, userLibName));
+                }
             }
 
             if (dllList.Count == 0)

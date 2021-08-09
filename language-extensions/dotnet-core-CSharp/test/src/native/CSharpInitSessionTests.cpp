@@ -16,12 +16,12 @@ using namespace std;
 namespace ExtensionApiTest
 {
     //----------------------------------------------------------------------------------------------
-    // Name: TestInitWithNulls
+    // Name: InitValidSessionTest
     //
     // Description:
     //  Test InitSession() API with valid values.
     //
-    TEST_F(CSharpExtensionApiTests, InitSessionTest)
+    TEST_F(CSharpExtensionApiTests, InitValidSessionTest)
     {
         SQLRETURN result = (*sm_initSessionFuncPtr)(
             *m_sessionId,

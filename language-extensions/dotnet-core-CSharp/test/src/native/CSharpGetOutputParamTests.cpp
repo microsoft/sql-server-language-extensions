@@ -28,7 +28,8 @@ namespace ExtensionApiTest
         SQLINTEGER p2 = 4;
         SQLINTEGER p3 = 0;
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorIntParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorIntParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber
@@ -85,7 +86,8 @@ namespace ExtensionApiTest
         SQLCHAR p2 = '\x1';
         SQLCHAR p3 = '\0';
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorBitParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorBitParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber
@@ -142,7 +144,8 @@ namespace ExtensionApiTest
         SQLREAL p2 = 2.3e4;
         SQLREAL p3 = 0;
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorRealParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorRealParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber
@@ -199,7 +202,8 @@ namespace ExtensionApiTest
         SQLDOUBLE p2 = 1.45e38;
         SQLDOUBLE p3 = 0;
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorDoubleParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorDoubleParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber
@@ -256,7 +260,8 @@ namespace ExtensionApiTest
         SQLBIGINT p2 = 9372036854775;
         SQLBIGINT p3 = 0;
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorBigIntParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorBigIntParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber
@@ -313,7 +318,8 @@ namespace ExtensionApiTest
         SQLSMALLINT p2 = 3007;
         SQLSMALLINT p3 = 0;
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorSmallIntParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorSmallIntParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber
@@ -370,7 +376,8 @@ namespace ExtensionApiTest
         SQLCHAR p2 = 123;
         SQLCHAR p3 = -1;
 
-        string scriptString = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorTinyIntParam";
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorTinyIntParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
 
         InitializeSession(
             0, 		       // inputSchemaColumnsNumber

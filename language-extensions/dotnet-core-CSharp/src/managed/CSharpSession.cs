@@ -182,9 +182,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             Logging.Trace("CSharpSession::Execute");
             _inputDataSet.AddColumns(rowsNumber, data, strLenOrNullMap);
-            AbstractSqlServerExtensionExecutor userExecutor = _userDll.InstantiateUserExecutor();
+            _userDll.UserExecutor = _userDll.InstantiateUserExecutor();
 
-            _outputDataSet.CSharpDataFrame = userExecutor.Execute(_inputDataSet.CSharpDataFrame, _paramContainer.UserParams);
+            if(_userDll.UserExecutor != null)
+            {
+                _outputDataSet.CSharpDataFrame = _userDll.UserExecutor.Execute(_inputDataSet.CSharpDataFrame, _paramContainer.UserParams);
+            }
 
             if(_outputDataSet.CSharpDataFrame != null)
             {

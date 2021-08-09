@@ -15,6 +15,119 @@ using namespace std;
 namespace ExtensionApiTest
 {
     //----------------------------------------------------------------------------------------------
+    // Name: ExecuteEmptyDllNameTest
+    //
+    // Description:
+    //  Test Execute with empty dll file name.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteEmptyDllNameTest)
+    {
+        InitializeSession(
+            0, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            m_UserClassFullName);
+
+        SQLUSMALLINT outputschemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputschemaColumnsNumber);
+
+        EXPECT_EQ(result, SQL_SUCCESS);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ExecuteEmptyScriptTest
+    //
+    // Description:
+    //  Test Execute with null script.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteEmptyScriptTest)
+    {
+        InitializeSession(
+            0,   // inputSchemaColumnsNumber
+            0,   // parametersNumber
+            ""); // scriptStr
+
+        SQLUSMALLINT outputschemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputschemaColumnsNumber);
+
+        EXPECT_EQ(result, SQL_SUCCESS);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ExecuteInvalidScriptTest
+    //
+    // Description:
+    //  Test Execute with invalid script format.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteInvalidScriptTest)
+    {
+        // Script in invalid format
+        //
+        string scriptString = m_UserLibName + "." + m_UserClassFullName;
+        InitializeSession(
+            0,   // inputSchemaColumnsNumber
+            0,   // parametersNumber
+            scriptString);
+
+        testing::internal::CaptureStderr();
+        SQLUSMALLINT outputschemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputschemaColumnsNumber);
+
+        EXPECT_EQ(result, SQL_ERROR);
+        string error = testing::internal::GetCapturedStderr();
+        EXPECT_TRUE(error.find("Please provide user class in the form of LibraryName;Namespace.Classname or Namespace.Classname") != string::npos);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ExecuteInvalidLibraryNameScriptTest
+    //
+    // Description:
+    //  Test Execute with invalid library name.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteInvalidLibraryNameScriptTest)
+    {
+        // Unmatched library name with the dll file name.
+        //
+        string userLibName = "Microsoft.SqlServer.CSharpExtensionTest";
+        string scriptString = userLibName + m_Separator + m_UserClassFullName;
+        InitializeSession(
+            0,   // inputSchemaColumnsNumber
+            0,   // parametersNumber
+            scriptString);
+
+        testing::internal::CaptureStderr();
+        SQLUSMALLINT outputschemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputschemaColumnsNumber);
+
+        EXPECT_EQ(result, SQL_ERROR);
+        string error = testing::internal::GetCapturedStderr();
+        EXPECT_TRUE(error.find("Unable to find user dll under") != string::npos);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: ExecuteIntegerColumnsTest
     //
     // Description:
@@ -44,10 +157,11 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, ExecuteInvalidIntegerColumnsTest)
     {
+        string scriptString = m_UserLibName + m_Separator + "UserExecutor.CSharpTestInValidExecutor";
         InitializeSession(
             (*m_integerInfo).GetColumnsNumber(),       // inputSchemaColumnsNumber
             0,                                         // parametersNumber
-            "UserExecutor.CSharpTestInValidExecutor"); // scriptString (undefined user class name)
+            scriptString);                             // scriptString (undefined user class name)
 
         InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_integerInfo.get());
 
