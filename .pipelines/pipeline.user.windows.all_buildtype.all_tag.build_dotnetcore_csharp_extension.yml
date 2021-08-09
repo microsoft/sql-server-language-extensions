@@ -128,10 +128,35 @@ build:
             - 'Microsoft.SqlServer.CSharpExtension.deps.json'
           signing_options:
             profile: 'none'
-    - !!defaultcommand
+    - !!buildcommand
       name: 'Build DotNetCore CSharp Extension Test'
       command: 'language-extensions\dotnet-core-CSharp\test\build\windows\build-dotnet-core-CSharp-extension-test.cmd'
       arguments:  'debug release'
+      artifacts:
+        - from: 'build-output\dotnet-core-CSharp-extension-test\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug'
+          include:
+            - 'Microsoft.SqlServer.CSharpExtensionTest.dll'
+          signing_options:
+            profile: '135020002'
+        - from: 'build-output\dotnet-core-CSharp-extension-test\windows\debug'
+          to: 'out\dotnet-core-CSharp-extension\debug\symbols'
+          include:
+            - 'Microsoft.SqlServer.CSharpExtensionTest.pdb'
+          signing_options:
+            profile: 'none'
+        - from: 'build-output\dotnet-core-CSharp-extension-test\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release'
+          include:
+            - 'Microsoft.SqlServer.CSharpExtensionTest.dll'
+          signing_options:
+            profile: '135020002'
+        - from: 'build-output\dotnet-core-CSharp-extension-test\windows\release'
+          to: 'out\dotnet-core-CSharp-extension\release\symbols'
+          include:
+            - 'Microsoft.SqlServer.CSharpExtensionTest.pdb'
+          signing_options:
+            profile: 'none'
 
 package:
   commands:                                      # This is a sequence of script files to be executed one after another

@@ -58,6 +58,7 @@ SET EXTENSION_HOST_INCLUDE=%ENL_ROOT%\extension-host\include
 SET DOTNET_NATIVE_LIB=%DOTNET_EXTENSION_HOME%\lib
 
 cl.exe /LD %DOTNET_NATIVE_SRC%\nativecsharpextension.cpp %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /EHsc /Zi
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build nativecsharpextension for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[Info] Copying dependent libraries..."
 XCOPY %DOTNET_NATIVE_LIB%\hostfxr.dll %BUILD_OUTPUT%
@@ -65,6 +66,7 @@ XCOPY %DOTNET_NATIVE_LIB%\hostfxr.dll %BUILD_OUTPUT%
 ECHO "[Info] Building Microsoft.SqlServer.CSharpExtension dll..."
 SET DOTNET_MANAGED_SRC=%DOTNET_EXTENSION_HOME%\src\managed
 dotnet build %DOTNET_MANAGED_SRC%\Microsoft.SqlServer.CSharpExtension.csproj /m /p:Configuration=%BUILD_CONFIGURATION%;OutDir=%BUILD_OUTPUT% --no-dependencies
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build for Microsoft.SqlServer.CSharpExtension.dll for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "Success: Built dotnet-core-CSharp-extension for %BUILD_CONFIGURATION% configuration."
 
