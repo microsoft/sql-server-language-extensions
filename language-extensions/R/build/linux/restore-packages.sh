@@ -46,13 +46,13 @@ ${R_HOME}/bin/R -e "remove.packages('codetools', lib = '${R_LIBRARY_PATH}')"
 
 # Install Rcpp.
 #
-${R_HOME}/bin/R -e "install.packages('Rcpp', lib = '${R_LIBRARY_PATH}', repos = 'https://ftp.osuosl.org/pub/cran/')"
+${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.6.tar.gz', lib = '${R_LIBRARY_PATH}', repos = NULL, type='source')"
 ${R_HOME}/bin/R -e "stopifnot(require(Rcpp))"
 check_exit_code "Success: Installed Rcpp package." "Error: Failed to install Rcpp package."
 
 # Install RInside.
 #
-${R_HOME}/bin/R -e "install.packages('RInside', lib = '${R_LIBRARY_PATH}', repos = 'https://ftp.osuosl.org/pub/cran/')"
+${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/RInside/RInside_0.2.15.tar.gz', lib = '${R_LIBRARY_PATH}', repos = NULL, , type='source')"
 ${R_HOME}/bin/R -e "stopifnot(require(RInside))"
 check_exit_code "Success: Installed RInside package." "Error: Failed to install RInside package."
 
