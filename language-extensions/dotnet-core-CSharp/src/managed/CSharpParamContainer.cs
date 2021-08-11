@@ -59,14 +59,14 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// and adds to user parameter dictionary as well.
         /// </summary>
         public unsafe void AddParam(
-            ushort paramNumber,
-            string paramName,
+            ushort       paramNumber,
+            string       paramName,
             SqlDataType  dataType,
-            ulong  paramSize,
-            short  decimalDigits,
-            void   *paramValue,
-            int    strLenOrNullMap,
-            short  inputOutputType)
+            ulong        paramSize,
+            short        decimalDigits,
+            void         *paramValue,
+            int          strLenOrNullMap,
+            short        inputOutputType)
         {
             Logging.Trace("CSharpParamContainer::AddParam");
             if (paramName == null)
@@ -147,9 +147,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         ///	with the updated output value from execution parameters' dictionary
         /// </summary>
         public unsafe void ReplaceParam(
-            ushort         paramNumber,
-            void           **paramValue,
-            int            *strLenOrNullMap)
+            ushort paramNumber,
+            void   **paramValue,
+            int    *strLenOrNullMap)
         {
             Logging.Trace("CSharpParamContainer::ReplaceParam");
             if(!UserParams.ContainsKey(_params[paramNumber].Name))
@@ -159,66 +159,60 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             _params[paramNumber].Value = UserParams[_params[paramNumber].Name];
-            if(_params[paramNumber].Value == null)
+            CSharpParam param = _params[paramNumber];
+            if(param.Value == null)
             {
                 *strLenOrNullMap = SQL_NULL_DATA;
                 return;
             }
 
-            *strLenOrNullMap = (int)_params[paramNumber].Size;
-            switch(_params[paramNumber].DataType)
+            *strLenOrNullMap = (int)param.Size;
+            switch(param.DataType)
             {
                 case SqlDataType.DotNetInteger:
-                    ReplaceNumericParam<int>((int)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<int>((int)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetUInteger:
-                    ReplaceNumericParam<uint>((uint)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<uint>((uint)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetBigInt:
-                    ReplaceNumericParam<long>((long)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<long>((long)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetUBigInt:
-                    ReplaceNumericParam<ulong>((ulong)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<ulong>((ulong)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetTinyInt:
-                    ReplaceNumericParam<sbyte>((sbyte)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<sbyte>((sbyte)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetUTinyInt:
-                    ReplaceNumericParam<byte>((byte)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<byte>((byte)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetSmallInt:
-                    ReplaceNumericParam<short>((short)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<short>((short)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetUSmallInt:
-                    ReplaceNumericParam<ushort>((ushort)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<ushort>((ushort)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetDouble:
-                    ReplaceNumericParam<double>((double)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<double>((double)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetFloat:
-                    ReplaceNumericParam<double>((double)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<double>((double)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetReal:
-                    ReplaceNumericParam<float>((float)_params[paramNumber].Value, paramValue);
+                    ReplaceNumericParam<float>((float)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetBit:
-                    bool boolValue = Convert.ToBoolean(_params[paramNumber].Value);
+                    bool boolValue = Convert.ToBoolean(param.Value);
                     ReplaceNumericParam<bool>(boolValue, paramValue);
                     break;
+                case SqlDataType.DotNetChar:
+                    *strLenOrNullMap = (param.Value.Length < *strLenOrNullMap) ? param.Value.Length : *strLenOrNullMap;
+                    ReplaceStringParam((string)param.Value, paramValue);
+                    break;
                 default:
-                    throw new NotImplementedException("Parameter type for " + _params[paramNumber].DataType.ToString() + " has not been implemented yet");
+                    throw new NotImplementedException("Parameter type for " + param.DataType.ToString() + " has not been implemented yet");
             }
-        }
-
-        /// <summary>
-        /// This method replaces parameter value for numeric data types.
-        /// </summary>
-        private unsafe void ReplaceNumericParam<T>(
-            T              value,
-            void           **paramValue) where T : unmanaged
-        {
-            _handleList.Add(GCHandle.Alloc(value));
-            *paramValue = &value;
         }
 
         /// <summary>
@@ -236,6 +230,45 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             _handleList = null;
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for numeric data types.
+        /// </summary>
+        private unsafe void ReplaceNumericParam<T>(
+            T    value,
+            void **paramValue) where T : unmanaged
+        {
+            _handleList.Add(GCHandle.Alloc(value));
+            *paramValue = &value;
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for string data types.
+        /// If the string is not empty, the address of underlying bytes will be assigned to paramValue.
+        /// </summary>
+        private unsafe void ReplaceStringParam(
+            string value,
+            void   **paramValue
+        )
+        {
+            if(string.IsNullOrEmpty(value))
+            {
+                _handleList.Add(GCHandle.Alloc(value));
+                fixed(void* strPtr = value)
+                {
+                    *paramValue = strPtr;
+                }
+            }
+            else
+            {
+                byte[] strBytes = Encoding.UTF8.GetBytes(value);
+                _handleList.Add(GCHandle.Alloc(strBytes));
+                fixed(void* strPtr = strBytes)
+                {
+                    *paramValue = strPtr;
+                }
+            }
         }
     }
 }

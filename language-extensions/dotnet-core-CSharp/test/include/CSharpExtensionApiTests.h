@@ -275,6 +275,12 @@ namespace ExtensionApiTest
             SQLINTEGER     *columnStrLenOrInd,
             SQLSMALLINT    nullable);
 
+        // Test output string param value and strLenOrInd is as expected.
+        //
+        void GetStringOutputParam(
+            std::vector<const char*> expectedParamValueVector,
+            std::vector<SQLINTEGER>  expectedStrLenOrIndVector);
+
         // Test GetResults to verify the expected string results are obtained.
         //
         void GetStringResults(

@@ -252,7 +252,14 @@ namespace Microsoft.SqlServer.CSharpExtension
             int            *strLenOrNullMap)
         {
             Logging.Trace("CSharpSession::GetOutputParam");
-            _paramContainer.ReplaceParam(paramNumber, paramValue, strLenOrNullMap);
+            if(paramValue != null && strLenOrNullMap != null)
+            {
+                _paramContainer.ReplaceParam(paramNumber, paramValue, strLenOrNullMap);
+            }
+            else
+            {
+                throw new ArgumentException("Unexpected null error occurred");
+            }
         }
 
         /// <summary>

@@ -28,7 +28,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </param>
         public static void Trace(string message)
         {
+        #if DEBUG
             Console.WriteLine(message);
+        #endif
         }
 
         /// <summary>
