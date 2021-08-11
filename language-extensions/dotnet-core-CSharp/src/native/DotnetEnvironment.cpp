@@ -9,8 +9,10 @@
 //
 //*********************************************************************
 #include "DotnetEnvironment.h"
+#include "Logger.h"
 #include "Windows.h"
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <assert.h>
 #include <coreclr_delegates.h>
@@ -26,7 +28,7 @@ using string_t = std::basic_string<char_t>;
 // Name: DotnetEnvironment::DotnetEnvironment
 //
 // Description:
-//	Constructor to initialize the members. The language path is defined as the root path.
+// Constructor to initialize the members. The language path is defined as the root path.
 //
 DotnetEnvironment::DotnetEnvironment(
     std::string language_params,
@@ -40,10 +42,11 @@ DotnetEnvironment::DotnetEnvironment(
 // Name: DotnetEnvironment::init
 //
 // Description:
-//	Initialize the runtime by reading the runtimeconfig.json file.
+// Initialize the runtime by reading the runtimeconfig.json file.
 //
 short DotnetEnvironment::Init()
 {
+    LOG("DotnetEnvironment::Init");
     // STEP 1: Load HostFxr and get exported hosting functions
     //
     if (!load_hostfxr())
@@ -69,10 +72,11 @@ short DotnetEnvironment::Init()
 // Name: DotnetEnvironment::to_utf16_str
 //
 // Description:
-//	Convert a utf8 string to utf16.
+// Convert a utf8 string to utf16.
 //
 string_t DotnetEnvironment::to_utf16_str(const std::string& utf8str)
 {
+    LOG("DotnetEnvironment::to_utf16_str");
     int wchars_num = MultiByteToWideChar( CP_UTF8 , 0 , utf8str.c_str() , -1, nullptr, 0);
     unique_ptr<wchar_t> wstr (new wchar_t[wchars_num]);
     MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, wstr.get(), wchars_num);
@@ -80,13 +84,28 @@ string_t DotnetEnvironment::to_utf16_str(const std::string& utf8str)
 }
 
 //--------------------------------------------------------------------------------------------------
+// Name: DotnetEnvironment::to_hex_string
+//
+// Description:
+// Convert an int to string in hex.
+//
+string DotnetEnvironment::to_hex_string(int value)
+{
+    LOG("DotnetEnvironment::to_hex_string");
+    std::stringstream s;
+    s << "0x" << std::hex << std::showbase << value;
+    return s.str();
+}
+
+//--------------------------------------------------------------------------------------------------
 // Name: DotnetEnvironment::load_library
 //
 // Description:
-//	Load the library from the path
+// Load the library from the path
 //
 void* DotnetEnvironment::load_library(const char_t *path)
 {
+    LOG("DotnetEnvironment::load_library");
     HMODULE h = ::LoadLibraryW(path);
     assert(h != nullptr);
     return (void*)h;
@@ -96,10 +115,11 @@ void* DotnetEnvironment::load_library(const char_t *path)
 // Name: DotnetEnvironment::get_export
 //
 // Description:
-//	Export the method from the library
+// Export the method from the library
 //
 void* DotnetEnvironment::get_export(void *h, const char *name)
 {
+    LOG("DotnetEnvironment::get_export");
     void *f = ::GetProcAddress((HMODULE)h, name);
     assert(f != nullptr);
     return f;
@@ -109,10 +129,11 @@ void* DotnetEnvironment::get_export(void *h, const char *name)
 // Name: DotnetEnvironment::get_export
 //
 // Description:
-//	Load hostfxr and get desired exports
+// Load hostfxr and get desired exports
 //
 bool DotnetEnvironment::load_hostfxr()
 {
+    LOG("DotnetEnvironment::load_hostfxr");
     string_t hostfxr_location = m_root_path + STR("\\hostfxr.dll");
     void *lib = load_library(hostfxr_location.c_str());
     m_init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
@@ -126,10 +147,11 @@ bool DotnetEnvironment::load_hostfxr()
 // Name: DotnetEnvironment::get_dotnet_load_assembly
 //
 // Description:
-//	load assembly function pointer from the path.
+// load assembly function pointer from the path.
 //
 load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_assembly(hostfxr_handle cxt)
 {
+    LOG("DotnetEnvironment::get_dotnet_load_assembly");
     // Load .NET Core
     void *load_assembly_and_get_function_pointer = nullptr;
 
@@ -139,7 +161,9 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
         hdt_load_assembly_and_get_function_pointer,
         &load_assembly_and_get_function_pointer);
     if (rc != 0 || load_assembly_and_get_function_pointer == nullptr)
-        std::cerr << "Get delegate failed: " << std::hex << std::showbase << rc << std::endl;
+    {
+        LOG_ERROR("Get delegate failed: " + to_hex_string(rc));
+    }
 
     m_close_fptr(cxt);
     return (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
@@ -149,14 +173,15 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
 // Name: DotnetEnvironment::get_dotnet
 //
 // Description:
-//	load the .NET from the path and get the hostfxr handle
+// load the .NET from the path and get the hostfxr handle
 //
 hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
+    LOG("DotnetEnvironment::get_dotnet");
     hostfxr_handle cxt = nullptr;
     int rc = m_init_fptr(config_path, nullptr, &cxt);
     if (rc != 0 || cxt == nullptr)
     {
-        std::cerr << "Init failed: " << std::hex << std::showbase << rc << std::endl;
+        LOG_ERROR("Init failed: " + to_hex_string(rc));
         m_close_fptr(cxt);
         return nullptr;
     }

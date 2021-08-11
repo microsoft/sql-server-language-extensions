@@ -76,8 +76,16 @@ private:
     //
     static string_t to_utf16_str(const std::string& utf8str);
 
+    // Convert an int to string in hex.
+    //
+    static std::string to_hex_string(int value);
+
+    // Load the library from the path
+    //
     void* load_library(const char_t *path);
 
+    // Load hostfxr and get desired exports
+    //
     void* get_export(void *h, const char *name);
 
     // Load hostfxr and get desired exports

@@ -57,7 +57,12 @@ SET DOTNET_NATIVE_INCLUDE=%DOTNET_EXTENSION_HOME%\include
 SET EXTENSION_HOST_INCLUDE=%ENL_ROOT%\extension-host\include
 SET DOTNET_NATIVE_LIB=%DOTNET_EXTENSION_HOME%\lib
 
-cl.exe /LD %DOTNET_NATIVE_SRC%\nativecsharpextension.cpp %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /EHsc /Zi
+IF /I %BUILD_CONFIGURATION%==debug (
+	cl.exe /LD %DOTNET_NATIVE_SRC%\nativecsharpextension.cpp %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /D DEBUG /EHsc /Zi
+) ELSE (
+	cl.exe /LD %DOTNET_NATIVE_SRC%\nativecsharpextension.cpp %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /EHsc /Zi
+)
+
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build nativecsharpextension for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[Info] Copying dependent libraries..."
