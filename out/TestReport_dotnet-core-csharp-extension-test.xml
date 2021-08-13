@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="52" failures="0" disabled="0" errors="0" timestamp="2021-08-13T15:25:04" time="0.895" name="AllTests">
+  <testsuite name="CSharpExtensionApiTests" tests="52" failures="0" disabled="0" errors="0" time="0.785">
+    <testcase name="ExecuteEmptyDllNameTest" status="run" time="0.243" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteEmptyScriptTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteInvalidScriptTest" status="run" time="0.051" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteInvalidLibraryNameScriptTest" status="run" time="0.009" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteIntegerColumnsTest" status="run" time="0.04" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteInvalidIntegerColumnsTest" status="run" time="0.013" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteBooleanColumnsTest" status="run" time="0.01" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteRealColumnsTest" status="run" time="0.013" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteDoubleColumnsTest" status="run" time="0.014" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteBigIntColumnsTest" status="run" time="0.013" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteSmallIntColumnsTest" status="run" time="0.011" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteTinyIntColumnsTest" status="run" time="0.012" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteStringColumnsTest" status="run" time="0.012" classname="CSharpExtensionApiTests" />
+    <testcase name="ExecuteNullColumnsTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="GetIntegerOutputParamTest" status="run" time="0.124" classname="CSharpExtensionApiTests" />
+    <testcase name="GetBitOutputParamTest" status="run" time="0.009" classname="CSharpExtensionApiTests" />
+    <testcase name="GetRealOutputParamTest" status="run" time="0.008" classname="CSharpExtensionApiTests" />
+    <testcase name="GetDoubleOutputParamTest" status="run" time="0.006" classname="CSharpExtensionApiTests" />
+    <testcase name="GetBigIntOutputParamTest" status="run" time="0.009" classname="CSharpExtensionApiTests" />
+    <testcase name="GetSmallIntOutputParamTest" status="run" time="0.008" classname="CSharpExtensionApiTests" />
+    <testcase name="GetTinyIntOutputParamTest" status="run" time="0.006" classname="CSharpExtensionApiTests" />
+    <testcase name="GetStringOutputParamTest" status="run" time="0.011" classname="CSharpExtensionApiTests" />
+    <testcase name="GetIntegerResultColumnsTest" status="run" time="0.01" classname="CSharpExtensionApiTests" />
+    <testcase name="GetBooleanResultColumnsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetBigIntResultColumnsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetSmallIntResultColumnsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetTinyIntResultColumnsTest" status="run" time="0.004" classname="CSharpExtensionApiTests" />
+    <testcase name="GetRealResultColumnsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetDoubleResultColumnsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetStringResultColumnsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetIntegerResultsTest" status="run" time="0.006" classname="CSharpExtensionApiTests" />
+    <testcase name="GetBigIntResultsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetSmallIntResultsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetTinyIntResultsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetBooleanResultsTest" status="run" time="0.007" classname="CSharpExtensionApiTests" />
+    <testcase name="GetDoubleResultsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetRealResultsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="GetStringResultsTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="InitColumnTest" status="run" time="0" classname="CSharpExtensionApiTests" />
+    <testcase name="InitInvalidColumnTest" status="run" time="0.003" classname="CSharpExtensionApiTests" />
+    <testcase name="InitInvalidColumnNumberTest" status="run" time="0.003" classname="CSharpExtensionApiTests" />
+    <testcase name="InitNegativeColumnNumberTest" status="run" time="0.003" classname="CSharpExtensionApiTests" />
+    <testcase name="InitIntegerParamTest" status="run" time="0.005" classname="CSharpExtensionApiTests" />
+    <testcase name="InitBitParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitFloatParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitDoubleParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitBigIntParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitTinyIntParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitSmallIntParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitStringParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitWStringParamTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+    <testcase name="InitValidSessionTest" status="run" time="0.001" classname="CSharpExtensionApiTests" />
+  </testsuite>
+</testsuites>
