@@ -28,7 +28,7 @@ To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial
         This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ### Linux
-TODO
+Not Supported.
 
 ## Testing (Optional)
 
@@ -40,7 +40,7 @@ PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension-test\windows\debug\
 3. Run [run-dotnet-core-CSharp-extension-test.cmd](./test/build/windows/run-dotnet-core-CSharp-extension-test.cmd) to run all the unit tests.
 
 ### Linux
-TODO
+Not Supported.
 
 ## Usage
 After downloading or building the dotnet-core-CSharp-lang-extension.zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to register the language with SQL Server 2019 CU3+.
