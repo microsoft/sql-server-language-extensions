@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputPath>$(BinRoot)/$(Configuration)/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Analysis" Version="0.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.SqlServer.CSharpExtension.SDK">
+      <HintPath>..\..\..\..\..\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
