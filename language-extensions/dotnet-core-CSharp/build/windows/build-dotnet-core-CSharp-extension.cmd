@@ -12,13 +12,14 @@ MKDIR %DOTNET_EXTENSION_WORKING_DIR%
 
 :LOOP
 
-REM Set build config to first arg
+REM Set cmake config to first arg
 REM
 SET BUILD_CONFIGURATION=%1
 
-REM BUILD_CONFIGURATION is debug by default.
+REM Setting BUILD_CONFIGURATION to anything but "debug" will set BUILD_CONFIGURATION to "release".
+REM The string comparison for BUILD_CONFIGURATION is case-insensitive.
 REM
-IF NOT DEFINED BUILD_CONFIGURATION (SET BUILD_CONFIGURATION=debug)
+IF NOT DEFINED BUILD_CONFIGURATION (SET BUILD_CONFIGURATION=release)
 IF /I NOT %BUILD_CONFIGURATION%==debug (SET BUILD_CONFIGURATION=release)
 
 REM Output directory and output dll name
