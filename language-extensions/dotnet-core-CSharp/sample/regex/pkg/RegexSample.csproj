@@ -13,7 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SqlServer.CSharpExtension.SDK">
-      <HintPath>..\..\..\..\..\build-output\dotnet-core-CSharp-extension\windows\debug\Microsoft.SqlServer.CSharpExtension.dll</HintPath>
+      <HintPath>..\..\..\..\..\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

@@ -17,11 +17,11 @@ To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial
 1. Install latest [Visual Studio](https://visualstudio.microsoft.com/vs/) selecting the following required workloads: ".NET desktop development", "Desktop Development with C++" and ".NET core cross platform".
 
 2. Run [build-dotnet-core-CSharp-extension.cmd](./build/windows/build-dotnet-core-CSharp-extension.cmd) which will generate: \
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\debug\nativecsharpextension.dll \
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\debug\hostfxr.dll \
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\debug\Microsoft.SqlServer.CSharpExtension.dll \
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\debug\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json\
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\debug\Microsoft.SqlServer.CSharpExtension.deps.json
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\nativecsharpextension.dll \
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\hostfxr.dll \
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.dll \
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json\
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.deps.json
 
 3. Run [create-dotnet-core-CSharp-extension-zip.cmd](./build/windows/create-dotnet-core-CSharp-extension-zip.cmd) which will generate: \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\target\debug\dotnet-core-CSharp-lang-extension.zip
@@ -36,7 +36,7 @@ Not Supported.
 To unit test this extension,
 1. Install [CMake](https://cmake.org/download/) for Windows. Set `CMAKE_ROOT` to point to the cmake installation folder.
 2. Run [build-dotnet-core-CSharp-extension-test.cmd](./test/build/windows/build-dotnet-core-CSharp-extension-test.cmd) which will generate: \
-PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension-test\windows\debug\dotnet-core-CSharp-extension-test.exe
+PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension-test\windows\release\dotnet-core-CSharp-extension-test.exe
 3. Run [run-dotnet-core-CSharp-extension-test.cmd](./test/build/windows/run-dotnet-core-CSharp-extension-test.cmd) to run all the unit tests.
 
 ### Linux

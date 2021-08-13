@@ -24,7 +24,7 @@ GO
 
 CREATE EXTERNAL LANGUAGE Dotnet
 FROM
-(CONTENT = N'<Data-SQL-Language-Extensions root path>\build-output\dotnet-core-CSharp-extension\windows\debug\packages\dotnet-core-CSharp-lang-extension.zip', FILE_NAME = 'nativecsharpextension.dll' );
+(CONTENT = N'<Data-SQL-Language-Extensions root path>\build-output\dotnet-core-CSharp-extension\windows\release\packages\dotnet-core-CSharp-lang-extension.zip', FILE_NAME = 'nativecsharpextension.dll' );
 GO
 
 -- Step 5: Create external libraries
