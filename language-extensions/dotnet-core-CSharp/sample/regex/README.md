@@ -153,7 +153,7 @@ If you are using Windows, follow the steps below to create an external language 
 
 1. Create a .zip file containing the extension.
 
-    Follow this [tutorial]((../../../../README.md)) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
+    Follow this [tutorial](../../../../README.md) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
 
 2. Create an external language Dotnet from the .zip file:
 
