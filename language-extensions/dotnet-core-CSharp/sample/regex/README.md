@@ -13,7 +13,8 @@ This particular sample uses a regular expression that checks if a text contains 
 
 ## Prerequisites
 
-+ SQL Server 2019 CU3+ Database Engine instance with the extensibility framework.
++ SQL Server 2019 CU3+ Database Engine instance with the extensibility framework and enable external scripts: `sp_configure 'external scripts enabled', 1;
+RECONFIGURE WITH OVERRIDE;`.
 
 + SQL Server Management Studio or Azure Data Studio for executing T-SQL.
 
@@ -151,9 +152,7 @@ You need to create an external language in the database. The external language i
 
 If you are using Windows, follow the steps below to create an external language for .NET.
 
-1. Create a .zip file containing the extension.
-
-    Follow this [tutorial]((../../../../README.md)) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
+1. Download the [release](https://github.com/microsoft/sql-server-language-extensions/releases) containing the language extension. If you have any changes to the language extension, then follow this [tutorial](../../README.md) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
 
 2. Create an external language Dotnet from the .zip file:
 
@@ -186,7 +185,7 @@ GO
 ```
 
 ## Call the .NET Core C# class
-Create a stored procedure that calls `sp_execute_external_script` to call the C# code from SQL Server. In the **script** parameter, define which `libraryname;namespace.classname` you want to call. You can also define which `namespace.classname` you want to call without sepcifying the library name. The extension will find the first library that has the matched `namespace.classname`.
+Call the [stored procedure](https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-execute-external-script-transact-sql?view=sql-server-ver15) `sp_execute_external_script` to invoke the C# code from SQL Server. In the **script** parameter, define which `libraryname;namespace.classname` you want to call. You can also define which `namespace.classname` you want to call without sepcifying the library name. The extension will find the first library that has the matched `namespace.classname`.
 In the code below, the class belongs to a namespace called **UserExecutor** and a class called **CSharpRegexExecutor**.
 
 > [!NOTE]
