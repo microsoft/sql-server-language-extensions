@@ -165,7 +165,7 @@ If you are using Windows, follow the steps below to create an external language 
     ```
 
 ### Permissions to execute external language
-To execute .NET C# code, a user needs to be granted **ALL APPLICATION PACKAGES** read permissions to the **<SQL Server install path>\MSSQL** folder.
+To execute .NET C# code, the user ALL APPLICATION PACKAGES needs to be granted read permissions to the \MSSQL folder.
 1. Right-click the folder and choose **Properties** > **Security**.
 2. Click **Edit**.
 3. Click **Add**.
