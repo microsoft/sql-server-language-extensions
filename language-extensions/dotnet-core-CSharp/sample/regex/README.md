@@ -185,7 +185,7 @@ GO
 ```
 
 ## Call the .NET Core C# class
-Create a stored procedure that calls `sp_execute_external_script` to call the C# code from SQL Server. In the **script** parameter, define which `libraryname;namespace.classname` you want to call. You can also define which `namespace.classname` you want to call without sepcifying the library name. The extension will find the first library that has the matched `namespace.classname`.
+Call the [stored procedure](https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-execute-external-script-transact-sql?view=sql-server-ver15) `sp_execute_external_script` to invoke the C# code from SQL Server. In the **script** parameter, define which `libraryname;namespace.classname` you want to call. You can also define which `namespace.classname` you want to call without sepcifying the library name. The extension will find the first library that has the matched `namespace.classname`.
 In the code below, the class belongs to a namespace called **UserExecutor** and a class called **CSharpRegexExecutor**.
 
 > [!NOTE]
