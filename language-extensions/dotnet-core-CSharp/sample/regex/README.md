@@ -151,9 +151,7 @@ You need to create an external language in the database. The external language i
 
 If you are using Windows, follow the steps below to create an external language for .NET.
 
-1. Create a .zip file containing the extension.
-
-    Follow this [tutorial]((../../../../README.md)) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
+1. Download the [release](https://github.com/microsoft/sql-server-language-extensions/releases/download/dotnet-csharp-v1.0.0/dotnet-core-CSharp-lang-extension-windows-release.zip) containing the language extension. If you have any changes to the language extension, then follow this [tutorial]((../../../../README.md)) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
 
 2. Create an external language Dotnet from the .zip file:
 
