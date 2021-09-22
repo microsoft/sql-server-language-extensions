@@ -13,7 +13,8 @@ This particular sample uses a regular expression that checks if a text contains 
 
 ## Prerequisites
 
-+ SQL Server 2019 CU3+ Database Engine instance with the extensibility framework.
++ SQL Server 2019 CU3+ Database Engine instance with the extensibility framework and enable external scripts: `sp_configure 'external scripts enabled', 1;
+RECONFIGURE WITH OVERRIDE;`.
 
 + SQL Server Management Studio or Azure Data Studio for executing T-SQL.
 
