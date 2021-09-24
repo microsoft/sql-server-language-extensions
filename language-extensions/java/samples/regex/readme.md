@@ -21,12 +21,22 @@ This particular sample uses a regular expression that checks if a text contains 
 
 + Command-line compilation using **javac** is sufficient for this sample.
 
-### Creating a jar file
+### Compiling a class file
 
-When using using this sample and executing a Java code from SQL Server, we recommend packaging your class files into a jar file.
+The class file can be created using the command-line compiler **javac**. For this sample, create a folder containing the RegexSample.java file.
 
-To create a jar from class files, navigate to the folder containing your class file and run this command:
+To create the class files, navigate to the folder containing your java file and run this command:
 
 ```cmd
-jar -cf <MyJar.jar> *.class
+javac -cp <mssql-java-lang-extension.jar> *.java
+```
+
+### Creating a jar file
+
+When using this sample and executing a Java code from SQL Server, we recommend packaging your class files into a jar file.
+
+To create a jar from class files, navigate to the parent folder of the location that contains the class file and run this command:
+
+```cmd
+jar -cf <MyJar.jar> folder/*.class
 ```
