@@ -20,8 +20,6 @@ RECONFIGURE WITH OVERRIDE;`.
 
 + [.NET 5.0 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) on Windows.
 
-+ The **dotnet-core-CSharp-lang-extension.zip** file from the [.NET Core C# Language Extension](../../../../README.md).
-
 ## Download required files
 
 1. Download the [release](https://github.com/microsoft/sql-server-language-extensions/releases) containing the language extension. If you have any changes to the language extension, then follow this [tutorial](../../README.md) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
