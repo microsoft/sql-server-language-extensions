@@ -22,6 +22,11 @@ RECONFIGURE WITH OVERRIDE;`.
 
 + The **dotnet-core-CSharp-lang-extension.zip** file from the [.NET Core C# Language Extension](../../../../README.md).
 
+## Download required files
+
+1. Download the [release](https://github.com/microsoft/sql-server-language-extensions/releases) containing the language extension. If you have any changes to the language extension, then follow this [tutorial](../../README.md) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
+2. Unzip **dotnet-core-CSharp-lang-extension.zip**. Be sure to keep both **dotnet-core-CSharp-lang-extension.zip** and the unzipped folder.
+
 ## Create sample data
 
 First, create a new database and populate a **testdata** table with **ID** and **text** columns.
@@ -115,7 +120,7 @@ namespace UserExecutor
 ## Compile and create a .dll file
 Package your classes and dependencies into a `.dll` files. You can create a `.csproj` file called **RegexSample.csproj** and copy the following code into that file.
 
-Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the **Microsoft.SqlServer.CSharpExtension.dll** to find the implementation of the sdk AbstractSqlServerExtensionExecutor.
+Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the **Microsoft.SqlServer.CSharpExtension.dll** (found inside the unzipped folder from [Download required files](download-required-files) to find the implementation of the sdk AbstractSqlServerExtensionExecutor.
 
 [RegexSample.csproj](./pkg/RegexSample.csproj) is already included in this sample. The sample uses a relative path to Microsoft.SqlServer.CSharpExtension.dll.
 
@@ -152,9 +157,7 @@ You need to create an external language in the database. The external language i
 
 If you are using Windows, follow the steps below to create an external language for .NET.
 
-1. Download the [release](https://github.com/microsoft/sql-server-language-extensions/releases) containing the language extension. If you have any changes to the language extension, then follow this [tutorial](../../README.md) to create **dotnet-core-CSharp-lang-extension.zip**. This file contains the **nativecsharpextension.dll** and **Microsoft.SqlServer.CSharpExtension.dll**.
-
-2. Create an external language Dotnet from the .zip file:
+1. Create an external language Dotnet from the .zip that was created in [Download required files](download-required-files):
 
     ```sql
     CREATE EXTERNAL LANGUAGE Dotnet
