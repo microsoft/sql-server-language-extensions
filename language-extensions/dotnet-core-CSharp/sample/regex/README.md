@@ -120,7 +120,7 @@ namespace UserExecutor
 ## Compile and create a .dll file
 Package your classes and dependencies into a `.dll` files. You can create a `.csproj` file called **RegexSample.csproj** and copy the following code into that file.
 
-Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the **Microsoft.SqlServer.CSharpExtension.dll** (found inside the unzipped folder from [Download required files](download-required-files)) to find the implementation of the sdk AbstractSqlServerExtensionExecutor.
+Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the **Microsoft.SqlServer.CSharpExtension.dll** (found inside the unzipped folder from [Download required files](#download-required-files)) to find the implementation of the sdk AbstractSqlServerExtensionExecutor.
 
 [RegexSample.csproj](./pkg/RegexSample.csproj) is already included in this sample. The sample uses a relative path to Microsoft.SqlServer.CSharpExtension.dll.
 
@@ -157,7 +157,7 @@ You need to create an external language in the database. The external language i
 
 If you are using Windows, follow the steps below to create an external language for .NET.
 
-1. Create an external language Dotnet from the .zip that was created in [Download required files](download-required-files):
+1. Create an external language Dotnet from the .zip that was created in [Download required files](#download-required-files):
 
     ```sql
     CREATE EXTERNAL LANGUAGE Dotnet
