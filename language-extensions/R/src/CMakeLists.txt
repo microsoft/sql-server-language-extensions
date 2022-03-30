@@ -48,7 +48,8 @@ if (${PLATFORM} STREQUAL linux)
 		-std=c++17 -Wno-unused-parameter)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed \
 		-Wl,--export-dynamic -fopenmp -Wl,-rpath,'${ORIGIN}'")
-	set(USR_LIB_PATH "/usr/local/lib")
+	set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES};.so.1;.so.3;.so.5")
+	set(USR_LIB_PATH "/usr/lib/x86_64-linux-gnu")
 
 	# Find dependent libraries
 	#
