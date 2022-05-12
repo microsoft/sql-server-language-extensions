@@ -10,9 +10,15 @@ apt-get install -y software-properties-common
 add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
 
-apt-get install -y python3.7-dev libboost-all-dev python3-pip
-
 DEFAULT_PYTHONHOME=/usr
+BOOST_VERSION=1.79.0
+BOOST_VERSION_IN_UNDERSCORE=1_79_0
+PYTHON_VERSION=3.10
+NUMPY_VERSION=1.22.3
+PANDAS_VERSION=1.4.2
+
+apt-get install -y python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
+curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION}
 
 # Find PYTHONHOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
@@ -28,29 +34,29 @@ fi
 
 echo "Python home is ${PYTHONHOME}"
 
-${PYTHONHOME}/bin/python3.7 -m pip install --upgrade pip==18.1
-
-# Lock versions of numpy and pandas to the versions shipped in SQL Server for compatibility
+# Lock versions of numpy and pandas to versions compatible for the defined python version
 #
-${PYTHONHOME}/bin/python3.7 -m pip install --force-reinstall numpy==1.15.4 -t ${PYTHONHOME}/lib/python3.7/dist-packages
-${PYTHONHOME}/bin/python3.7 -m pip install --force-reinstall pandas==0.23.4 -t ${PYTHONHOME}/lib/python3.7/dist-packages
+${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
+${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 
-wget -O boost_1_69_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.69.0/boost_1_69_0.tar.gz/download
-tar xzvf boost_1_69_0.tar.gz -C /usr/lib/
-pushd /usr/lib/boost_1_69_0
-
-# Build Python3.7 version of boost and boost python
+# Download and install boost, then navigate to boost root directory
 #
-./bootstrap.sh --without-icu --with-python=${PYTHONHOME}/bin/python3.7 --with-python-version=3.7 --with-python-root=${PYTHONHOME}/lib/python3.7
+wget -O boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz/download
+tar xzvf boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz -C /usr/lib/
+pushd /usr/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
-echo "using python : 3.7 : ${PYTHONHOME}/bin/python3.7 : ${PYTHONHOME}/include/python3.7m : ${PYTHONHOME}/lib ;" >> project-config.jam
+# Build defined python version of boost and boost python
+#
+./bootstrap.sh --without-icu --with-python=${PYTHONHOME}/bin/python${PYTHON_VERSION} --with-python-version=${PYTHON_VERSION} --with-python-root=${PYTHONHOME}/lib/python${PYTHON_VERSION}
+
+echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSION} : ${PYTHONHOME}/include/python${PYTHON_VERSION} : ${PYTHONHOME}/lib ;" >> project-config.jam
 
 # Change cxx flags to force boost to compile with -fPIC compilation, otherwise will fail linking when building libPythonExtension.so
 #
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
 ./b2 --clean
-./b2 toolset=gcc variant=debug address-model=64 include=${PYTHONHOME}/include/python3.7m/ link=static threading=multi -j12
+./b2 toolset=gcc variant=debug address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ link=static threading=multi -j12
 
 cp -rf boost /usr/include/
 

@@ -1,6 +1,12 @@
 cmake_minimum_required (VERSION 3.5)
 
-# this is what the final executable is going to be named
+# Define the python runtime version to be used
+#
+set(PYTHON_VERSION "3.10")
+set(PYTHON_VERSION_NO_DOT "310")
+
+# This is what the final executable is going to be named
+#
 project(pythonextension-test VERSION 1.0 LANGUAGES CXX)
 
 # All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
@@ -31,13 +37,13 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
 	
 	set(USR_LIB_PATH /usr/local/lib)
-	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python3.7/config-3.7m-x86_64-linux-gnu)
+	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
 	
-	find_library(PYTHON_LIB python3.7 ${PYTHON_LIB_PATH})
-	find_library(BOOST_PYTHON_LIB boost_python37 ${BOOST_PYTHON_ROOT})
-	find_library(BOOST_NUMPY_LIB boost_numpy37 ${BOOST_PYTHON_ROOT})
+	find_library(PYTHON_LIB python${PYTHON_VERSION} ${PYTHON_LIB_PATH})
+	find_library(BOOST_PYTHON_LIB boost_python${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
+	find_library(BOOST_NUMPY_LIB boost_numpy${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
 
-	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python3.7 PYTHON_INCLUDE)
+	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
 	
 	set(ADDITIONAL_INCLUDES ${PYTHON_INCLUDE} ${BOOST_INCLUDE})
