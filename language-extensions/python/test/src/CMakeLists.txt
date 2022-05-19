@@ -67,7 +67,7 @@ elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
 	set(COMPILE_OPTIONS /std:c++17)
 	
-	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)
+	find_library(PYTHON_LIB python${PYTHON_VERSION_NO_DOT} ${PYTHONHOME}/libs)
 	
 
 	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.1.3 GTEST_HOME)
@@ -78,13 +78,13 @@ elseif(${PLATFORM} STREQUAL windows)
 	#
 	if (${CMAKE_CONFIGURATION} STREQUAL debug)
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MDd)
-		find_library(BOOST_PYTHON_LIB libboost_python37-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
-		find_library(BOOST_NUMPY_LIB libboost_numpy37-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
 		find_library(GTEST_LIB gtestd ${GTEST_LIB_PATH})
 	else()
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MD)
-		find_library(BOOST_PYTHON_LIB libboost_python37-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
-		find_library(BOOST_NUMPY_LIB libboost_numpy37-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
 		find_library(GTEST_LIB gtest ${GTEST_LIB_PATH})
 	endif()
 	

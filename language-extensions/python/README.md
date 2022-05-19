@@ -12,6 +12,20 @@ Note that the Python Extension released in the current repository works with Pyt
 ## Building
 
 ### Windows
+There are two alternatives to building this project.
+
+A.	Using the [**restore-packages.cmd**](build/windows/restore-packages.cmd) script
+
+1.	Modify the following as appropriate
+	- `PYTHON_VERSION`, `PYTHON_VERSION_NO_DOT` on line 5 & 6 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+	- `DEFAULT_PYTHONHOME` on line 16 in [**build-python-extension.cmd**](build/windows/build-python-extension.cmd)
+
+1.	Run [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+
+1. Continue on **Step 6** below.
+
+B.	Installing needed packages from respective sources.
+
 1. Install [CMake for Windows](https://cmake.org/download/) and [Python](https://www.python.org/downloads/release/python-379/).
 
 1. Install the package numpy into your python. This is needed to build boost_numpy in the next step.
@@ -71,11 +85,13 @@ B.	Installing needed packages from respective sources.
 ### Windows
 To unit test this extension,
 
-1. Install [CMake for Windows](https://cmake.org/download/). Set CMAKE_ROOT to point to the cmake installation folder. \
+1. Install [CMake for Windows](https://cmake.org/download/). Set CMAKE_ROOT to point to the cmake installation folder.
 
-1. Download or build (GoogleTest)[https://github.com/google/googletest]. \
+1. Download or build (GoogleTest)[https://github.com/google/googletest].
 
-1. Run [**build-pythonextension-test.cmd**](test/build/windows/build-pythonextension-test.cmd) which will generate: \
+1.	Modify `DEFAULT_PYTHONHOME` on line 17 in [**build-python-extension-test.cmd**](test/build/windows/build-pythonextension-test.cmd)
+
+1. Run [**build-pythonextension-test.cmd**](test/build/windows/build-pythonextension-test.cmd) which will generate:
 	- PATH\TO\ENLISTMENT\build-output\pythonextension-test\windows\release\pythonextension-test.exe
 
 1. Modify [**run-pythonextension-test.cmd**](test/build/windows/run-pythonextension-test.cmd) to point `GTEST_HOME` and `GTEST_LIB_PATH` to your GTest binaries.
@@ -85,10 +101,10 @@ To unit test this extension,
 ### Linux
 To unit test this extension,
 
-1. Run [**build-googletest.sh**](../../test/googletest/build/linux/build-googletest.sh) which will generate the gtest library essential to build the pythonextension-test binary: \
+1. Run [**build-googletest.sh**](../../test/googletest/build/linux/build-googletest.sh) which will generate the gtest library essential to build the pythonextension-test binary:
 	- /PATH/TO/ENLISTMENT/build-output/googletest/linux/lib/libgtest.a
 
-1. Run [**build-pythonextension-test.sh**](test/build/linux/build-pythonextension-test.sh) which will generate: \
+1. Run [**build-pythonextension-test.sh**](test/build/linux/build-pythonextension-test.sh) which will generate:
 	- /PATH/TO/ENLISTMENT/build-output/pythonextension-test/windows/release/pythonextension-test.exe
 
 1. Run [**run-pythonextension-test.sh**](test/build/linux/run-pythonextension-test.sh) to run all the unit tests.

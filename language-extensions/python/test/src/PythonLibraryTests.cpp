@@ -376,8 +376,8 @@ namespace LibraryApiTests
 		//
 		string libName = "absl-py";
 		string moduleName = "absl";
-		fs::path pkgPath = m_packagesPath / "absl-py-0.1.13-TAR.zip";
-		string version = "0.1.13";
+		fs::path pkgPath = m_packagesPath / "absl-py-1.0.0-TAR.zip";
+		string version = "1.0.0";
 
 		EXPECT_TRUE(fs::exists(pkgPath));
 
@@ -396,11 +396,11 @@ namespace LibraryApiTests
 		vector<string> libNames{ "absl-py", "astor", "testpackageA" };
 		vector<string> moduleNames{ "absl", "astor", "testpackageA" };
 
-		vector<fs::path> pkgPaths{ m_packagesPath / "absl-py-0.1.13-TAR.zip",
+		vector<fs::path> pkgPaths{ m_packagesPath / "absl-py-1.0.0-TAR.zip",
 			 m_packagesPath / "astor-0.7.1-WHL.zip",
 			 m_packagesPath / "testpackageA-ZIP.zip" };
 
-		vector<string> versions{ "0.1.13", "0.7.1", "0.0.1" };
+		vector<string> versions{ "1.0.0", "0.7.1", "0.0.1" };
 
 		for (size_t i = 0; i < libNames.size(); ++i)
 		{

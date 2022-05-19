@@ -25,7 +25,7 @@
     <IncludeDirectory>..\..\include</IncludeDirectory>
     <PackageDirectory>$(EnlRoot)\packages</PackageDirectory>
     <ExtensionApiIncludeDirectory>$(EnlRoot)\extension-host\include</ExtensionApiIncludeDirectory>
-    <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1020</ExternalBoostRoot>
+    <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1457</ExternalBoostRoot>
     <ExternalBoostWindowsRoot>$(ExternalBoostRoot)\Windows</ExternalBoostWindowsRoot>
     <PythonRoot>$(PackageDirectory)\python</PythonRoot>
   </PropertyGroup>
@@ -115,13 +115,13 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       %(AdditionalDependencies);
-      $(ExternalBoostWindowsRoot)\lib-debug\libboost_python37-vc140-mt-gd-x64-1_69.lib;
-      $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy37-vc140-mt-gd-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_python310-vc140-mt-gd-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy310-vc140-mt-gd-x64-1_69.lib;
       </AdditionalDependencies>
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       %(AdditionalDependencies);
-      $(ExternalBoostWindowsRoot)\lib\libboost_python37-vc140-mt-x64-1_69.lib;
-      $(ExternalBoostWindowsRoot)\lib\libboost_numpy37-vc140-mt-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_python310-vc140-mt-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_numpy310-vc140-mt-x64-1_69.lib;
       </AdditionalDependencies>
       <AdditionalLibraryDirectories>$(PythonRoot)\libs;</AdditionalLibraryDirectories>
     </Link>

@@ -42,7 +42,7 @@
     <TestIncludeDirectory>$(EnlRoot)\language-extensions\python\test\include</TestIncludeDirectory>
     <TestSrcDirectory>$(EnlRoot)\language-extensions\python\test\src</TestSrcDirectory>
     <ExtensionBuildDirectory>$(EnlRoot)\build-output\pythonextension</ExtensionBuildDirectory>
-    <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1020</ExternalBoostRoot>
+    <ExternalBoostRoot>$(PackageDirectory)\External-Boost.master.Boost.1.69.0.1457</ExternalBoostRoot>
     <ExternalBoostWindowsRoot>$(ExternalBoostRoot)\Windows</ExternalBoostWindowsRoot>
     <PythonRoot>$(PackageDirectory)\python</PythonRoot>
     <GtestHome>$(EnlRoot)\packages\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.1.3</GtestHome>
@@ -73,8 +73,8 @@
       <AdditionalDependencies>
       $(GtestDebugLib)\gtestd.lib;
       $(ExtensionBuildDirectory)\Windows\Debug\pythonextension.lib;
-      $(ExternalBoostWindowsRoot)\lib-debug\libboost_python37-vc140-mt-gd-x64-1_69.lib;
-      $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy37-vc140-mt-gd-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_python310-vc140-mt-gd-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib-debug\libboost_numpy310-vc140-mt-gd-x64-1_69.lib;
       %(AdditionalDependencies);
       </AdditionalDependencies>
     </Link>
@@ -100,8 +100,8 @@
       <AdditionalDependencies>
       $(GtestReleaseLib)\gtest.lib;
       $(ExtensionBuildDirectory)\Windows\Release\pythonextension.lib;
-      $(ExternalBoostWindowsRoot)\lib\libboost_python37-vc140-mt-x64-1_69.lib;
-      $(ExternalBoostWindowsRoot)\lib\libboost_numpy37-vc140-mt-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_python310-vc140-mt-x64-1_69.lib;
+      $(ExternalBoostWindowsRoot)\lib\libboost_numpy310-vc140-mt-x64-1_69.lib;
       %(AdditionalDependencies);
       </AdditionalDependencies>
     </Link>
