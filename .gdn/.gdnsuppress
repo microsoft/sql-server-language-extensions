@@ -1,0 +1,812 @@
+{
+  "version": "latest",
+  "suppressionSets": {
+    "default": {
+      "name": "default",
+      "createdDate": "2022-08-25 18:56:38Z",
+      "lastUpdatedDate": "2022-08-25 18:56:38Z"
+    }
+  },
+  "results": {
+    "1241c90fe383ba44e49dad1720ace75783913d0eb4c62eb5210036032b8e41cf": {
+      "signature": "1241c90fe383ba44e49dad1720ace75783913d0eb4c62eb5210036032b8e41cf",
+      "alternativeSignatures": [
+        "b8e5d3ef48485747f4c8e98b378245a2018ca83e4a0fcb2e4c9514c3d8fefdc2"
+      ],
+      "target": "out/build/out/java-extension/debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "7c534c8df278725c6ac29346ac595b5d043c04d3415968c0d13b5167dde9358a": {
+      "signature": "7c534c8df278725c6ac29346ac595b5d043c04d3415968c0d13b5167dde9358a",
+      "alternativeSignatures": [
+        "316db17b8bb1e02a8ca16b98ad4c5dbc617e89fa0afe80bd431b85e0a80edb18"
+      ],
+      "target": "out/build/out/java-extension/debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "137c007adf8ff05004401c05a6ccf031d51fd97663f79b1d34e8267f6748ae51": {
+      "signature": "137c007adf8ff05004401c05a6ccf031d51fd97663f79b1d34e8267f6748ae51",
+      "alternativeSignatures": [
+        "187034b18f28eae28828af1882868feec2d18963b8b61cbc8a7261b40d2e2a33"
+      ],
+      "target": "out/build/out/java-extension/debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "29c2a70cdcdd85c8e533d5461ba27eff8423a3b123fda08208c9ac108e278ce0": {
+      "signature": "29c2a70cdcdd85c8e533d5461ba27eff8423a3b123fda08208c9ac108e278ce0",
+      "alternativeSignatures": [
+        "00fb371f31ed33dcd52e0b74c525f650e3915813440aeff9f8b743243049eef1"
+      ],
+      "target": "out/build/out/java-extension/debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "60b62c670bcfab69f212a140fff9df3f4af4354802f8c7f5eb037660afd71282": {
+      "signature": "60b62c670bcfab69f212a140fff9df3f4af4354802f8c7f5eb037660afd71282",
+      "alternativeSignatures": [
+        "55259ac6bfa54f646a74ddf24a5014ffa04b8374ec29bbd90c6bdde7916857e3"
+      ],
+      "target": "out/build/out/java-extension/debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "58528a1d28ee25bc5d54d3a819b38988ff4a791c4d9eff4d2ca9b97ee3f0b151": {
+      "signature": "58528a1d28ee25bc5d54d3a819b38988ff4a791c4d9eff4d2ca9b97ee3f0b151",
+      "alternativeSignatures": [
+        "cf7eef33a92a9746367aa067fb797997247086bc689450973f3229444aa46e79"
+      ],
+      "target": "out/build/out/java-extension/debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "a31bbcda8723a5b4407c8a28b4b4279f940930fc897cec9f9da100d36f8f97b0": {
+      "signature": "a31bbcda8723a5b4407c8a28b4b4279f940930fc897cec9f9da100d36f8f97b0",
+      "alternativeSignatures": [
+        "387af8b9c58df4e6a8f49d28002f12d9d1fb0c25c98b075ddf229f4cc1c2b47b"
+      ],
+      "target": "out/build/out/java-extension/release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "85b3bc09d76ac358366fbd5f21b60e414ae92b02e5f908df376d10a3805dc5e7": {
+      "signature": "85b3bc09d76ac358366fbd5f21b60e414ae92b02e5f908df376d10a3805dc5e7",
+      "alternativeSignatures": [
+        "eb4369e319f860133539182cc0b54bb7cdd2f149816f69b02462e0ce2473918f"
+      ],
+      "target": "out/build/out/java-extension/release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "5d14f7fa725eeaa6e46c48739bd76095933c003582701e923ee87cc20b42310a": {
+      "signature": "5d14f7fa725eeaa6e46c48739bd76095933c003582701e923ee87cc20b42310a",
+      "alternativeSignatures": [
+        "3cc70fc822cbe52e23556ad405fb8cb85de18c3320c277b3df3da8650bfe498f"
+      ],
+      "target": "out/build/out/java-extension/release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "59c24c60127aabb0fa0d7d415295addc6238d57d019548acfe95e90d06d8667f": {
+      "signature": "59c24c60127aabb0fa0d7d415295addc6238d57d019548acfe95e90d06d8667f",
+      "alternativeSignatures": [
+        "0b08ddd9621a85b0a10f7df2e5c3fe182b49d4019b4d1c20b5c715394403037b"
+      ],
+      "target": "out/build/out/java-extension/release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "2e1b55fe806fbebdc3365d00a360aabc3c616148b7c0ed8a2c2f4eac51c17a92": {
+      "signature": "2e1b55fe806fbebdc3365d00a360aabc3c616148b7c0ed8a2c2f4eac51c17a92",
+      "alternativeSignatures": [
+        "8b72a6b01b9c1891f3539184cd3293b896af279e780c3d743defc022615f6a2b"
+      ],
+      "target": "out/build/out/java-extension/release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "1c4480f9a66537ac40de2c4ad2d10dbd31777047f41b182164f0263932c19215": {
+      "signature": "1c4480f9a66537ac40de2c4ad2d10dbd31777047f41b182164f0263932c19215",
+      "alternativeSignatures": [
+        "a7d56fe473db83580bb9426fc7d13ff5b4e7ee8a352992d088003819eb9279ae"
+      ],
+      "target": "out/build/out/java-extension/release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "4e482327459a5a2bf5097731d61bc4acb59898117bf7e95fd16715532c56b2e0": {
+      "signature": "4e482327459a5a2bf5097731d61bc4acb59898117bf7e95fd16715532c56b2e0",
+      "alternativeSignatures": [
+        "5bfc0b980d3ffe072241e6a739753157f9b8b7e7cb6a972eaafe0537aa51d579"
+      ],
+      "target": "out/build/out/pythonextension/debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "78537ab3cbf58a3fdbf05ea1a0207fffbba0a55adea1dc8ed4affa5fb86ea267": {
+      "signature": "78537ab3cbf58a3fdbf05ea1a0207fffbba0a55adea1dc8ed4affa5fb86ea267",
+      "alternativeSignatures": [
+        "cb74ac01762ab21f1e3253542288a9802a2ca150da69ab330fa2c507a47e0b01"
+      ],
+      "target": "out/build/out/pythonextension/debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "4532a9dce4b1f488b48f5185605d96c6d1a45152e3b9c220fa5d315091942ab8": {
+      "signature": "4532a9dce4b1f488b48f5185605d96c6d1a45152e3b9c220fa5d315091942ab8",
+      "alternativeSignatures": [
+        "50c47381df2558888a46bac98779111c46a7a06fac070ee74e4ef703d3dfcfff"
+      ],
+      "target": "out/build/out/pythonextension/debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "ac8dac59352bce8c6762a96caf9100eee59adff2d84ad36099365910589f61ca": {
+      "signature": "ac8dac59352bce8c6762a96caf9100eee59adff2d84ad36099365910589f61ca",
+      "alternativeSignatures": [
+        "80232120e4565a7ae491b4e1bda45454c35e1f92395003400200632a282abfcb"
+      ],
+      "target": "out/build/out/pythonextension/debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "fb9825ebc189a98187bcf39034519ecc2d9edcdd0c45b3d6203d253ee897ff59": {
+      "signature": "fb9825ebc189a98187bcf39034519ecc2d9edcdd0c45b3d6203d253ee897ff59",
+      "alternativeSignatures": [
+        "3b3284ef9f805956e61726a6f147f95546275377ef9bc93069514d0d08cf3192"
+      ],
+      "target": "out/build/out/pythonextension/debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "def8a4fada06d1da66c58baddbf8d77268fec698f9cf163e1af7f37f08923ae6": {
+      "signature": "def8a4fada06d1da66c58baddbf8d77268fec698f9cf163e1af7f37f08923ae6",
+      "alternativeSignatures": [
+        "46766fa3338a0039e4660b804370d6fad1851f2884f0b83c12e42e59740268f9"
+      ],
+      "target": "out/build/out/pythonextension/release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "150e0a330350552ff4b577a47166b4b00ddc6dfbad777fa019a1ebc5ca76f002": {
+      "signature": "150e0a330350552ff4b577a47166b4b00ddc6dfbad777fa019a1ebc5ca76f002",
+      "alternativeSignatures": [
+        "3942f70b246028772e07100dcda0fab5cb13cdd4ed0ded81f0982dfab1986de5"
+      ],
+      "target": "out/build/out/pythonextension/release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "2f4e1c136ea91bc7dd8f88a950c31e23f9e01123315cfb14bd159ef016df2941": {
+      "signature": "2f4e1c136ea91bc7dd8f88a950c31e23f9e01123315cfb14bd159ef016df2941",
+      "alternativeSignatures": [
+        "028cebc2c9e0d2c7400aa60138d7bf94e7c59656c34119967ef35710bec096ef"
+      ],
+      "target": "out/build/out/pythonextension/release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "afff5592064bf8e63e51a6a19dd1581aaba9bb73e17e2162b737d604a6d03a5c": {
+      "signature": "afff5592064bf8e63e51a6a19dd1581aaba9bb73e17e2162b737d604a6d03a5c",
+      "alternativeSignatures": [
+        "84683d9a867074c3b696923578aabef94af4f117344f1d1801d32e1b2d6c2ba0"
+      ],
+      "target": "out/build/out/pythonextension/release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "13404f44dde0ff01af4ea0f7c041bf79d7be1512c873bc91b52f66e68f98f680": {
+      "signature": "13404f44dde0ff01af4ea0f7c041bf79d7be1512c873bc91b52f66e68f98f680",
+      "alternativeSignatures": [
+        "6b9701343d35d36f3e2fd716ce3bdcee7fbf651c73b0dcc5d4e86dccc3edcd5d"
+      ],
+      "target": "out/build/out/pythonextension/release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "6d1a65de46da94476a15740742650b0d10666144e94ba2fd77205fd17d486154": {
+      "signature": "6d1a65de46da94476a15740742650b0d10666144e94ba2fd77205fd17d486154",
+      "alternativeSignatures": [
+        "2e8e51bb2e9122860efc061f7e26ef630ba7dcdf0073cb934ac5965c4cdeb761"
+      ],
+      "target": "out/build/out/RExtension/debug/libRExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2001",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "730eb340c1659b3d87ec0b7bf0d1ce1cf25fa8c9126dd11d4d9e8066cdd3439f": {
+      "signature": "730eb340c1659b3d87ec0b7bf0d1ce1cf25fa8c9126dd11d4d9e8066cdd3439f",
+      "alternativeSignatures": [
+        "de956f27a4fd8dac9a8864109a788c9ba048f0e4a2b65338734be12f518f60ea"
+      ],
+      "target": "out/build/out/RExtension/debug/libRExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2009",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "8c044d7edafa17832e1f8b80be6a9ec745453988b94e9fec6142a63c0cc61843": {
+      "signature": "8c044d7edafa17832e1f8b80be6a9ec745453988b94e9fec6142a63c0cc61843",
+      "alternativeSignatures": [
+        "a4dca7e95b64006547eaa491cfd4827ed383088242b80a7ad849f1bba206a084"
+      ],
+      "target": "out/build/out/RExtension/debug/libRExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "540872ae987a6905652534b53288b6b222ea99dcdd436cc3c27a4ddee0d0c3f7": {
+      "signature": "540872ae987a6905652534b53288b6b222ea99dcdd436cc3c27a4ddee0d0c3f7",
+      "alternativeSignatures": [
+        "39ba342177c8d962fceb302f852c91f8df40aa0afd30ac0af46a4a0ba290a0aa"
+      ],
+      "target": "out/build/out/RExtension/release/libRExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2001",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "16eefd599fc1bed627b5ea497e61d9e34c9fbab3600c5e5279e7c6d1e5900011": {
+      "signature": "16eefd599fc1bed627b5ea497e61d9e34c9fbab3600c5e5279e7c6d1e5900011",
+      "alternativeSignatures": [
+        "a5138353ff1faeafb46645b341d43abd0d9858b8042dada8d1b708fb013a95b8"
+      ],
+      "target": "out/build/out/RExtension/release/libRExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2009",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "cd6a31e9526caedd5f56e3d12a46c1500cd82e1c72cadcb50bfd7576f040bcee": {
+      "signature": "cd6a31e9526caedd5f56e3d12a46c1500cd82e1c72cadcb50bfd7576f040bcee",
+      "alternativeSignatures": [
+        "c4146ae5d80c1541e3577b88d93c2b820da15df7de0ee0f56788dcf1afb9e03e"
+      ],
+      "target": "out/build/out/RExtension/release/libRExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "7f5af00ee5a24ab7d90f67e8dd62209c127e4cd9eb2654a0384b945946830e4c": {
+      "signature": "7f5af00ee5a24ab7d90f67e8dd62209c127e4cd9eb2654a0384b945946830e4c",
+      "alternativeSignatures": [
+        "599ae79dd9e50b55f810bff8fcd8e23c473a3cf4697e21af2bc1b6d490320f66"
+      ],
+      "target": "out/build/out/java-extension/debug/Debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "6b8a1d11b44fcc4b2b07303ec596c521285bf2b24699bca46ef10d29daec0196": {
+      "signature": "6b8a1d11b44fcc4b2b07303ec596c521285bf2b24699bca46ef10d29daec0196",
+      "alternativeSignatures": [
+        "b8cf17a171a35468a35b9f0f30d6500dfae62242914ec8cc97228fd5862afa7c"
+      ],
+      "target": "out/build/out/java-extension/debug/Debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "587577b3dea9a86f36b3c79411e623f437f725a015c75a6c4a4432de36716bb3": {
+      "signature": "587577b3dea9a86f36b3c79411e623f437f725a015c75a6c4a4432de36716bb3",
+      "alternativeSignatures": [
+        "b112eefd30b74c1e417dc1403e5145f07f4792c6f54518653b01609c2cbcfd6d"
+      ],
+      "target": "out/build/out/java-extension/debug/Debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "5627135af4aecac9e61a945e109241d6123f4f503c4e30a8f19bb64122ebb3db": {
+      "signature": "5627135af4aecac9e61a945e109241d6123f4f503c4e30a8f19bb64122ebb3db",
+      "alternativeSignatures": [
+        "0fd4ac9b8d29ef196eab88c167d524e4092b13b1ec719a174da3ed4943433fb8"
+      ],
+      "target": "out/build/out/java-extension/debug/Debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "61e1b937982ee4f9edac95c84d0365797d6f4ae2fc6f9618e6af0eab573b6661": {
+      "signature": "61e1b937982ee4f9edac95c84d0365797d6f4ae2fc6f9618e6af0eab573b6661",
+      "alternativeSignatures": [
+        "bc06a8819356b0e34197f419ec961be57019b6fa0fa20b26e2c1dd499cf1629a"
+      ],
+      "target": "out/build/out/java-extension/debug/Debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "6186d81be2bbb658a1877c9a404b72ed9009f7cf739b9dd1a4fc22db4a578c22": {
+      "signature": "6186d81be2bbb658a1877c9a404b72ed9009f7cf739b9dd1a4fc22db4a578c22",
+      "alternativeSignatures": [
+        "0dda8936e21db3df737c7a021eba35d3631fc462c8834baee1e7171cad8da593"
+      ],
+      "target": "out/build/out/java-extension/debug/Debug/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "f637db9b26a3cd584a661333f0706dc434d04464a7249983d397f961259807f0": {
+      "signature": "f637db9b26a3cd584a661333f0706dc434d04464a7249983d397f961259807f0",
+      "alternativeSignatures": [
+        "a704b7bc785336cc891beaf312754462533316143d4a500c09e655bcace66de4"
+      ],
+      "target": "out/build/out/java-extension/release/Release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "78c0c237d4456480387a998e9fba3945b64f18a533d5a52adc26d33d27c3196d": {
+      "signature": "78c0c237d4456480387a998e9fba3945b64f18a533d5a52adc26d33d27c3196d",
+      "alternativeSignatures": [
+        "a93be46fc14e125bad41d667258ca129fb5ff70cafab754777fc32eaeac66a6e"
+      ],
+      "target": "out/build/out/java-extension/release/Release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "c715ac4b2195aa52ed7e38f6054c5560007eea10540050a23bcd194a04a23220": {
+      "signature": "c715ac4b2195aa52ed7e38f6054c5560007eea10540050a23bcd194a04a23220",
+      "alternativeSignatures": [
+        "babd70ed94b0634ab5157937fc03a9e8b538e118051e89191c6ff7ffc32cfd22"
+      ],
+      "target": "out/build/out/java-extension/release/Release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "27c6b71daaca498d5d7bedbec1be4dd3227d9266e3221e1767497517741a656e": {
+      "signature": "27c6b71daaca498d5d7bedbec1be4dd3227d9266e3221e1767497517741a656e",
+      "alternativeSignatures": [
+        "d63eab195235c66efc03a5a47f598784776132b560373a42699fbbded460c3cd"
+      ],
+      "target": "out/build/out/java-extension/release/Release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "0a9bc1f1ca05c68998e3101073f735f087f3ed695717da0d0fd53b1f75778a49": {
+      "signature": "0a9bc1f1ca05c68998e3101073f735f087f3ed695717da0d0fd53b1f75778a49",
+      "alternativeSignatures": [
+        "995808d2cdc26495f02641f8828d71f595fd94d6fb74b9747339589e1c276a97"
+      ],
+      "target": "out/build/out/java-extension/release/Release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "6c7434639f9b259291a8e30deb141a8c9dacedebfa7e50450b25bf16a9352f31": {
+      "signature": "6c7434639f9b259291a8e30deb141a8c9dacedebfa7e50450b25bf16a9352f31",
+      "alternativeSignatures": [
+        "7a232f2ad84bf100dddfd93565665886e0f484af55b3f4dd1344b57654ef2a7b"
+      ],
+      "target": "out/build/out/java-extension/release/Release/JavaExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "02f8511b3b2f8bed0fb514ef01be0627ea5528a867506084d740a55d94ca89b5": {
+      "signature": "02f8511b3b2f8bed0fb514ef01be0627ea5528a867506084d740a55d94ca89b5",
+      "alternativeSignatures": [
+        "ea57e90d4be1b004e534fe718c15e93bf7bba680dec02e8faf0adf302efc457a"
+      ],
+      "target": "out/build/out/pythonextension/debug/Debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "48bf1f57c2e010feb1d1d785541db2c0fcac60fe31c13a9f58149f27d820db62": {
+      "signature": "48bf1f57c2e010feb1d1d785541db2c0fcac60fe31c13a9f58149f27d820db62",
+      "alternativeSignatures": [
+        "657dd68c07e06dcdd86dfa8b4e083829d4c64f4e59e31b6d59a2071e627d6c04"
+      ],
+      "target": "out/build/out/pythonextension/debug/Debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "be17bbcb5c73078ea5dac14da7c99df497570f5a320fa2951538d2d9ddb6dcc6": {
+      "signature": "be17bbcb5c73078ea5dac14da7c99df497570f5a320fa2951538d2d9ddb6dcc6",
+      "alternativeSignatures": [
+        "c27ac4a9da0ba0cf11e51630982a80ca39730c1cde37172bafb4a6101c0da522"
+      ],
+      "target": "out/build/out/pythonextension/debug/Debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "e00be5869dd25ae27f4fe1625f961d62e10458e6dc4b699af0d5db96ef1c83ec": {
+      "signature": "e00be5869dd25ae27f4fe1625f961d62e10458e6dc4b699af0d5db96ef1c83ec",
+      "alternativeSignatures": [
+        "5ab9bec624b16b5a68a84526a20763d09e4a9ac11634edf645b72726faf76f5e"
+      ],
+      "target": "out/build/out/pythonextension/debug/Debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "6c8a256920b27101ebe5bf45d558fb6914856eb7a141bd6c7b5cee1d2526c1ea": {
+      "signature": "6c8a256920b27101ebe5bf45d558fb6914856eb7a141bd6c7b5cee1d2526c1ea",
+      "alternativeSignatures": [
+        "e9ea5633b897cf8e6deb0bdeb12308e4aef148c385aeaf9960b2ba4c58b3e84d"
+      ],
+      "target": "out/build/out/pythonextension/debug/Debug/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "2259dc0a937cbb59a4ebd0527619eee09c8c400914c322f980eb787495b652fe": {
+      "signature": "2259dc0a937cbb59a4ebd0527619eee09c8c400914c322f980eb787495b652fe",
+      "alternativeSignatures": [
+        "0f5f4c2c757a4d7f836c068f4492981800056951b320624cee0a0c5a7255e3d6"
+      ],
+      "target": "out/build/out/pythonextension/release/Release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2004",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "e287b256d342be74dd3013b34f29ce01091f49bec9c50ae13f32804d721547dc": {
+      "signature": "e287b256d342be74dd3013b34f29ce01091f49bec9c50ae13f32804d721547dc",
+      "alternativeSignatures": [
+        "fc1e5e95813159e4740f642ed5a4aa3fc26fa44632959d3baf69b764f9e1add7"
+      ],
+      "target": "out/build/out/pythonextension/release/Release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2008",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "294328e18af65f32a94c1de9be16798a6d6de5307a80ce39fc2283fe8b6ade09": {
+      "signature": "294328e18af65f32a94c1de9be16798a6d6de5307a80ce39fc2283fe8b6ade09",
+      "alternativeSignatures": [
+        "e1b5e568c7042bc66675ab548a5dcc8738a13c6f5e9edc650f69ec2190cc4498"
+      ],
+      "target": "out/build/out/pythonextension/release/Release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2024",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "41f69effff0d09e89bfaab3d0ac18db03d4c5bed17c69baf0b3bca3b797cfd58": {
+      "signature": "41f69effff0d09e89bfaab3d0ac18db03d4c5bed17c69baf0b3bca3b797cfd58",
+      "alternativeSignatures": [
+        "907845a1113c952e9e28369883270b6ad0d85eaa6ffd143f8ed9e8251ee1a516"
+      ],
+      "target": "out/build/out/pythonextension/release/Release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2025",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    },
+    "03dae0f4d6129297345e6259315d2058f3ee30b3a664479bbab47fff6da8685e": {
+      "signature": "03dae0f4d6129297345e6259315d2058f3ee30b3a664479bbab47fff6da8685e",
+      "alternativeSignatures": [
+        "a7f68167957e32c721c27bfbecc078d571420f0def2189bef25933cca4041950"
+      ],
+      "target": "out/build/out/pythonextension/release/Release/PythonExtension.dll",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2026",
+      "justification": null,
+      "createdDate": "2022-08-25 18:56:38Z",
+      "expirationDate": null,
+      "type": null
+    }
+  }
+}
