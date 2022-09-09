@@ -1,0 +1,290 @@
+#################################################################################
+#   Onebranch Pipelines - Official Linux (CDPXMigrated)                         #
+# This pipeline was created by EasyStart from a sample located at:              #
+#   https://aka.ms/obpipelines/easystart/samples                                #
+# Documentation:  https://aka.ms/obpipelines                                    #
+# Yaml Schema:    https://aka.ms/obpipelines/yaml/schema                        #
+# Retail Tasks:   https://aka.ms/obpipelines/tasks                              #
+# Support:        https://aka.ms/onebranchsup                                   #
+#################################################################################
+
+trigger: none
+
+parameters: # parameters are shown up in ADO UI in a build queue time
+- name: 'debug'
+  displayName: 'Enable debug output'
+  type: boolean
+  default: false
+
+variables:
+  CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)] # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
+  LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-1804:latest' # Docker image which is used to build the project https://aka.ms/obpipelines/containers
+  DEBIAN_FRONTEND: noninteractive
+  ROOT: $(Build.SourcesDirectory)
+  REPOROOT: $(Build.SourcesDirectory)
+  OUTPUTROOT: $(REPOROOT)\out
+  CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: $(Build.SourcesDirectory)
+  CDP_DEFINITION_BUILD_COUNT_DAY: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+  CDP_DEFINITION_BUILD_COUNT_MONTH: $[counter(format('{0:yyyyMM}', pipeline.startTime), 1)]
+  CDP_DEFINITION_BUILD_COUNT_YEAR: $[counter(format('{0:yyyy}', pipeline.startTime), 1)]
+
+resources:
+  repositories: 
+    - repository: templates
+      type: git
+      name: OneBranch.Pipelines/GovernedTemplates
+      ref: refs/heads/main
+
+extends:
+  template: v2/OneBranch.Official.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  parameters:
+    cloudvault: # https://aka.ms/obpipelines/cloudvault
+      enabled: true # set to true to enable cloudvault
+
+    globalSdl: # https://aka.ms/obpipelines/sdl
+      tsa:
+       enabled: false # SDL results of non-official builds aren't uploaded to TSA by default.
+      # credscan:
+      #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
+      policheck:
+        break: false # always break the build on policheck issues. You can disable it by setting to 'false'
+      # baseline:
+      #   baselineFile: $(Build.SourcesDirectory)\.gdn\global.gdnbaselines
+
+    stages:
+    - stage: linux_stage
+      jobs:
+      - job: linux_job
+        pool:
+          type: linux
+
+        variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
+          ob_outputDirectory: '$(Build.SourcesDirectory)/out' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
+          ob_artifactBaseName: 'drop'
+          
+        steps:
+          - task: onebranch.pipeline.version@1
+            displayName: 'Setup BuildNumber'
+            inputs:
+              system: 'RevisionCounter'
+              major: '1'
+              minor: '0'
+              tag: 'alpha'
+              name: 'mssql-language-extensions'
+              exclude_commit: false
+              
+          - task: CmdLine@2
+            displayName: 'Restore Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)/restore-packages.sh
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore Java Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/java/build/linux/restore-packages.sh
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore R Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/R/build/linux/restore-packages.sh
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore Python Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/python/build/linux/restore-packages.sh
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore and Build GoogleTest'
+            inputs:
+              script: $(Build.SourcesDirectory)/test/googletest/build/linux/build-googletest.sh
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Build Java extension'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/java/build/linux/build-java-extension.sh debug release 
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/java-extension/linux'
+              Contents: |
+                **/libjavaextension.so.1.0
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension'
+
+          - task: CmdLine@2
+            displayName: 'Build RExtension'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/R/build/linux/build-RExtension.sh debug release 
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/RExtension/linux'
+              Contents: |
+                **/libRExtension.so.1.1
+              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/RExtension'
+
+          - task: CmdLine@2
+            displayName: 'Build Python Extension'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/python/build/linux/build-python-extension.sh debug release 
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/pythonextension/linux'
+              Contents: |
+                **/libPythonExtension.so.1.1
+              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/pythonextension'
+
+          - task: CmdLine@2
+            displayName: 'Build RExtension test'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/R/test/build/linux/build-RExtension-test.sh debug release 
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Build Python Extension test'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/python/test/build/linux/build-pythonextension-test.sh debug release 
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Copy nuspec'
+            inputs:
+              script: |
+                chmod +x $(Build.SourcesDirectory)/empty-script.sh
+                $(Build.SourcesDirectory)/empty-script.sh "Copying nuget spec file." 
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)'
+              Contents: |
+                data-sql-language-extensions.nuspec
+              TargetFolder: '$(Build.SourcesDirectory)/out/build/out'
+
+          - task: CmdLine@2
+            displayName: 'Create Java extension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/java/build/linux/create-java-extension-zip.sh debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/java-extension/linux/debug/packages'
+              Contents: 'java-lang-extension-linux.zip'
+              TargetFolder: '$(Build.SourcesDirectory)/out/package/out/java-extension/packages/debug'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/java-extension/linux/release/packages'
+              Contents: 'java-lang-extension-linux.zip'
+              TargetFolder: '$(Build.SourcesDirectory)/out/package/out/java-extension/packages/release'
+
+          - task: CmdLine@2
+            displayName: 'Create RExtension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/R/build/linux/create-RExtension-zip.sh debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/RExtension/linux/debug/packages'
+              Contents: 'R-lang-extension-linux.zip'
+              TargetFolder: '$(Build.SourcesDirectory)/out/package/out/RExtension/packages/debug'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/RExtension/linux/release/packages'
+              Contents: 'R-lang-extension-linux.zip'
+              TargetFolder: '$(Build.SourcesDirectory)/out/package/out/RExtension/packages/release'
+
+          - task: CmdLine@2
+            displayName: 'Create Python Extension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/python/build/linux/create-python-extension-zip.sh debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/pythonextension/linux/debug/packages'
+              Contents: 'python-lang-extension-linux.zip'
+              TargetFolder: '$(Build.SourcesDirectory)/out/package/out/pythonextension/packages/debug'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/build-output/pythonextension/linux/release/packages'
+              Contents: 'python-lang-extension-linux.zip'
+              TargetFolder: '$(Build.SourcesDirectory)/out/package/out/pythonextension/packages/release'
+
+          - task: CmdLine@2
+            displayName: 'Test RExtension-test'
+            inputs:
+              script: $(Build.SourcesDirectory)/language-extensions/R/test/build/linux/run-RExtension-test.sh debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: false
+
+          - task: PublishTestResults@2
+            displayName: 'All Tests'
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(Build.SourcesDirectory)/language-extensions/R/test/build/linux'
+              failTaskOnFailedTests: true
+              testRunTitle: 'Test RExtension'
+              # buildPlatform: 'x64'
+              # buildConfiguration: 'Release'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'All Tests'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(Build.SourcesDirectory)/TestOutput/reports/coverage.cobertura.xml'
+              pathToSources: '$(Build.SourcesDirectory)'
+              reportDirectory: 'TestOutput/reports'
+              additionalCodeCoverageFiles: '$(Build.SourcesDirectory)/TestOutput/reports/**/*.xml;$(Build.SourcesDirectory)/TestOutput/reports/index.html;!**/*reports*.xml'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/out'
+              Contents: 'TestReport*.xml'
+              TargetFolder: '$(Build.SourcesDirectory)/out/test/_post_command__test_rextension/_testresults/out'
+
+          - task: CmdLine@2
+            displayName: 'Test PythonExtension-test'
+            inputs:
+              script: $(Build.SourcesDirectory)/empty-script.sh debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: false
+
+          - task: PublishTestResults@2
+            displayName: 'All Tests'
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(Build.SourcesDirectory)/language-extensions/python/test/build/linux'
+              failTaskOnFailedTests: true
+              testRunTitle: 'Python Tests'
+              # buildPlatform: 'x64'
+              # buildConfiguration: 'Release'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'All Tests'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(Build.SourcesDirectory)/TestOutput/reports/coverage.cobertura.xml'
+              pathToSources: '$(Build.SourcesDirectory)'
+              reportDirectory: 'TestOutput/reports'
+              additionalCodeCoverageFiles: '$(Build.SourcesDirectory)/TestOutput/reports/**/*.xml;$(Build.SourcesDirectory)/TestOutput/reports/index.html;!**/*reports*.xml'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/out'
+              Contents: 'TestReport*.xml'
+              TargetFolder: '$(Build.SourcesDirectory)/out/test/_post_command__test_python/_testresults/out'
