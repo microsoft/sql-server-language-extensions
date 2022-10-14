@@ -1,0 +1,544 @@
+#################################################################################
+#   Onebranch Pipelines - PR MSBuild                                            #
+# This pipeline was created by EasyStart from a sample located at:              #
+#   https://aka.ms/obpipelines/easystart/samples                                #
+# Documentation:  https://aka.ms/obpipelines                                    #
+# Yaml Schema:    https://aka.ms/obpipelines/yaml/schema                        #
+# Retail Tasks:   https://aka.ms/obpipelines/tasks                              #
+# Support:        https://aka.ms/onebranchsup                                   #
+#################################################################################
+
+trigger: none # https://aka.ms/obpipelines/triggers
+
+parameters: # parameters are shown up in ADO UI in a build queue time
+- name: 'debug'
+  displayName: 'Enable debug output'
+  type: boolean
+  default: false
+
+variables:
+  CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)] # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
+  system.debug: ${{ parameters.debug }}
+  ENABLE_PRS_DELAYSIGN: 0
+  ROOT: $(Build.SourcesDirectory)
+  REPOROOT: $(Build.SourcesDirectory)
+  OUTPUTROOT: $(REPOROOT)\out
+  EnlRoot: $(Build.SourcesDirectory)
+  CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: $(Build.SourcesDirectory)
+  CDP_DEFINITION_BUILD_COUNT_DAY: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+  CDP_DEFINITION_BUILD_COUNT_MONTH: $[counter(format('{0:yyyyMM}', pipeline.startTime), 1)]
+  CDP_DEFINITION_BUILD_COUNT_YEAR: $[counter(format('{0:yyyy}', pipeline.startTime), 1)]
+  NUGET_XMLDOC_MODE: none
+
+  WindowsContainerImage: 'cdpxwin1809.azurecr.io/global/vse2017:latest'
+  # WindowsContainerImage2: 'cdpxwin1809.azurecr.io/global/vse2019:latest' # Docker image which is used to build the project https://aka.ms/obpipelines/containers
+  # WindowsContainerImage: 'cdpxwin.azurecr.io/legacy/global/vse2017u7-external-azsdk-mobile-ext-winltsc2016:latest' 
+
+resources:
+  repositories: 
+    - repository: templates
+      type: git
+      name: OneBranch.Pipelines/GovernedTemplates
+      ref: refs/heads/main
+
+extends:
+  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  parameters:
+    git:
+      fetchDepth: -1
+      longpaths: true  
+    globalSdl: # https://aka.ms/obpipelines/sdl
+      tsa:
+        enabled: false # onebranch publish all sdl results to TSA. If TSA is disabled all SDL tools will forced into 'break' build mode.
+      # credscan:
+      #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
+      binskim:
+        enabled: true
+        scanOutputDirectoryOnly: true
+        break: false # always break the build on binskim issues in addition to TSA upload
+        # analyzeTargetGlob: '+:f|out\outputs\**\*.dll;-:f|out\outputs\**\JavaExtension.dll;-:f|out\outputs\**\PythonExtension.dll;-:f|out\outputs\**\libRExtension.dll;-f:|out\outputs\**\nativecsharpextension.dll'
+      policheck:
+        enabled: true
+        break: true # always break the build on policheck issues. You can disable it by setting to 'false'
+      baseline:
+        baselineFile: $(Build.SourcesDirectory)\.gdn\.gdnbaselines
+
+    stages:
+    - stage: Phase_1
+      jobs:
+      - job: build
+        pool:
+          type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
+        
+        variables:
+          ob_outputDirectory: '$(REPOROOT)\out' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
+          ob_sdl_binskim_break: true # https://aka.ms/obpipelines/sdl
+          ob_sdl_binskim_scanOutputDirectoryOnly: true
+          ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}: # conditionally enable symbolsPublishing for master branch only
+            ob_symbolsPublishing_enabled: true # https://aka.ms/obpipelines/symbols
+          ob_sdl_baseline_baselineFile: $(Build.SourcesDirectory)\.gdn\.gdnbaselines
+          ob_sdl_codeSignValidation_excludes: -|**\pythonextension\**\PythonExtension.dll;-|**\java-extension\**\JavaExtension.dll;-|**\CompilerIdCXX\CompilerIdCXX.exe;-|**\CompilerIdCXX\a.exe
+          ob_artifactBaseName: 'drop_Phase_1'
+          # enable_network: true
+
+        steps:
+          - task: onebranch.pipeline.version@1 # generates automatic version. For other versioning options check https://aka.ms/obpipelines/versioning
+            displayName: 'Setup BuildNumber'
+            inputs:
+              system: 'RevisionCounter'
+              major: '1'
+              minor: '0'
+              tag: 'alpha'
+              name: 'mssql-language-extensions'
+              exclude_commit: false
+
+          - task: CmdLine@2
+            displayName: 'Restore Java Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\java\build\windows\restore-packages.cmd
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore R Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\R\build\windows\restore-packages.cmd
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore Python Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\python\build\windows\restore-packages.cmd
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Restore and Build GoogleTest'
+            inputs:
+              script: $(Build.SourcesDirectory)\test\googletest\build\windows\build-googletest.cmd
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Build Java extension'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\java\build\windows\build-java-extension.cmd azuljava debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension SDK(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\target\debug'
+              Contents: 'mssql-java-lang-extension.jar'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\windows\debug'
+              Contents: 'javaextension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension symbols(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\windows\debug'
+              Contents: 'javaextension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension SDK(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\target\release'
+              Contents: 'mssql-java-lang-extension.jar'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\windows\release'
+              Contents: 'javaextension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
+              
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension symbols(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\windows\release'
+              Contents: 'javaextension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release\symbols'
+
+          - task: CmdLine@2
+            displayName: 'Build RExtension'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\R\build\windows\build-RExtension.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\RExtension\windows\debug'
+              Contents: 'libRExtension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension symbols(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\RExtension\windows\debug'
+              Contents: 'libRExtension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\RExtension\windows\release'
+              Contents: 'libRExtension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension symbols(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\RExtension\windows\release'
+              Contents: 'libRExtension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\release\symbols'
+
+          - task: CmdLine@2
+            displayName: 'Build python extension'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\python\build\windows\build-python-extension.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\pythonextension\windows\debug'
+              Contents: 'pythonextension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension symbols(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\pythonextension\windows\debug'
+              Contents: 'pythonextension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\pythonextension\windows\release'
+              Contents: 'pythonextension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension symbols(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\pythonextension\windows\release'
+              Contents: 'pythonextension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\release\symbols'
+
+          - task: CmdLine@2
+            displayName: 'Build RExtension Test'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\R\test\build\windows\build-RExtension-test.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Build pythonextension Test'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\python\test\build\windows\build-pythonextension-test.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Create Java extension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\java\build\windows\create-java-extension-zip.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension zip(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\windows\debug\packages'
+              Contents: '**\*.zip'
+              # Contents: 'java-lang-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\java-extension\packages\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension zip(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\java-extension\windows\release\packages'
+              Contents: '**\*.zip'
+              # Contents: 'java-lang-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\java-extension\packages\release'
+
+          - task: CmdLine@2
+            displayName: 'Create RExtension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\R\build\windows\create-RExtension-zip.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension zip(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\RExtension\windows\debug\packages'
+              Contents: '**\*.zip'
+              # Contents: 'R-lang-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\RExtension\packages\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension zip(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\RExtension\windows\release\packages'
+              Contents: '**\*.zip'
+              # Contents: 'R-lang-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\RExtension\packages\release'
+
+          - task: CmdLine@2
+            displayName: 'Create python extension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\python\build\windows\create-python-extension-zip.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension zip(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\pythonextension\windows\debug\packages'
+              Contents: '**\*.zip'
+              # Contents: 'python-lang-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\pythonextension\packages\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension zip(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\pythonextension\windows\release\packages'
+              Contents: '**\*.zip'
+              # Contents: 'python-lang-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\pythonextension\packages\release'
+
+          - task: CmdLine@2 
+            displayName: 'Generate file list'
+            inputs:
+              targetType: 'inline'
+              script: |
+                dir $(Build.SourcesDirectory) /b /s > $(Build.SourcesDirectory)\out\filelist.txt
+
+          - task: CmdLine@2
+            displayName: 'All Tests'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\R\test\build\windows\run-RExtension-test.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: false
+
+          - task: PublishTestResults@2
+            displayName: 'Test RExtension'
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**\*.trx'
+              searchFolder: '$(Build.SourcesDirectory)\language-extensions\R\test\build\windows'
+              failTaskOnFailedTests: true
+              testRunTitle: 'Test RExtension'
+              # buildPlatform: 'x64'
+              # buildConfiguration: 'Release'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Test RExtension'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(Build.SourcesDirectory)\TestOutput\reports\coverage.cobertura.xml'
+              pathToSources: '$(Build.SourcesDirectory)'
+              reportDirectory: 'TestOutput\reports'
+              additionalCodeCoverageFiles: '$(Build.SourcesDirectory)\TestOutput\reports\**\*.xml;$(Build.SourcesDirectory)\TestOutput\reports\index.html;!**\*reports*.xml'
+
+          - task: CopyFiles@2
+            displayName: 'Copy RExtension test results'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\out'
+              Contents: 'TestReport_RExtension-test.xml'
+              TargetFolder: '$(Build.SourcesDirectory)\out\test\_post_command__test_rextension\_testresults\out'
+
+          - task: CmdLine@2
+            displayName: 'Python Tests'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\python\test\build\windows\run-pythonextension-test.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: false
+
+          - task: PublishTestResults@2
+            displayName: 'Python Tests'
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**\*.trx'
+              searchFolder: '$(Build.SourcesDirectory)\language-extensions\python\test\build\windows'
+              failTaskOnFailedTests: true
+              testRunTitle: 'Python Tests'
+              # buildPlatform: 'x64'
+              # buildConfiguration: 'Release'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Python Tests'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(Build.SourcesDirectory)\TestOutput\reports\coverage.cobertura.xml'
+              pathToSources: '$(Build.SourcesDirectory)'
+              reportDirectory: 'TestOutput\reports'
+              additionalCodeCoverageFiles: '$(Build.SourcesDirectory)\TestOutput\reports\**\*.xml;$(Build.SourcesDirectory)\TestOutput\reports\index.html;!**\*reports*.xml'
+
+          - task: CopyFiles@2
+            displayName: 'Copy pythonextension test results'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\out'
+              Contents: 'TestReport_PythonExtension-test.xml'
+              TargetFolder: '$(Build.SourcesDirectory)\out\test\_post_command__test_python\_testresults\out'
+
+
+    - stage: Build_DotNetCore_CSharp_Extension
+
+      jobs:
+      - job: CSharp_Extension
+        pool:
+          type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
+        
+        variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
+          ob_outputDirectory: '$(Build.SourcesDirectory)\out' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
+          ob_artifactBaseName: 'drop_Build_DotNetCore_CSharp_Extension'
+          WindowsContainerImage: 'cdpxwin1809.azurecr.io/global/vse2019:latest'
+          # ob_sdl_codeSignValidation_excludes: regex|.+(?:dll|exe|sys|ps1|ps1xml|psc1|psd1|cdxml|vbs|js|wsf)$;-:file|**\ci-test\**\*.*
+          # ob_sdl_baseline_baselineFile: $(Build.SourcesDirectory)\.gdn\global.gdnbaselines
+          # ob_sdl_baseline_baselineSet: default
+          CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: '$(Build.SourcesDirectory)'
+
+        steps:
+
+          - task: onebranch.pipeline.version@1 # generates automatic version. For other versioning options check https://aka.ms/obpipelines/versioning
+            displayName: 'Setup BuildNumber'
+            inputs:
+              system: 'RevisionCounter'
+              major: '1'
+              minor: '0'
+              tag: 'alpha'
+              name: 'mssql-language-extensions'
+              exclude_commit: false
+
+          - task: CmdLine@2
+            displayName: 'Restore DotNetCore CSharp Packages'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\dotnet-core-CSharp\build\windows\restore-packages.cmd
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CmdLine@2
+            displayName: 'Build .NET Core C Sharp extension'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\dotnet-core-CSharp\build\windows\build-dotnet-core-CSharp-extension.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension\windows\debug'
+              Contents: |
+                *.dll
+                *.json
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension symbols(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension\windows\debug'
+              Contents: |
+                *.pdb
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension\windows\release'
+              Contents: |
+                *.dll
+                *.json
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension symbols(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension\windows\release'
+              Contents: |
+                *.pdb
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\release\symbols'
+
+          - task: CmdLine@2
+            displayName: 'Build DotNetCore CSharp Extension Test'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\dotnet-core-CSharp\test\build\windows\build-dotnet-core-CSharp-extension-test.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension Test(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension-test\windows\debug'
+              Contents: |
+                *.dll
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension Test Symbols(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension-test\windows\debug'
+              Contents: |
+                *.pdb
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension Test(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension-test\windows\release'
+              Contents: |
+                *.dll
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension Test(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension-test\windows\release'
+              Contents: |
+                *.pdb
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\release\symbols'
+
+          - task: CmdLine@2
+            displayName: 'Create .NET Core C Sharp extension zip'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\dotnet-core-CSharp\build\windows\create-dotnet-core-CSharp-extension-zip.cmd debug release
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension zip(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension\windows\debug\packages'
+              Contents: '**\*.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\dotnet-core-CSharp-extension\packages\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension zip(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\build-output\dotnet-core-CSharp-extension\windows\release\packages'
+              Contents: '**\*.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\dotnet-core-CSharp-extension\packages\release'
+
+          - task: CmdLine@2
+            displayName: 'Test DotNetCore CSharp Extension'
+            inputs:
+              script: $(Build.SourcesDirectory)\language-extensions\dotnet-core-CSharp\test\build\windows\run-dotnet-core-CSharp-extension-test.cmd debug release | exit /b 0
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: false
+
+          - task: PublishTestResults@2
+            displayName: 'All Tests'
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**\*.trx'
+              searchFolder: '$(Build.SourcesDirectory)\language-extensions'
+              failTaskOnFailedTests: true
+              testRunTitle: 'Test DotNetCore CSharp Extension'
+              # buildPlatform: 'x64'
+              # buildConfiguration: 'Release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy CSharp Extension test results'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\out'
+              Contents: 'TestReport_dotnet-core-csharp-extension-test.xml'
+              TargetFolder: '$(Build.SourcesDirectory)\out\test\_post_command__test_dotnetcore_csharp_extension\_testresults\out'
