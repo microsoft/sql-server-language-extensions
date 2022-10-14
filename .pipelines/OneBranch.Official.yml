@@ -312,6 +312,13 @@ extends:
               script: $(Build.SourcesDirectory)\language-extensions\python\test\build\windows\build-pythonextension-test.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
 
+          - task: CopyFiles@2
+            displayName: 'Copy nuspec'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)'
+              Contents: 'data-sql-language-extensions.nuspec'
+              TargetFolder: '$(Build.SourcesDirectory)\out'
+
           - task: CmdLine@2
             displayName: 'Create Java extension zip'
             inputs:
