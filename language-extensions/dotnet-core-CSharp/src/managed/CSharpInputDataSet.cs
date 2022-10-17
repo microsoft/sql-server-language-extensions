@@ -69,6 +69,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     AddColumn(i, rowsNumber, data[i], strLenOrNullMap[i]);
                 }
             }
+            else
+            {
+                for(ushort i = 0; i < ColumnsNumber; ++i)
+                {
+                    AddColumn(i, rowsNumber, null, null);
+                }
+            }
         }
 
         /// <summary>

@@ -128,6 +128,28 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: ExecuteEmptyColumnsTest
+    //
+    // Description:
+    //  Test Execute with default script using an InputDataSet of Empty columns.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteEmptyColumnsTest)
+    {
+        InitializeSession(
+            (*m_emptyIntegerInfo).GetColumnsNumber(), // inputSchemaColumnsNumber
+            0,                                        // parametersNumber
+            m_scriptString);                          // scriptString
+
+        InitializeColumns<SQLINTEGER, SQL_C_SLONG>(m_emptyIntegerInfo.get());
+
+        Execute<SQLINTEGER, SQL_C_SLONG>(
+            0,
+            nullptr,
+            nullptr,
+            (*m_emptyIntegerInfo).m_columnNames);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: ExecuteIntegerColumnsTest
     //
     // Description:

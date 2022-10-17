@@ -72,7 +72,7 @@ ECHO "[INFO] Building dotnet-core-CSharp-extension test project using CMAKE_CONF
 
 REM Call dotnet build
 REM
-dotnet build %DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\src\managed\Microsoft.SqlServer.CSharpExtensionTest.csproj /m /p:Configuration=%CMAKE_CONFIGURATION%;OutDir=%BUILD_OUTPUT% --no-dependencies
+dotnet build %DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\src\managed\Microsoft.SqlServer.CSharpExtensionTest.csproj /m -c %CMAKE_CONFIGURATION% -o %BUILD_OUTPUT% --no-dependencies
 
 REM Delete Microsoft.SqlServer.CSharpExtension.dll to avoid test executor referencing it instead of the extension itself
 REM
