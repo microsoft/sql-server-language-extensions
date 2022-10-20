@@ -12,12 +12,12 @@
 //*************************************************************************************************
 
 #include <dlfcn.h>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 const CHAR *GuidFormat = "%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 

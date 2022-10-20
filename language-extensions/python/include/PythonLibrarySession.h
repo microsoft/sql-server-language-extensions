@@ -13,7 +13,7 @@
 
 #pragma once
 #include "Common.h"
-#include <experimental/filesystem>
+#include <filesystem>
 
 class PythonLibrarySession
 {
@@ -44,13 +44,13 @@ public:
 
 	// Get top level directory/ies for a package
 	//
-	std::vector<std::experimental::filesystem::directory_entry> GetTopLevel(
+	std::vector<std::filesystem::directory_entry> GetTopLevel(
 		std::string libName,
 		std::string installDir);
 
 	// Get all the artifacts we can find of a package that are in the path
 	//
-	std::vector<std::experimental::filesystem::directory_entry> GetAllArtifacts(
+	std::vector<std::filesystem::directory_entry> GetAllArtifacts(
 		std::string libName,
 		std::string path);
 

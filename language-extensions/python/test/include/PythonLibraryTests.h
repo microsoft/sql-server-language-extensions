@@ -12,8 +12,8 @@
 //*************************************************************************************************
 #pragma once
 #include "Common.h"
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
+namespace fs = std::filesystem;
 
 namespace LibraryApiTests
 {

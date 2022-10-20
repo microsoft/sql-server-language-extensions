@@ -32,8 +32,8 @@ B.	Installing needed packages from respective sources.
 
 1. Download and build [Boost Python](https://www.boost.org/doc/libs/1_74_0/libs/python/doc/html/building/no_install_quickstart.html) with your version of Python. Make sure to build the static libraries.
 
-1. Install C++ Tools for CMake from the [Build Tools for Visual Studio 2017](https://my.visualstudio.com/Downloads?q=visual%20studio%202017&wt.mc_id=o~msft~vscom~older-downloads). 
-		Download the Visual Studio 2017 Build Tools installer and check the **Visual C++ build tools** option under Workloads. In the sidebar on the right, make sure **Visual C++ tools for CMake** is checked, then install.
+1. Install C++ Tools for CMake from the [Build Tools for Visual Studio 2019](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads). 
+		Download the Visual Studio 2019 Build Tools installer and check the **Visual C++ build tools** option under Workloads. In the sidebar on the right, make sure **Visual C++ tools for CMake** is checked, then install.
 		
 1. Set CMAKE_ROOT, PYTHONHOME, and BOOST_ROOT pointing to their respective installation and build folders.
 

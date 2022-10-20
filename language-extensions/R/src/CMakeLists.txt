@@ -116,7 +116,7 @@ find_library(R_LIB R ${R_LIB_DIR})
 target_link_libraries(RExtension
 	${R_LIB}
 	${RINSIDE_LIB}
-	# stdc++fs needed for experimental::filesystem
+	# stdc++fs needed for filesystem
 	#
 	stdc++fs
 )

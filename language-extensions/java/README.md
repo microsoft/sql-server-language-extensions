@@ -11,8 +11,8 @@ The Java extension version in this repository is compatible with SQL Server 2019
 
 #### Windows
 1) Install [CMake for Windows](https://cmake.org/download/) and Java ([file](https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk) and [instructions](https://docs.azul.com/zulu/zuludocs/ZuluUserGuide/InstallingZulu/InstallWindowsUsingZuluZIPFile.htm))
-2) Install C++ Tools for CMake from the [Build Tools for Visual Studio 2017](https://my.visualstudio.com/Downloads?q=visual%20studio%202017&wt.mc_id=o~msft~vscom~older-downloads). 
-		Download the Visual Studio 2017 Build Tools installer and check the **Visual C++ build tools** option under Workloads. In the sidebar on the right, make sure **Visual C++ tools for CMake** is checked, then install.
+2) Install C++ Tools for CMake from the [Build Tools for Visual Studio 2019](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads). 
+		Download the Visual Studio 2019 Build Tools installer and check the **Visual C++ build tools** option under Workloads. In the sidebar on the right, make sure **Visual C++ tools for CMake** is checked, then install.
 3) Set CMAKE_ROOT and JAVA_HOME pointing to the respective folders
 4) Run **build-java-extension.cmd** which will generate two main files: \
 		- PATH\TO\ENLISTMENT\build-output\java-extension\windows\release\release\java-extension.dll \

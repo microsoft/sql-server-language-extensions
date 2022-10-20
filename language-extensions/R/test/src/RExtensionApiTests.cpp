@@ -32,7 +32,7 @@
 #include "Common.h"
 
 using namespace std;
-namespace fs = experimental::filesystem;
+namespace fs = filesystem;
 
 #ifdef _WIN64
 	const string x_RExtensionLibName = "libRExtension.dll";

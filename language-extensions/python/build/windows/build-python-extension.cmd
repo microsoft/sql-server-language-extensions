@@ -85,7 +85,7 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 if not defined DevEnvDir (
-	call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 ECHO "[INFO] Generating Python extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
@@ -97,7 +97,7 @@ PUSHD %BUILD_OUTPUT%
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 15 2017 Win64" ^
+	-G "Visual Studio 16 2019" ^
 	-DPLATFORM=Windows ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^

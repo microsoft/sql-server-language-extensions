@@ -14,7 +14,7 @@
 //*************************************************************************************************
 
 #include <boost/python.hpp>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
@@ -30,7 +30,7 @@
 
 using namespace std;
 namespace bp = boost::python;
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 #ifndef _WIN64
 #include <dlfcn.h>

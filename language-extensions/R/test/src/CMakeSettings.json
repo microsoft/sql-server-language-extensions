@@ -2,7 +2,7 @@
   "configurations": [
     {
       "name": "RExtension-test",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019",
       "configurationType": "Debug",
       "inheritEnvironments": [
         "msvc_x64_x64"
@@ -15,7 +15,7 @@
     },
     {
       "name": "RExtension-test",
-      "generator": "Visual Studio 15 2017 Win64",
+      "generator": "Visual Studio 16 2019",
       "configurationType": "Release",
       "inheritEnvironments": [
         "msvc_x64_x64"

@@ -30,8 +30,7 @@ variables:
   CDP_DEFINITION_BUILD_COUNT_YEAR: $[counter(format('{0:yyyy}', pipeline.startTime), 1)]
   NUGET_XMLDOC_MODE: none
 
-  WindowsContainerImage: 'cdpxwin1809.azurecr.io/global/vse2017:latest'
-  # WindowsContainerImage2: 'cdpxwin1809.azurecr.io/global/vse2019:latest' # Docker image which is used to build the project https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'cdpxwin1809.azurecr.io/global/vse2019:latest'
   # WindowsContainerImage: 'cdpxwin.azurecr.io/legacy/global/vse2017u7-external-azsdk-mobile-ext-winltsc2016:latest' 
 
 resources:

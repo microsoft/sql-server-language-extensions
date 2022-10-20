@@ -11,7 +11,7 @@
 //
 //*************************************************************************************************
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <regex>
@@ -24,7 +24,7 @@
 
 using namespace std;
 namespace bp = boost::python;
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 //-------------------------------------------------------------------------------------------------
 // Name: PythonLibrarySession::Init

@@ -99,7 +99,7 @@ target_link_libraries(RExtension-test
 	${GTEST_LIB}
 	${R_LIB}
 	${RINSIDE_LIB}
-	# stdc++fs needed for experimental::filesystem
+	# stdc++fs needed for filesystem
 	#
 	stdc++fs
 )

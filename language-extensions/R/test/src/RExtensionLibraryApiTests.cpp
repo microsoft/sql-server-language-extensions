@@ -31,7 +31,7 @@
 #include "RExtensionLibraryApiTests.h"
 
 using namespace std;
-namespace fs = experimental::filesystem;
+namespace fs = filesystem;
 
 namespace ExtensionApiTest
 {

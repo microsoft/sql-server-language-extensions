@@ -21,6 +21,7 @@
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
