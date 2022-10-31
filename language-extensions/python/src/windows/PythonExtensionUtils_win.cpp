@@ -11,7 +11,11 @@
 //
 //*************************************************************************************************
 
-#include <filesystem>
+#ifdef _WIN64
+	#include <filesystem>
+#else
+	#include <experimental/filesystem>
+#endif
 
 #include "Logger.h"
 #include "PythonExtensionUtils.h"

@@ -1,5 +1,5 @@
 #################################################################################
-#   Onebranch Pipelines - Official Linux (CDPXMigrated)                         #
+#   Onebranch Pipelines - PR Linux                                              #
 # This pipeline was created by EasyStart from a sample located at:              #
 #   https://aka.ms/obpipelines/easystart/samples                                #
 # Documentation:  https://aka.ms/obpipelines                                    #
@@ -36,11 +36,8 @@ resources:
       ref: refs/heads/main
 
 extends:
-  template: v2/OneBranch.Official.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
   parameters:
-    cloudvault: # https://aka.ms/obpipelines/cloudvault
-      enabled: true # set to true to enable cloudvault
-
     globalSdl: # https://aka.ms/obpipelines/sdl
       tsa:
        enabled: false # SDL results of non-official builds aren't uploaded to TSA by default.
@@ -252,7 +249,7 @@ extends:
           - task: CmdLine@2
             displayName: 'Test PythonExtension-test'
             inputs:
-              script: chmod +x $(Build.SourcesDirectory)/empty-script.sh
+              script:  chmod +x $(Build.SourcesDirectory)/empty-script.sh
               workingDirectory: '$(Build.SourcesDirectory)'
               failOnStderr: false
 
