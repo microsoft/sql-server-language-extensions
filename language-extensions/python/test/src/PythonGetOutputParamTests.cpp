@@ -690,27 +690,29 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, GetRawOutputParamTest)
 	{
+		string value4 = CreateInputSizeRandomStr(128000);
 		string scriptString = 
 			"param0 = b'HELLO';"
 			"param1 = b'PyExtension';"
 			"param2 = b'';"
 			"param3 = b'WORLD';"
-			"param4 = None;"
-			"param5 = None";
+			"param4 = b'" + value4 + "';"
+			"param5 = None;"
+			"param6 = None";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
 		//
 		InitializeSession(
-			6,   // parametersNumber
+			7,   // parametersNumber
 			0,   // inputSchemaColumnsNumber
 			scriptString);
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true, true, false, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 5, 5 };
+		vector<bool> isFixedType = { true, false, true, true, false, false, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, USHRT_MAX, 5, 5 };
 
 		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
@@ -750,7 +752,10 @@ namespace ExtensionApiTest
 			"",
 			// Test BINARY(10) value with string length less than the type allows.
 			//
-			"WORLD" };
+			"WORLD",
+			// Test VARBINARY(max) with string length of 128000.
+			//			
+			value4 };
 
 		vector<SQLCHAR*> expectedParamValues = {
 			static_cast<SQLCHAR*>(
@@ -761,6 +766,8 @@ namespace ExtensionApiTest
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
 			static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[4].c_str()))),
 			// Test None returned in a VARCHAR(5) parameter.
 			//
 			nullptr,
@@ -773,6 +780,7 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[4].length()),
 			SQL_NULL_DATA,
 			SQL_NULL_DATA };
 
