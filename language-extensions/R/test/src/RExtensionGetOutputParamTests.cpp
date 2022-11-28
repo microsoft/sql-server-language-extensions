@@ -541,17 +541,13 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTests, GetCharOutputParamTest)
 	{
-		int paramsNumber = 7;
-		// Construct value greater than USHRT_MAX to test truncating behavior
-		//
-		string value5 = CreateInputSizeRandomStr(m_ValueLargerThanUShrtMax);
+		int paramsNumber = 6;
 		string scriptString = "param1 <- 'HELLO';"
 			"param2 <- 'RExtension';"
 			"param3 <- '';"
 			"param4 <- 'WORLD';"
-			"param5 <- '" + value5 + "';"
-			"param6 <- as.character(NA);"
-			"param7 <- as.character();";
+			"param5 <- as.character(NA);"
+			"param6 <- as.character();";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -562,12 +558,12 @@ namespace ExtensionApiTest
 			paramsNumber);
 
 		vector<const char*> initParamValues(paramsNumber, "");
-		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, USHRT_MAX, 5, 5 };
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 5, 5 };
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true, false, false, true, true };
+		vector<bool> isFixedType = { true, false, true, false, true, true };
 		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
 
 		InitCharParam<char, SQL_C_CHAR>(
@@ -602,10 +598,7 @@ namespace ExtensionApiTest
 			"",
 			// Test CHAR(10) value with string length less than the type allows.
 			//
-			"WORLD",
-			// Test VARCHAR(max) with string length of 128000.
-			//	
-			value5};
+			"WORLD"};
 
 		vector<SQLCHAR*> expectedParamValues = {
 			static_cast<SQLCHAR*>(
@@ -616,8 +609,6 @@ namespace ExtensionApiTest
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
 			static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))),
-			static_cast<SQLCHAR*>(
-				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[4].c_str()))),
 			// Test NA returned in a VARCHAR(5) parameter.
 			//
 			nullptr,
@@ -630,7 +621,6 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
-			static_cast<SQLINTEGER>(ExpectedParamValueStrings[4].length()),
 			SQL_NULL_DATA,
 			SQL_NULL_DATA};
 
@@ -648,25 +638,21 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTests, GetNCharOutputParamTest)
 	{
-		int paramsNumber = 9;
+		int paramsNumber = 8;
 
 		// Construct the values that correspond to 你好
 		//
 		vector<char> chineseString = { -28, -67, -96, -27, -91, -67 };
 		string dummystring = string(chineseString.data(), 6);
 
-		// Construct value greater than USHRT_MAX to test truncating behavior
-		//
-		string value7 = CreateInputSizeRandomStr(m_ValueLargerThanUShrtMax);
 		string scriptString = "param1 <- 'HELLO';"
 			"param2 <- 'RExtension';"
 			"param3 <- '';"
 			"param4 <- 'WORLD';"
 			"param5 <- '" + dummystring + "';"
 			"param6 <- 'Mix " + dummystring + "';"
-			"param7 <- '" + value7 + "';"
-			"param8 <- as.character(NA);"
-			"param9 <- as.character();";
+			"param7 <- as.character(NA);"
+			"param8 <- as.character();";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -679,9 +665,9 @@ namespace ExtensionApiTest
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if they are initialized as fixed or varying.
 		//
-		vector<bool> isFixedType = { true, false, true, true, true, false, false, true, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 6, USHRT_MAX, 5, 5 };
-		vector<const wchar_t*> initParamValues(9, L"");
+		vector<bool> isFixedType = { true, false, true, true, true, false, true, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 6, 5, 5 };
+		vector<const wchar_t*> initParamValues(8, L"");
 		vector<SQLSMALLINT> inputOutputTypes(paramsNumber, SQL_PARAM_INPUT_OUTPUT);
 
 		InitCharParam<wchar_t, SQL_C_WCHAR>(
@@ -703,8 +689,6 @@ namespace ExtensionApiTest
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-		wstring wideStrOfValue7 = wstring(value7.begin(), value7.end());
-		const wchar_t* wideCStrOfValue7 = wideStrOfValue7.c_str();
 		vector<const wchar_t*> expectedParamValues = {
 			// Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
 			//
@@ -725,7 +709,6 @@ namespace ExtensionApiTest
 			// Test a mixture of one-byte and multi-byte Unicode string
 			//
 			L"Mix 你好",
-			wideCStrOfValue7,
 			nullptr,
 			nullptr};
 
@@ -736,7 +719,6 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
-			static_cast<SQLINTEGER>(m_ValueLargerThanUShrtMax * sizeof(wchar_t)),
 			SQL_NULL_DATA,
 			SQL_NULL_DATA
 		};
@@ -754,16 +736,11 @@ namespace ExtensionApiTest
 	//
 	TEST_F(RExtensionApiTests, GetRawOutputParamTest)
 	{
-		// Construct values greater than USHRT_MAX to test truncating behavior
-		//
-		vector<SQLCHAR> BinaryValue5(m_ValueLargerThanUShrtMax, 0x01);
-		string value5 = CreateInputSizeBinaryStringR(m_ValueLargerThanUShrtMax);
 		string scriptString = "param1 <- c(as.raw(0x00), as.raw(0x01), as.raw(0xe2), as.raw(0x40));"
 			"param2 <- charToRaw(paste(letters[1:10], collapse=''));"
 			"param3 <- c(as.raw(0x01), as.raw(0x3f));"
 			"param4 <- as.raw(NA);"
-			"param5 <- c(" + value5 + ");"
-			"param6 <- raw();";
+			"param5 <- raw()";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
@@ -771,13 +748,12 @@ namespace ExtensionApiTest
 		InitializeSession(
 			0,   // inputSchemaColumnsNumber
 			scriptString,
-			6);  // parametersNumber
+			5);  // parametersNumber
 
 		const vector<SQLCHAR> dummyValue = { };
-		vector<SQLCHAR*> initParamValues(6, const_cast<SQLCHAR*>(dummyValue.data()));
-		vector<SQLINTEGER> strLenOrInd(6, static_cast<SQLINTEGER>(dummyValue.size())/m_BinarySize);
-		
-		vector<SQLULEN> paramSizes = { 4, 5, 10, 5, USHRT_MAX, 5 };
+		vector<SQLCHAR*> initParamValues(5, const_cast<SQLCHAR*>(dummyValue.data()));
+		vector<SQLINTEGER> strLenOrInd(5, static_cast<SQLINTEGER>(dummyValue.size())/m_BinarySize);
+		vector<SQLULEN> paramSizes = { 4, 5, 10, 5, 5 };
 		vector<SQLSMALLINT> inputOutputTypes(initParamValues.size(), SQL_PARAM_INPUT_OUTPUT);
 
 		InitRawParam(
@@ -821,7 +797,6 @@ namespace ExtensionApiTest
 			const_cast<SQLCHAR*>(BinaryValue2.data()),
 			const_cast<SQLCHAR*>(BinaryValue3.data()),
 			const_cast<SQLCHAR*>(BinaryValue4.data()),
-			const_cast<SQLCHAR*>(BinaryValue5.data()),
 			// Test NULL BINARY(5) value
 			//
 			nullptr };
@@ -831,8 +806,6 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(BinaryValue2.size())/m_BinarySize,
 			static_cast<SQLINTEGER>(BinaryValue3.size())/m_BinarySize,
 			static_cast<SQLINTEGER>(BinaryValue4.size())/m_BinarySize,
-			static_cast<SQLINTEGER>(BinaryValue5.size())/m_BinarySize,
-
 			SQL_NULL_DATA };
 
 		GetRawOutputParam(
@@ -1538,40 +1511,5 @@ namespace ExtensionApiTest
 				EXPECT_EQ(paramValue, nullptr);
 			}
 		}
-	}
-
-	// Name: CreateInputSizeRandomStr
-	//
-	// Description:
-	// Create a string of random characters of the provided size.
-	//
-	string RExtensionApiTests::CreateInputSizeRandomStr(int size)
-	{
-		string result;
-		for (int i = 0; i < size; i++)
-		{
-			char randomChar = 'a' + rand()%26;
-			result += randomChar;
-		}
-
-		return result;
-	}
-
-	// Name: CreateInputSizeBinaryStringR
-	//
-	// Description:
-	// Create the script string which will generate the raw values
-	// needed within the R environment of the provided size.
-	//
-	string RExtensionApiTests::CreateInputSizeBinaryStringR(int size)
-	{
-		string result;
-		for (int i = 0; i < size - 1; i++)
-		{
-			result += "as.raw(0x01), ";
-		}
-
-		result += "as.raw(0x01)";
-		return result;
 	}
 }

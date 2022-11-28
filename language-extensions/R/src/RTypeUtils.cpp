@@ -525,13 +525,8 @@ SQLINTEGER RTypeUtils::InsertStringBasedOnLengthAndRowsNumber(
 {
 	SQLINTEGER lengthOfStringToInsert = unicodeString.length();
 
-	// Truncate size of return data to only be the size allowed,
-	// unless allowed length is equal to or greater than USHRT_MAX.
-	// In this case do not truncate as we have a max sized variable,
-	// ie: varchar(max) 
-	//
 	lengthOfStringToInsert =
-		static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen || allowedLen >= USHRT_MAX
+		static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
 		? lengthOfStringToInsert
 		: static_cast<SQLINTEGER>(allowedLen);
 
@@ -650,13 +645,8 @@ void RTypeUtils::FillDataFromRawVector(
 {
 	LOG("RTypeUtils::FillDataFromRawVector");
 
-	// Truncate size of return data to only be the size allowed,
-	// unless allowed length is equal to or greater than USHRT_MAX.
-	// In thise case do not truncate as we have a max sized variable,
-	// ie: varbinary(max) 
-	//
 	strLenOrInd[0] =
-		static_cast<SQLULEN>(vectorInR.size()) <= allowedLen || allowedLen >= USHRT_MAX
+		static_cast<SQLULEN>(vectorInR.size()) <= allowedLen
 			? vectorInR.size() : static_cast<SQLINTEGER>(allowedLen);
 	data->resize(strLenOrInd[0]);
 	for(SQLINTEGER index = 0 ; index < strLenOrInd[0]; ++index)

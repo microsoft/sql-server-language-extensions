@@ -86,13 +86,12 @@ void Logger::Log(const string &msg)
 //  Prints out the value of the given variable name using R's print function.
 //  Only available in debug mode, not in release.
 //  This function has a precondition that R's environment is already initialized,
-//  otherwise it is a no-op. Use print() instead of message() to avoid segmentation
-//  fault in the test environment.
+//  otherwise it is a no-op.
 //
 void Logger::LogRVariable(const string &name)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
-	string printVariable = "print(" + name + ");";
+	string printVariable = "message(" + name + ");";
 	ExecuteScript(printVariable);
 #endif
 }

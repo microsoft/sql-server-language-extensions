@@ -459,15 +459,6 @@ namespace ExtensionApiTest
 			std::vector<SQL_NUMERIC_STRUCT> expectedParamValues,
 			std::vector<SQLINTEGER>         expectedStrLenOrInd);
 
-		// Helper function to create a string with random characters of the provided size.
-		//
-		std::string CreateInputSizeRandomStr(int size);
-
-		// Helper function to create the script string which will generate the raw values
-		// needed within the R environment of the provided size.
-		//
-		std::string CreateInputSizeBinaryStringR(int size);
-
 		// Objects declared here can be used by all tests in the test suite.
 		//
 		static const std::string sm_RHomePath;
@@ -493,10 +484,6 @@ namespace ExtensionApiTest
 		const std::string m_printMessage = "Hello RExtension!";
 
 		const std::string m_streamingParamName = "@r_rowsPerRead";
-
-		// A value greater than USHRT_MAX to test truncation
-		//
-		const int m_ValueLargerThanUShrtMax = 128000;
 
 		// A value of 2'147'483'647
 		//
