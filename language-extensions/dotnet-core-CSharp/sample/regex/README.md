@@ -17,7 +17,7 @@ This particular sample uses a regular expression that checks if a text contains 
 
 + SQL Server Management Studio or Azure Data Studio for executing T-SQL.
 
-+ [.NET 5.0 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) on Windows.
++ [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0) on Windows.
 
 + The **dotnet-core-CSharp-lang-extension.zip** file from the [.NET Core C# Language Extension](../../../../README.md).
 
@@ -121,7 +121,7 @@ Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>

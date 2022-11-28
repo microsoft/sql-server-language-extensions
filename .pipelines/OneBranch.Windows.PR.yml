@@ -391,7 +391,7 @@ extends:
       - job: CSharp_Extension
         pool:
           type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
-        
+
         variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
           ob_outputDirectory: '$(Build.SourcesDirectory)\out' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
           ob_artifactBaseName: 'drop_Build_DotNetCore_CSharp_Extension'
@@ -402,6 +402,13 @@ extends:
           CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: '$(Build.SourcesDirectory)'
 
         steps:
+
+          - task: UseDotNet@2
+            displayName: 'Install .NET Core SDK'
+            inputs:
+              version: 6.x
+              performMultiLevelLookup: true
+              includePreviewVersions: true # Required for preview versions
 
           - task: onebranch.pipeline.version@1 # generates automatic version. For other versioning options check https://aka.ms/obpipelines/versioning
             displayName: 'Setup BuildNumber'
