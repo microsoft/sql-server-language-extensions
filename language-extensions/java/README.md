@@ -10,7 +10,7 @@ The Java extension version in this repository is compatible with SQL Server 2019
 ## Building
 
 #### Windows
-1) Install [CMake for Windows](https://cmake.org/download/) and Java ([file](https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk) and [instructions](https://docs.azul.com/zulu/zuludocs/ZuluUserGuide/InstallingZulu/InstallWindowsUsingZuluZIPFile.htm))
+1) Install [CMake for Windows](https://cmake.org/download/) and Java ([file](https://learn.microsoft.com/en-us/java/openjdk/download) and [instructions](https://learn.microsoft.com/en-us/java/openjdk/install)
 2) Install C++ Tools for CMake from the [Build Tools for Visual Studio 2019](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads). 
 		Download the Visual Studio 2019 Build Tools installer and check the **Visual C++ build tools** option under Workloads. In the sidebar on the right, make sure **Visual C++ tools for CMake** is checked, then install.
 3) Set CMAKE_ROOT and JAVA_HOME pointing to the respective folders
@@ -22,7 +22,7 @@ The Java extension version in this repository is compatible with SQL Server 2019
 		This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 #### Linux
-1) Install [CMake for Linux](https://cmake.org/download/) and [Java](https://docs.azul.com/zulu/zuludocs/ZuluUserGuide/InstallingZulu/InstallOnLinuxUsingAPTRepository.htm)
+1) Install [CMake for Linux](https://cmake.org/download/) and [Java](https://learn.microsoft.com/en-us/java/openjdk/download)
 2) Set JAVA_HOME pointing to the Java folder
 3) Run **build-java-extension.sh** which will generate two main files: \
 		- PATH/TO/ENLISTMENT/build-output/java-extension/linux/release/libJavaExtension.so.1.0 \

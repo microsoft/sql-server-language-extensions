@@ -8,22 +8,12 @@ SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\java-extension\windows
 SET JAVAEXTENSION_HOME=%ENL_ROOT%\language-extensions\java
 
 SET DEFAULT_CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
-SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\AzulSystems.Zulu.DPG.8.33.0.1\tools
+SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\jdk-17.0.5+8
 
 REM Find JAVA_HOME and CMAKE_ROOT from user, or set to default for tests.
 REM Error code 203 is ENVVAR_NOT_FOUND.
 REM
 SET ENVVAR_NOT_FOUND=203
-
-REM If first argument is "azuljava", enforce %DEFAULT_JAVA_HOME%
-REM
-IF "%~1"=="azuljava" (
-	SET JAVA_HOME=%DEFAULT_JAVA_HOME%
-
-	REM Advance arg passed to build-java-extension.cmd
-	REM
-	SHIFT
-)
 
 IF "%JAVA_HOME%" == "" (
 	IF EXIST %DEFAULT_JAVA_HOME% (

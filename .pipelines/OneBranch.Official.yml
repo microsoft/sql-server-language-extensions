@@ -120,7 +120,7 @@ extends:
           - task: CmdLine@2
             displayName: 'Build Java extension'
             inputs:
-              script: $(Build.SourcesDirectory)\language-extensions\java\build\windows\build-java-extension.cmd azuljava debug release
+              script: $(Build.SourcesDirectory)\language-extensions\java\build\windows\build-java-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: onebranch.pipeline.signing@1
