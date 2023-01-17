@@ -64,11 +64,6 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rcpp package" || EXIT /b
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install RInside package" || EXIT /b %ERRORLEVEL%
 SETLOCAL disabledelayedexpansion
 
-REM Restore cv2pdb.exe
-REM
-nuget restore %REXTENSION_HOME%\build\windows\packages.config -PackagesDirectory %PACKAGES_ROOT%
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore cv2pdb" || EXIT /b %ERRORLEVEL%
-
 EXIT /b %ERRORLEVEL%
 
 :CHECKERROR

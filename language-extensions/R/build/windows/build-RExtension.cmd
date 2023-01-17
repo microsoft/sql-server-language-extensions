@@ -11,7 +11,6 @@ SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.5-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 SET DEFAULT_RTOOLS40_HOME=C:\rtools40
 SET DEFAULT_RTOOLS35_HOME=C:\rtools
-SET DEFAULT_CV2PDB_ROOT=%PACKAGES_ROOT%\cv2pdb.0.38.0
 
 REM Find R_HOME, RTOOLS40_HOME, RTOOLS35_HOME, CMAKE_ROOT from user or set to default.
 REM Error code 203 is ENVVAR_NOT_FOUND.
@@ -47,14 +46,6 @@ IF "%CMAKE_ROOT%" == "" (
 		SET CMAKE_ROOT=%DEFAULT_CMAKE_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: CMAKE_ROOT variable must be set to build the RExtension" || EXIT /b %ENVVAR_NOT_FOUND%
-	)
-)
-
-IF "%CV2PDB_HOME%" == "" (
-	IF EXIST %DEFAULT_CV2PDB_ROOT% (
-		SET CV2PDB_HOME=%DEFAULT_CV2PDB_ROOT%
-	) ELSE (
-		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Warning: CV2PDB_HOME not found. PDB files will not be generated."
 	)
 )
 
@@ -119,12 +110,6 @@ REM builds will call create-RExtension-zip.cmd after the binaries have been sign
 REM
 powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\libRExtension.dll, %BUILD_OUTPUT%\libRExtension.dll.a -DestinationPath %TARGET%\R-lang-extension.zip"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for RExtension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
-
-IF NOT "%CV2PDB_HOME%" == "" (
-	REM Create pdb from the RExtension dll using cv2pdb
-	REM
-	%CV2PDB_HOME%\bin\cv2pdb.exe %BUILD_OUTPUT%\libRExtension.dll
-)
 
 REM Advance arg passed to build-RExtension.cmd
 REM
