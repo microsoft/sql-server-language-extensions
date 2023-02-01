@@ -12,7 +12,7 @@ MKDIR %DOTNET_EXTENSION_WORKING_DIR%
 
 :LOOP
 
-REM Set cmake config to first arg
+REM Set build config to first arg
 REM
 SET BUILD_CONFIGURATION=%1
 
@@ -71,7 +71,7 @@ XCOPY %DOTNET_NATIVE_LIB%\hostfxr.dll %BUILD_OUTPUT%
 
 ECHO "[Info] Building Microsoft.SqlServer.CSharpExtension dll..."
 SET DOTNET_MANAGED_SRC=%DOTNET_EXTENSION_HOME%\src\managed
-dotnet build %DOTNET_MANAGED_SRC%\Microsoft.SqlServer.CSharpExtension.csproj /m /p:Configuration=%BUILD_CONFIGURATION%;OutDir=%BUILD_OUTPUT% --no-dependencies
+dotnet build %DOTNET_MANAGED_SRC%\Microsoft.SqlServer.CSharpExtension.csproj /m -c %BUILD_CONFIGURATION% -o %BUILD_OUTPUT% --no-dependencies
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build for Microsoft.SqlServer.CSharpExtension.dll for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "Success: Built dotnet-core-CSharp-extension for %BUILD_CONFIGURATION% configuration."

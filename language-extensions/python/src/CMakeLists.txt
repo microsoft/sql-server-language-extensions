@@ -5,8 +5,10 @@ cmake_minimum_required (VERSION 3.5)
 set(PYTHONEXTENSION_VERSION_MAJOR "1")
 set(PYTHONEXTENSION_VERSION_MINOR "1")
 set(PYTHONEXTENSION_VERSION ${PYTHONEXTENSION_VERSION_MAJOR}.${PYTHONEXTENSION_VERSION_MINOR})
+set(PYTHON_VERSION "3.10")
+set(PYTHON_VERSION_NO_DOT "310")
 
-# this is what the final library is going to be named
+# This is what the final library is going to be named
 #
 project(PythonExtension VERSION ${PYTHONEXTENSION_VERSION} LANGUAGES CXX)
 
@@ -49,13 +51,13 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
 	set(USR_LIB_PATH /usr/local/lib)
-	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python3.7/config-3.7m-x86_64-linux-gnu)
+	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
 
-	find_library(PYTHON_LIB python3.7 ${PYTHON_LIB_PATH})
-	find_library(BOOST_PYTHON_LIB boost_python37 ${BOOST_PYTHON_ROOT})
-	find_library(BOOST_NUMPY_LIB boost_numpy37 ${BOOST_PYTHON_ROOT})
+	find_library(PYTHON_LIB python${PYTHON_VERSION} ${PYTHON_LIB_PATH})
+	find_library(BOOST_PYTHON_LIB boost_python${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
+	find_library(BOOST_NUMPY_LIB boost_numpy${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
 
-	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python3.7 PYTHON_INCLUDE)
+	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost/python BOOST_PYTHON_INCLUDE)
 
@@ -71,7 +73,7 @@ elseif(${PLATFORM} STREQUAL windows)
 	#
 	set(COMPILE_OPTIONS /c /std:c++17)
 
-	find_library(PYTHON_LIB python37 ${PYTHONHOME}/libs)
+	find_library(PYTHON_LIB python${PYTHON_VERSION_NO_DOT} ${PYTHONHOME}/libs)
 
 	# MDd is for debug DLL and MD is for release DLL
 	#
@@ -79,14 +81,14 @@ elseif(${PLATFORM} STREQUAL windows)
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MDd)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi")
 		set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /OPT:REF /OPT:ICF")
-		find_library(BOOST_PYTHON_LIB libboost_python37-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
-		find_library(BOOST_NUMPY_LIB libboost_numpy37-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc140-mt-gd-x64-1_69 ${BOOST_PYTHON_ROOT})
 	else()
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
 		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG:FULL /OPT:REF /OPT:ICF")
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MD)
-		find_library(BOOST_PYTHON_LIB libboost_python37-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
-		find_library(BOOST_NUMPY_LIB libboost_numpy37-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc140-mt-x64-1_69 ${BOOST_PYTHON_ROOT})
 	endif()
 
 	target_compile_options(PythonExtension PRIVATE ${COMPILE_OPTIONS})

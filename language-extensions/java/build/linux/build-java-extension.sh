@@ -101,7 +101,7 @@ if [ "$1" == "" ]; then
 fi
 
 while [ "$1" != "" ]; do
-	# Advance arg passed to build.cmd
+	# Advance arg passed to build.sh
 	#
 	build $1
 	shift

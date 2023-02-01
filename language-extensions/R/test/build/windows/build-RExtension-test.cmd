@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
 SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\build-output\RExtension-test\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.2-win
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.5-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
 REM Find R_HOME and CMAKE_ROOT from user, or set to default.
@@ -74,7 +74,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CO
 ECHO "[INFO] Building RExtension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 REM Call cmake build
 REM
-CALL "mingw32-make.exe" all
+CALL "mingw32-make.exe" -j all
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build RExtension-test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Advance arg passed to build-RExtension-test.cmd

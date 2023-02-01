@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..
 SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
 SET REXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.3-win
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.5-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 SET DEFAULT_RTOOLS40_HOME=C:\rtools40
 SET DEFAULT_RTOOLS35_HOME=C:\rtools
@@ -102,7 +102,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CO
 ECHO "[INFO] Building RExtension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 REM Call cmake build
 REM
-CALL "mingw32-make.exe" all
+CALL "mingw32-make.exe" -j all
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build RExtension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM This will create the RExtension package with unsigned binaries, this is used for local development and non-release builds. Release

@@ -13,7 +13,11 @@
 
 #pragma once
 #include "Common.h"
-#include <experimental/filesystem>
+#ifdef _WIN64
+	#include <filesystem>
+#else
+	#include <experimental/filesystem>
+#endif
 
 class PythonLibrarySession
 {
@@ -42,17 +46,31 @@ public:
 		SQLCHAR    *libraryInstallDirectory,
 		SQLINTEGER libraryInstallDirectoryLength);
 
-	// Get top level directory/ies for a package
-	//
-	std::vector<std::experimental::filesystem::directory_entry> GetTopLevel(
-		std::string libName,
-		std::string installDir);
+	#ifdef _WIN64
+		// Get top level directory/ies for a package
+		//
+		std::vector<std::filesystem::directory_entry> GetTopLevel(
+			std::string libName,
+			std::string installDir);
 
-	// Get all the artifacts we can find of a package that are in the path
-	//
-	std::vector<std::experimental::filesystem::directory_entry> GetAllArtifacts(
-		std::string libName,
-		std::string path);
+		// Get all the artifacts we can find of a package that are in the path
+		//
+		std::vector<std::filesystem::directory_entry> GetAllArtifacts(
+			std::string libName,
+			std::string path);
+	#else
+		// Get top level directory/ies for a package
+		//
+		std::vector<std::experimental::filesystem::directory_entry> GetTopLevel(
+			std::string libName,
+			std::string installDir);
+
+		// Get all the artifacts we can find of a package that are in the path
+		//
+		std::vector<std::experimental::filesystem::directory_entry> GetAllArtifacts(
+			std::string libName,
+			std::string path);
+	#endif
 
 private:
 	SQLGUID m_sessionId{ 0, 0, 0, {0} };

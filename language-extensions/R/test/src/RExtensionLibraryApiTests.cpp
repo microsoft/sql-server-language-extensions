@@ -31,7 +31,6 @@
 #include "RExtensionLibraryApiTests.h"
 
 using namespace std;
-namespace fs = experimental::filesystem;
 
 namespace ExtensionApiTest
 {
@@ -39,8 +38,10 @@ namespace ExtensionApiTest
 	//
 #ifdef _WIN64
 	const string x_OsName = "windows";
+	namespace fs = filesystem;
 #else
 	const string x_OsName = "linux";
+	namespace fs = experimental::filesystem;
 #endif
 
 	const string x_FileExtension = ".zip";

@@ -302,6 +302,10 @@ namespace ExtensionApiTest
 			SQLINTEGER     *expectedColumnStrLenOrInd,
 			SQLINTEGER     *columnStrLenOrInd);
 
+		// Helper function to create a string with random characters of the provided size.
+		//
+		std::string CreateInputSizeRandomStr(int size);
+
 		// Template function to test output param value and strLenOrInd is as expected.
 		//
 		template<class SQLType>

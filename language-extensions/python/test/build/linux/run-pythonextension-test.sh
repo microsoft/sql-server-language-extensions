@@ -55,6 +55,8 @@ if [ -z "${PYTHONHOME}" ]; then
 	fi
 fi
 
+echo "Python home is ${PYTHONHOME}"
+
 # Build in release mode if nothing is specified
 #
 if [ "$1" == "" ]; then

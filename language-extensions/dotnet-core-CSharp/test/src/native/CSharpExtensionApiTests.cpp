@@ -129,6 +129,15 @@ namespace ExtensionApiTest
             static_cast<void *>(const_cast<char *>(m_outputDataNameString.c_str())));
         m_outputDataNameLength = m_outputDataNameString.length();
 
+        m_emptyIntegerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
+            "IntegerColumn1",
+            vector<SQLINTEGER>{ },
+            vector<SQLINTEGER>(0, m_IntSize),
+            "IntegerColumn2",
+            vector<SQLINTEGER>{ },
+            vector<SQLINTEGER>(0, m_IntSize),
+            vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NO_NULLS });
+
         m_integerInfo = make_unique<ColumnInfo<SQLINTEGER>>(
             "IntegerColumn1",
             vector<SQLINTEGER>{ 1, 2, 3, 4, 5 },
