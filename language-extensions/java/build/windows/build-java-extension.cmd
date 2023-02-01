@@ -8,7 +8,7 @@ SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\java-extension\windows
 SET JAVAEXTENSION_HOME=%ENL_ROOT%\language-extensions\java
 
 SET DEFAULT_CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
-SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\AzulSystems.Zulu.DPG.8.33.0.1\tools
+SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\jdk-17.0.5+8
 
 REM Find JAVA_HOME and CMAKE_ROOT from user, or set to default for tests.
 REM Error code 203 is ENVVAR_NOT_FOUND.
@@ -83,6 +83,7 @@ dir /s /B *.java > %TARGET%\sources.txt
 
 REM Compile all the Java sources
 REM
+ECHO %JAVA_HOME% is used for compilation
 %JAVA_BIN%\javac -d %TARGET_CLASSES% @%TARGET%\sources.txt
 
 REM Restore the working directory
@@ -106,7 +107,7 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 ECHO "[INFO] Generating Java extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
@@ -118,7 +119,7 @@ PUSHD %BUILD_OUTPUT%
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 15 2017 Win64" ^
+	-G "Visual Studio 16 2019" ^
 	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%JAVAEXTENSION_WORKING_DIR%" ^
 	-DENL_ROOT=%ENL_ROOT% ^
@@ -136,13 +137,17 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --tar
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Java extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
+REM Copy DLL, LIB, etc files out of debug/debug and release/release into the build output folder
+REM
+copy %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\* %BUILD_OUTPUT%\
+
 REM This will create the Java extension package with unsigned binaries, this is used for local development and non-release builds. release
 REM builds will call create-java-extension-zip.cmd after the binaries have been signed and this will be included in the zip
 REM
 IF /I %CMAKE_CONFIGURATION%==debug (
-	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\javaextension.dll, %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\javaextension.pdb -DestinationPath %TARGET%\java-lang-extension.zip"
+	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\javaextension.dll, %BUILD_OUTPUT%\javaextension.pdb -DestinationPath %TARGET%\java-lang-extension.zip"
 ) ELSE (
-	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\javaextension.dll -DestinationPath %TARGET%\java-lang-extension.zip"
+	powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Force -Path %BUILD_OUTPUT%\javaextension.dll -DestinationPath %TARGET%\java-lang-extension.zip"
 )
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for Java extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%

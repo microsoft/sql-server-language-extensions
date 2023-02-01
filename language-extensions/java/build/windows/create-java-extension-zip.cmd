@@ -15,7 +15,7 @@ REM
 IF NOT DEFINED BUILD_CONFIGURATION (SET BUILD_CONFIGURATION=release)
 IF /I NOT %BUILD_CONFIGURATION%==debug (SET BUILD_CONFIGURATION=release)
 
-SET BUILD_OUTPUT=%ENL_ROOT%\build-output\java-extension\windows\%BUILD_CONFIGURATION%\%BUILD_CONFIGURATION%
+SET BUILD_OUTPUT=%ENL_ROOT%\build-output\java-extension\windows\%BUILD_CONFIGURATION%
 SET OUTPUT_JAR="%ENL_ROOT%\build-output\java-extension\target\%BUILD_CONFIGURATION%\mssql-java-lang-extension.jar"
 
 mkdir %BUILD_OUTPUT%\packages

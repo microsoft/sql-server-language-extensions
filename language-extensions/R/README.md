@@ -5,7 +5,7 @@ Language Extensions is a feature of SQL Server used for executing external code.
 
 For more information about SQL Server Language Extensions, refer to this [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sql-server-ver15).
 
-The RExtension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates R in SQL Server and works with R >= v3.3, however it is strongly recommended to use the latest stable version. At the time of this writing, it is R v4.0.3.
+The RExtension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates R in SQL Server and works with R >= v3.3, however it is strongly recommended to use the latest stable version. At the time of this writing, it is R v4.0.2.
 
 To use this released R-language-extension.zip package, follow [this tutorial](https://docs.microsoft.com/en-us/sql/machine-learning/install/custom-runtime-r?view=sql-server-ver15). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
 
@@ -60,20 +60,20 @@ To use this released R-language-extension.zip package, follow [this tutorial](ht
 ## Testing (Optional)
 
 ### Windows
-To unit test this extension,
-1. Run [**build-googletest.cmd**](../../test/googletest/build/windows/build-googletest.cmd) which will generate the gtest library essential to build the RExtension-test executable: \
-	- PATH\TO\ENLISTMENT\build-output\googletest\windows\lib\libgtest.a
-1. Run [**build-RExtension-test.cmd**](./test/build/windows/build-RExtension-test.cmd) which will generate: \
-	- PATH\TO\ENLISTMENT\build-output\RExtension-test\windows\release\RExtension-test.exe
-1. Run [**run-RExtension-test.cmd**](./test/build/windows/run-RExtension-test.cmd) to run all the unit tests.
+1. (Optional) To unit test this extension,
+	+ Run [**build-googletest.cmd**](../test/googletest/build/windows/build-googletest.cmd) which will generate the gtest library essential to build the RExtension-test executable: \
+		- PATH\TO\ENLISTMENT\build-output\googletest\windows\lib\libgtest.a
+	+ Run [**build-RExtension-test.cmd**](./test/build/windows/build-RExtension-test.cmd) which will generate: \
+		- PATH\TO\ENLISTMENT\build-output\RExtension-test\windows\release\RExtension-test.exe
+	+ Run [**run-RExtension-test.cmd**](./test/build/windows/run-RExtension-test.cmd) to run all the unit tests.
 
 ### Linux
-To unit test this extension,
-1. Run [**build-googletest.sh**](../../test/googletest/build/linux/build-googletest.sh) which will generate the gtest library essential to build the RExtension-test binary: \
-	- /PATH/TO/ENLISTMENT/build-output/googletest/linux/lib/libgtest.a
-1. Run [**build-RExtension-test.sh**](./test/build/linux/build-RExtension-test.sh) which will generate: \
-	- /PATH/TO/ENLISTMENT/build-output/RExtension-test/windows/release/RExtension-test.exe
-1. Run [**run-RExtension-test.sh**](./test/build/linux/run-RExtension-test.sh) to run all the unit tests.
+1. (Optional) To unit test this extension,
+	+ Run [**build-googletest.sh**](../test/googletest/build/linux/build-googletest.sh) which will generate the gtest library essential to build the RExtension-test binary: \
+		- /PATH/TO/ENLISTMENT/build-output/googletest/linux/lib/libgtest.a
+	+ Run [**build-RExtension-test.sh**](./test/build/linux/build-RExtension-test.sh) which will generate: \
+		- /PATH/TO/ENLISTMENT/build-output/RExtension-test/windows/release/RExtension-test.exe
+	+ Run [**run-RExtension-test.sh**](./test/build/linux/run-RExtension-test.sh) to run all the unit tests.
 
 ## Usage
 After downloading or building the R-lang-extension.zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to register the language with SQL Server 2019 CU3+.

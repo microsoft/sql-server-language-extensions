@@ -879,13 +879,13 @@ size_t Utf16Size(const std::string &str)
 // Description:
 // Returns True if the string is a valid UTF8, false otherwise.
 //
-bool IsValidUTF8(const std::string &str, int numberOfBytesInStr)
+bool IsValidUTF8(const char* str, int numberOfBytesInStr)
 {
 	int trailingBytesToValidate = 0;
 	
 	for (int i = 0; i < numberOfBytesInStr; ++i)
 	{
-		int c = (unsigned char) str[i];
+		int c = str[i];
 		if (0x00 <= c && c <= 0x7f) 
 		{
 			// 0xxxxxxx -> One byte

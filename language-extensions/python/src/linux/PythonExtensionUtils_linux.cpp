@@ -94,6 +94,6 @@ void PythonExtensionUtils::FreeDLL(void *pDll)
 //
 std::string PythonExtensionUtils::GetPathToPython()
 {
-	fs::path pathToPython = fs::path("python3.7");
+	fs::path pathToPython = fs::path("python3.10");
 	return pathToPython.string();
 }

@@ -359,9 +359,12 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(bp::object mainNames
 				}
 			}
 
-			// Truncate the return data to only be the size specified when creating
+			// Truncate the return data to only be the size specified when creating. Only
+			// truncate if m_size is less than USHRT_MAX because otherwise we have a
+			// max sized variable, and we do not want to truncate max sized variables,
+			// ie: varchar(max)
 			//
-			if (m_value.size() > m_size)
+			if (m_value.size() > m_size && m_size < USHRT_MAX)
 			{
 				m_value.resize(m_size);
 				m_value.shrink_to_fit();
@@ -431,10 +434,11 @@ PythonRawParam::PythonRawParam(
 void PythonRawParam::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 {
 	bp::dict dictNamespace = bp::extract<bp::dict>(mainNamespace);
+
 	if (dictNamespace.has_key(m_name))
 	{
 		bp::object tempObj = mainNamespace[m_name];
-
+		
 		m_strLenOrInd = SQL_NULL_DATA;
 
 		if (!tempObj.is_none())
@@ -453,9 +457,12 @@ void PythonRawParam::RetrieveValueAndStrLenInd(bp::object mainNamespace)
 				m_strLenOrInd = 0;
 			}
 
-			// Truncate the return data to only be the size specified when creating
+			// Truncate the return data to only be the size specified when creating. Only
+			// truncate if m_size is less than USHRT_MAX because otherwise we have a
+			// max sized variable, and we do not want to truncate max sized variables,
+			// ie: varbinary(max)
 			//
-			if (m_value.size() > m_size)
+			if (m_value.size() > m_size && m_size < USHRT_MAX)
 			{
 				m_value.resize(m_size);
 				m_value.shrink_to_fit();

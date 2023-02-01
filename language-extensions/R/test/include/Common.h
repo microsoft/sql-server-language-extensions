@@ -29,11 +29,12 @@
 
 #ifdef _WIN64
 	#include <windows.h>
+	#include <filesystem>
 #else
 	#include <dlfcn.h>
+	#include <experimental/filesystem>
 #endif
 
-#include <experimental/filesystem>
 #include <iostream>
 #include <math.h>
 #include <memory>

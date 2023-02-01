@@ -1,0 +1,30 @@
+﻿{
+  "configurations": [
+    {
+      "name": "RExtension-test",
+      "generator": "Visual Studio 16 2019",
+      "configurationType": "Debug",
+      "inheritEnvironments": [
+        "msvc_x64_x64"
+      ],
+      "buildRoot": "${thisFileDir}..\\..\\..\\..\\..\\build-output\\${name}\\windows",
+      "installRoot": "${thisFileDir}..\\..\\..\\..\\..\\build-output\\${name}\\windows\\${configurationType}",
+      "cmakeCommandArgs": "-DENL_ROOT=${thisFileDir}..\\..\\..\\..\\..\\ -DCMAKE_CONFIGURATION=${configurationType}",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
+    },
+    {
+      "name": "RExtension-test",
+      "generator": "Visual Studio 16 2019",
+      "configurationType": "Release",
+      "inheritEnvironments": [
+        "msvc_x64_x64"
+      ],
+      "buildRoot": "${thisFileDir}..\\..\\..\\..\\..\\build-output\\${name}\\windows",
+      "installRoot": "${thisFileDir}..\\..\\..\\..\\..\\build-output\\${name}\\windows\\${configurationType}",
+      "cmakeCommandArgs": "-DENL_ROOT=${thisFileDir}..\\..\\..\\..\\..\\ -DCMAKE_CONFIGURATION=${configurationType}",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
+    }
+  ]
+}

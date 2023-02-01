@@ -12,8 +12,13 @@
 //*************************************************************************************************
 #pragma once
 #include "Common.h"
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#ifdef _WIN64
+	#include <filesystem>
+	namespace fs = std::filesystem;
+#else
+	#include <experimental/filesystem>
+	namespace fs = std::experimental::filesystem;
+#endif
 
 namespace LibraryApiTests
 {
