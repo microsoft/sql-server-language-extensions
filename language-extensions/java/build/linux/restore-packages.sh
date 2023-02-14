@@ -5,7 +5,7 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 
-apt-get --no-install-recommends -y install curl zip unzip apt-transport-https unixodbc-dev
+apt-get --no-install-recommends -y install curl zip unzip apt-transport-https
 
 # Need bionic (Ubuntu 18.04 repo) for multiarch-support package.
 #
