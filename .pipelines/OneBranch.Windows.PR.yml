@@ -30,8 +30,7 @@ variables:
   CDP_DEFINITION_BUILD_COUNT_YEAR: $[counter(format('{0:yyyy}', pipeline.startTime), 1)]
   NUGET_XMLDOC_MODE: none
 
-  WindowsContainerImage: 'cdpxwin1809.azurecr.io/global/vse2019:latest'
-  # WindowsContainerImage: 'cdpxwin.azurecr.io/legacy/global/vse2017u7-external-azsdk-mobile-ext-winltsc2016:latest' 
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2019:latest'
 
 resources:
   repositories: 
@@ -395,7 +394,7 @@ extends:
         variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
           ob_outputDirectory: '$(Build.SourcesDirectory)\out' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
           ob_artifactBaseName: 'drop_Build_DotNetCore_CSharp_Extension'
-          WindowsContainerImage: 'cdpxwin1809.azurecr.io/global/vse2019:latest'
+          WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2019:latest'
           # ob_sdl_codeSignValidation_excludes: regex|.+(?:dll|exe|sys|ps1|ps1xml|psc1|psd1|cdxml|vbs|js|wsf)$;-:file|**\ci-test\**\*.*
           # ob_sdl_baseline_baselineFile: $(Build.SourcesDirectory)\.gdn\global.gdnbaselines
           # ob_sdl_baseline_baselineSet: default

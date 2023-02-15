@@ -11,7 +11,7 @@ environment:
   runtime:
     provider: 'appcontainer'                                            # Currently only appcontainer is supported
                                                                         # future will bring oscontainer and virtualmachine
-    image: 'cdpxwin1809.azurecr.io/global/vse2019:latest' # This is the image that your pipeline will run in.
+    image: 'onebranch.azurecr.io/windows/ltsc2019/vse2019:latest' # This is the image that your pipeline will run in.
                                                                         # For (appcontainer), Docker Hub public Microsoft repository images
                                                                         # can be used.
                                                                         # Example microsoft/dotnet:1.1.1-sdk-nanoserver.
