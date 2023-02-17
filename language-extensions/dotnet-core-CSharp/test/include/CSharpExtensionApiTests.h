@@ -322,6 +322,7 @@ namespace ExtensionApiTest
         SQLUSMALLINT m_inputSchemaColumnsNumber;
         SQLUSMALLINT m_parametersNumber;
 
+        std::unique_ptr<ColumnInfo<SQLINTEGER>> m_emptyIntegerInfo = nullptr;
         std::unique_ptr<ColumnInfo<SQLINTEGER>> m_integerInfo = nullptr;
         std::unique_ptr<ColumnInfo<SQLCHAR>> m_booleanInfo = nullptr;
         std::unique_ptr<ColumnInfo<SQLREAL>> m_realInfo = nullptr;

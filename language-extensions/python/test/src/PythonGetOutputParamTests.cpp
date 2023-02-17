@@ -487,27 +487,31 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, GetStringOutputParamTest)
 	{
+		// Construct value greater than USHRT_MAX to test truncating behavior
+		//
+		string value4 = CreateInputSizeRandomStr(128000);
 		string scriptString = 
 			"param0 = 'HELLO';"
 			"param1 = 'PyExtension';"
 			"param2 = '';"
 			"param3 = 'WORLD';"
-			"param4 = None;"
-			"param5 = None;";
+			"param4 = '" + value4 + "';"
+			"param5 = None;"
+			"param6 = None;";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
 		//
 		InitializeSession(
-			6,   // parametersNumber
+			7,   // parametersNumber
 			0,   // inputSchemaColumnsNumber
 			scriptString);
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true, false, true, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
+		vector<bool> isFixedType = { true, false, true, false, true, true, false };
+		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, USHRT_MAX, 5, 5 };
 
 		for(SQLULEN paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
@@ -545,13 +549,17 @@ namespace ExtensionApiTest
 			"" ,
 			// Test CHAR(10) value with string length less than the type allows.
 			//
-			"WORLD"};
+			"WORLD",
+			// Test varchar(max) with string length of 128000.
+			//
+			value4};
 
 		vector<const char*> expectedParamValues = {
 			ExpectedParamValueStrings[0].c_str(),
 			ExpectedParamValueStrings[1].c_str(),
 			ExpectedParamValueStrings[2].c_str(),
 			ExpectedParamValueStrings[3].c_str(),
+			ExpectedParamValueStrings[4].c_str(),
 
 			// Test None returned in a VARCHAR(5) parameter.
 			//
@@ -566,6 +574,7 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[4].length()),
 			SQL_NULL_DATA,
 			SQL_NULL_DATA };
 
@@ -585,7 +594,9 @@ namespace ExtensionApiTest
 		//
 		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
 		string chineseString = string(chineseBytes.data(), 6);
-
+		// Construct value greater than USHRT_MAX to test truncating behavior
+		//
+		string value7 = CreateInputSizeRandomStr(128000); 
 		string scriptString = 
 			"param0 = 'HELLO';"
 			"param1 = 'PyExtension';"
@@ -593,21 +604,22 @@ namespace ExtensionApiTest
 			"param3 = 'WORLD';"
 			"param4 = '" + chineseString + "';"
 			"param5 = None;"
-			"param6 = None;";
+			"param6 = None;"
+			"param7 = '" + value7 + "';";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
 		//
 		InitializeSession(
-			7,   // parametersNumber
+			8,   // parametersNumber
 			0,   // inputSchemaColumnsNumber
 			scriptString);
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true , true, true, false, true};
-		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 5, 5 };
+		vector<bool> isFixedType = { true, false, true , true, true, false, true, false};
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 5, 5, USHRT_MAX };
 
 		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
@@ -631,7 +643,8 @@ namespace ExtensionApiTest
 		ASSERT_EQ(result, SQL_SUCCESS);
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
-
+		wstring wideStrOfValue7 = wstring(value7.begin(), value7.end());
+		const wchar_t* wideCStrOfValue7 = wideStrOfValue7.c_str();
 		vector<const wchar_t*> expectedParamValues = {
 			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
 			//
@@ -650,7 +663,8 @@ namespace ExtensionApiTest
 			//
 			L"你好",
 			nullptr,
-			nullptr};
+			nullptr,
+			wideCStrOfValue7};
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
@@ -659,7 +673,9 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
 			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
 			SQL_NULL_DATA,
-			SQL_NULL_DATA
+			SQL_NULL_DATA,
+			static_cast<SQLINTEGER>(128000 * sizeof(wchar_t)),
+
 		};
 
 		TestGetWStringOutputParam(
@@ -674,27 +690,29 @@ namespace ExtensionApiTest
 	//
 	TEST_F(PythonExtensionApiTests, GetRawOutputParamTest)
 	{
+		string value4 = CreateInputSizeRandomStr(128000);
 		string scriptString = 
 			"param0 = b'HELLO';"
 			"param1 = b'PyExtension';"
 			"param2 = b'';"
 			"param3 = b'WORLD';"
-			"param4 = None;"
-			"param5 = None";
+			"param4 = b'" + value4 + "';"
+			"param5 = None;"
+			"param6 = None";
 
 		// Initialize with a Session that executes the above script
 		// that sets output parameters.
 		//
 		InitializeSession(
-			6,   // parametersNumber
+			7,   // parametersNumber
 			0,   // inputSchemaColumnsNumber
 			scriptString);
 
 		// Note: The behavior of fixed and varying character types is same when it comes to output
 		// parameters. So it doesn't matter if we initialize these output parameters as fixed type.
 		//
-		vector<bool> isFixedType = { true, false, true, true, false, true };
-		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 5, 5 };
+		vector<bool> isFixedType = { true, false, true, true, false, false, true };
+		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, USHRT_MAX, 5, 5 };
 
 		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
@@ -734,7 +752,10 @@ namespace ExtensionApiTest
 			"",
 			// Test BINARY(10) value with string length less than the type allows.
 			//
-			"WORLD" };
+			"WORLD",
+			// Test VARBINARY(max) with string length of 128000.
+			//			
+			value4 };
 
 		vector<SQLCHAR*> expectedParamValues = {
 			static_cast<SQLCHAR*>(
@@ -745,6 +766,8 @@ namespace ExtensionApiTest
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[2].c_str()))),
 			static_cast<SQLCHAR*>(
 				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[3].c_str()))),
+			static_cast<SQLCHAR*>(
+				static_cast<void*>(const_cast<char *>(ExpectedParamValueStrings[4].c_str()))),
 			// Test None returned in a VARCHAR(5) parameter.
 			//
 			nullptr,
@@ -757,6 +780,7 @@ namespace ExtensionApiTest
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
 			static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
+			static_cast<SQLINTEGER>(ExpectedParamValueStrings[4].length()),
 			SQL_NULL_DATA,
 			SQL_NULL_DATA };
 
@@ -964,6 +988,23 @@ namespace ExtensionApiTest
 			&strLen_or_Ind);
 
 		ASSERT_EQ(result, SQL_ERROR);
+	}
+
+	// Name: CreateInputSizeRandomStr
+	//
+	// Description:
+	// Create a string of random characters of the provided size.
+	//
+	string PythonExtensionApiTests::CreateInputSizeRandomStr(int size)
+	{
+		string result;
+		for (int i = 0; i < size; i++)
+		{
+			char randomChar = 'a' + rand()%26;
+			result += randomChar;
+		}
+
+		return result;
 	}
 
 	// Name: TestGetOutputParam

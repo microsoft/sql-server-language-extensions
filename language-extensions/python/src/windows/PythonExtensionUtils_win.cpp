@@ -11,12 +11,16 @@
 //
 //*************************************************************************************************
 
-#include <experimental/filesystem>
+#ifdef _WIN64
+	#include <filesystem>
+#else
+	#include <experimental/filesystem>
+#endif
 
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 const CHAR *GuidFormat = "%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X";
 

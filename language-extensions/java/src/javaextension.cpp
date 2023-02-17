@@ -67,7 +67,7 @@ SQLUSMALLINT GetInterfaceVersion()
 // Name: Init
 //
 // Description:
-//	Initialize the java extension. Until registration, nothing is needed here.
+//	Initialize the java extension.
 //
 // Returns:
 //	SQL_SUCCESS on success, else SQL_ERROR

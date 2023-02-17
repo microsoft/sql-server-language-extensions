@@ -185,13 +185,13 @@ Rcpp::CharacterVector RTypeUtils::CreateCharacterVector(
 			{	
 				// Check if string is a valid UTF8
 				//
-				bool isValidUTF8 = estd::IsValidUTF8(str, strlen);
+				bool isValidUTF8 = estd::IsValidUTF8(const_cast<char*>(str), strlen);
 
 				if(!isValidUTF8)
 				{
 					throw std::invalid_argument("There is a bad UTF-8 character");
 				}
-	
+
 				value = string(str, strlen);
 			}
 
@@ -525,8 +525,13 @@ SQLINTEGER RTypeUtils::InsertStringBasedOnLengthAndRowsNumber(
 {
 	SQLINTEGER lengthOfStringToInsert = unicodeString.length();
 
+	// Truncate size of return data to only be the size allowed,
+	// unless allowed length is equal to or greater than USHRT_MAX.
+	// In this case do not truncate as we have a max sized variable,
+	// ie: varchar(max) 
+	//
 	lengthOfStringToInsert =
-		static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen
+		static_cast<SQLULEN>(lengthOfStringToInsert) <= allowedLen || allowedLen >= USHRT_MAX
 		? lengthOfStringToInsert
 		: static_cast<SQLINTEGER>(allowedLen);
 
@@ -645,8 +650,13 @@ void RTypeUtils::FillDataFromRawVector(
 {
 	LOG("RTypeUtils::FillDataFromRawVector");
 
+	// Truncate size of return data to only be the size allowed,
+	// unless allowed length is equal to or greater than USHRT_MAX.
+	// In thise case do not truncate as we have a max sized variable,
+	// ie: varbinary(max) 
+	//
 	strLenOrInd[0] =
-		static_cast<SQLULEN>(vectorInR.size()) <= allowedLen
+		static_cast<SQLULEN>(vectorInR.size()) <= allowedLen || allowedLen >= USHRT_MAX
 			? vectorInR.size() : static_cast<SQLINTEGER>(allowedLen);
 	data->resize(strLenOrInd[0]);
 	for(SQLINTEGER index = 0 ; index < strLenOrInd[0]; ++index)

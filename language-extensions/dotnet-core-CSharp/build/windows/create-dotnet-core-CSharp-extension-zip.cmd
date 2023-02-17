@@ -6,7 +6,7 @@ SET DOTNET_EXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-CSharp-exte
 
 :LOOP
 
-REM Set cmake config to first arg
+REM Set build config to first arg
 REM
 SET BUILD_CONFIGURATION=%1
 

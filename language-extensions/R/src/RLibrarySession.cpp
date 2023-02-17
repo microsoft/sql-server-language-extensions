@@ -27,12 +27,17 @@
 
 #include "Common.h"
 #include <fstream>
-#include <experimental/filesystem>
 
 #include "RLibrarySession.h"
 
 using namespace std;
-namespace fs = experimental::filesystem;
+#ifdef _WIN64
+	#include <filesystem>
+	namespace fs = filesystem;
+#else
+	#include <experimental/filesystem>
+	namespace fs = experimental::filesystem;
+#endif
 
 const int x_NumberOfMagicBytes = 2;
 const std::byte x_FirstMagicByte = static_cast<std::byte>(0x1f);

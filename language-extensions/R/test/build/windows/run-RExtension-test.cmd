@@ -10,7 +10,7 @@ SET PACKAGES_ROOT=%ENL_ROOT%\packages
 SET GTEST_HOME=%PACKAGES_ROOT%\Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.1.3
 SET GTEST_LIB_PATH=%GTEST_HOME%\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64
 
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.2-win
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.5-win
 
 REM Find R_HOME from user, or set to default.
 REM Error code 203 is ENVVAR_NOT_FOUND.
@@ -31,14 +31,14 @@ REM Set cmake config to first arg
 REM
 SET CMAKE_CONFIGURATION=%1
 
-REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set CMAKE_CONFIGURATION to "release".
+REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set MSVC_BUILD_CONFIGURATION to "release".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
 REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=release)
-IF /I %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=debug) ELSE (SET CMAKE_CONFIGURATION=release)
+IF /I %CMAKE_CONFIGURATION%==debug (SET MSVC_BUILD_CONFIGURATION=debug) ELSE (SET MSVC_BUILD_CONFIGURATION=release)
 
-pushd %REXTENSIONTEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
-copy %REXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%\libRExtension.dll .
+pushd %REXTENSIONTEST_WORKING_DIR%\%MSVC_BUILD_CONFIGURATION%
+copy %REXTENSION_WORKING_DIR%\%MSVC_BUILD_CONFIGURATION%\libRExtension.dll .
 copy %GTEST_LIB_PATH%\debug\gtest.dll .
 SET PATH=%R_HOME%\bin\x64;%PATH%
 RExtension-test.exe --gtest_output=xml:%ENL_ROOT%\out\TestReport_RExtension-test.xml

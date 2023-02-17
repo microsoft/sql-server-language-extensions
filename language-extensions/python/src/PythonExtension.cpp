@@ -14,7 +14,6 @@
 //*************************************************************************************************
 
 #include <boost/python.hpp>
-#include <experimental/filesystem>
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
@@ -30,11 +29,15 @@
 
 using namespace std;
 namespace bp = boost::python;
-namespace fs = std::experimental::filesystem;
 
-#ifndef _WIN64
-#include <dlfcn.h>
-const string x_PythonSoFile = "libpython3.7m.so.1.0";
+#ifdef _WIN64
+	#include <filesystem>
+	namespace fs = std::filesystem;
+#else
+	#include <experimental/filesystem>
+	namespace fs = experimental::filesystem;
+	#include <dlfcn.h>
+	const string x_PythonSoFile = "libpython3.10.so.1.0";
 #endif
 
 static unordered_map<string, PythonSession *> g_pySessionMap;

@@ -12,6 +12,7 @@
 #include "JavaExtensionUtils.h"
 #include "JavaLibraryUtils.h"
 #include "Logger.h"
+#include <sstream>
 #include <cstring> // Needed for memset in Linux
 
 using namespace std;
@@ -156,6 +157,29 @@ string JavaExtensionUtils::CombinePath(const string &basePath, const string &pat
 	return path;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Name: JavaExtensionUtils::SplitString
+//
+// Description:
+//  Split a string based on a delimiter
+//
+// Returns:
+//  vector of strings that represent the tokenized input string
+//
+vector<string> JavaExtensionUtils::SplitString(const string &str, const char delimiter)
+{
+	vector<string> out;
+	stringstream ss(str); // Turn the string into a stream.
+	string split;
+
+	while (getline(ss, split, delimiter))
+	{
+		out.push_back(split);
+	}
+
+	return out;
+}
+
 //----------------------------------------------------------------------------
 // Name: JavaExtensionUtils::CreateJvm
 //
@@ -182,13 +206,21 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 		throw runtime_error("Failed to find function JNI_CreateJVM in JVM library");
 	}
 
+	// Get all Java options from JAVA_OPTS environment variable.
+	// If there are multiple options, they should be separated with spaces.
+	//
+	string javaOpts = GetEnvVariable("JAVA_OPTS");
+	vector<string> splitOptions = SplitString(javaOpts, ' ');
+	int numOptions = splitOptions.size();
+
 	// Prepare loading for the JVM by declaring the initialization
 	// arguments and the invocation options
 	//
 	JavaVMInitArgs vm_args;
-	JavaVMOption options[2] = {0};
+	vector<JavaVMOption> options(numOptions + 2); // +2 to make space for classpath and file encoding
 
-	string optionStringClassPath = "-Djava.class.path=" + GetClassPath();
+	string classPathPrefix = "-Djava.class.path";
+	string optionStringClassPath = classPathPrefix + "=" + GetClassPath();
 	options[0].optionString = const_cast<char*>(optionStringClassPath.c_str());
 	options[0].extraInfo = 0;
 
@@ -196,16 +228,37 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 	// Linux is UTF-8 and for Windows is Cp1252. The following code makes it uniform
 	// across both Windows and Linux by explicitly setting the encoding to UTF-8.
 	//
-	string optionStringFileEncoding = "-Dfile.encoding=UTF-8";
+	string fileEncodingPrefix = "-Dfile.encoding";
+	string optionStringFileEncoding = fileEncodingPrefix + "=UTF-8";
 	options[1].optionString = const_cast<char*>(optionStringFileEncoding.c_str());
 	options[1].extraInfo = 0;
+
+	// Set all the other options
+	//
+	for (int i = 0; i < numOptions; ++i)
+	{
+		int index = i + 2; // +2 to account for the two default options
+		string optionString = splitOptions[i];
+
+		// Throw error if user set java class path or file encoding
+		//
+		if (optionString.compare(0, classPathPrefix.length(), classPathPrefix) == 0 ||
+			optionString.compare(0, fileEncodingPrefix.length(), fileEncodingPrefix) == 0)
+		{
+			throw runtime_error("Cannot add java.class.path or file.encoding as JAVA_OPTS "
+				"because they are preset in the java extension");
+		}
+
+		options[index].optionString = const_cast<char*>(splitOptions[i].c_str());
+		options[index].extraInfo = 0;
+	}
 
 	// We set the Java version we want here and specify the number of options
 	//
 	memset(&vm_args, 0, sizeof(vm_args));
-	vm_args.version = JNI_VERSION_1_8;
-	vm_args.nOptions = 2;
-	vm_args.options = options;
+	vm_args.version = JNI_VERSION_10;
+	vm_args.nOptions = options.size();
+	vm_args.options = options.data();
 	vm_args.ignoreUnrecognized = JNI_FALSE;
 
 	// Load and initialize Java VM and JNI interface

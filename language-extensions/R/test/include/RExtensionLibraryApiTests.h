@@ -115,7 +115,11 @@ namespace ExtensionApiTest
 		// Filesystem path of the source location of the directory containing the
 		// packages we will install.
 		//
-		static std::experimental::filesystem::path sm_packagesSourcePath;
+		#ifdef _WIN64
+			static std::filesystem::path sm_packagesSourcePath;
+		#else
+			static std::experimental::filesystem::path sm_packagesSourcePath;
+		#endif
 
 		// Different prefixes appended to zip file paths based on public or private libraries.
 		//

@@ -21,6 +21,17 @@ This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutoria
 ## Building
 
 ### Windows
+A.	Using the [**restore-packages.cmd**](build/windows/restore-packages.cmd) script
+
+1.	Modify the following as appropriate
+	- `JAVA_VERSION` on line 5 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+	- `DEFAULT_JAVA_HOME` on line 11 in [**build-RExtension.cmd**](build/windows/build-java-extension.cmd)
+
+1.	Run [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+
+1. Continue on **Step 4** below.
+
+B.	Installing needed packages from respective sources.
 
 1. Install [CMake for Windows](https://cmake.org/download/) and Java ([file](https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk) and [instructions](https://docs.azul.com/zulu/zuludocs/ZuluUserGuide/InstallingZulu/InstallWindowsUsingZuluZIPFile.htm))
 
@@ -38,6 +49,15 @@ This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutoria
 		This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ### Linux
+There are two alternatives to building this project.
+
+A.	Using the [**restore-packages.sh**](build/linux/restore-packages.sh) script
+
+1.	Modify `openjdk-17-jdk` on line 14 in [**restore-packages.sh**](build/linux/restore-packages.sh) as appropriate.
+
+1.	Run [**restore-packages.sh**](build/linux/restore-packages.sh)
+
+1. Continue on **Step 3** below.
 
 1. Install [CMake for Linux](https://cmake.org/download/) and [Java](https://docs.azul.com/zulu/zuludocs/ZuluUserGuide/InstallingZulu/InstallOnLinuxUsingAPTRepository.htm)
 
