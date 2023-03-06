@@ -53,10 +53,10 @@ const char JavaExtensionUtils::GetPathSeparator()
 // Name: JavaExtensionUtils::GetPlatformJvmPath
 //
 // Description:
-//  Gets the platform specific path to the jvm.dll with respect to JRE_HOME
+//  Gets the platform specific path to the jvm.dll with respect to JAVA_HOME
 //
 // Returns:
-//  Returns a string to the relative path to the jvm.dll with respect to JRE_HOME
+//  Returns a string to the relative path to the jvm.dll with respect to JAVA_HOME
 //
 const string& JavaExtensionUtils::GetRelativeJvmPath()
 {
@@ -141,7 +141,7 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 	{
 		throw runtime_error(
 				  "Failed to load jvm.dll from path " + jvmPath +
-				  ". Ensure JRE_HOME is set.");
+				  ". Ensure JAVA_HOME is set.");
 	}
 
 	return reinterpret_cast<fn_createJvm>(GetProcAddress(g_jvmDll, "JNI_CreateJavaVM"));

@@ -81,7 +81,7 @@ string JavaExtensionUtils::GetClassPath()
 // Name: JavaExtensionUtils::GetJvmPath
 //
 // Description:
-//  Tries to construct a JVM path from the JRE_HOME enviroment variable
+//  Tries to construct a JVM path from the JAVA_HOME enviroment variable
 //
 // Returns:
 //  String to the full path to the JVM library if valid, else the filename of
@@ -91,21 +91,21 @@ string JavaExtensionUtils::GetJvmPath()
 {
 	string jvmDllPath = "";
 
-	// Get the enviroment variable JRE_HOME
+	// Get the enviroment variable JAVA_HOME
 	//
-	string jreHomeValue = GetEnvVariable("JRE_HOME");
+	string javaHomeValue = GetEnvVariable("JAVA_HOME");
 
 	// If the enviroment variable exists then check if the JVM exists
 	//
-	if (!jreHomeValue.empty())
+	if (!javaHomeValue.empty())
 	{
-		// Combine the well known directory to the JVM library from the JRE_HOME
+		// Combine the well known directory to the JVM library from the JAVA_HOME
 		//
-		jvmDllPath = CombinePath(jreHomeValue, GetRelativeJvmPath());
+		jvmDllPath = CombinePath(javaHomeValue, GetRelativeJvmPath());
 
 		if (!IsValidFile(jvmDllPath))
 		{
-			LOG("Could not find the JVM library from the JRE_HOME path: " + jvmDllPath);
+			LOG("Could not find the JVM library from the JAVA_HOME path: " + jvmDllPath);
 
 			// The full path to the JVM library is not valid, clear the path.
 			//
@@ -115,7 +115,7 @@ string JavaExtensionUtils::GetJvmPath()
 
 	if (jvmDllPath.empty())
 	{
-		// A JVM library to load could not be found based on the JRE_HOME
+		// A JVM library to load could not be found based on the JAVA_HOME
 		// path, try to load the JVM without a path in case it is
 		// added to the global PATH enviroment variable
 		//

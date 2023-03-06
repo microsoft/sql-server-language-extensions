@@ -22,7 +22,7 @@ const char x_LinuxClassPathSeparator = ':';    // CLASSPATH separator on Linux
 const char x_LinuxFilePathSeparator = '/';     // File path separator on Linux
 const string x_LinuxJvmFilename = "libjvm.so"; // Filename of the JVM library on Linux
 
-// Linux specific relative path to the JVM library, based on the standard for the JRE_HOME
+// Linux specific relative path to the JVM library, based on the standard for the JAVA_HOME
 // enviroment variable.
 //
 const string x_LinuxJvmPath = "lib/server/" + x_LinuxJvmFilename;
@@ -58,10 +58,10 @@ const char JavaExtensionUtils::GetPathSeparator()
 //
 // Description:
 //  Gets the platform specific relative path to the JVM library
-//  with respect to JRE_HOME.
+//  with respect to JAVA_HOME.
 //
 // Returns:
-//  Returns a string to the relative path to libjvm.so with respect to JRE_HOME
+//  Returns a string to the relative path to libjvm.so with respect to JAVA_HOME
 //
 const string& JavaExtensionUtils::GetRelativeJvmPath()
 {
@@ -153,7 +153,7 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 	{
 		throw runtime_error(
 				  "Failed to load JVM from path " + jvmPath +
-				  ". Ensure JRE_HOME is set.");
+				  ". Ensure JAVA_HOME is set.");
 	}
 	else
 	{

@@ -66,7 +66,7 @@ private:
 	static std::string GetJvmPath();
 
 	// Constructs the platform specific relative path to the JVM with respect to
-	// the JRE_HOME path
+	// the JAVA_HOME path
 	//
 	static const std::string& GetRelativeJvmPath();
 
