@@ -1,0 +1,4 @@
+[submodule "sql-server-language-extensions"]
+	path = sql-server-language-extensions
+	url = https://github.com/microsoft/sql-server-language-extensions.git
+	branch = main
