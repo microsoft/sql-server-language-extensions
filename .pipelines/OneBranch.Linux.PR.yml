@@ -94,6 +94,12 @@ extends:
               script: $(Build.SourcesDirectory)/sql-server-language-extensions/language-extensions/R/build/linux/restore-packages.sh
               workingDirectory: '$(Build.SourcesDirectory)'
 
+          # Authentication task for the pip client used for installing Python packages.
+          - task: PipAuthenticate@1
+            displayName: 'Authentication for pip client'
+            inputs:
+              artifactFeeds: 'Data-SQL-Language-Extensions'
+
           - task: CmdLine@2
             displayName: 'Restore Python Packages'
             inputs:
