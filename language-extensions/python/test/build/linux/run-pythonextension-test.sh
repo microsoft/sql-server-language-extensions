@@ -22,7 +22,7 @@ function build {
 	
 	# Move the generated libs to configuration folder
 	#
-	cp ${PYTHONEXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libPythonExtension.so.1.1 .
+	cp ${PYTHONEXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION}/libPythonExtension.so.1.2 .
 	cp /usr/src/gtest/*.so .
 	
 	ENL_ROOT=${ENL_ROOT} ./pythonextension-test --gtest_output=xml:${ENL_ROOT}/out/TestReport_PythonExtension-test.xml

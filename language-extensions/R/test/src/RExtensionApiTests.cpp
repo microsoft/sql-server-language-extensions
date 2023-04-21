@@ -37,7 +37,7 @@ using namespace std;
 	const string x_RExtensionLibName = "libRExtension.dll";
 	namespace fs = filesystem;
 #else
-	const string x_RExtensionLibName = "libRExtension.so.1.1";
+	const string x_RExtensionLibName = "libRExtension.so.1.2";
 	namespace fs = experimental::filesystem;
 #endif // _WIN64
 
