@@ -76,7 +76,7 @@ B.	Installing needed packages from respective sources.
 1. Install the [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) and [RInside](https://cran.r-project.org/web/packages/RInside/index.html) packages into this R runtime. These are needed to seamlessly integrate and embed R in C++.
 
 1. Run [**build-RExtension.sh**](./build/linux/build-RExtension.sh) which will generate: \
-		- /PATH/TO/ENLISTMENT/build-output/RExtension/linux/release/libRExtension.so.1.1
+		- /PATH/TO/ENLISTMENT/build-output/RExtension/linux/release/libRExtension.so.1.2
 
 1. Run [**create-R-extension-zip.sh**](./build/linux/create-RExtension-zip.sh) which will generate: \
 		- /PATH/TO/ENLISTMENT/build-output/RExtension/linux/release/packages/R-lang-extension.zip \
