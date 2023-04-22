@@ -51,7 +51,7 @@ function build {
 	# Move the generated libs to configuration folder
 	#
 	mkdir -p ${CMAKE_CONFIGURATION}
-	mv -f libRExtension.so.1.2 ${CMAKE_CONFIGURATION}/
+	mv -f libRExtension.so* ${CMAKE_CONFIGURATION}/
 
 	cd ${CMAKE_CONFIGURATION}/
 	# This will create the RExtension package with unsigned binaries, this is used for local development and non-release builds. Release

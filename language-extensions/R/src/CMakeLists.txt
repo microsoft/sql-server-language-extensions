@@ -3,7 +3,7 @@
 cmake_minimum_required (VERSION 3.5)
 
 set(REXTENSION_VERSION_MAJOR "1")
-set(REXTENSION_VERSION_MINOR "1")
+set(REXTENSION_VERSION_MINOR "2")
 set(REXTENSION_VERSION ${REXTENSION_VERSION_MAJOR}.${REXTENSION_VERSION_MINOR})
 
 # this is what the final library is going to be named
