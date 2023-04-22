@@ -47,7 +47,7 @@ function build {
 	# Move the generated libs to configuration folder
 	#
 	mkdir -p ${CMAKE_CONFIGURATION}
-	mv libPythonExtension.so.1.2 ${CMAKE_CONFIGURATION}/
+	mv libPythonExtension.so* ${CMAKE_CONFIGURATION}/
 
 	cd ${CMAKE_CONFIGURATION}/
 
