@@ -42,7 +42,7 @@ function build {
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#
-	check_exit_code "Success: Built libPythonExtension.so.1.1" "Error: Failed to build python extension"
+	check_exit_code "Success: Built libPythonExtension.so.1.2" "Error: Failed to build python extension"
 
 	# Move the generated libs to configuration folder
 	#
@@ -54,7 +54,7 @@ function build {
 	# This will create the python extension package with unsigned binaries, this is used for local development and non-release builds. release
 	# builds will call create-python-extension-zip.sh after the binaries have been signed and this will be included in the zip
 	#
-	zip ${TARGET}/python-lang-extension libPythonExtension.so.1.1
+	zip ${TARGET}/python-lang-extension libPythonExtension.so.1.2
 
 	check_exit_code "Success: Created python-lang-extension.zip" "Error: Failed to create zip for python extension"
 }

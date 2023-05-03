@@ -62,7 +62,7 @@ B.	Installing needed packages from respective sources.
 1. Modify [**PythonExtensionUtils_linux.cpp**](src/linux/PythonExtensionUtils_linux.cpp). Change the version of python on line 97 to the custom python version.
 
 1. Run [**build-python-extension.sh**](build/linux/build-python-extension.sh) which will generate: \
-		- PATH/TO/ENLISTMENT/build-output/pythonextension/linux/release/libPythonExtension.so.1.1 
+		- PATH/TO/ENLISTMENT/build-output/pythonextension/linux/release/libPythonExtension.so.1.2 
 
 1. Run [**create-python-extension-zip.sh**](build/linux/create-python-extension-zip.sh) which will generate: \
 		- PATH/TO/ENLISTMENT/build-output/pythonextension/linux/release/packages/python-lang-extension.zip \

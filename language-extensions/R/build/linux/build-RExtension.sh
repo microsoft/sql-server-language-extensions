@@ -46,7 +46,7 @@ function build {
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#
-	check_exit_code "Success: Built libRExtension.so.1.1" "Error: Failed to build RExtension"
+	check_exit_code "Success: Built libRExtension.so.1.2" "Error: Failed to build RExtension"
 
 	# Move the generated libs to configuration folder
 	#
@@ -57,7 +57,7 @@ function build {
 	# This will create the RExtension package with unsigned binaries, this is used for local development and non-release builds. Release
 	# builds will call create-RExtension-zip.sh after the binaries have been signed and this will be included in the zip
 	#
-	zip ${TARGET}/R-lang-extension libRExtension.so.1.1
+	zip ${TARGET}/R-lang-extension libRExtension.so.1.2
 
 	check_exit_code "Success: Created R-lang-extension.zip" "Error: Failed to create zip for RExtension"
 }
