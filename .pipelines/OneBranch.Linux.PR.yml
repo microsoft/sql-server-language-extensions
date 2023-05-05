@@ -135,7 +135,7 @@ extends:
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/RExtension/linux'
               Contents: |
-                **/libRExtension.so.1.1
+                **/libRExtension.so.1.2
               TargetFolder: '$(Build.SourcesDirectory)/out/build/out/RExtension'
 
           - task: CmdLine@2
@@ -148,7 +148,7 @@ extends:
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/pythonextension/linux'
               Contents: |
-                **/libPythonExtension.so.1.1
+                **/libPythonExtension.so.1.2
               TargetFolder: '$(Build.SourcesDirectory)/out/build/out/pythonextension'
 
           - task: CmdLine@2
