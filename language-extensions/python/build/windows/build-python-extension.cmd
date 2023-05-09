@@ -11,13 +11,15 @@ SET PYTHONEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\pythonextension\windows
 IF EXIST %PYTHONEXTENSION_WORKING_DIR% (RMDIR /s /q %PYTHONEXTENSION_WORKING_DIR%)
 MKDIR %PYTHONEXTENSION_WORKING_DIR%
 
-SET DEFAULT_BOOST_ROOT=%PACKAGES_ROOT%\External-Boost.master.Boost.1.69.0.1457
-SET DEFAULT_BOOST_PYTHON_ROOT=%DEFAULT_BOOST_ROOT%\windows\lib
-SET DEFAULT_PYTHONHOME=%PACKAGES_ROOT%\Python310
+SET BOOST_VERSION=1.79.0
+SET BOOST_VERSION_IN_UNDERSCORE=1_79_0
+SET DEFAULT_BOOST_ROOT=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
+SET DEFAULT_BOOST_PYTHON_ROOT=%DEFAULT_BOOST_ROOT%\stage\lib
+SET DEFAULT_PYTHONHOME=C:\Python310
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
 REM Find boost, python, and cmake paths from user, or set to default for tests.
-REM 
+REM
 SET ENVVAR_NOT_FOUND=203
 
 IF "%BOOST_ROOT%" == "" (
@@ -120,7 +122,7 @@ REM Copy DLL, LIB, etc files out of debug/debug and release/release into the bui
 REM
 copy %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\* %BUILD_OUTPUT%\
 
-REM This will create the Python extension package with unsigned binaries, this is used for local development and non-release builds. 
+REM This will create the Python extension package with unsigned binaries, this is used for local development and non-release builds.
 REM Release builds will call create-python-extension-zip.cmd after the binaries have been signed and this will be included in the zip
 REM
 IF /I %CMAKE_CONFIGURATION%==debug (
