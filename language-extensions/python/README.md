@@ -12,7 +12,21 @@ Note that the Python Extension released in the current repository works with Pyt
 ## Building
 
 ### Windows
-Installing needed packages from respective sources.
+There are two alternatives to building this project.
+
+A.	Using the [**restore-packages.cmd**](build/windows/restore-packages.cmd) script
+
+1.	Modify the following as appropriate
+	- `PYTHON_VERSION` on line 8 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+	- `BOOST_VERSION` on line 14 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+	- `DEFAULT_PYTHONHOME` on line 18 in [**build-python-extension.cmd**](build/windows/build-python-extension.cmd)
+	- `DEFAULT_BOOST_ROOT` on line 16 in [**build-python-extension.cmd**](build/windows/build-python-extension.cmd)
+
+1.	Run [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+
+1. Continue on **Step 7** below.
+
+B.	Installing needed packages from respective sources.
 
 1. Install [CMake for Windows](https://cmake.org/download/) and [Python](https://www.python.org/downloads/release/python-379/).
 
