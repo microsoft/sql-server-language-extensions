@@ -1,36 +1,32 @@
 # Introduction
-This repo contains 3rd-party language extensions for SQL Server. This repo is built and released via CDPx pipeline and SQL Server consumes the output via a Nuget package.
+This repo contains 3rd-party language extensions for SQL Server. This repo is built and released via Onebranch pipeline and SQL Server consumes the output via a Nuget package.
 
 # Getting Started
 Overview:
-The directory \extension-host\ contains the extension API, while \language-extensions\ contains all of the extensions (e.g. language-extensions\java).
+This repo does not contain any source code but only pipelines. The source code is in the the [open source repository](https://github.com/microsoft/sql-server-language-extensions) where the SQL Server language extensions is hosted. This repo contains the open source repository as a git submodule. The code is tested in the pipeline and in TestShellTests through an artifact.
 
-This repo is a staging area for the [open source repository](https://github.com/microsoft/sql-server-language-extensions) where the SQL Server language extensions will be hosted. The code is tested in the pipeline and in TestShellTests through an artifact.
-
-Whenever there is a new release scheduled in the open source repo, code should be ported from the master branch to the open source branch. **When moving code from master, make sure to change the default build configuration from debug to release.**
-
-Copy the files in the language-extensions folder ONLY to the open source repository, but **DO NOT** copy the restore-packages.cmd/sh files, packages.config files, or the vcxproj files. They are used for internal builds in the Azure Pipeline and may reference internal nugets.
+Whenever there is a new change in the open source repo, this repo needs to update the submodule information to target the newest commit id of the open source repo.
 
 # Build
 Each extension should contain its own building process.
 All the scripts to trigger the build of an extension for a specific platform should be located in its respective build\<platform> folders 
-(e.g. language-extensions\java\build\windows).
+(e.g. sql-server-language-extensions\language-extensions\java\build\windows).
 
 Java Extension:
 There are multiple ways to build the Java Extension.
 
 Prerequisites:
-For the first time building the Java Extension, run \language-extensions\java\build\windows\restore-packages.cmd to download the nuget containing the JDK to build with. Alternatively, if the version of JDK is updated then re-run this command.
+For the first time building the Java Extension, run \sql-server-language-extensions\language-extensions\java\build\windows\restore-packages.cmd to download the nuget containing the JDK to build with. Alternatively, if the version of JDK is updated then re-run this command.
 
-1) For developing open \language-extensions\java\build\windows\javaextension.vcxproj in Visual Studio to modify and/or build. This build will only produce the javaextension.dll
+1) For developing open \sql-server-language-extensions\language-extensions\java\build\windows\javaextension.vcxproj in Visual Studio to modify and/or build. This build will only produce the javaextension.dll
 
-2) Run \language-extensions\java\build\windows\build-java-extension.cmd, this will build everything for the Java Extension (javaextension.dll, mssql-java-lang-extension.jar) and it will create a zip of the java-lang-extension.zip package which contains the javaextension.dll/.pdb for local testing with TestShell.
+2) Run  \sql-server-language-extensions\language-extensions\java\build\windows\build-java-extension.cmd, this will build everything for the Java Extension (javaextension.dll, mssql-java-lang-extension.jar) and it will create a zip of the java-lang-extension.zip package which contains the javaextension.dll/.pdb for local testing with TestShell.
 	-By default build-java-extension.cmd builds debug, to build retail run build-java-extension.cmd -retail.
 
-3) Run \language-extensions\java\build\windows\build-java-package.cmd to build mssql-java-lang-extension.jar
+3) Run  \sql-server-language-extensions\language-extensions\java\build\windows\build-java-package.cmd to build mssql-java-lang-extension.jar
 
 # Test
-Each extension is responsible for its own unit testing, which should be located in its respective test folder. e.g. language-extensions\java\test
+Each extension is responsible for its own unit testing, which should be located in its respective test folder. e.g.  \sql-server-language-extensions\language-extensions\java\test
 
 Currently, there is no local testing for the Java extension in this repo. Full coverage and testing is done via TestShell and SQL labruns.
 For local validation of changes, the recommended practice is to do the following steps:

@@ -113,7 +113,7 @@ extends:
           - task: CmdLine@2
             displayName: 'Restore Python Packages'
             inputs:
-              script: $(Build.SourcesDirectory)\restore-python-packages.cmd
+              script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\python\build\windows\restore-packages.cmd
               workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: CmdLine@2
