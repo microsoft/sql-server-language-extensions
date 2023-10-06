@@ -299,11 +299,17 @@ void JavaExtensionUtils::CleanupJvm()
 	// Destroy the JVM
 	//
 	if (g_jvm != nullptr)
-	{
+	{			
+		LOG("about to call g_jvm->Destroy");
+
 		int rc = g_jvm->DestroyJavaVM();
 		if (rc == 0)
 		{
+			LOG("successfully executed g_jvm->Destroy");
 			g_jvm = nullptr;
+
+			// Call platform specific function to unload JVM library
+			UnloadJvm();
 		}
 		else
 		{
@@ -312,8 +318,10 @@ void JavaExtensionUtils::CleanupJvm()
 			LOG_ERROR(msg);
 		}
 	}
+	else{
+			string msg = "NULL g_jvm!";
 
-	// Call platform specific function to unload JVM library
-	//
-	UnloadJvm();
+			LOG_ERROR(msg);
+	}
+
 }
