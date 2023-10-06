@@ -175,7 +175,16 @@ void JavaExtensionUtils::UnloadJvm()
 	//
 	if (g_jvmLib != nullptr)
 	{
-		dlclose(g_jvmLib);
-		g_jvmLib = nullptr;
+		LOG("about to dlclose g_jvmLib");
+		if (dlclose(g_jvmLib) != 0)
+		{
+			string msg = "Failed to close  JVM.";
+
+			LOG_ERROR(msg);
+		}
+		else{
+			g_jvmLib = nullptr;
+			LOG("SUCCESS dlclose g_jvmLib");
+		}
 	}
 }
