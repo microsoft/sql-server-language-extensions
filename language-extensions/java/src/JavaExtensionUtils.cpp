@@ -256,7 +256,7 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 	// We set the Java version we want here and specify the number of options
 	//
 	memset(&vm_args, 0, sizeof(vm_args));
-	vm_args.version = JNI_VERSION_10;
+	vm_args.version = JNI_VERSION_1_2;
 	vm_args.nOptions = options.size();
 	vm_args.options = options.data();
 	vm_args.ignoreUnrecognized = JNI_FALSE;
