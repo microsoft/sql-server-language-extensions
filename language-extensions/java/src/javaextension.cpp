@@ -579,7 +579,7 @@ SQLRETURN Cleanup()
 
 	// Cleanup JVM
 	//
-	JavaExtensionUtils::CleanupJvm();
+	// JavaExtensionUtils::CleanupJvm();
 
 	return SQL_SUCCESS;
 }
