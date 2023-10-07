@@ -276,13 +276,13 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 		string msg = "JVM load succeeded: Version " + version + ".";
 		LOG(msg);
 
-		jint res = g_jvm->AttachCurrentThread(reinterpret_cast<void**>(&result), NULL);
+		jint res = g_jvm->AttachCurrentThreadAsDaemon(reinterpret_cast<void**>(&result), NULL);
 		if (res != JNI_OK){
-			LOG_ERROR("Unexpected failure to attach current thread to jvm.");
+			LOG_ERROR("Unexpected failure to attach current thread as daemon to jvm.");
 
 		}
 		else{
-			LOG("JVM attached to current thread");
+			LOG("JVM attached to current thread as daemon");
 		}
 	}
 	else
