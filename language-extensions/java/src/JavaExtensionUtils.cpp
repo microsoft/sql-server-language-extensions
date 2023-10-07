@@ -275,6 +275,15 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 
 		string msg = "JVM load succeeded: Version " + version + ".";
 		LOG(msg);
+
+		jint res = g_jvm->AttachCurrentThread((void**)&env, NULL);
+		if (rest != JNI_OK){
+			LOG_ERROR("Unexpected failure to attach current thread to jvm.");
+
+		}
+		else{
+			LOG("JVM attached to current thread");
+		}
 	}
 	else
 	{
@@ -301,6 +310,14 @@ void JavaExtensionUtils::CleanupJvm()
 	if (g_jvm != nullptr)
 	{			
 		LOG("about to call g_jvm->Destroy");
+		int detachRC = g_jvm->DetachCurrentThread();
+		if (detachRC != JNI_OK)
+		{
+			LOG_ERROR("Failed to detach thread from jvm");
+		}
+		else{
+			LOG("successfully executed g_jvm->DetachCurrentThread()");
+		}
 
 		int rc = g_jvm->DestroyJavaVM();
 		if (rc == 0)
