@@ -276,8 +276,8 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 		string msg = "JVM load succeeded: Version " + version + ".";
 		LOG(msg);
 
-		jint res = g_jvm->AttachCurrentThread((void**)&env, NULL);
-		if (rest != JNI_OK){
+		jint res = g_jvm->AttachCurrentThread(reinterpret_cast<void**>(&result), NULL);
+		if (res != JNI_OK){
 			LOG_ERROR("Unexpected failure to attach current thread to jvm.");
 
 		}
