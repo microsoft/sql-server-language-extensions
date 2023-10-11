@@ -201,7 +201,7 @@ set @regexExpr = N'[Cc]#'
 
 EXEC sp_execute_external_script
   @language = N'Dotnet'
-, @script = N'regex;UserExecutor.CSharpRegexExecutor'
+, @script = N'regex.dll;UserExecutor.CSharpRegexExecutor'
 , @input_data_1 = N'SELECT * FROM testdata'
 , @params = N'@regexExpr varchar(200) OUTPUT, @rowsCount int OUTPUT'
 , @regexExpr =  @regexExpr OUTPUT
