@@ -80,7 +80,16 @@ ENL_ROOT=${SCRIPTDIR}/../../../..
 #
 JAVAEXTENSION_HOME=${ENL_ROOT}/language-extensions/java
 JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/java-extension/linux
-DEFAULT_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+JAVA_VERSION="11.0.20.1"
+JVM_DIR="/usr/lib/jvm"
+
+JAVA_DIR=$(find "$JVM_DIR" -maxdepth 1 -type d -name "*${JAVA_VERSION}*" -exec basename {} \;)
+if [ -z "$JAVA_DIR" ]; then
+    echo "Error: Could not find extracted folder"
+    exit 1
+fi
+
+DEFAULT_JAVA_HOME="$JVM_DIR/$JAVA_DIR"
 
 # Find JAVA_HOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
