@@ -179,7 +179,7 @@ To execute .NET C# code, the user SID [S-1-15-2-1](https://docs.microsoft.com/en
 Create an external library for the RegEx code.
 
 ```sql
-CREATE EXTERNAL LIBRARY regex
+CREATE EXTERNAL LIBRARY [regex.dll]
 FROM (CONTENT = N'<path>\RegexSample.dll')
 WITH (LANGUAGE = 'Dotnet');
 GO
@@ -201,7 +201,7 @@ set @regexExpr = N'[Cc]#'
 
 EXEC sp_execute_external_script
   @language = N'Dotnet'
-, @script = N'regex;UserExecutor.CSharpRegexExecutor'
+, @script = N'regex.dll;UserExecutor.CSharpRegexExecutor'
 , @input_data_1 = N'SELECT * FROM testdata'
 , @params = N'@regexExpr varchar(200) OUTPUT, @rowsCount int OUTPUT'
 , @regexExpr =  @regexExpr OUTPUT
