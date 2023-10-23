@@ -300,14 +300,17 @@ void JavaExtensionUtils::CleanupJvm()
 	//
 	if (g_jvm != nullptr)
 	{
+		
 		LOG("Entering jvm->DetachCurrentThread()");
-		int status = g_jvm->DetachCurrentThread();
-		LOG("detach status: " + to_string(status));
+		JNIEnv *env; // Pointer to native interface
+		int status = g_jvm->AttachCurrentThreadAsDaemon((void **)&env, NULL); // Attach current thread as daemon
+		LOG("attach as daemon status: " + to_string(status));
 		if (status != JNI_OK)
 		{
-			string msg = "Failed to detach curr thread from JVM. JNI error code: " + to_string(status) + ".";
+			string msg = "Failed to attach current thread as daemon: " + to_string(status) + ".";
 			LOG_ERROR(msg);
 		}
+		
 
 		LOG("Entering jvm->DestroyJavaVM()");
 		int rc = g_jvm->DestroyJavaVM();
