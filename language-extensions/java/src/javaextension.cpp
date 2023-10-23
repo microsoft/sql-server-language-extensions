@@ -576,7 +576,7 @@ SQLRETURN Cleanup()
 {
 	string msg = "Calling cleanup";
 	LOG(msg);
-
+	
 	// Cleanup JVM
 	//
 	JavaExtensionUtils::CleanupJvm();

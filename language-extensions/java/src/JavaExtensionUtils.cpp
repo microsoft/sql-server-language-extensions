@@ -300,17 +300,20 @@ void JavaExtensionUtils::CleanupJvm()
 	//
 	if (g_jvm != nullptr)
 	{
+		LOG("Entering jvm->DetachCurrentThread()");
 		int status = g_jvm->DetachCurrentThread();
+		LOG("detach status: " + to_string(status));
 		if (status != JNI_OK)
 		{
 			string msg = "Failed to detach curr thread from JVM. JNI error code: " + to_string(status) + ".";
 			LOG_ERROR(msg);
-
 		}
-		
+
+		LOG("Entering jvm->DestroyJavaVM()");
 		int rc = g_jvm->DestroyJavaVM();
 		if (rc == 0)
 		{
+			LOG("Successful call to jvm->DestroyJavaVM()");
 			g_jvm = nullptr;
 		}
 		else

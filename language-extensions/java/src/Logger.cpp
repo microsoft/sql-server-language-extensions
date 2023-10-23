@@ -58,6 +58,6 @@ void Logger::LogJavaException(const string &exceptionMsg)
 void Logger::Log(const string &msg)
 {
 #ifdef DEBUG
-	cout << GetCurrentTimestamp() << msg << endl;
+	cout << GetCurrentTimestamp() << std::this_thread::get_id() << msg << endl;
 #endif
 }
