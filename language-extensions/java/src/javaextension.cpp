@@ -578,7 +578,7 @@ SQLRETURN Cleanup()
 	LOG(msg);
 	
 	LOG("Cleaning up global jni_env ref.");
-	delete g_env;
+	//delete g_env;
 	g_env = nullptr;
 	// Cleanup JVM
 	//
