@@ -179,7 +179,7 @@ SQLRETURN InitSession(
 	catch (exception &ex)
 	{
 		result = SQL_ERROR;
-
+		LOG_ERROR("General Exception encountered in function InitSession()");
 		LOG_ERROR(ex.what());
 	}
 	catch (...)
@@ -577,6 +577,9 @@ SQLRETURN Cleanup()
 	string msg = "Calling cleanup";
 	LOG(msg);
 	
+	LOG("Cleaning up global jni_env ref.");
+	delete g_env;
+	g_env = nullptr;
 	// Cleanup JVM
 	//
 	JavaExtensionUtils::CleanupJvm();
