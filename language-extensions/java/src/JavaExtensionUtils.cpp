@@ -256,7 +256,7 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 	// We set the Java version we want here and specify the number of options
 	//
 	memset(&vm_args, 0, sizeof(vm_args));
-	vm_args.version = JNI_VERSION_1_6;
+	vm_args.version = JNI_VERSION_1_8;
 	vm_args.nOptions = options.size();
 	vm_args.options = options.data();
 	vm_args.ignoreUnrecognized = JNI_FALSE;
@@ -300,7 +300,7 @@ void JavaExtensionUtils::CleanupJvm()
 	//
 	if (g_jvm != nullptr)
 	{
-		
+		/*
 		LOG("Entering jvm->DetachCurrentThread()");
 		JNIEnv *env; // Pointer to native interface
 		int status = g_jvm->AttachCurrentThreadAsDaemon((void **)&env, NULL); // Attach current thread as daemon
@@ -310,7 +310,7 @@ void JavaExtensionUtils::CleanupJvm()
 			string msg = "Failed to attach current thread as daemon: " + to_string(status) + ".";
 			LOG_ERROR(msg);
 		}
-		
+		*/
 
 		LOG("Entering jvm->DestroyJavaVM()");
 		int rc = g_jvm->DestroyJavaVM();
