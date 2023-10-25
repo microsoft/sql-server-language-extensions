@@ -578,7 +578,7 @@ SQLRETURN Cleanup()
 {
 	string msg = "Calling cleanup";
 	LOG(msg);
-	std::this_thread::sleep_for (std::chrono::seconds(30));
+	//std::this_thread::sleep_for (std::chrono::seconds(30));
 	LOG("Cleaning up global jni_env ref.");
 	//delete g_env;
 	g_env = nullptr;
