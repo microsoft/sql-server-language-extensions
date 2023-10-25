@@ -8,7 +8,7 @@ SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\java-extension\windows
 SET JAVAEXTENSION_HOME=%ENL_ROOT%\language-extensions\java
 
 SET DEFAULT_CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
-SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\jdk-17.0.5+8
+SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\jdk-17.0.8.1
 
 REM Find JAVA_HOME and CMAKE_ROOT from user, or set to default for tests.
 REM Error code 203 is ENVVAR_NOT_FOUND.

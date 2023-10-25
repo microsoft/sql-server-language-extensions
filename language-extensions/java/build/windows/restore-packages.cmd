@@ -2,7 +2,7 @@ SET ENL_ROOT=%~dp0..\..\..\..
 CALL %ENL_ROOT%\restore-packages.cmd
 
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET JAVA_VERSION=17.0.5
+SET JAVA_VERSION=17.0.8.1
 
 REM Download and install JAVA
 REM
