@@ -66,8 +66,8 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -L${OUTPUT_DIRECTORY}/lib -L${LIBS} -Wl,-rpath,${JRE_ROOT}:/opt/mssql-extensibility/lib")
 	set(USR_LIB_PATH "/usr/local/lib")
 	
-	find_library(CXX_LIB c++ ${USR_LIB_PATH})
-	find_library(ABI_LIB c++abi ${USR_LIB_PATH})
+	find_library(CXX_LIB c++)
+	find_library(ABI_LIB c++abi)
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	
 	target_link_libraries(JavaExtension ${CXX_LIB} ${ABI_LIB} ${DL_LIB})
