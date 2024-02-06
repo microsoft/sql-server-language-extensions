@@ -21,7 +21,7 @@ IF "%R_HOME%" == "" (
 	REM
 	SET R_HOME=%DEFAULT_R_HOME%
 	MKDIR %DEFAULT_R_HOME%
-	powershell -Command "Invoke-WebRequest https://cran.microsoft.com/bin/windows/base/old/%R_VERSION%/%R_INSTALLER%  -OutFile %DEFAULT_R_HOME%\%R_INSTALLER%"
+	powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/base/old/%R_VERSION%/%R_INSTALLER%  -OutFile %DEFAULT_R_HOME%\%R_INSTALLER%"
 	CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download R-%R_VERSION%." || EXIT /b %ERRORLEVEL%
 	%DEFAULT_R_HOME%\%R_INSTALLER% /VERYSILENT /DIR=%DEFAULT_R_HOME%
 	CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install R-%R_VERSION%." || EXIT /b %ERRORLEVEL%
@@ -38,9 +38,9 @@ REM Get RTools35 for mingw32-make and rtools40 for g++ v8.3.0 that works with C+
 REM
 SET RTOOLS_HOME=%PACKAGES_ROOT%\Rtools
 MKDIR %RTOOLS_HOME%
-powershell -Command "Invoke-WebRequest https://cran.microsoft.com/bin/windows/Rtools/Rtools35.exe -OutFile %RTOOLS_HOME%\Rtools35.exe"
+powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/Rtools35.exe -OutFile %RTOOLS_HOME%\Rtools35.exe"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools3.5." || EXIT /b %ERRORLEVEL%
-powershell -Command "Invoke-WebRequest https://cran.microsoft.com/bin/windows/Rtools/rtools40-x86_64.exe -OutFile %RTOOLS_HOME%\rtools40.exe"
+powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/rtools40-x86_64.exe -OutFile %RTOOLS_HOME%\rtools40.exe"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools4.0." || EXIT /b %ERRORLEVEL%
 
 REM Install RTools
