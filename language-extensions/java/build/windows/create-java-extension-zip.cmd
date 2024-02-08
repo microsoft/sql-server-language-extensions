@@ -20,11 +20,12 @@ SET OUTPUT_JAR="%ENL_ROOT%\build-output\java-extension\target\%BUILD_CONFIGURATI
 
 mkdir %BUILD_OUTPUT%\packages
 
+REM Set common files to be included in the zip
+SET INCLUDE_FILES=%BUILD_OUTPUT%\javaextension.dll, %OUTPUT_JAR%
+
 REM Check if BUILD_CONFIGURATION is debug, then include javaextension.pdb in the zip
 IF /I "%BUILD_CONFIGURATION%"=="debug" (
-    SET INCLUDE_FILES=%BUILD_OUTPUT%\javaextension.dll, %OUTPUT_JAR%, %BUILD_OUTPUT%\javaextension.pdb
-) ELSE (
-    SET INCLUDE_FILES=%BUILD_OUTPUT%\javaextension.dll, %OUTPUT_JAR%
+    SET INCLUDE_FILES=%INCLUDE_FILES%, %BUILD_OUTPUT%\javaextension.pdb
 )
 
 powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Path %INCLUDE_FILES% -DestinationPath %BUILD_OUTPUT%\packages\java-lang-extension.zip -Force"
