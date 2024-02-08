@@ -19,7 +19,16 @@ SET BUILD_OUTPUT=%ENL_ROOT%\build-output\java-extension\windows\%BUILD_CONFIGURA
 SET OUTPUT_JAR="%ENL_ROOT%\build-output\java-extension\target\%BUILD_CONFIGURATION%\mssql-java-lang-extension.jar"
 
 mkdir %BUILD_OUTPUT%\packages
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Path %BUILD_OUTPUT%\javaextension.dll, %OUTPUT_JAR% -DestinationPath %BUILD_OUTPUT%\packages\java-lang-extension.zip -Force"
+
+REM Set common files to be included in the zip
+SET INCLUDE_FILES=%BUILD_OUTPUT%\javaextension.dll, %OUTPUT_JAR%
+
+REM Check if BUILD_CONFIGURATION is debug, then include javaextension.pdb in the zip
+IF /I "%BUILD_CONFIGURATION%"=="debug" (
+    SET INCLUDE_FILES=%INCLUDE_FILES%, %BUILD_OUTPUT%\javaextension.pdb
+)
+
+powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Path %INCLUDE_FILES% -DestinationPath %BUILD_OUTPUT%\packages\java-lang-extension.zip -Force"
 CALL :CHECK_BUILD_ERROR %ERRORLEVEL% %BUILD_CONFIGURATION%
 
 REM Advance arg passed to create-java-extension.cmd
@@ -33,9 +42,9 @@ IF NOT "%~1"=="" GOTO LOOP
 EXIT /b %ERRORLEVEL%
 
 :CHECK_BUILD_ERROR
-	IF %1 == 0 (
-		ECHO Success: Created zip for %2 config
-	) ELSE (
-		ECHO Error: Failed to create zip for %2 config
-		EXIT /b %1
-	)
+    IF %1 == 0 (
+        ECHO Success: Created zip for %2 config
+    ) ELSE (
+        ECHO Error: Failed to create zip for %2 config
+        EXIT /b %1
+    )

@@ -19,7 +19,14 @@ SET BUILD_OUTPUT=%ENL_ROOT%\build-output\pythonextension\windows\%BUILD_CONFIGUR
 
 mkdir %BUILD_OUTPUT%\packages
 
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Path %BUILD_OUTPUT%\pythonextension.dll -DestinationPath %BUILD_OUTPUT%\packages\python-lang-extension.zip -Force"
+REM Check if BUILD_CONFIGURATION is debug, then include pythonextension.pdb in the zip
+IF /I "%BUILD_CONFIGURATION%"=="debug" (
+    SET INCLUDE_FILES=%BUILD_OUTPUT%\pythonextension.dll, %BUILD_OUTPUT%\pythonextension.pdb
+) ELSE (
+    SET INCLUDE_FILES=%BUILD_OUTPUT%\pythonextension.dll
+)
+
+powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Compress-Archive -Path %INCLUDE_FILES% -DestinationPath %BUILD_OUTPUT%\packages\python-lang-extension.zip -Force"
 
 CALL :CHECK_BUILD_ERROR %ERRORLEVEL% %BUILD_CONFIGURATION%
 
