@@ -128,6 +128,46 @@ extends:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\java\build\windows\build-java-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
 
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign java extension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '170'
+              files_to_sign: 'mssql-java-lang-extension.jar' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\debug'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign java extension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '135020002'
+              files_to_sign: 'javaextension.dll' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\debug'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign java extension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '170'
+              files_to_sign: 'mssql-java-lang-extension.jar' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\release'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign java extension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '135020002'
+              files_to_sign: 'javaextension.dll' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
+
           - task: CopyFiles@2
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
@@ -139,6 +179,26 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\R\build\windows\build-RExtension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
+          
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign RExtension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '135020002'
+              files_to_sign: 'libRExtension.dll' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\debug'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign RExtension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '135020002'
+              files_to_sign: 'libRExtension.dll' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\release'
 
           - task: CopyFiles@2
             inputs:
@@ -151,6 +211,26 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\python\build\windows\build-python-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign python extension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '135020002'
+              files_to_sign: 'pythonextension.dll' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\debug'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign python extension'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: ''
+              cp_code: '135020002'
+              files_to_sign: 'pythonextension.dll' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\release'
 
           - task: CopyFiles@2
             inputs:
@@ -387,6 +467,26 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\build\windows\build-dotnet-core-CSharp-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign CSharp extension - debug'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: 'external_distribution'
+              # cp_code: '135020002'
+              files_to_sign: '*.dll;Microsoft.SqlServer.CSharpExtension.runtimeconfig.json;Microsoft.SqlServer.CSharpExtension.deps.json' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\debug'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign CSharp extension - release'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: 'external_distribution'
+              # cp_code: '135020002'
+              files_to_sign: '*.dll;Microsoft.SqlServer.CSharpExtension.runtimeconfig.json;Microsoft.SqlServer.CSharpExtension.deps.json' 
+              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\release'
 
           - task: CopyFiles@2
             inputs:
