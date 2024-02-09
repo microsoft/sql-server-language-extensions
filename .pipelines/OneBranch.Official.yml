@@ -128,76 +128,6 @@ extends:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\java\build\windows\build-java-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
 
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign java extension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '170'
-              files_to_sign: 'mssql-java-lang-extension.jar' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\debug'
-              Contents: 'mssql-java-lang-extension.jar'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign java extension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '135020002'
-              files_to_sign: 'javaextension.dll' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\debug'
-              Contents: 'javaextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\debug'
-              Contents: 'javaextension.pdb'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug\symbols'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign java extension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '170'
-              files_to_sign: 'mssql-java-lang-extension.jar' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\release'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\release'
-              Contents: 'mssql-java-lang-extension.jar'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign java extension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '135020002'
-              files_to_sign: 'javaextension.dll' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
-              Contents: 'javaextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
-              
           - task: CopyFiles@2
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
@@ -210,44 +140,6 @@ extends:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\R\build\windows\build-RExtension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
 
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign RExtension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '135020002'
-              files_to_sign: 'libRExtension.dll' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\debug'
-              Contents: 'libRExtension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\debug'
-              Contents: 'libRExtension.pdb'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\debug\symbols'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign RExtension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '135020002'
-              files_to_sign: 'libRExtension.dll' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\release'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\release'
-              Contents: 'libRExtension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\release'
-
           - task: CopyFiles@2
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\release'
@@ -259,44 +151,6 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\python\build\windows\build-python-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign python extension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '135020002'
-              files_to_sign: 'pythonextension.dll' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\debug'
-              Contents: 'pythonextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\debug'
-              Contents: 'pythonextension.pdb'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\debug\symbols'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign python extension'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: ''
-              cp_code: '135020002'
-              files_to_sign: 'pythonextension.dll' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\release'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\release'
-              Contents: 'pythonextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\release'
 
           - task: CopyFiles@2
             inputs:
@@ -533,50 +387,6 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\build\windows\build-dotnet-core-CSharp-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign CSharp extension - debug'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: 'external_distribution'
-              # cp_code: '135020002'
-              files_to_sign: '*.dll;Microsoft.SqlServer.CSharpExtension.runtimeconfig.json;Microsoft.SqlServer.CSharpExtension.deps.json' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\debug'
-              Contents: |
-                *.dll
-                *.json
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\debug'
-              Contents: |
-                *.pdb
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug\symbols'
-
-          - task: onebranch.pipeline.signing@1
-            displayName: 'Sign CSharp extension - release'
-            inputs:
-              command: 'sign'
-              signing_environment: 'azure-ado'
-              signing_profile: 'external_distribution'
-              # cp_code: '135020002'
-              files_to_sign: '*.dll;Microsoft.SqlServer.CSharpExtension.runtimeconfig.json;Microsoft.SqlServer.CSharpExtension.deps.json' 
-              search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\release'
-
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\release'
-              Contents: |
-                *.dll
-                *.json
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\release'
 
           - task: CopyFiles@2
             inputs:

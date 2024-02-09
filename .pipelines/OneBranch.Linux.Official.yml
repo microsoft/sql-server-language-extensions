@@ -121,38 +121,17 @@ extends:
               script: $(Build.SourcesDirectory)/sql-server-language-extensions/language-extensions/java/build/linux/build-java-extension.sh debug release 
               workingDirectory: '$(Build.SourcesDirectory)'
 
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/java-extension/linux'
-              Contents: |
-                **/libJavaExtension.so.1.0
-              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/java-extension'
-
           - task: CmdLine@2
             displayName: 'Build RExtension'
             inputs:
               script: $(Build.SourcesDirectory)/sql-server-language-extensions/language-extensions/R/build/linux/build-RExtension.sh debug release 
               workingDirectory: '$(Build.SourcesDirectory)'
 
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/RExtension/linux'
-              Contents: |
-                **/libRExtension.so.1.2
-              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/RExtension'
-
           - task: CmdLine@2
             displayName: 'Build Python Extension'
             inputs:
               script: $(Build.SourcesDirectory)/sql-server-language-extensions/language-extensions/python/build/linux/build-python-extension.sh debug release 
               workingDirectory: '$(Build.SourcesDirectory)'
-
-          - task: CopyFiles@2
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/pythonextension/linux'
-              Contents: |
-                **/libPythonExtension.so.1.2
-              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/pythonextension'
 
           - task: CmdLine@2
             displayName: 'Build RExtension test'

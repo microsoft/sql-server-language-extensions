@@ -127,41 +127,6 @@ extends:
               workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: CopyFiles@2
-            displayName: 'Copy javaextension SDK(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\debug'
-              Contents: 'mssql-java-lang-extension.jar'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
-
-          - task: CopyFiles@2
-            displayName: 'Copy javaextension(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\debug'
-              Contents: 'javaextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
-
-          - task: CopyFiles@2
-            displayName: 'Copy javaextension symbols(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\debug'
-              Contents: 'javaextension.pdb'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug\symbols'
-
-          - task: CopyFiles@2
-            displayName: 'Copy javaextension SDK(release)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\release'
-              Contents: 'mssql-java-lang-extension.jar'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
-
-          - task: CopyFiles@2
-            displayName: 'Copy javaextension(release)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
-              Contents: 'javaextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
-              
-          - task: CopyFiles@2
             displayName: 'Copy javaextension symbols(release)'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\windows\release'
@@ -175,27 +140,6 @@ extends:
               workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: CopyFiles@2
-            displayName: 'Copy RExtension(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\debug'
-              Contents: 'libRExtension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\debug'
-
-          - task: CopyFiles@2
-            displayName: 'Copy RExtension symbols(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\debug'
-              Contents: 'libRExtension.pdb'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\debug\symbols'
-
-          - task: CopyFiles@2
-            displayName: 'Copy RExtension(release)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\release'
-              Contents: 'libRExtension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\RExtension\release'
-
-          - task: CopyFiles@2
             displayName: 'Copy RExtension symbols(release)'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\RExtension\windows\release'
@@ -207,27 +151,6 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\python\build\windows\build-python-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
-
-          - task: CopyFiles@2
-            displayName: 'Copy pythonextension(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\debug'
-              Contents: 'pythonextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\debug'
-
-          - task: CopyFiles@2
-            displayName: 'Copy pythonextension symbols(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\debug'
-              Contents: 'pythonextension.pdb'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\debug\symbols'
-
-          - task: CopyFiles@2
-            displayName: 'Copy pythonextension(release)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\pythonextension\windows\release'
-              Contents: 'pythonextension.dll'
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\pythonextension\release'
 
           - task: CopyFiles@2
             displayName: 'Copy pythonextension symbols(release)'
@@ -436,32 +359,6 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\build\windows\build-dotnet-core-CSharp-extension.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
-
-          - task: CopyFiles@2
-            displayName: 'Copy CSharp Extension(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\debug'
-              Contents: |
-                *.dll
-                *.json
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug'
-
-          - task: CopyFiles@2
-            displayName: 'Copy CSharp Extension symbols(debug)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\debug'
-              Contents: |
-                *.pdb
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\debug\symbols'
-
-          - task: CopyFiles@2
-            displayName: 'Copy CSharp Extension(release)'
-            inputs:
-              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\dotnet-core-CSharp-extension\windows\release'
-              Contents: |
-                *.dll
-                *.json
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\dotnet-core-CSharp-extension\release'
 
           - task: CopyFiles@2
             displayName: 'Copy CSharp Extension symbols(release)'
