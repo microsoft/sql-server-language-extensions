@@ -19,7 +19,7 @@ function build {
 	#
 	TARGET=${ENL_ROOT}/build-output/java-extension/target/${CMAKE_CONFIGURATION}
 	TARGET_CLASSES=${TARGET}/classes
-	OUTPUT_JAR=mssql-java-lang-extension.jar
+	OUTPUT_JAR=mssql-java-lang-extension-linux.jar
 
 	# Create the output directories
 	#
@@ -32,7 +32,7 @@ function build {
 	ls -d "$PWD"/*.java > ${TARGET}/sources.txt
 	${JAVA_HOME}/bin/javac  -d ${TARGET_CLASSES} @${TARGET}/sources.txt
 
-	# Create the mssql-java-lang-extension.jar file
+	# Create the mssql-java-lang-extension-linux.jar file
 	#
 	${JAVA_HOME}/bin/jar cvf ${TARGET}/${OUTPUT_JAR} -C ${TARGET_CLASSES} .
 
@@ -80,7 +80,7 @@ ENL_ROOT=${SCRIPTDIR}/../../../..
 #
 JAVAEXTENSION_HOME=${ENL_ROOT}/language-extensions/java
 JAVAEXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/java-extension/linux
-DEFAULT_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+DEFAULT_JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 # Find JAVA_HOME from user, or set to default for tests.
 # Error code 1 is generic bash error.

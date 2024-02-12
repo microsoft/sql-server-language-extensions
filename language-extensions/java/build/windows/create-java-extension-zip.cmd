@@ -16,12 +16,11 @@ IF NOT DEFINED BUILD_CONFIGURATION (SET BUILD_CONFIGURATION=release)
 IF /I NOT %BUILD_CONFIGURATION%==debug (SET BUILD_CONFIGURATION=release)
 
 SET BUILD_OUTPUT=%ENL_ROOT%\build-output\java-extension\windows\%BUILD_CONFIGURATION%
-SET OUTPUT_JAR="%ENL_ROOT%\build-output\java-extension\target\%BUILD_CONFIGURATION%\mssql-java-lang-extension.jar"
 
 mkdir %BUILD_OUTPUT%\packages
 
 REM Set common files to be included in the zip
-SET INCLUDE_FILES=%BUILD_OUTPUT%\javaextension.dll, %OUTPUT_JAR%
+SET INCLUDE_FILES=%BUILD_OUTPUT%\javaextension.dll
 
 REM Check if BUILD_CONFIGURATION is debug, then include javaextension.pdb in the zip
 IF /I "%BUILD_CONFIGURATION%"=="debug" (
