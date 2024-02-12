@@ -65,7 +65,7 @@ A.	Using the [**restore-packages.sh**](build/linux/restore-packages.sh) script
 
 1. Run [**build-java-extension.sh**](build/linux/build-java-extension.sh) which will generate two main files: \
 		- PATH/TO/ENLISTMENT/build-output/java-extension/linux/release/libJavaExtension.so.1.0 \
-		- PATH/TO/ENLISTMENT/build-output/java-extension/target/release/mssql-java-lang-extension.jar
+		- PATH/TO/ENLISTMENT/build-output/java-extension/target/release/mssql-java-lang-extension-linux.jar
 
 1. Run [**create-java-extension-zip.sh**](build/linux/create-java-extension-zip.sh) which will generate: \
 		- PATH/TO/ENLISTMENT/build-output/java-extension/linux/release/packages/java-lang-extension.zip \
