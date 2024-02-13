@@ -138,6 +138,13 @@ extends:
               files_to_sign: 'mssql-java-lang-extension.jar' 
               search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\debug'
 
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension SDK(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\debug'
+              Contents: 'mssql-java-lang-extension.jar'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\debug'
+
           - task: onebranch.pipeline.signing@1
             displayName: 'Sign java extension'
             inputs:
@@ -157,6 +164,13 @@ extends:
               cp_code: '170'
               files_to_sign: 'mssql-java-lang-extension.jar' 
               search_root: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension SDK(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\sql-server-language-extensions\build-output\java-extension\target\release'
+              Contents: 'mssql-java-lang-extension.jar'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\java-extension\release'
 
           - task: onebranch.pipeline.signing@1
             displayName: 'Sign java extension'

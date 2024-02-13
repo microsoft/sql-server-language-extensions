@@ -121,6 +121,20 @@ extends:
               script: $(Build.SourcesDirectory)/sql-server-language-extensions/language-extensions/java/build/linux/build-java-extension.sh debug release 
               workingDirectory: '$(Build.SourcesDirectory)'
 
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension SDK(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/java-extension/target/debug'
+              Contents: 'mssql-java-lang-extension-linux.jar'
+              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/java-extension/debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy javaextension SDK(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/sql-server-language-extensions/build-output/java-extension/target/release'
+              Contents: 'mssql-java-lang-extension-linux.jar'
+              TargetFolder: '$(Build.SourcesDirectory)/out/build/out/java-extension/release'
+
           - task: CmdLine@2
             displayName: 'Build RExtension'
             inputs:
