@@ -43,7 +43,7 @@ extends:
 
     globalSdl: # https://aka.ms/obpipelines/sdl
       tsa:
-       enabled: false # SDL results of non-official builds aren't uploaded to TSA by default.
+       enabled: true # OneBranch publishes all sdl results to TSA.
       # credscan:
       #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
       policheck:

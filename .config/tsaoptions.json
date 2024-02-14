@@ -1,0 +1,11 @@
+{
+   "instanceUrl"        :  "https://msdata.visualstudio.com",
+   "projectName"        :  "Database Systems",
+   "areaPath"           :  "Database Systems\\SQL Server\\Extensibility",
+   "iterationPath"      :  "Database Systems\\Azure Semesters",
+   "notificationAliases":  [
+                             "monamaki@microsoft.com",
+                             "anmunde@microsoft.com",
+                             "extclrcommitters@service.microsoft.com"
+                           ]
+ }

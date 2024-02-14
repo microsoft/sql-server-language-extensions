@@ -49,7 +49,7 @@ extends:
       enabled: true
     globalSdl: # https://aka.ms/obpipelines/sdl
       tsa:
-        enabled: false # onebranch publish all sdl results to TSA. If TSA is disabled all SDL tools will forced into 'break' build mode.
+        enabled: true # OneBranch publishes all sdl results to TSA.
       # credscan:
       #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
       binskim:
