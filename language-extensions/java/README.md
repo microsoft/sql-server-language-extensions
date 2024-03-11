@@ -3,13 +3,24 @@
 ## Getting Started
 Language Extensions is a feature of SQL Server used for executing external code. The relational data can be used in the external code using the extensibility framework.
 
-For more information about SQL Server Language Extensions, refer to this [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sql-server-ver15).
+For more information about SQL Server Language Extensions on Microsoft Learn, refer to this [article](https://docs.microsoft.com/sql/language-extensions/language-extensions-overview).
 
-The Java extension version in this repository is compatible with SQL Server 2019 CU3 onwards. 
+## Compatibility Matrix
 
-This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension for SQL Server. Sample code files for the tutorial can also be found under samples in this repository. [Sample code files](./samples/regex) are also available in this repository.
+The Java extension version in this repository is compatible with the following versions of SQL: 
 
+| SQL Server Version            | Java Language Extension Support |
+|-------------------------------|---------------------------------|
+| SQL Server 2019 (GDR - CU2)   | :x:                             |
+| SQL Server 2019 (CU3 and onwards) | :white_check_mark:              |
+| (Azure) SQL Managed Instance  | :white_check_mark:              |
+| SQL Server 2022               | :white_check_mark:              |
 
+## What you will achieve by the end of this tutorial
+
+This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension for SQL Server on both Windows and Linux.
+
+Sample code files for the tutorial can also be found under samples in this repository. [Sample code files](./samples/regex) are also available in this repository.
 
 ## Things to Know
 
@@ -49,29 +60,63 @@ B.	Installing needed packages from respective sources.
 		This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ### Linux
-There are two alternatives to building this project.
 
-A.	Using the [**restore-packages.sh**](build/linux/restore-packages.sh) script
+#### Restore package dependencies
 
-1.	Modify `openjdk-17-jdk` on line 14 in [**restore-packages.sh**](build/linux/restore-packages.sh) as appropriate.
+1. Run the Language Extension repository's package restore script [**restore-packages.sh**](../../restore-packages.sh) located at the **root** of this repository.
 
-1.	Run [**restore-packages.sh**](build/linux/restore-packages.sh)
+    ```sh
+    ../../restore-package.sh
+    ```
+   1. (*Optional*) By default, these instructions use `openjdk-17-jdk`. If you would like to use a different version of the JDK, install that version separately and ensure your `JAVA_HOME` environment variable is set to point to your desired JDK.
+1. Run the Java Extension's package restore script from `/build/linux`: [**restore-packages.sh**](build/linux/restore-packages.sh).
+    ```sh
+    ./build/linux/restore-packages.sh
+    ```
+1. Set the environment variable `JAVA_HOME` to point to your desired JDK version.
+    1. Identify installed versions of Java:
 
-1. Continue on **Step 3** below.
+        ```sh
+        sudo update-alternatives --config java
+        ```
+    1. Set the `JAVA_HOME` environment variable by copying the location of the JDK (Remove path contents including /bin and after)
+        ```sh
+		## 1. Copy the jdk version MINUS all content including /bin and after
+		sudo nano /etc/environment
+		## 2. On a new line in the environment file, add the following:
+		JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64/"
+		## 3. Save (write out using ctrl+o) and then hit enter to use the default resolved file name.
+		## 4. Reload your shell environment so the new environment variable is available.
+		source /etc/environment
+		## 5. Confirm that the JAVA_HOME environment variable is set, the following command should print out the value you set in your etc/environment file.
+		echo $JAVA_HOME
+        ```
 
-1. Install [CMake for Linux](https://cmake.org/download/) and [Java](https://docs.azul.com/zulu/zuludocs/ZuluUserGuide/InstallingZulu/InstallOnLinuxUsingAPTRepository.htm)
+#### Build Java Extension
 
-1. Set JAVA_HOME pointing to the Java folder.
+1. Run [**build-java-extension.sh**](build/linux/build-java-extension.sh) which will generate two main files:
+    ```sh
+    ./build-java-extension.sh
+	```
+    1. **libJavaExtension.so.1.0** 
+        - `<REPOSITORY_ROOT>/build-output/java-extension/linux/release/libJavaExtension.so.1.0`
+	1. **mssql-java-lang-extension.jar** 
+	    - `<REPOSITORY_ROOT>/build-output/java-extension/target/release/mssql-java-lang-extension.jar`
 
-1. Run [**build-java-extension.sh**](build/linux/build-java-extension.sh) which will generate two main files: \
-		- PATH/TO/ENLISTMENT/build-output/java-extension/linux/release/libJavaExtension.so.1.0 \
-		- PATH/TO/ENLISTMENT/build-output/java-extension/target/release/mssql-java-lang-extension-linux.jar
+1. Run [**create-java-extension-zip.sh**](build/linux/create-java-extension-zip.sh) to create the zip file you will use with `CREATE EXTERNAL LANGUAGE`, as detailed in the next section.
+    ```sh
+	./create-java-extension-zip.sh
+	```
+   - **java-lang-extension.zip** 
+     - `<REPOSITORY_ROOT>/build-output/java-extension/linux/release/packages/java-lang-extension.zip`
 
-1. Run [**create-java-extension-zip.sh**](build/linux/create-java-extension-zip.sh) which will generate: \
-		- PATH/TO/ENLISTMENT/build-output/java-extension/linux/release/packages/java-lang-extension.zip \
-		This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
+## Create External Language
 
-## Usage
-After creating the Java extension zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to create the language on the SQL Server. 
+After creating the Java extension zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to create the language on the SQL Server.
+```tsql
+CREATE EXTERNAL LANGUAGE ()
+```
+
+## Follow up tutorial
 
 This [tutorial](https://docs.microsoft.com/en-us/sql/language-extensions/tutorials/search-for-string-using-regular-expressions-in-java?view=sqlallproducts-allversions) will walk you through an end to end sample using the Java language extension. 
