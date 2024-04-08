@@ -178,16 +178,6 @@ void JavaExtensionUtils::CleanupJvm()
 	if (g_jvm != nullptr)
 	{
 		g_jvm = nullptr;
-		int rc = g_jvm->DestroyJavaVM();
-		if (rc == 0)
-		{
-			g_jvm = nullptr;
-		}
-		else
-		{
-			string msg = "Failed to destroy JVM. JNI error code: " + to_string(rc) + ".";
-			LOG_ERROR(msg);
-		}
 	}
 
 	// Call platform specific function to unload JVM library
