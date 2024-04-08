@@ -286,3 +286,21 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 
 	return result;
 }
+
+//----------------------------------------------------------------------------
+// Name: JavaExtensionUtils::CleanupJvm
+//
+// Description:
+//  Cleans up all JVM resources, if valid. Destroys the JVM enviroment,
+//  and unloads the JVM library
+//
+void JavaExtensionUtils::CleanupJvm()
+{
+	// Call platform specific function to shutdown the JVM
+	//
+	ShutdownJvm(g_jvm);
+
+	// Call platform specific function to unload JVM library
+	//
+	UnloadJvm();
+}

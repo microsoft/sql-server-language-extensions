@@ -170,19 +170,15 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 //  Cleans up all JVM resources, if valid. Destroys the JVM enviroment,
 //  and unloads the JVM library
 //
-void JavaExtensionUtils::CleanupJvm()
+void JavaExtensionUtils::ShutdownJvm(JavaVM *jvm)
 {
-	LOG("CleanupJVM");
+	LOG("Shutting down JVM");
 	// Destroy the JVM
 	//
-	if (g_jvm != nullptr)
+	if (jvm != nullptr)
 	{
-		g_jvm = nullptr;
+		jvm = nullptr;
 	}
-
-	// Call platform specific function to unload JVM library
-	//
-	UnloadJvm();
 }
 
 //----------------------------------------------------------------------------
