@@ -14,6 +14,10 @@
 #include "Logger.h"
 #include <sstream>
 #include <cstring> // Needed for memset in Linux
+#include <iostream>
+#include <chrono>
+#include <ctime>    
+#include <thread>
 
 using namespace std;
 
@@ -298,12 +302,40 @@ void JavaExtensionUtils::CleanupJvm()
 {
 	// Destroy the JVM
 	//
+
+		auto myid = this_thread::get_id();
+		stringstream ss;
+		ss << myid;
+		string threadIdCurr = ss.str();
+		LOG("threadID in JVM destruction: "+ threadIdCurr);
+
 	if (g_jvm != nullptr)
 	{
+		JNIEnv* currEnv = nullptr;
+		int nEnvStat = g_jvm->GetEnv(reinterpret_cast<void**>(&currEnv), JNI_VERSION_1_6);
+		LOG("status code for getENV(): "+to_string(nEnvStat));
+		if (nEnvStat == JNI_EDETACHED)
+		{
+			LOG("Current thread is detached from the JVM");
+		}
+		else if (nEnvStat == JNI_OK)
+		{
+			LOG("Current thread is ATTACHED to the JVM.");
+			int detachStatus =  g_jvm->DetachCurrentThread();
+			LOG("DetachCurrentThread() return code: " + to_string(detachStatus));
+		}
+		else if (nEnvStat == JNI_EVERSION) {
+			LOG("GetEnv: version not supported");
+		}
+		else
+		{
+			LOG("Uknown return code of GETENV.");
+		}
+
 		int rc = g_jvm->DestroyJavaVM();
 		if (rc == 0)
 		{
-			g_jvm = nullptr;
+			LOG("Success message 0 from DestroyJavaVM()");
 		}
 		else
 		{
@@ -312,7 +344,6 @@ void JavaExtensionUtils::CleanupJvm()
 			LOG_ERROR(msg);
 		}
 	}
-
 	// Call platform specific function to unload JVM library
 	//
 	UnloadJvm();

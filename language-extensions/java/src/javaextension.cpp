@@ -18,6 +18,11 @@
 #include "JavaPathSettings.h"
 #include "Logger.h"
 #include "sqlexternallanguage.h"
+#include <iostream>
+#include <chrono>
+#include <ctime>    
+#include <thread>
+#include <sstream>
 
 using namespace std;
 
@@ -88,6 +93,11 @@ SQLRETURN Init(
 
 	try
 	{
+		auto myid = this_thread::get_id();
+		stringstream ss;
+		ss << myid;
+		string threadIdCurr = ss.str();
+		LOG("threadID: "+ threadIdCurr);
 		JavaPathSettings::Init(
 			languageParams,
 			languagePath,
@@ -574,12 +584,23 @@ SQLRETURN CleanupSession(SQLGUID SessionId, SQLUSMALLINT TaskId)
 //
 SQLRETURN Cleanup()
 {
-	string msg = "Calling cleanup";
+	string msg = "Calling CleanupJVM";
 	LOG(msg);
 
-	// Cleanup JVM
+	// Cleanup 
 	//
+
+	if (g_env != nullptr)
+	{
+		LOG("g_env is not null.");
+	}
+	else
+	{
+		LOG("g_env is null already.");
+	}
+
 	JavaExtensionUtils::CleanupJvm();
 
+	LOG("Finished final Cleanup(), returning.");
 	return SQL_SUCCESS;
 }

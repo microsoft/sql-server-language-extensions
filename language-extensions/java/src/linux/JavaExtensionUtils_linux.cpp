@@ -173,9 +173,11 @@ void JavaExtensionUtils::UnloadJvm()
 {
 	// If the extension was loaded, free it
 	//
+	LOG("Unloading g_jvmLib via dlclose");
 	if (g_jvmLib != nullptr)
 	{
 		dlclose(g_jvmLib);
 		g_jvmLib = nullptr;
 	}
+	LOG("Unloaded g_jvmLib via dlclose");
 }
