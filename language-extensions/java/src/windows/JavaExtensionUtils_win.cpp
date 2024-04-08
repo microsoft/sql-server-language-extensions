@@ -158,6 +158,7 @@ void JavaExtensionUtils::CleanupJvm()
 {
 	// Destroy the JVM
 	//
+	LOG("Cleanup JVM windows");
 	if (g_jvm != nullptr)
 	{
 		int rc = g_jvm->DestroyJavaVM();

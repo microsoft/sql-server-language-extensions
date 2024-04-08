@@ -66,9 +66,9 @@ function build {
 	# This will create the java extension package with unsigned binaries, this is used for local development and non-release builds. release
 	# builds will call create-java-extension-zip.sh after the binaries have been signed and this will be included in the zip
 	#
-	zip ${TARGET}/java-lang-extension libJavaExtension.so.1.0
+	tar -czvf ${TARGET}/java-lang-extension.tar.gz libJavaExtension.so.1.0
 
-	check_exit_code "Success: Created java-lang-extension.zip" "Error: Failed to create zip for java extension"
+	check_exit_code "Success: Created java-lang-extension.tar.gz" "Error: Failed to create tarball of the Java extension build output."
 }
 
 # Enlistment root and location of javaextension
