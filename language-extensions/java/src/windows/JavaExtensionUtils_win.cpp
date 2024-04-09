@@ -148,6 +148,32 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 }
 
 //----------------------------------------------------------------------------
+// Name: JavaExtensionUtils::ShutdownJvm
+//
+// Description:
+//  Cleans up JVM resources by calling the Invocation API function: DestroyJavaVM.
+//
+void JavaExtensionUtils::ShutdownJvm(JavaVM *jvm)
+{
+	// Destroy the JVM
+	//
+	LOG("Shutting down JVM");
+	if (jvm != nullptr)
+	{
+		int rc = jvm->DestroyJavaVM();
+		if (rc == 0)
+		{
+			jvm = nullptr;
+		}
+		else
+		{
+			string msg = "Failed to destroy JVM. JNI error code: " + to_string(rc) + ".";
+			LOG_ERROR(msg);
+		}
+	}
+}
+
+//----------------------------------------------------------------------------
 // Name: JavaExtensionUtils::UnloadJvm
 //
 // Description:

@@ -296,22 +296,9 @@ JNIEnv* JavaExtensionUtils::CreateJvm()
 //
 void JavaExtensionUtils::CleanupJvm()
 {
-	// Destroy the JVM
+	// Call platform specific function to shutdown the JVM
 	//
-	if (g_jvm != nullptr)
-	{
-		int rc = g_jvm->DestroyJavaVM();
-		if (rc == 0)
-		{
-			g_jvm = nullptr;
-		}
-		else
-		{
-			string msg = "Failed to destroy JVM. JNI error code: " + to_string(rc) + ".";
-
-			LOG_ERROR(msg);
-		}
-	}
+	ShutdownJvm(g_jvm);
 
 	// Call platform specific function to unload JVM library
 	//
