@@ -67,6 +67,7 @@ function build {
 	# builds will call create-java-extension-zip.sh after the binaries have been signed and this will be included in the zip
 	#
 	zip ${TARGET}/java-lang-extension libJavaExtension.so.1.0
+
 	check_exit_code "Success: Created java-lang-extension.zip" "Error: Failed to create zip for java extension"
 }
 
