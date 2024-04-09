@@ -78,7 +78,7 @@ private:
 	//
 	static fn_createJvm LoadJvm(const std::string &jvmPath);
 
-	// Shutsdown the JVM instance
+	// Cleans up the JVM instance
 	//
 	static void ShutdownJvm(JavaVM *jvm);
 

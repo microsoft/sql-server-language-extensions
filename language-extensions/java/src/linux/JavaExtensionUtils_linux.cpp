@@ -164,13 +164,12 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaExtensionUtils::CleanupJvm
+// Name: JavaExtensionUtils::ShutdownJvm
 //
 // Description:
 //  Cleans up JVM resources. Doesn't call Invocation API function
-//  DestroyJavaVM to promote faster SPEES query execution in Linux versions
-//  of SQL Server where calling that function contributed to a minimum
-//  5 second SPEES query execution duration.
+//  DestroyJavaVM since ExtHost process exit defers to OS for resource
+//  cleanup and SPEES query doesn't hang.
 //
 void JavaExtensionUtils::ShutdownJvm(JavaVM *jvm)
 {

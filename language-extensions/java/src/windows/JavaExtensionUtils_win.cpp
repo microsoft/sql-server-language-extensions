@@ -148,7 +148,7 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 }
 
 //----------------------------------------------------------------------------
-// Name: JavaExtensionUtils::CleanupJvm
+// Name: JavaExtensionUtils::ShutdownJvm
 //
 // Description:
 //  Cleans up JVM resources by calling the Invocation API function: DestroyJavaVM.
