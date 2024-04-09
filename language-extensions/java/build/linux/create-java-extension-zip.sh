@@ -21,7 +21,7 @@ function build {
 
 	mkdir -p ${BUILD_OUTPUT}/packages
 	cd ${BUILD_OUTPUT}
-	tar -czvf java-lang-extension.tar.gz libJavaExtension.so.1.0
+	zip packages/java-lang-extension-linux libJavaExtension.so.1.0
 	check_exit_code  ${BUILD_CONFIGURATION}
 }
 
