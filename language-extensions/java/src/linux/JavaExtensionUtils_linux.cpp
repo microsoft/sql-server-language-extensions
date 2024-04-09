@@ -167,19 +167,16 @@ JavaExtensionUtils::fn_createJvm JavaExtensionUtils::LoadJvm(const string& jvmPa
 // Name: JavaExtensionUtils::ShutdownJvm
 //
 // Description:
-//  Cleans up JVM resources. Doesn't call Invocation API function
-//  DestroyJavaVM since ExtHost process exit defers to OS for resource
-//  cleanup and SPEES query doesn't hang.
+//  Cleans up JVM resources. When running on Linux, clean up operation
+//  doesn't call Invocation API function DestroyJavaVM() because 
+//  ExtHost process exit defers to OS for resource cleanup 
+//  and SPEES query doesn't hang.
 //  Follow up investigation tracked via work item: 3090980
 //
 void JavaExtensionUtils::ShutdownJvm(JavaVM *jvm)
 {
 	LOG("Cleaning up JVM");
-
-	if (jvm != nullptr)
-	{
-		jvm = nullptr;
-	}
+	jvm = nullptr;
 }
 
 //----------------------------------------------------------------------------
