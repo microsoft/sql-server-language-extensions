@@ -50,21 +50,61 @@ The complete release pipeline does the following:
 5) Runs the unit tests
 6) Packages a corresponding retail/debug zip of the signed binaries
 7) Creates/publishes a new nuget which contains the following:
-	<package>/build/debug/javaextension.dll
-	<package>/build/debug/mssql-java-lang-extension.jar
-	<package>/build/debug/java-lang-extension.zip
-	<package>/build/debug/symbols/javaextension.pdb
+	- `<package>/build/debug/java-lang-extension-linux.zip`
+	- `<package>/build/debug/java-lang-extension.zip`
+	- `<package>/build/debug/mssql-java-lang-extension.jar`
+	- `<package>/build/release/java-lang-extension-linux.zip`
+	- `<package>/build/release/java-lang-extension.zip`
+	- `<package>/build/release/mssql-java-lang-extension.jar`
+	- `<package>/build/release/symbols/JavaExtension.pdb`
 
+## Pre-Release Steps
+Before starting the release process, update the git submodule inside the repo to ensure all components are up-to-date:
 
-	<package>/build/release/javaextension.dll
-	<package>/build/release/mssql-java-lang-extension.jar
-	<package>/build/release/java-lang-extension.zip
-	<package>/build/release/symbols/javaextension.pdb
+1) Open a terminal or command prompt.
+2) Navigate to the root directory of this repository.
+3) Run `git submodule update --init --recursive` to initialize and update the submodule.
+4) If there are changes, commit them: `git commit -am "Update submodules" && git push`.
 
-To create a release do the following:
-1) Run an official build from master, this will perform steps 1-6) mentioned above.
-2) From the official build, create a new release which will perform step 7).
-3) Update the nuget version numbers in DS_Main_Dev and run PVS before checking in. You need to manually pull the nuget into the SqlUnified-MsAzure feed before SqlUnified will be able to pick it up. To do so, run the following command: `X:\corextcache>  X:\path-to-DsMainDev\Tools\Nuget\nuget install data-sql-language-extensions  -Version <version number> -Source https://msdata.pkgs.visualstudio.com/_packaging/SqlUnified-MsAzure/nuget/v3/index.json`. Once that has happened, it will be visible in the SqlUnified-MsAzure feed.  You'll then need to wait (up to 3 hours) for the next update of SqlUnified in order for it to become available on SqlUnified.
+## Release Process
+
+### 1. Initiate Official Builds:
+- **Access Build Pipelines:** Use the Azure DevOps link to access the official build pipelines: [Official Build Pipelines](https://msazure.visualstudio.com/One/_build?definitionScope=%5COneBranch%5CData-SQL-Language-Extensions).
+![Pipelines](/pics/pipelines.png)
+- **Schedule Builds:** Schedule two separate official builds, one for Windows and one for Linux, to ensure platform compatibility.
+![Pipeline](/pics/pipeline.png)
+- **Monitor Builds:** Keep an eye on the build progress and address any issues that arise promptly.
+
+### 2. Creating a New Release:
+- **Navigate to Release Management:** After successful build completion, go to: [Release Management](https://msazure.visualstudio.com/One/_release?_a=releases&view=mine&definitionId=47018).
+- **Select Artifacts:** Choose the artifacts from the completed Windows and Linux builds to create a new release.
+- **Complete Pipeline Steps:** Follow through the pipeline steps including staging deployments, testing, and final publishing, waiting for the process to complete.
+![Release](/pics/release.png)
+
+### 3. NuGet Package Management:
+- **Verify NuGet Package:** Check the new NuGet package version in the SqlUnified feed: [SqlUnified NuGet Feed](https://msdata.visualstudio.com/Database%20Systems/_artifacts/feed/SqlUnified/NuGet/data-sql-language-extensions). Save from upstream if the version is not updated.
+![feed](/pics/feed.png)
+
+### 4. Updating NuGet Version Numbers:
+- **Update `package.config`:** Modify the [`package.config`](https://msdata.visualstudio.com/Database%20Systems/_git/DsMainDev?path=%2FSql%2FNtdbms%2Fextensibility%2Fdata-sql-language-extensions%2Fexternals%2Fpackages.config&version=GBmaster&_a=contents) to reference the new package version.
+- **Update Project File if Necessary:** If there are changes to the output files or the structure of the NuGet package, also update the [`data-sql-language-extensions.vcxproj`](https://msdata.visualstudio.com/Database%20Systems/_git/DsMainDev?path=%2FSql%2FNtdbms%2Fextensibility%2Fdata-sql-language-extensions%2Fdata-sql-language-extensions.vcxproj&version=GBmaster&_a=contents).
+
+### 5. Running PVS (Private Validation Service):
+- **Execute PVS:** Run the PVS to ensure changes are valid, addressing any detected issues.
+
+### 6. Check-in and Merge:
+- **Finalize Changes:** After successful validation, check in your changes to the DsMainDev master branch.
+
+### 7. Publishing Releases on GitHub:
+- **Download the NuGet Package:** Start by downloading the NuGet package from the feed. Change the file extension from `.nupkg` to `.zip` for extraction.
+- **Extract the Package:** Extract the ZIP file contents, preparing the language extensions for the next step.
+![nuget](/pics/nuget.png)
+- **Create a New Release on GitHub:**
+  - Navigate to the [Create Release](https://github.com/microsoft/sql-server-language-extensions/releases/new) page.
+  - Fill in the release details, including version tagging, title, and a descriptive changelog.
+- **Upload Language Extensions:**
+  - Find the attachment section in the release creation page to upload the language extensions.
+- **Refer to Sample Releases:** For more information on release structure, refer to the [sample releases](https://github.com/microsoft/sql-server-language-extensions/releases).
 
 # Contribute
-Contact sqlext@microsoft.com for questions and contributing.
+Contact ExtensibilityCommitters@service.microsoft.com for questions and contributing.
