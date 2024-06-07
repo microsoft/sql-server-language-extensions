@@ -17,33 +17,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
-
 namespace UserExecutor
 {
     /// <summary>
-    /// This class extends the AbstractSqlServerExtensionExecutor and uses
-    /// a regular expression that checks if a text contains the word "C#" or "c#"
+    /// This class extends the AbstractSqlServerExtensionExecutor
+    /// This can be used to run custom SQL queries in the Language extension Environment
     /// </summary>
     public class LoopBackConnectionADONET: AbstractSqlServerExtensionExecutor
     {
         /// <summary>
         /// This method overrides the Execute method from AbstractSqlServerExtensionExecutor.
         /// </summary>
-        
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
             // Connection string to the server.. 
             // This is a standard connection string. 
             // Example: 
             // string connectionstring = "Data Source=SQLSERVER2022;User Id=user1;Password=xxxx;Initial Catalog=DBNAME;Trusted_Connection=True;Encrypt=False;";
             string connectionstring = "Data Source=<ServerName>;User Id=<<UserID>>;Password=<<Credentials>>;Initial Catalog=<<Database>>;Trusted_Connection=True;Encrypt=False;";
-            
             using (SqlConnection connection = new SqlConnection(connectionstring))
             {
                 connection.Open();
                 // The SQL command that you need to execute on the SQL server.
                 // This can be passed as a parameter as well into this method if you want to make it more dynamic.
                 String sql = "SELECT field1, field2 FROM table1";
-
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
                     using (SqlDataReader reader = command.ExecuteReader())
@@ -55,10 +51,7 @@ namespace UserExecutor
                     }
                 }
             }
-
             return null;
         }
-
-      
     }
 }

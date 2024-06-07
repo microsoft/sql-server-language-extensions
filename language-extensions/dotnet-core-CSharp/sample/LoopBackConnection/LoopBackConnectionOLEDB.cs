@@ -20,33 +20,27 @@ using System.Data.OleDb;
 namespace UserExecutor
 {
     /// <summary>
-    /// This class extends the AbstractSqlServerExtensionExecutor and uses
-    /// a regular expression that checks if a text contains the word "C#" or "c#"
+    /// This class extends the AbstractSqlServerExtensionExecutor.
+    /// This class can be used to execute custom SQL queries in Language Extension environment.
     /// </summary>
     public class LoopBackConnectionOLEDB : AbstractSqlServerExtensionExecutor
     {
         /// <summary>
         /// This method overrides the Execute method from AbstractSqlServerExtensionExecutor.
         /// </summary>
-       
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
-
-            //Ole DB implementation
+            // Ole DB implementation
             // Connection string to the server.. 
             // This is a standard connection string. 
             // Example: 
             // string connectionstring = "Data Source=SQLSERVER2022;User Id=user1;Password=xxxx;Initial Catalog=DBNAME;Trusted_Connection=True;Encrypt=False;";
             string connectionstring = "Data Source=<ServerName>;User Id=<<UserID>>;Password=<<Credentials>>;Initial Catalog=<<Database>>;Trusted_Connection=True;Encrypt=False;";
-
             using (OleDbConnection connection = new OleDbConnection(connectionstring))
             {
-
                 connection.Open();
                 // The SQL command that you need to execute on the SQL server.
                 // This can be passed as a parameter as well into this method if you want to make it more dynamic.
                 String sql = "SELECT field1, field2 FROM table1";
-
-
                 using (OleDbCommand command = new OleDbCommand(sql, connection))
                 {
                     using (OleDbDataReader reader = command.ExecuteReader())
@@ -57,13 +51,8 @@ namespace UserExecutor
                         }
                     }
                 }
-                
-                }
-            
-
+            }
             return null;
         }
-
-      
     }
 }
