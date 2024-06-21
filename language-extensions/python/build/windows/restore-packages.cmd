@@ -61,7 +61,7 @@ REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive
 REM -o Output directory
 REM 2nd param is the file to expand
 echo -- Beginning Boost ZIP extraction -- Time: %time% --
-%ARCHIVE_TOOL_PATH% e -y -o"%PACKAGES_ROOT%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
+%ARCHIVE_TOOL_PATH% e -y -o"%PACKAGES_ROOT%/boost_%BOOST_VERSION_IN_UNDERSCORE%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
 echo -- Finished Boost Zip extration -- Time: %time% --
 
 REM Boost cleanup
