@@ -52,7 +52,12 @@ REM Remove the Boost zip file
 REM Navigate to the extracted Boost directory
 REM
 curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.zip https://sourceforge.net/projects/boost/files/boost/%BOOST_VERSION%/boost_%BOOST_VERSION_IN_UNDERSCORE%.zip/download
-powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive -Force -Path 'boost_%BOOST_VERSION_IN_UNDERSCORE%.zip' -DestinationPath '%PACKAGES_ROOT%'"
+REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive -Force -Path 'boost_%BOOST_VERSION_IN_UNDERSCORE%.zip' -DestinationPath '%PACKAGES_ROOT%'"
+
+REM -o Output directory
+REM 2nd param is the file to expand
+C:\7-Zip\7z.exe e -y -o"%PACKAGES_ROOT%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.zip"
+
 del boost_%BOOST_VERSION_IN_UNDERSCORE%.zip
 pushd %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
 
