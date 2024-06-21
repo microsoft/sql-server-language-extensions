@@ -4,7 +4,7 @@ CALL %ENL_ROOT%\restore-packages.cmd
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 
 REM 7zip file extraction tooling - Direct path on pipeline
-SET 7ZIPPATH="C:\7-Zip\7z.exe"
+SET ARCHIVE_TOOL_PATH=C:\7-Zip\7z.exe
 
 REM Specify the Python version to be downloaded and installed
 REM
@@ -61,7 +61,7 @@ REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive
 REM -o Output directory
 REM 2nd param is the file to expand
 echo -- Beginning Boost ZIP extraction -- Time: %time% --
-%7ZIPPATH% e -y -o"%PACKAGES_ROOT%" "%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
+%ARCHIVE_TOOL_PATH% e -y -o"%PACKAGES_ROOT%" "%PACKAGES_ROOT%/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
 echo -- Finished Boost Zip extration -- Time: %time% --
 
 REM Boost cleanup
