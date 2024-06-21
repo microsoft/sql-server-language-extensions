@@ -61,17 +61,18 @@ REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive
 REM -o Output directory
 REM 2nd param is the file to expand
 echo -- Beginning Boost ZIP extraction -- Time: %time% --
-%ARCHIVE_TOOL_PATH% x -y -o"packages" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
+%ARCHIVE_TOOL_PATH% x -y -o"%PACKAGES_ROOT%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
 echo -- Finished Boost Zip extration -- Time: %time% --
 
 REM Boost cleanup
 echo Delete 7z boost archive
 del boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 echo go to dir with boost unarchived
-%cd%
+echo %cd%
 dir
+echo %PACKAGES_ROOT%
 pushd %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
-%cd%
+echo %cd%
 dir
 echo create user config jam
 REM Create a Boost user-config.jam configuration file for building Boost.Python
