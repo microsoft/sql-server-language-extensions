@@ -65,9 +65,15 @@ echo -- Beginning Boost ZIP extraction -- Time: %time% --
 echo -- Finished Boost Zip extration -- Time: %time% --
 
 REM Boost cleanup
+echo Delete 7z boost archive
 del boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
+echo go to dir with boost unarchived
+%cd%
+dir
 pushd %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
-
+%cd%
+dir
+echo create user config jam
 REM Create a Boost user-config.jam configuration file for building Boost.Python
 REM
 echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\python" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\include" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\libs" ; > user-config.jam
