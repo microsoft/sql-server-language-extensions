@@ -4,7 +4,7 @@ CALL %ENL_ROOT%\restore-packages.cmd
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 
 REM 7zip file extraction tooling - Direct path on pipeline
-SET ARCHIVE_TOOL_PATH=C:\7-Zip\7z.exe
+SET ARCHIVE_TOOL_PATH="C:\Program Files\7-Zip\7z.exe"
 
 REM Specify the Python version to be downloaded and installed
 REM
@@ -61,7 +61,7 @@ REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive
 REM -o Output directory
 REM 2nd param is the file to expand
 echo -- Beginning Boost ZIP extraction -- Time: %time% --
-%ARCHIVE_TOOL_PATH% e -y -o"%PACKAGES_ROOT%/boost_%BOOST_VERSION_IN_UNDERSCORE%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
+%ARCHIVE_TOOL_PATH% x -y -o"packages" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
 echo -- Finished Boost Zip extration -- Time: %time% --
 
 REM Boost cleanup
@@ -74,8 +74,9 @@ echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DO
 
 REM Run Boost's bootstrap script and build Boost.Python with the created configuration
 REM
-echo -- Beginning Boost build using b2.exe-- Time: %time% --
+echo -- Beginning Boost b2.exe build -- Time: %time% --
 CALL bootstrap.bat
+echo -- Beginning Boost build using compiled b2.exe-- Time: %time% --
 b2.exe -j12 --with-python --user-config="%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\user-config.jam" --debug-configuration -d0
 echo -- Finished Boost build -- Time: %time% --
 
