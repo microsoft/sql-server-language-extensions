@@ -3,6 +3,9 @@ CALL %ENL_ROOT%\restore-packages.cmd
 
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 
+REM 7zip file extraction tooling - Direct path on pipeline
+SET 7ZIPPATH="C:\Program Files\7-Zip\7z.exe"
+
 REM Specify the Python version to be downloaded and installed
 REM
 SET PYTHON_VERSION=3.10.2
@@ -46,20 +49,23 @@ REM Remove the Python installer which is no longer needed
 REM
 del "python-%PYTHON_VERSION%.exe"
 
+REM BOOST artifact download, extract, build
 REM Download the specified version of Boost from SourceForge
 REM Extract the downloaded Boost zip file to the packages directory
 REM Remove the Boost zip file
 REM Navigate to the extracted Boost directory
 REM
-curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.zip https://sourceforge.net/projects/boost/files/boost/%BOOST_VERSION%/boost_%BOOST_VERSION_IN_UNDERSCORE%.zip/download
+curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive -Force -Path 'boost_%BOOST_VERSION_IN_UNDERSCORE%.zip' -DestinationPath '%PACKAGES_ROOT%'"
 
 REM -o Output directory
 REM 2nd param is the file to expand
 echo -- Beginning Boost ZIP extraction -- Time: %time% --
-C:\7-Zip\7z.exe e -y -o"%PACKAGES_ROOT%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.zip"
+%7ZIPPATH% e -y -o"%PACKAGES_ROOT%" "%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
 echo -- Finished Boost Zip extration -- Time: %time% --
-del boost_%BOOST_VERSION_IN_UNDERSCORE%.zip
+
+REM Boost cleanup
+del boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 pushd %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
 
 REM Create a Boost user-config.jam configuration file for building Boost.Python
@@ -68,8 +74,10 @@ echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DO
 
 REM Run Boost's bootstrap script and build Boost.Python with the created configuration
 REM
+echo -- Beginning Boost build using b2.exe-- Time: %time% --
 CALL bootstrap.bat
 b2.exe -j12 --with-python --user-config="%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\user-config.jam" --debug-configuration -d0
+echo -- Finished Boost build -- Time: %time% --
 
 REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
 REM
