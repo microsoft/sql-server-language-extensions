@@ -4,7 +4,7 @@ CALL %ENL_ROOT%\restore-packages.cmd
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 
 REM 7zip file extraction tooling - Direct path on pipeline
-SET 7ZIPPATH="C:\Program Files\7-Zip\7z.exe"
+SET 7ZIPPATH="C:\7-Zip\7z.exe"
 
 REM Specify the Python version to be downloaded and installed
 REM
