@@ -43,7 +43,9 @@ curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\pytho
 
 REM Install numpy and pandas
 REM
-"%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install pandas numpy
+SET NUMPY_VERSION=1.22.3
+SET PANDAS_VERSION=1.4.2
+"%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
 
 REM Remove the Python installer which is no longer needed
 REM
@@ -56,7 +58,6 @@ REM Remove the Boost zip file
 REM Navigate to the extracted Boost directory
 REM
 curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
-REM powershell -NoProfile -ExecutionPolicy Unrestricted -Command "Expand-Archive -Force -Path 'boost_%BOOST_VERSION_IN_UNDERSCORE%.zip' -DestinationPath '%PACKAGES_ROOT%'"
 
 REM -o Output directory
 REM 2nd param is the file to expand
@@ -80,11 +81,14 @@ REM
 echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\python" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\include" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\libs" ; > user-config.jam
 
 REM Run Boost's bootstrap script and build Boost.Python with the created configuration
-REM
+REM Explicitly set VS2019 Compiler tooling 
+REM bootstrap - "vc142"
+REM b2.exe "toolset=msvc-14.2"
 echo -- Beginning Boost b2.exe build -- Time: %time% --
-CALL bootstrap.bat
+CALL bootstrap.bat vc142
 echo -- Beginning Boost build using compiled b2.exe-- Time: %time% --
-b2.exe -j12 --with-python --user-config="%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\user-config.jam" --debug-configuration -d0
+b2.exe -j12 --prefix=%PACKAGES_ROOT%\output --with-python --user-config="%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\user-config.jam" --debug-configuration -dp0 toolset=msvc-14.2
+REM  address-model=64 variant=debug link=static threading=multi runtime-link=shared install
 echo -- Finished Boost build -- Time: %time% --
 
 REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
