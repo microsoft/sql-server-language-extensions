@@ -88,7 +88,6 @@ echo -- Beginning Boost b2.exe build -- Time: %time% --
 CALL bootstrap.bat vc142
 echo -- Beginning Boost build using compiled b2.exe-- Time: %time% --
 b2.exe -j12 --prefix=%PACKAGES_ROOT%\output --with-python --user-config="%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\user-config.jam" --debug-configuration -dp0 toolset=msvc-14.2
-REM  address-model=64 variant=debug link=static threading=multi runtime-link=shared install
 echo -- Finished Boost build -- Time: %time% --
 
 REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
