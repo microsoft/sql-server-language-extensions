@@ -20,7 +20,7 @@ namespace UserExecutor
     /// <summary>
     /// This class extends the AbstractSqlServerExtensionExecutor.
     /// This can be used to call any custom DLL to achive any functionality in Langauge Extension.
-    /// </summary>
+    /// </summary>  
     public class CallSubModule: AbstractSqlServerExtensionExecutor
     {
         /// <summary>
@@ -42,12 +42,12 @@ namespace UserExecutor
             // The required DLL needs to be stored in the location where SQL server has access. 
             // These DLLs are dynamically loaded during runtime and any method inside of these DLLs can be executed on the fly. 
             // Below is an example of how we can do that with a sample Hello World Program.
-            // Example: var DLL = Assembly.LoadFile(@"C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1\helloworlddll.dll");
-            var DLL = Assembly.LoadFile(@"<Path to DLL>");
-            //Example : Type type = DLL.GetType("UserExecutor.HelloWorld");
-            Type type = DLL.GetType("<Class Name >");
-            //Example: MethodInfo mi = type.GetMethod("printConsole");
-            MethodInfo mi = type.GetMethod("<method name>");
+            var DLL = Assembly.LoadFile(@"C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1\SubModule.dll");
+            // Template: var DLL = Assembly.LoadFile(@"<Path to DLL>");
+            Type type = DLL.GetType("UserExecutor.HelloWorld");
+            //Template : Type type = DLL.GetType("<Class Name >");
+            MethodInfo mi = type.GetMethod("printConsole");
+            //Template : MethodInfo mi = type.GetMethod("<method name>");
             if (mi != null)
             {
                 object result = null;
