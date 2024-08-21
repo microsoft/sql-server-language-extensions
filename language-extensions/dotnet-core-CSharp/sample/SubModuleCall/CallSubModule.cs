@@ -42,12 +42,24 @@ namespace UserExecutor
             // The required DLL needs to be stored in the location where SQL server has access. 
             // These DLLs are dynamically loaded during runtime and any method inside of these DLLs can be executed on the fly. 
             // Below is an example of how we can do that with a sample Hello World Program.
-            var DLL = Assembly.LoadFile(@"C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1\SubModule.dll");
+
             // Template: var DLL = Assembly.LoadFile(@"<Path to DLL>");
-            Type type = DLL.GetType("UserExecutor.HelloWorld");
+            //Example
+            //Object DLL = Assembly.LoadFile(@"C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1\SubModule.dll");
+            Object DLL = sqlParams["@dllLocation"];
+
             //Template : Type type = DLL.GetType("<Class Name >");
-            MethodInfo mi = type.GetMethod("printConsole");
+            //Example Type type = DLL.GetType("UserExecutor.HelloWorld");
+            Type type = DLL.GetType(sqlParams["@className"]);
+
             //Template : MethodInfo mi = type.GetMethod("<method name>");
+            //Example MethodInfo mi = type.GetMethod("printConsole");
+            MethodInfo mi = type.GetMethod(sqlParams["@methodName"]);
+
+            // Create empty output DataFrame with One column
+            //
+            DataFrame output = new DataFrame(new StringDataFrameColumn("text", 0));
+
             if (mi != null)
             {
                 object result = null;
@@ -56,9 +68,16 @@ namespace UserExecutor
                 if (parameters.Length == 0)
                 {
                     result = mi.Invoke(classInstance, null);
+                    output.append("Method invoked Successfully");
                 }
             }
-            return null;
+
+            // Modify the parameters
+            //
+            sqlParams["@rowsCount"] = output.Rows.Count;
+            sqlParams["@Status"] = "Success!";
+
+            return output;
         }
     }
 }
