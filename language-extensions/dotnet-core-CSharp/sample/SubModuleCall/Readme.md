@@ -10,7 +10,7 @@
 
 1) Download/clone the [SubModuleProject](./SubModuleProject/SubModule/) 
 2) Compile the project [SubModule.sln](./SubModuleProject/SubModule/SubModule.sln). This will generete a DLL file named SubModule.dll
-3) Move this DLL file to respective folder of SQL server Langugage extension.
+3) Move this DLL file to the respective folder of the SQL Server Language Extension.
 4) Grant access to the DLL once it is moved.Below are the commands to grant access. Run these in a command prompt window. 
 
   * icacls "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1" /grant "SQLRUsergroupSQLSERVER2022":(OI)(CI)RX /T  
