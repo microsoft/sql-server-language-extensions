@@ -19,7 +19,7 @@ namespace UserExecutor
 {
     /// <summary>
     /// This class extends the AbstractSqlServerExtensionExecutor.
-    /// This can be used to call any custom DLL to achive any functionality in Langauge Extension.
+    /// This can be used to call any custom DLL to further extend the functionality of the C# Language Extension.
     /// </summary>  
     public class CallSubModule: AbstractSqlServerExtensionExecutor
     {
