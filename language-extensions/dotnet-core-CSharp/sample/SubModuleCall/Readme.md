@@ -16,6 +16,6 @@
   * icacls "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1" /grant "SQLRUsergroupSQLSERVER2022":(OI)(CI)RX /T  
     * icacls "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1"  /grant *S-1-15-2-1:(OI)(CI)RX /T 
 5) Modify the code in [CallSubModule.cs](./CallSubModule.cs). You will have to just update the folder name here along with DLL.
-6) Follow the standard method to outlined in documentation to moved the DLL code into Language extension folder.
+6) Follow the standard method to outlined in documentation to move the DLL into the Language extension folder.
 7) Execute the code through a stored procedure call. 
 8) Once your run it you should be able to see the console output in SSMS. 
