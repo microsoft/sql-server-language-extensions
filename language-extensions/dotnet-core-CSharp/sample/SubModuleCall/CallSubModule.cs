@@ -28,7 +28,7 @@ namespace UserExecutor
         /// </summary>
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
         {
-            // Below is an example to call any c# program/Method from an external DLL. 
+            // The following example demonstrates how to call any C# program/method from an external DLL. 
             // Access needs to be granted to respective folder before you execute these commands. 
             // To grant access perform below commands in windows command prompt. 
             // Note: The folder name may change in your environment. So please specify the right folder name.
