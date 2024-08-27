@@ -30,7 +30,7 @@ namespace UserExecutor
         {
             // The following example demonstrates how to call any C# program/method from an external DLL. 
             // Access needs to be granted to respective folder before you execute these commands. 
-            // To grant access perform below commands in windows command prompt. 
+            // To grant access, run the following commands in a Windows command prompt. 
             // Note: The folder name may change in your environment. So please specify the right folder name.
             // Command1: 
             //          icacls "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1" /grant "SQLRUsergroupSQLSERVER2022":(OI)(CI)RX /T  
