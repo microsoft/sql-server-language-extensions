@@ -1,5 +1,5 @@
 # Loopback Connection
- This folder contains an implementation which will help in doing a loopback connection to SQL server. This will help in running any custom query against the SQL server through SQL Server Language Extension.
+This example demonstrates how to establish a loopback connection to SQL server. A loopback connection will allow your C# language extension to run any custom query against SQL Server.
  ## Prerequisites
  * [LoopBackConnectionADONET.cs](LoopBackConnectionADONET.cs). This contains the ADO.NET driver implementation sample for Loopback connection.
  * [LoopBackCOnnectionOLEDB.cs](LoopBackConnectionOLEDB.cs). This contains the OLEDB driver implementation sample for Loopback Connection. 
