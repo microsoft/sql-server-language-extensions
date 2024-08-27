@@ -7,8 +7,8 @@ namespace UserExecutor
 {
     // Lets assume that a DLL is created using this kind of code in another project. 
     // The DLL is moved into the folder where access is granted. 
-    // Access needs to be granted to respective folder before you execute these commands. 
-    // To grant access perform below commands in windows command prompt. 
+    // You need to grant access to the DLL's parent folder before you execute these commands. 
+    // To grant access to the folder, run the following commands in Windows command prompt:
     // Note: The folder name may change in your environment. So please specify the right folder name.
     // Command1: 
     //          icacls "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1" /grant "SQLRUsergroupSQLSERVER2022":(OI)(CI)RX /T  
