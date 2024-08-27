@@ -6,7 +6,7 @@
 //
 // Purpose:
 //  Sample C# code which can dynamically load a class in SQL Server Language extension. 
-//  This can be used to wrap around different functionalities  to be extended on top of SQL server.
+//  This can be used to wrap around different functionality to be extended on top of SQL server.
 //*********************************************************************
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
