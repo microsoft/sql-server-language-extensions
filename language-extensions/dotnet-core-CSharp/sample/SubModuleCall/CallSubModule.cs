@@ -5,8 +5,8 @@
 // @File: CallSubModule.cs
 //
 // Purpose:
-//  Sample C# code which can dynamically load a class in SQL Server Language extension. 
-//  This can be used to wrap around different functionalities  to be extended on top of SQL server.
+//  Sample C# code which can dynamically load a class in the SQL Server C# Language Extension. 
+//  This can be used to wrap around different functionality to be extended on top of SQL server.
 //*********************************************************************
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
@@ -19,7 +19,7 @@ namespace UserExecutor
 {
     /// <summary>
     /// This class extends the AbstractSqlServerExtensionExecutor.
-    /// This can be used to call any custom DLL to achive any functionality in Langauge Extension.
+    /// This can be used to call any custom DLL to further extend the functionality of the C# Language Extension.
     /// </summary>  
     public class CallSubModule: AbstractSqlServerExtensionExecutor
     {
@@ -28,9 +28,9 @@ namespace UserExecutor
         /// </summary>
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
         {
-            // Below is an example to call any c# program/Method from an external DLL. 
+            // The following example demonstrates how to call any C# program/method from an external DLL. 
             // Access needs to be granted to respective folder before you execute these commands. 
-            // To grant access perform below commands in windows command prompt. 
+            // To grant access, run the following commands in a Windows command prompt. 
             // Note: The folder name may change in your environment. So please specify the right folder name.
             // Command1: 
             //          icacls "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1" /grant "SQLRUsergroupSQLSERVER2022":(OI)(CI)RX /T  

@@ -21,7 +21,7 @@ namespace UserExecutor
 {
     /// <summary>
     /// This class extends the AbstractSqlServerExtensionExecutor.
-    /// This class can be used to execute custom SQL queries in Language Extension environment.
+    /// This class can be used to execute custom SQL queries within the Language Extension environment.
     /// </summary>
     public class LoopBackConnectionOLEDB : AbstractSqlServerExtensionExecutor
     {
