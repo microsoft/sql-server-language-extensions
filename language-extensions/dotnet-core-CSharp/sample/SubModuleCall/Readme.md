@@ -63,3 +63,4 @@ select @rowsCount as rowsCount, @Status as message
 ```
 
 6) Once you run it you should be able to see the console output in SSMS. 
+
