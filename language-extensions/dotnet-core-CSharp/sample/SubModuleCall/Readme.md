@@ -1,5 +1,6 @@
 # SubModule Call
  This folder contains an implementation which will help in Calling any functionality which has been embeded inside an external DLL. Imagine that you already have a DLL which has a lot of functionalities built into it and you would like to reuse all those features in SQL Server Language Extension. This particualar example tries to address this exact requirements. To represent the custom build, we have create a simple project , which has been placed in SubModuleProject folder.This project just has a console out statement. 
+ 
  ## Prerequisites
  * SubModuleProject\SubModule\Program.cs: This is a sample custom code with simple console log.  
  * SubModuleProject\SubModule\SubModule.csproj: This is the .NET project file which encapsulated the custom code. 
@@ -19,3 +20,4 @@
 6) Follow the standard method to outlined in documentation to moved the DLL code into Language extension folder.
 7) Execute the code through a stored procedure call. 
 8) Once your run it you should be able to see the console output in SSMS. 
+
