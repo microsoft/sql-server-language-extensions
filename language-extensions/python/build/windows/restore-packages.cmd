@@ -26,7 +26,7 @@ SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
 
 REM Download the Python installer using curl
 REM
-curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
+curl --tlsv1.2 -f -L --retry 5 --retry-delay 5 %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
 
 REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
 REM
@@ -39,7 +39,7 @@ SET PYTHONPATH=%PYTHON_INSTALLATION_PATH%
 
 REM Download and install pip
 REM
-curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\python.exe"
+curl --tlsv1.2 -f -sSL --retry 5 --retry-delay 5 https://bootstrap.pypa.io/get-pip.py | "%PYTHON_INSTALLATION_PATH%\python.exe"
 
 REM Install numpy and pandas
 REM
@@ -57,7 +57,7 @@ REM Extract the downloaded Boost zip file to the packages directory
 REM Remove the Boost zip file
 REM Navigate to the extracted Boost directory
 REM
-curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
+curl --tlsv1.2 -f -sSL --retry 5 --retry-delay 5 -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 
 REM -o Output directory
 REM 2nd param is the file to expand
@@ -78,7 +78,12 @@ dir
 echo create user config jam
 REM Create a Boost user-config.jam configuration file for building Boost.Python
 REM
-echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\python" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\include" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\libs" ; > user-config.jam
+REM Locate NumPy include path (hardcoded based on known install location)
+SET NUMPY_INCLUDE_PATH=%PYTHON_INSTALLATION_PATH%\Lib\site-packages\numpy\core\include
+SET "NUMPY_INCLUDE_PATH_DOUBLE_SLASH=%NUMPY_INCLUDE_PATH:\=\\%"
+
+REM Create a Boost user-config.jam configuration file for building Boost.Python and Boost.NumPy
+echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\python" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\include" "%NUMPY_INCLUDE_PATH_DOUBLE_SLASH%" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\libs" ; > user-config.jam
 
 REM Run Boost's bootstrap script and build Boost.Python with the created configuration
 REM Explicitly set VS2019 Compiler tooling 
