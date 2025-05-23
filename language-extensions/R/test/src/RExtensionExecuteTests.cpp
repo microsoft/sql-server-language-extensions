@@ -623,7 +623,7 @@ namespace ExtensionApiTest
 			//
 			Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
 
-			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+			for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 			{
 				RVectorType column = inputDataSet[columnNames[columnNumber].c_str()];
 				CheckRVectorColumnDataEquality<SQLType, RVectorType, dataType>(
@@ -686,7 +686,7 @@ namespace ExtensionApiTest
 			//
 			Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
 
-			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+			for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 			{
 				Rcpp::CharacterVector column = inputDataSet[columnNames[columnNumber].c_str()];
 				CheckRCharacterVectorColumnDataEquality<CharType>(
@@ -766,7 +766,7 @@ namespace ExtensionApiTest
 			//
 			Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
 
-			for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+			for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 			{
 				RVectorType column = inputDataSet[columnNames[columnNumber].c_str()];
 				CheckRDateTimeVectorColumnDataEquality<SQLType, RVectorType, DateTimeTypeInR>(
@@ -826,7 +826,7 @@ namespace ExtensionApiTest
 		//
 		Rcpp::DataFrame inputDataSet = m_globalEnvironment[m_inputDataNameString.c_str()];
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			Rcpp::NumericVector column = inputDataSet[columnNames[columnNumber].c_str()];
 			CheckRVectorColumnDataEquality<SQLDOUBLE, Rcpp::NumericVector, SQL_C_DOUBLE>(
@@ -857,8 +857,8 @@ namespace ExtensionApiTest
 		RVectorType expectedVector)
 	{
 		ASSERT_EQ(vectorToTest.size(), expectedVector.size());
-		SQLULEN expectedRowsNumber = expectedVector.size();
-		for(SQLULEN index = 0 ; index < expectedRowsNumber; ++index)
+
+		for(size_t index = 0 ; index < expectedVector.size(); ++index)
 		{
 			if (RVectorType::is_na(expectedVector[index]))
 			{
@@ -883,8 +883,8 @@ namespace ExtensionApiTest
 		Rcpp::DataFrame expectedDataFrame)
 	{
 		ASSERT_EQ(dataFrameToTest.size(), expectedDataFrame.size());
-		SQLUSMALLINT expectedColumns = dataFrameToTest.size();
-		for(SQLUSMALLINT index = 0 ; index < expectedColumns; ++index)
+
+		for(size_t index = 0 ; index < dataFrameToTest.size(); ++index)
 		{
 			CheckRVectorEquality<RVectorType>(
 				dataFrameToTest[index],

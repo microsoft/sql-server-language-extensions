@@ -862,7 +862,7 @@ void ROutputDataSet::CleanupColumns()
 {
 	LOG("ROutputDataSet::CleanupColumns");
 
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < m_data.size(); ++columnNumber)
+	for (size_t columnNumber = 0; columnNumber < m_data.size(); ++columnNumber)
 	{
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
 
