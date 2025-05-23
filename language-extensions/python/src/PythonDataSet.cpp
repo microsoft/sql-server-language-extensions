@@ -879,7 +879,7 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 
 	bp::list columnNames = GetColumnNames();
 
-	for (ssize_t columnNumber = 0; columnNumber < bp::len(columnNames); columnNumber++)
+	for (size_t columnNumber = 0; columnNumber < bp::len(columnNames); columnNumber++)
 	{
 		string columnName = bp::extract<string>(bp::str(columnNames[columnNumber]));
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
