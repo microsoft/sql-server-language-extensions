@@ -612,7 +612,7 @@ namespace ExtensionApiTest
 
 		vector<SQLULEN> precisionAsParamSize(parametersNumber, 0);
 		vector<SQLSMALLINT> decimalDigits(parametersNumber, 0);
-		for (int paramNumber = 0; paramNumber < parametersNumber; ++paramNumber)
+		for (SQLUSMALLINT paramNumber = 0; paramNumber < parametersNumber; ++paramNumber)
 		{
 			precisionAsParamSize[paramNumber] = inputNumericValues[paramNumber].precision;
 			decimalDigits[paramNumber] = inputNumericValues[paramNumber].scale;
@@ -830,7 +830,7 @@ namespace ExtensionApiTest
 		vector<SQLSMALLINT>         inputOutputTypes,
 		bool                        validate)
 	{
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			string paramNameString = string("@param" + to_string(paramNumber + 1));
 			SQLCHAR *paramName = static_cast<SQLCHAR*>(
@@ -894,7 +894,7 @@ namespace ExtensionApiTest
 		bool                    validate,
 		bool                    expectSuccess)
 	{
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			string paramNameString = string("@param" + to_string(paramNumber + 1));
 			SQLCHAR *paramName = static_cast<SQLCHAR*>(
@@ -1019,7 +1019,7 @@ namespace ExtensionApiTest
 		vector<SQLSMALLINT> inputOutputTypes,
 		bool                validate)
 	{
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			string paramNameString = string("@param" + to_string(paramNumber + 1));
 			SQLCHAR *paramName = static_cast<SQLCHAR*>(
@@ -1081,7 +1081,7 @@ namespace ExtensionApiTest
 		vector<SQLSMALLINT> inputOutputTypes,
 		bool                validate)
 	{
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			string paramNameString = string("@param" + to_string(paramNumber + 1));
 			SQLCHAR *paramName = static_cast<SQLCHAR*>(
@@ -1132,7 +1132,7 @@ namespace ExtensionApiTest
 		vector<SQLSMALLINT>        decimalDigits,
 		vector<double>             expectedParamValues)
 	{
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < initParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < initParamValues.size(); ++paramNumber)
 		{
 			string paramNameString = string("@param" + to_string(paramNumber + 1));
 			SQLCHAR *paramName = static_cast<SQLCHAR*>(

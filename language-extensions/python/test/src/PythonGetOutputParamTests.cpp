@@ -513,7 +513,7 @@ namespace ExtensionApiTest
 		vector<bool> isFixedType = { true, false, true, false, true, true, false };
 		vector<SQLULEN> paramSizes = { 5, 6, 10, 5, USHRT_MAX, 5, 5 };
 
-		for(SQLULEN paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+		for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
 			TestStringParameter(
 				paramNumber,
@@ -621,7 +621,7 @@ namespace ExtensionApiTest
 		vector<bool> isFixedType = { true, false, true , true, true, false, true, false};
 		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, 2, 5, 5, USHRT_MAX };
 
-		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
 			TestWStringParameter(
 				paramNumber,
@@ -714,7 +714,7 @@ namespace ExtensionApiTest
 		vector<bool> isFixedType = { true, false, true, true, false, false, true };
 		vector<SQLULEN> paramSizes = { 5, 6, 5, 10, USHRT_MAX, 5, 5 };
 
-		for (SQLULEN paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < paramSizes.size(); ++paramNumber)
 		{
 			vector<SQLCHAR> dummy = { 0x00 };
 
@@ -1019,7 +1019,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValueVector.size(), expectedStrLenOrIndVector.size());
 
-		for(SQLULEN i=0; i< expectedParamValueVector.size(); ++i)
+		for(size_t i=0; i< expectedParamValueVector.size(); ++i)
 		{
 			SQLType *expectedParamValue = expectedParamValueVector[i];
 			SQLINTEGER expectedStrLenOrInd = expectedStrLenOrIndVector[i];
@@ -1062,7 +1062,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1107,7 +1107,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1161,7 +1161,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1206,7 +1206,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValueVector.size(), expectedStrLenOrIndVector.size());
 
-		for (SQLULEN i = 0; i < expectedParamValueVector.size(); ++i)
+		for (size_t i = 0; i < expectedParamValueVector.size(); ++i)
 		{
 			DateTimeStruct *expectedParamValue = expectedParamValueVector[i];
 			SQLINTEGER expectedStrLenOrInd = expectedStrLenOrIndVector[i];

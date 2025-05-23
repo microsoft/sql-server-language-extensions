@@ -1246,7 +1246,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1306,7 +1306,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1350,7 +1350,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1405,7 +1405,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLPOINTER paramValue = nullptr;
 			SQLINTEGER strLen_or_Ind = 0;
@@ -1450,7 +1450,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLULEN paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQLType expectedParamValue = expectedParamValues[paramNumber];
 
@@ -1496,7 +1496,7 @@ namespace ExtensionApiTest
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-		for (SQLULEN paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+		for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
 		{
 			SQL_NUMERIC_STRUCT expectedParamValue = expectedParamValues[paramNumber];
 

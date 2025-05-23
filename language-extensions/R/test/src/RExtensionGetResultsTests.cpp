@@ -824,7 +824,7 @@ namespace ExtensionApiTest
 		//
 		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			InputSQLType *expectedColumnData = static_cast<InputSQLType *>(expectedData[columnNumber]);
 			OutputSQLType *columnData = static_cast<OutputSQLType *>(data[columnNumber]);
@@ -944,7 +944,7 @@ namespace ExtensionApiTest
 		//
 		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			char *expectedColumnData = static_cast<char *>(expectedData[columnNumber]);
 			char *columnData = static_cast<char *>(data[columnNumber]);
@@ -1033,7 +1033,7 @@ namespace ExtensionApiTest
 		//
 		Rcpp::DataFrame outputDataSet = m_globalEnvironment[m_outputDataNameString.c_str()];
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			SQLType *expectedColumnData = static_cast<SQLType*>(expectedData[columnNumber]);
 			SQLType *columnData = static_cast<SQLType *>(data[columnNumber]);
