@@ -55,7 +55,7 @@ REM Setting PATH to access make.exe
 REM
 SET PATH=C:\rtools40\usr\bin;%PATH%
 
-"%R_BIN_PATH%\R" -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.6.tar.gz', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL, type='source')"
+"%R_BIN_PATH%\R" -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.13.tar.gz', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL, type='source')"
 "%R_BIN_PATH%\R" -e "stopifnot(require(Rcpp))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rcpp package" || EXIT /b %ERRORLEVEL%
 
