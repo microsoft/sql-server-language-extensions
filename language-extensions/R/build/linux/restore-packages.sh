@@ -11,6 +11,8 @@ function check_exit_code {
 }
 
 export DEBIAN_FRONTEND=noninteractive
+export CXXFLAGS="-Wno-format-security -Wno-error=format-security -Wformat=0"
+
 apt-get update
 apt-get --no-install-recommends -y install curl zip unzip apt-transport-https libstdc++6
 
@@ -45,7 +47,6 @@ R_LIBRARY_PATH=${R_HOME}/library
 #
 ${R_HOME}/bin/R -e "remove.packages('codetools', lib = '${R_LIBRARY_PATH}')"
 
-export CXXFLAGS="-Wno-format-security"
 
 # Install Rcpp.
 #
