@@ -45,6 +45,8 @@ R_LIBRARY_PATH=${R_HOME}/library
 #
 ${R_HOME}/bin/R -e "remove.packages('codetools', lib = '${R_LIBRARY_PATH}')"
 
+export CXXFLAGS="-Wno-format-security"
+
 # Install Rcpp.
 #
 ${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.6.tar.gz', lib = '${R_LIBRARY_PATH}', repos = NULL, type='source')"
