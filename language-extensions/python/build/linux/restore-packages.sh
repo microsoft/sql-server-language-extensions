@@ -9,6 +9,8 @@ apt-get update
 apt-get install -y software-properties-common
 add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
+add-apt-repository -y universe
+apt-get update
 
 DEFAULT_PYTHONHOME=/usr
 BOOST_VERSION=1.79.0
