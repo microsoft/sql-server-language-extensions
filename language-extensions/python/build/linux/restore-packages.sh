@@ -44,8 +44,9 @@ echo "Python home is ${PYTHONHOME}"
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 
-${ALTERNATE_PYTHON_HOME}/bin/python3.10 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${ALTERNATE_PYTHON_HOME}/lib/python3.10/dist-packages
-${ALTERNATE_PYTHON_HOME}/bin/python3.10 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${ALTERNATE_PYTHON_HOME}/lib/python3.10/dist-packages
+/bin/python3 -m pip install distutils
+/bin/python3 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t /usr/lib/python3.10/dist-packages
+/bin/python3 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t /usr/lib/python3.10/dist-packages
 
 # Download and install boost, then navigate to boost root directory
 #
@@ -55,16 +56,16 @@ pushd /usr/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
 # Build defined python version of boost and boost python
 #
-./bootstrap.sh --without-icu --with-python=${ALTERNATE_PYTHON_HOME}/bin/python${PYTHON_VERSION} --with-python-version=${PYTHON_VERSION} --with-python-root=${PYTHONHOME}/lib/python${PYTHON_VERSION}
+./bootstrap.sh --without-icu --with-python=/bin/python3 --with-python-version=${PYTHON_VERSION} --with-python-root=/usr/lib/python${PYTHON_VERSION}
 
-echo "using python : ${PYTHON_VERSION} : ${ALTERNATE_PYTHON_HOME}/bin/python${PYTHON_VERSION} : ${PYTHONHOME}/include/python${PYTHON_VERSION} : ${ALTERNATE_PYTHON_HOME}/lib ;" >> project-config.jam
+echo "using python : ${PYTHON_VERSION} : /bin/python3 : ${PYTHONHOME}/include/python${PYTHON_VERSION} : /usr/lib ;" >> project-config.jam
 
 # Change cxx flags to force boost to compile with -fPIC compilation, otherwise will fail linking when building libPythonExtension.so
 #
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
 ./b2 --clean
-./b2 toolset=gcc variant=debug address-model=64 include=${ALTERNATE_PYTHON_HOME}/include/python${PYTHON_VERSION}/ link=static threading=multi -j12
+./b2 toolset=gcc variant=debug address-model=64 include=/usr/include/python${PYTHON_VERSION}/ link=static threading=multi -j12
 
 cp -rf boost /usr/include/
 
