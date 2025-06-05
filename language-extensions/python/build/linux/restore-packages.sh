@@ -11,8 +11,8 @@ add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
 
 DEFAULT_PYTHONHOME=/usr
-BOOST_VERSION=1.87.0
-BOOST_VERSION_IN_UNDERSCORE=1_87_0
+BOOST_VERSION=1.79.0
+BOOST_VERSION_IN_UNDERSCORE=1_79_0
 PYTHON_VERSION=3.12
 NUMPY_VERSION=1.26.0
 PANDAS_VERSION=1.4.2
@@ -40,6 +40,9 @@ echo "Python home is ${PYTHONHOME}"
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 
 /usr/local/bin/python3.12 -m pip install setuptools
+/usr/local/bin/python3.12 -m pip install python3-dev
+/usr/local/bin/python3.12 -m pip install python3.12-dev
+/usr/local/bin/python3.12 -m pip install python-dev
 /usr/local/bin/python3.12 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t /usr/lib/python3.12/dist-packages
 /usr/local/bin/python3.12 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t /usr/lib/python3.12/dist-packages
 
