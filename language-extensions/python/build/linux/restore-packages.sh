@@ -13,7 +13,7 @@ apt-get update
 DEFAULT_PYTHONHOME=/usr
 BOOST_VERSION=1.79.0
 BOOST_VERSION_IN_UNDERSCORE=1_79_0
-PYTHON_VERSION=3.10
+PYTHON_VERSION=3.12
 NUMPY_VERSION=1.22.3
 PANDAS_VERSION=1.4.2
 
@@ -53,9 +53,9 @@ echo "Python home is ${PYTHONHOME}"
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 
-/bin/python3 -m pip install distutils
-/bin/python3 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t /usr/lib/python3.10/dist-packages
-/bin/python3 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t /usr/lib/python3.10/dist-packages
+/usr/local/bin/python3.12 -m pip install distutils
+/usr/local/bin/python3.12 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t /usr/lib/python3.12/dist-packages
+/usr/local/bin/python3.12 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t /usr/lib/python3.12/dist-packages
 
 # Download and install boost, then navigate to boost root directory
 #
@@ -65,9 +65,9 @@ pushd /usr/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
 # Build defined python version of boost and boost python
 #
-./bootstrap.sh --without-icu --with-python=/bin/python3 --with-python-version=3 --with-python-root=/usr/lib/python${PYTHON_VERSION}
+./bootstrap.sh --without-icu --with-python=/usr/local/bin/python3.12 --with-python-version=3 --with-python-root=/usr/lib/python3.12
 
-echo "using python : ${PYTHON_VERSION} : /bin/python3 : /usr/include/python3 : /usr/lib ;" >> project-config.jam
+echo "using python : ${PYTHON_VERSION} : /usr/local/bin/python3.12 : /usr/include/python3.12 : /usr/lib ;" >> project-config.jam
 
 # Change cxx flags to force boost to compile with -fPIC compilation, otherwise will fail linking when building libPythonExtension.so
 #
