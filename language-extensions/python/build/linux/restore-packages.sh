@@ -20,6 +20,9 @@ PANDAS_VERSION=1.4.2
 echo "checking python3 version"
 which python3
 
+echo "check all the python versions"
+whereis python3
+
 ALTERNATE_PYTHON_HOME=$(which python3)
 
 apt-get install -y python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
