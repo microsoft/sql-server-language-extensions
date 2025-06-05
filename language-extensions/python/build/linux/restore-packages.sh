@@ -23,6 +23,12 @@ which python3
 echo "check all the python versions"
 whereis python3
 
+echo "list what is in /bin/python3"
+ls -ls /bin/python3
+
+echo "list what is in /usr/local/bin/python3.12"
+ls -ls /usr/local/bin/python3.12
+
 ALTERNATE_PYTHON_HOME=$(which python3)
 
 apt-get install -y python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
