@@ -23,7 +23,7 @@ which python3
 ALTERNATE_PYTHON_HOME=$(which python3)
 
 apt-get install -y python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
-curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION}
+curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
 # Find PYTHONHOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
@@ -56,16 +56,16 @@ pushd /usr/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
 # Build defined python version of boost and boost python
 #
-./bootstrap.sh --without-icu --with-python=/bin/python3 --with-python-version=${PYTHON_VERSION} --with-python-root=/usr/lib/python${PYTHON_VERSION}
+./bootstrap.sh --without-icu --with-python=/bin/python3 --with-python-version=3 --with-python-root=/usr/lib/python${PYTHON_VERSION}
 
-echo "using python : ${PYTHON_VERSION} : /bin/python3 : ${PYTHONHOME}/include/python${PYTHON_VERSION} : /usr/lib ;" >> project-config.jam
+echo "using python : ${PYTHON_VERSION} : /bin/python3 : /usr/include/python3 : /usr/lib ;" >> project-config.jam
 
 # Change cxx flags to force boost to compile with -fPIC compilation, otherwise will fail linking when building libPythonExtension.so
 #
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
 ./b2 --clean
-./b2 toolset=gcc variant=debug address-model=64 include=/usr/include/python${PYTHON_VERSION}/ link=static threading=multi -j12
+./b2 toolset=gcc variant=debug address-model=64 include=/usr/include/python3/ link=static threading=multi -j12
 
 cp -rf boost /usr/include/
 
