@@ -14,22 +14,8 @@ DEFAULT_PYTHONHOME=/usr
 BOOST_VERSION=1.79.0
 BOOST_VERSION_IN_UNDERSCORE=1_79_0
 PYTHON_VERSION=3.12
-NUMPY_VERSION=1.22.3
+NUMPY_VERSION=1.26.0
 PANDAS_VERSION=1.4.2
-
-echo "checking python3 version"
-which python3
-
-echo "check all the python versions"
-whereis python3
-
-echo "list what is in /bin/python3"
-ls -ls /bin/python3
-
-echo "list what is in /usr/local/bin/python3.12"
-ls -ls /usr/local/bin/python3.12
-
-ALTERNATE_PYTHON_HOME=$(which python3)
 
 apt-get install -y python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
 curl -sS https://bootstrap.pypa.io/get-pip.py | /usr/local/bin/python3.12
