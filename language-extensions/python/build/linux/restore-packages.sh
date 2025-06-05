@@ -32,7 +32,7 @@ ls -ls /usr/local/bin/python3.12
 ALTERNATE_PYTHON_HOME=$(which python3)
 
 apt-get install -y python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
-curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+curl -sS https://bootstrap.pypa.io/get-pip.py | /usr/local/bin/python3.12
 
 # Find PYTHONHOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
@@ -53,7 +53,7 @@ echo "Python home is ${PYTHONHOME}"
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 #${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 
-/usr/local/bin/python3.12 -m pip install distutils
+/usr/local/bin/python3.12 -m pip install setuptools
 /usr/local/bin/python3.12 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t /usr/lib/python3.12/dist-packages
 /usr/local/bin/python3.12 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t /usr/lib/python3.12/dist-packages
 
