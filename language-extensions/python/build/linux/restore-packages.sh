@@ -60,9 +60,9 @@ pushd /usr/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
 # Build defined python version of boost and boost python
 #
-./bootstrap.sh --without-icu --with-python=/usr/local/bin/python3.12 --with-python-version=3 --with-python-root=/usr/lib/python3.12
+./bootstrap.sh --without-icu --with-python=/usr/local/bin/python3.12 --with-python-version=3.12 --with-python-root=/usr/lib/python3.12
 
-echo "using python : ${PYTHON_VERSION} : /usr/local/bin/python3.12 : /usr/include/python3.12 : /usr/lib ;" >> project-config.jam
+echo "using python : ${PYTHON_VERSION} : /usr/local/bin/python3.12 : /usr/include/python3.12: /usr/local/include/python3.12 : /usr/lib ;" >> project-config.jam
 
 # Change cxx flags to force boost to compile with -fPIC compilation, otherwise will fail linking when building libPythonExtension.so
 #
