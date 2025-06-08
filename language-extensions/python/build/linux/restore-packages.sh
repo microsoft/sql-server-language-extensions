@@ -46,6 +46,12 @@ echo "Python home is ${PYTHONHOME}"
 /usr/local/bin/python3.12 -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t /usr/lib/python3.12/dist-packages
 /usr/local/bin/python3.12 -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t /usr/lib/python3.12/dist-packages
 
+echo "python 3.8"
+python3.8-config --includes --libs
+
+echo "python 3.12"
+python3.12-config --includes --libs
+
 # Download and install boost, then navigate to boost root directory
 #
 wget -O boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz/download
