@@ -17,8 +17,8 @@ PYTHON_VERSION=3.12
 NUMPY_VERSION=1.26.0
 PANDAS_VERSION=1.4.2
 
-apt-get install -y python-dev python3-dev python${PYTHON_VERSION}-dev libboost-all-dev python${PYTHON_VERSION}-distutils
-curl -sS https://bootstrap.pypa.io/get-pip.py | ${PYTHONHOME}/bin/python${PYTHON_VERSION}
+apt-get install -y python-dev python3-dev libboost-all-dev
+curl -sS https://bootstrap.pypa.io/get-pip.py | /usr/local/bin/python${PYTHON_VERSION}
 
 # Find PYTHONHOME from user, or set to default for tests.
 # Error code 1 is generic bash error.
