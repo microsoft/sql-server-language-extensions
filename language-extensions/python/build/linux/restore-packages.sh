@@ -39,6 +39,9 @@ echo "Python home is ${PYTHONHOME}"
 ${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 ${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
 
+echo "list what is in /usr/local/bin"
+ls -ls /usr/local/bin/
+
 # Download and install boost, then navigate to boost root directory
 #
 wget -O boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_IN_UNDERSCORE}.tar.gz/download
@@ -47,7 +50,7 @@ pushd /usr/local/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
 # Build defined python version of boost and boost python
 #
-./bootstrap.sh --without-icu --with-python=${PYTHONHOME}/bin/python${PYTHON_VERSION} --with-python-version=${PYTHON_VERSION} --with-python-root=${PYTHONHOME}/lib/python${PYTHON_VERSION}
+./bootstrap.sh --without-icu --with-python=${PYTHONHOME}/bin/python${PYTHON_VERSION} --with-python-version=${PYTHON_VERSION} --with-python-root=${PYTHONHOME}/bin/
 
 echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSION} : ${PYTHONHOME}/include/python${PYTHON_VERSION} : ${PYTHONHOME}/lib ;" >> project-config.jam
 
@@ -55,24 +58,8 @@ echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSIO
 #
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
-# Get numpy include path
-${PYTHONHOME}/bin/python${PYTHON_VERSION} <<EOF
-import numpy as np
-include_path = np.get_include()
-print(include_path)
-# Exit gracefully
-sys.exit(0)
-EOF
-
-# Get the include path for python
-${PYTHONHOME}/bin/python${PYTHON_VERSION} <<EOF
-import sysconfig
-include_path = sysconfig.get_paths()["include"]
-print(include_path)
-EOF
-
 ./b2 --clean
-./b2 toolset=gcc variant=debug address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ link=static threading=multi -j12
+./b2 toolset=gcc variant=debug address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ include=${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages link=static threading=multi -j12
 
 cp -rf boost /usr/local/include/
 
