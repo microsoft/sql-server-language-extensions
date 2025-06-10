@@ -10,7 +10,7 @@ apt-get install -y software-properties-common
 add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
 
-DEFAULT_PYTHONHOME=/usr/local/
+DEFAULT_PYTHONHOME=/usr/local
 BOOST_VERSION=1.79.0
 BOOST_VERSION_IN_UNDERSCORE=1_79_0
 PYTHON_VERSION=3.12
