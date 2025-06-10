@@ -55,6 +55,22 @@ echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSIO
 #
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
+# Get numpy include path
+${PYTHONHOME}/bin/python${PYTHON_VERSION} <<EOF
+import numpy as np
+include_path = np.get_include()
+print(include_path)
+# Exit gracefully
+sys.exit(0)
+EOF
+
+# Get the include path for python
+${PYTHONHOME}/bin/python${PYTHON_VERSION} <<EOF
+import sysconfig
+include_path = sysconfig.get_paths()["include"]
+print(include_path)
+EOF
+
 ./b2 --clean
 ./b2 toolset=gcc variant=debug address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ link=static threading=multi -j12
 
