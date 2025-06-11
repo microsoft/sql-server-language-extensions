@@ -3,7 +3,7 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get --no-install-recommends -y install curl zip unzip 
+apt-get --no-install-recommends -y install curl zip unzip
 
 apt-get update
 apt-get install -y software-properties-common
@@ -11,11 +11,11 @@ add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
 
 DEFAULT_PYTHONHOME=/usr/local
-BOOST_VERSION=1.79.0
-BOOST_VERSION_IN_UNDERSCORE=1_79_0
+BOOST_VERSION=1.87.0
+BOOST_VERSION_IN_UNDERSCORE=1_87_0
 PYTHON_VERSION=3.12
-NUMPY_VERSION=1.26.0
-PANDAS_VERSION=1.4.2
+NUMPY_VERSION=2.3.0
+PANDAS_VERSION=2.3.0
 
 apt-get install -y python-dev python3-dev libboost-all-dev
 curl -sS https://bootstrap.pypa.io/get-pip.py | /usr/local/bin/python${PYTHON_VERSION}
@@ -36,8 +36,8 @@ echo "Python home is ${PYTHONHOME}"
 
 # Lock versions of numpy and pandas to versions compatible for the defined python version
 #
-${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
-${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION} -t ${PYTHONHOME}/lib/python${PYTHON_VERSION}/dist-packages
+${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall numpy==${NUMPY_VERSION}
+${PYTHONHOME}/bin/python${PYTHON_VERSION} -m pip install --force-reinstall pandas==${PANDAS_VERSION}
 
 # Download and install boost, then navigate to boost root directory
 #
@@ -47,7 +47,7 @@ pushd /usr/local/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}
 
 # Build defined python version of boost and boost python
 #
-./bootstrap.sh --without-icu --with-python=${PYTHONHOME}/bin/python${PYTHON_VERSION} --with-python-version=${PYTHON_VERSION} --with-python-root=${PYTHONHOME}/lib
+./bootstrap.sh --without-icu --with-python=${PYTHONHOME}/bin/python${PYTHON_VERSION} --with-python-version=${PYTHON_VERSION} --with-python-root=${PYTHONHOME}/lib/python${PYTHON_VERSION}
 
 echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSION} : ${PYTHONHOME}/include/python${PYTHON_VERSION} : ${PYTHONHOME}/lib ;" >> project-config.jam
 
