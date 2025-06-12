@@ -408,7 +408,7 @@ namespace ExtensionApiTest
 	TEST_F(RExtensionLibraryApiTests, InstallMultipleTest)
 	{
 		vector<string> libNames{ "assertthat", "pkgconfig", "rlang" };
-		vector<string> versions{ "0.2.1", "2.0.3", "0.4.7"};
+		vector<string> versions{ "0.2.1", "2.0.3", "1.1.6"};
 
 		vector<string> zipFileNames{
 			sm_PublicDbIdUserIdPrefix + libNames[0] + "_"
@@ -570,7 +570,7 @@ namespace ExtensionApiTest
 	TEST_F(RExtensionLibraryApiTests, DependencyInstallTest)
 	{
 		string libName = "bindrcpp";
-		string version = "0.2.2";
+		string version = "0.2.3";
 		string zipFileName =
 			sm_PrivateDbIdUserIdPrefix + libName + "_" + version + x_FileExtension;
 
