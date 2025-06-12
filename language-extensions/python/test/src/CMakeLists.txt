@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 3.5)
 
 # Define the python runtime version to be used
 #
-set(PYTHON_VERSION "3.10")
-set(PYTHON_VERSION_NO_DOT "310")
+set(PYTHON_VERSION "3.12")
+set(PYTHON_VERSION_NO_DOT "312")
 
 # This is what the final executable is going to be named
 #

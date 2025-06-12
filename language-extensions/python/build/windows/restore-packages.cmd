@@ -8,14 +8,14 @@ SET ARCHIVE_TOOL_PATH="C:\7-Zip\7z.exe"
 
 REM Specify the Python version to be downloaded and installed
 REM
-SET PYTHON_VERSION=3.10.2
-SET PYTHON_VERSION_MAJOR_MINOR=3.10
-SET PYTHON_VERSION_NO_DOT=310
+SET PYTHON_VERSION=3.12.10
+SET PYTHON_VERSION_MAJOR_MINOR=3.12
+SET PYTHON_VERSION_NO_DOT=312
 
 REM Specify the Boost version to be downloaded and installed
 REM
-SET BOOST_VERSION=1.79.0
-SET BOOST_VERSION_IN_UNDERSCORE=1_79_0
+SET BOOST_VERSION=1.87.0
+SET BOOST_VERSION_IN_UNDERSCORE=1_87_0
 
 REM Download and install Python from the official Python website
 REM
@@ -43,8 +43,8 @@ curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\pytho
 
 REM Install numpy and pandas
 REM
-SET NUMPY_VERSION=1.22.3
-SET PANDAS_VERSION=1.4.2
+SET NUMPY_VERSION=2.3.0
+SET PANDAS_VERSION=2.3.0
 "%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
 
 REM Remove the Python installer which is no longer needed
