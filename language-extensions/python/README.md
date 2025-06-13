@@ -65,7 +65,7 @@ B.	Installing needed packages from respective sources.
 
 1. Install the package numpy into your python. This is needed to build boost_numpy in the next step.
 
-1. Download and build [Boost Python](https://www.boost.org/doc/libs/1_79_0/libs/python/doc/html/building/no_install_quickstart.html) with your version of Python. Make sure to build the static libraries.
+1. Download and build [Boost Python](https://www.boost.org/doc/libs/1_87_0/libs/python/doc/html/building/no_install_quickstart.html) with your version of Python. Make sure to build the static libraries.
 
 1. Set PYTHONHOME and BOOST_ROOT to point to your python installation and boost build folder respectively.
 
