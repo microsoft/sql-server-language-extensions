@@ -47,7 +47,7 @@ ${R_HOME}/bin/R -e "remove.packages('codetools', lib = '${R_LIBRARY_PATH}')"
 
 # Install Rcpp.
 #
-${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.6.tar.gz', lib = '${R_LIBRARY_PATH}', repos = NULL, type='source')"
+${R_HOME}/bin/R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.13.tar.gz', lib = '${R_LIBRARY_PATH}', repos = NULL, type='source')"
 ${R_HOME}/bin/R -e "stopifnot(require(Rcpp))"
 check_exit_code "Success: Installed Rcpp package." "Error: Failed to install Rcpp package."
 

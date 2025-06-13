@@ -37,7 +37,7 @@ namespace bp = boost::python;
 	#include <experimental/filesystem>
 	namespace fs = experimental::filesystem;
 	#include <dlfcn.h>
-	const string x_PythonSoFile = "libpython3.10.so.1.0";
+	const string x_PythonSoFile = "libpython3.12.so.1.0";
 #endif
 
 static unordered_map<string, PythonSession *> g_pySessionMap;

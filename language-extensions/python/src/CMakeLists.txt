@@ -46,6 +46,12 @@ set_target_properties(PythonExtension
 )
 
 if (${PLATFORM} STREQUAL linux)
+	# Python runtime version used in the linux environment differs from the one used in Windows at this time.
+	# This declaration should no longer be needed once the Windows version is updated to 3.12.
+	#
+	set(PYTHON_VERSION "3.12")
+	set(PYTHON_VERSION_NO_DOT "312")
+
 	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -fshort-wchar)
 
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
