@@ -59,7 +59,7 @@ SET PATH=C:\rtools45\usr\bin;%PATH%
 "%R_BIN_PATH%\R" -e "stopifnot(require(Rcpp))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rcpp package" || EXIT /b %ERRORLEVEL%
 
-"%R_BIN_PATH%\R" -e "install.packages('https://cran.r-project.org/src/contrib/Archive/RInside/RInside_0.2.15.tar.gz', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL, , type='source')"
+"%R_BIN_PATH%\R" -e "install.packages('https://cran.r-project.org/src/contrib/RInside_0.2.19.tar.gz', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL, , type='source')"
 "%R_BIN_PATH%\R" -e "stopifnot(require(RInside))"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install RInside package" || EXIT /b %ERRORLEVEL%
 SETLOCAL disabledelayedexpansion
