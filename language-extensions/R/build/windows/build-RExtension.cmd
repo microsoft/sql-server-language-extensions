@@ -7,12 +7,12 @@ SET ENL_ROOT=%~dp0..\..\..\..
 SET REXTENSION_HOME=%ENL_ROOT%\language-extensions\R
 SET REXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\RExtension\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.5-win
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.5.0-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
-SET DEFAULT_RTOOLS40_HOME=C:\rtools40
+SET DEFAULT_RTOOLS45_HOME=C:\rtools45
 SET DEFAULT_RTOOLS35_HOME=C:\rtools
 
-REM Find R_HOME, RTOOLS40_HOME, RTOOLS35_HOME, CMAKE_ROOT from user or set to default.
+REM Find R_HOME, RTOOLS45_HOME, RTOOLS35_HOME, CMAKE_ROOT from user or set to default.
 REM Error code 203 is ENVVAR_NOT_FOUND.
 REM
 SET ENVVAR_NOT_FOUND=203
@@ -25,11 +25,11 @@ IF "%R_HOME%" == "" (
 	)
 )
 
-IF "%RTOOLS40_HOME%" == "" (
-	IF EXIST %DEFAULT_RTOOLS40_HOME% (
-		SET RTOOLS40_HOME=%DEFAULT_RTOOLS40_HOME%
+IF "%RTOOLS45_HOME%" == "" (
+	IF EXIST %DEFAULT_RTOOLS45_HOME% (
+		SET RTOOLS45_HOME=%DEFAULT_RTOOLS45_HOME%
 	) ELSE (
-		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: RTOOLS40_HOME variable must be set to build the RExtension" || EXIT /b %ENVVAR_NOT_FOUND%
+		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: RTOOLS45_HOME variable must be set to build the RExtension" || EXIT /b %ENVVAR_NOT_FOUND%
 	)
 )
 
@@ -84,7 +84,7 @@ PUSHD %BUILD_OUTPUT%
 REM Make sure g++, mingw32-make and R.dll are in the PATH.
 REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
 REM
-SET PATH=%RTOOLS40_HOME%\mingw64\bin;%RTOOLS35_HOME%\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
+SET PATH=%RTOOLS45_HOME%\mingw64\bin;%RTOOLS35_HOME%\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
 
 REM Call cmake
 REM

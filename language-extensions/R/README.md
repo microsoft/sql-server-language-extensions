@@ -25,7 +25,7 @@ A.	Using the [**restore-packages.cmd**](build/windows/restore-packages.cmd) scri
 
 B.	Installing needed packages from respective sources.
 
-1. Install [rtools40-x86_64.exe](https://cran.r-project.org/bin/windows/Rtools/) to get the gcc v8.3.0 toolchain. Set RTOOLS40_HOME to point to this rtools40 installation path. Also install [Rtools35.exe](https://cran.r-project.org/bin/windows/Rtools/Rtools35.exe) to use MinGW Makefiles as the generator for cmake and mingw32-make as the build tool. Set RTOOLS35_HOME to point to this Rtools35 installation path.
+1. Install [rtools45-6608-6492.exe](https://cran.r-project.org/bin/windows/Rtools/rtools45/files/rtools45-6608-6492.exe/) to get the gcc v8.3.0 toolchain. Set RTOOLS45_HOME to point to this rtools45 installation path. Also install [Rtools35.exe](https://cran.r-project.org/bin/windows/Rtools/Rtools35.exe) to use MinGW Makefiles as the generator for cmake and mingw32-make as the build tool. Set RTOOLS35_HOME to point to this Rtools35 installation path.
 
 1. Install [CMake for Windows](https://cmake.org/download/). Set CMAKE_ROOT to point to the cmake installation folder.
 

@@ -12,7 +12,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to restore common nuget packages." 
 
 REM Set DEFAULT_R_HOME
 REM
-SET R_VERSION=4.0.5
+SET R_VERSION=4.5.0
 SET R_INSTALLER=R-%R_VERSION%-win.exe
 SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-%R_VERSION%-win
 
@@ -34,26 +34,26 @@ SET R_BIN_PATH=%R_HOME%\bin
 SETLOCAL enabledelayedexpansion
 SET R_LIBRARY_PATH=%R_HOME%\library
 
-REM Get RTools35 for mingw32-make and rtools40 for g++ v8.3.0 that works with C++17.
+REM Get RTools35 for mingw32-make and rtools45 for g++ v8.3.0 that works with C++17.
 REM
 SET RTOOLS_HOME=%PACKAGES_ROOT%\Rtools
 MKDIR %RTOOLS_HOME%
 powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/Rtools35.exe -OutFile %RTOOLS_HOME%\Rtools35.exe"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools3.5." || EXIT /b %ERRORLEVEL%
-powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/rtools40-x86_64.exe -OutFile %RTOOLS_HOME%\rtools40.exe"
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools4.0." || EXIT /b %ERRORLEVEL%
+powershell -Command "Invoke-WebRequest https://cran.r-project.org/bin/windows/Rtools/rtools45/files/rtools45-6608-6492.exe -OutFile %RTOOLS_HOME%\rtools45.exe"
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to download Rtools4.5." || EXIT /b %ERRORLEVEL%
 
 REM Install RTools
 REM
 "%RTOOLS_HOME%\Rtools35.exe" /VERYSILENT /DIR="C:\Rtools\"
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools3.5." || EXIT /b %ERRORLEVEL%
-"%RTOOLS_HOME%\rtools40.exe" /VERYSILENT /DIR="C:\rtools40\"
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools4.0." || EXIT /b %ERRORLEVEL%
+"%RTOOLS_HOME%\rtools45.exe" /VERYSILENT /DIR="C:\rtools45\"
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to install Rtools4.5." || EXIT /b %ERRORLEVEL%
 
 REM Install Rcpp and RInside
 REM Setting PATH to access make.exe
 REM
-SET PATH=C:\rtools40\usr\bin;%PATH%
+SET PATH=C:\rtools45\usr\bin;%PATH%
 
 "%R_BIN_PATH%\R" -e "install.packages('https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.13.tar.gz', lib = '!R_LIBRARY_PATH:\=/!', repos = NULL, type='source')"
 "%R_BIN_PATH%\R" -e "stopifnot(require(Rcpp))"

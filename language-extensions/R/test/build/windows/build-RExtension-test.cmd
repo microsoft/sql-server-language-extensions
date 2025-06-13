@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..\..
 SET REXTENSIONTEST_HOME=%ENL_ROOT%\language-extensions\R\test
 SET REXTENSIONTEST_WORKING_DIR=%ENL_ROOT%\build-output\RExtension-test\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.0.5-win
+SET DEFAULT_R_HOME=%PACKAGES_ROOT%\R-4.5.0-win
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
 REM Find R_HOME and CMAKE_ROOT from user, or set to default.
@@ -55,7 +55,7 @@ REM Make sure g++ is in the PATH.
 REM Do not enclose the C:\Rtools\mingw_64\bin path in quotes - cmake test fails
 REM Also need to have R_HOME\bin\x64 in the PATH so that linker finds definitions for R functions.
 REM
-SET PATH=C:\rtools40\mingw64\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
+SET PATH=C:\rtools45\mingw64\bin;C:\Rtools\mingw_64\bin;%R_HOME%\bin\x64;%PATH%
 
 ECHO "[INFO] Generating RExtension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
