@@ -410,6 +410,10 @@ namespace ExtensionApiTest
 		vector<string> libNames{ "assertthat", "pkgconfig", "rlang" };
 		vector<string> versions{ "0.2.1", "2.0.3", "0.4.7"};
 
+		#ifndef _WIN64
+			versions[2] = "1.1.6"; // rlang version for linux
+		#endif
+
 		vector<string> zipFileNames{
 			sm_PublicDbIdUserIdPrefix + libNames[0] + "_"
 				+ versions[0] + x_FileExtension,
@@ -570,7 +574,14 @@ namespace ExtensionApiTest
 	TEST_F(RExtensionLibraryApiTests, DependencyInstallTest)
 	{
 		string libName = "bindrcpp";
-		string version = "0.2.2";
+		string version;
+
+		#ifdef _WIN64
+			version = "0.2.2"; // bindrcpp version for windows
+		#else
+			version = "0.2.3"; // bindrcpp version for linux
+		#endif
+
 		string zipFileName =
 			sm_PrivateDbIdUserIdPrefix + libName + "_" + version + x_FileExtension;
 
