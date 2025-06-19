@@ -577,7 +577,7 @@ namespace ExtensionApiTest
 				createDictScript = m_outputDataNameString + ".to_dict()";
 				bp::dict outputDataSet = bp::extract<bp::dict>(bp::eval(createDictScript.c_str(), m_mainNamespace));
 
-				for (SQLUSMALLINT columnIndex = 0; columnIndex < columnNames.size(); columnIndex++)
+				for (size_t columnIndex = 0; columnIndex < columnNames.size(); columnIndex++)
 				{
 					bp::dict inputColumnToTest = bp::extract<bp::dict>(inputDataSet.get(columnNames[columnIndex]));
 					bp::dict outputColumnToTest = bp::extract<bp::dict>(outputDataSet.get(columnNames[columnIndex]));

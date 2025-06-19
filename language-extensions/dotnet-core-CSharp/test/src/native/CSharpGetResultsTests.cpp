@@ -322,7 +322,7 @@ namespace ExtensionApiTest
 
         // Test data obtained is same as the expectedData and the OutputDataSet.
         //
-        for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+        for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
         {
             SQLINTEGER *expectedColumnStrLenOrInd = expectedStrLen_or_Ind[columnNumber];
             SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
@@ -419,7 +419,7 @@ namespace ExtensionApiTest
 
         EXPECT_EQ(rowsNumber, expectedRowsNumber);
 
-        for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+        for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
         {
             char *expectedColumnData = static_cast<char *>(expectedData[columnNumber]);
             char *columnData = static_cast<char *>(data[columnNumber]);

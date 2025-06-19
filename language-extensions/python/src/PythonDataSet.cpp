@@ -879,7 +879,7 @@ void PythonOutputDataSet::RetrieveColumnsFromDataFrame()
 
 	bp::list columnNames = GetColumnNames();
 
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < bp::len(columnNames); columnNumber++)
+	for (long columnNumber = 0; columnNumber < bp::len(columnNames); columnNumber++)
 	{
 		string columnName = bp::extract<string>(bp::str(columnNames[columnNumber]));
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
@@ -1527,7 +1527,7 @@ void PythonOutputDataSet::CleanupColumns()
 {
 	LOG("PythonOutputDataSet::CleanupColumns");
 
-	for (SQLUSMALLINT columnNumber = 0; columnNumber < m_data.size(); ++columnNumber)
+	for (size_t columnNumber = 0; columnNumber < m_data.size(); ++columnNumber)
 	{
 		SQLSMALLINT dataType = m_columnsDataType[columnNumber];
 

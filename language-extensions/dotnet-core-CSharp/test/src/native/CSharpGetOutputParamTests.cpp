@@ -445,7 +445,7 @@ namespace ExtensionApiTest
         vector<bool> isFixedType = { true, false, true, false, true, true };
         vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
 
-        for(SQLULEN paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+        for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
         {
             InitStringParameter(
                 paramNumber,
@@ -521,7 +521,7 @@ namespace ExtensionApiTest
     {
         ASSERT_EQ(expectedParamValueVector.size(), expectedStrLenOrIndVector.size());
 
-        for(SQLULEN i = 0; i < expectedParamValueVector.size(); ++i)
+        for(size_t i = 0; i < expectedParamValueVector.size(); ++i)
         {
             SQLType *expectedParamValue = expectedParamValueVector[i];
             SQLINTEGER expectedStrLenOrInd = expectedStrLenOrIndVector[i];
@@ -565,7 +565,7 @@ namespace ExtensionApiTest
     {
         ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
-        for (SQLUSMALLINT paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+        for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
         {
             SQLPOINTER paramValue = nullptr;
             SQLINTEGER strLen_or_Ind = 0;
