@@ -30,6 +30,9 @@ REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
 
 for /f "tokens=1 delims=" %%A in ('where python') do set PYTHON_INSTALLATION_PATH=%%A & goto done
 
+:done
+echo Python installation path is: %PYTHON_INSTALLATION_PATH%
+
 REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
 REM
 REM "python-%PYTHON_VERSION%.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="%PYTHON_INSTALLATION_PATH%"
@@ -100,6 +103,3 @@ if NOT "%BUILD_BUILDID%"=="" (
 )
 
 popd
-
-:done
-echo Python installation path is: %PYTHON_INSTALLATION_PATH%
