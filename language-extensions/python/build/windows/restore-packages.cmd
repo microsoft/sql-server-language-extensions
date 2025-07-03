@@ -28,6 +28,9 @@ REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
 
 for /f "tokens=1 delims=" %%i in ('where python') do (
 	set PYTHON_INSTALLATION_PATH=%%~dpi
+
+	REM Remove the trailing backslash
+	set "PYTHON_INSTALLATION_PATH=%PYTHON_INSTALLATION_PATH:~0,-1%"
 	goto continue
 )
 :continue
@@ -100,7 +103,7 @@ echo -- Finished Boost build -- Time: %time% --
 REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
 REM
 if NOT "%BUILD_BUILDID%"=="" (
-	setx PYTHONHOME %PYTHON_INSTALLATION_PATH%
+	setx PYTHONHOME "%PYTHON_INSTALLATION_PATH%"
 )
 
 popd
