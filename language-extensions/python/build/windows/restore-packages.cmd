@@ -100,7 +100,7 @@ echo -- Finished Boost build -- Time: %time% --
 REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
 REM
 if NOT "%BUILD_BUILDID%"=="" (
-	setx PYTHONHOME "%PYTHON_INSTALLATION_PATH%"
+	setx PYTHONHOME %PYTHON_INSTALLATION_PATH%
 )
 
 popd
