@@ -27,13 +27,13 @@ REM
 REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
 
 for /f "tokens=1 delims=" %%i in ('where python') do (
-	set PYTHON_INSTALLATION_PATH=%%~dpi
-
-	REM Remove the trailing backslash
-	set "PYTHON_INSTALLATION_PATH=%PYTHON_INSTALLATION_PATH:~0,-1%"
+	set PYTHON_PATH=%%~dpi
 	goto continue
 )
 :continue
+echo Python path is: %PYTHON_PATH%
+
+set "PYTHON_INSTALLATION_PATH=%PYTHON_PATH:~0,-1%"
 echo Python installation path is: %PYTHON_INSTALLATION_PATH%
 
 SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
