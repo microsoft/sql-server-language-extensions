@@ -26,11 +26,13 @@ SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
 
 REM Download the Python installer using curl
 REM
-curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
+REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
+
+for /f "tokens=1 delims=" %%A in ('where python') do set PYTHON_INSTALLATION_PATH=%%A & goto done
 
 REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
 REM
-"python-%PYTHON_VERSION%.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="%PYTHON_INSTALLATION_PATH%"
+REM "python-%PYTHON_VERSION%.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="%PYTHON_INSTALLATION_PATH%"
 
 REM Set the PYTHONHOME and PYTHONPATH for the build session
 REM
@@ -98,3 +100,6 @@ if NOT "%BUILD_BUILDID%"=="" (
 )
 
 popd
+
+:done
+echo Python installation path is: %PYTHON_INSTALLATION_PATH%
