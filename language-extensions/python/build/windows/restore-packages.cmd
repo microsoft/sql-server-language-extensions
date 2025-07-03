@@ -28,8 +28,10 @@ REM Download the Python installer using curl
 REM
 REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
 
-for /f "tokens=1 delims=" %%A in ('where python') do set PYTHON_INSTALLATION_PATH=%%A & goto done
-
+for /f "tokens=1 delims=" %%i in ('where python') do (
+	set PYTHON_INSTALLATION_PATH=%%~dpi
+	goto done
+)
 :done
 echo Python installation path is: %PYTHON_INSTALLATION_PATH%
 
@@ -50,12 +52,11 @@ REM Install numpy and pandas
 REM
 SET NUMPY_VERSION=1.22.3
 SET PANDAS_VERSION=1.4.2
-REM "%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
-python.exe -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
+"%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
 
 REM Remove the Python installer which is no longer needed
 REM
-del "python-%PYTHON_VERSION%.exe"
+REM del "python-%PYTHON_VERSION%.exe"
 
 REM BOOST artifact download, extract, build
 REM Download the specified version of Boost from SourceForge
