@@ -22,8 +22,6 @@ REM
 SET PYTHON_DOWNLOAD_URL="https://www.python.org/ftp/python/%PYTHON_VERSION%/python-%PYTHON_VERSION%-amd64.exe"
 SET PYTHON_INSTALLATION_PATH=C:\Python%PYTHON_VERSION_NO_DOT%
 
-SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
-
 REM Download the Python installer using curl
 REM
 REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
@@ -34,6 +32,8 @@ for /f "tokens=1 delims=" %%i in ('where python') do (
 )
 :done
 echo Python installation path is: %PYTHON_INSTALLATION_PATH%
+
+SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
 
 REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
 REM
