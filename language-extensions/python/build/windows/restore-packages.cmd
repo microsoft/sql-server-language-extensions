@@ -39,13 +39,14 @@ SET PYTHONPATH=%PYTHON_INSTALLATION_PATH%
 
 REM Download and install pip
 REM
-curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\python.exe"
+REM curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\python.exe"
 
 REM Install numpy and pandas
 REM
 SET NUMPY_VERSION=1.22.3
 SET PANDAS_VERSION=1.4.2
-"%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
+REM "%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
+python.exe -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
 
 REM Remove the Python installer which is no longer needed
 REM
