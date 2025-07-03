@@ -18,7 +18,6 @@ SET DEFAULT_BOOST_PYTHON_ROOT=%DEFAULT_BOOST_ROOT%\stage\lib
 SET DEFAULT_PYTHONHOME=C:\Python310
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
-setlocal enabledelayedexpansion
 for /f "tokens=1 delims=" %%i in ('where python') do (
 	set "DEFAULT_PYTHONHOME=%%~dpi"
 	goto continue
@@ -27,14 +26,13 @@ for /f "tokens=1 delims=" %%i in ('where python') do (
 :continue
 echo Python installation path is: %DEFAULT_PYTHONHOME%
 
-echo Find boost, python, and cmake paths from user, or set to default for tests.
+REM Find boost, python, and cmake paths from user, or set to default for tests.
 REM
 SET ENVVAR_NOT_FOUND=203
 
 echo Setting boost root
 IF "%BOOST_ROOT%" == "" (
 	IF EXIST %DEFAULT_BOOST_ROOT% (
-		echo boost root is set to default
 		SET BOOST_ROOT=%DEFAULT_BOOST_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: BOOST_ROOT variable must be set to build the python extension" || EXIT /b %ENVVAR_NOT_FOUND%
@@ -44,7 +42,6 @@ IF "%BOOST_ROOT%" == "" (
 echo Setting boost python root
 IF "%BOOST_PYTHON_ROOT%" == "" (
 	IF EXIST "%DEFAULT_BOOST_PYTHON_ROOT%" (
-		echo boost python root is set to default
 		SET BOOST_PYTHON_ROOT=%DEFAULT_BOOST_PYTHON_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: BOOST_PYTHON_ROOT variable must be set to build the python extension" || EXIT /b %ENVVAR_NOT_FOUND%
@@ -52,15 +49,13 @@ IF "%BOOST_PYTHON_ROOT%" == "" (
 )
 
 echo Setting python home as - %PYTHONHOME%
-rem IF "%PYTHONHOME%" == "" (
-	echo Checking if python home is set to default
-	IF EXIST "%DEFAULT_PYTHONHOME%" (
-		echo python home is set to default
+IF "%PYTHONHOME%" == "" (
+	IF EXIST %DEFAULT_PYTHONHOME% (
 		SET PYTHONHOME=%DEFAULT_PYTHONHOME%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: PYTHONHOME variable must be set to build the python extension" || EXIT /b %ENVVAR_NOT_FOUND%
 	)
-rem )
+)
 
 echo Setting cmake root
 IF "%CMAKE_ROOT%" == "" (
@@ -73,34 +68,34 @@ IF "%CMAKE_ROOT%" == "" (
 
 :LOOP
 
-echo Set cmake config to first arg
+REM Set cmake config to first arg
 REM
 SET CMAKE_CONFIGURATION=%1
 
-echo *Setting CMAKE_CONFIGURATION to anything but "debug" will set CMAKE_CONFIGURATION to "release".
+REM *Setting CMAKE_CONFIGURATION to anything but "debug" will set CMAKE_CONFIGURATION to "release".
 REM The string comparison for CMAKE_CONFIGURATION is case-insensitive.
 REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=release)
 IF /I NOT %CMAKE_CONFIGURATION%==debug (SET CMAKE_CONFIGURATION=release)
 
-echo Output directory and output dll name
+REM Output directory and output dll name
 REM
 SET TARGET="%ENL_ROOT%\build-output\pythonextension\target\%CMAKE_CONFIGURATION%"
 
-echo Remove existing output files
+REM Remove existing output files
 REM
 IF EXIST %TARGET% (RMDIR /s /q %TARGET%)
 
-echo Create the output directories
+REM Create the output directories
 REM
 mkdir %TARGET%
 
-echo VSCMD_START_DIR set the working directory to this variable after calling VsDevCmd.bat
+REM VSCMD_START_DIR set the working directory to this variable after calling VsDevCmd.bat
 REM otherwise, it will default to %USERPROFILE%\Source
 REM
 SET VSCMD_START_DIR=%ENL_ROOT%
 
-echo Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
+REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 if not defined DevEnvDir (
@@ -113,7 +108,7 @@ SET BUILD_OUTPUT=%PYTHONEXTENSION_WORKING_DIR%\%CMAKE_CONFIGURATION%
 MKDIR %BUILD_OUTPUT%
 PUSHD %BUILD_OUTPUT%
 
-echo Call cmake
+echo Call cmake - %ENL_ROOT%, %PYTHONHOME%, %BOOST_ROOT%, %BOOST_PYTHON_ROOT%, %PYTHONEXTENSION_HOME%/src, %CMAKE_CONFIGURATION%
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 	-G "Visual Studio 16 2019" ^
@@ -129,17 +124,17 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CO
 
 ECHO "[INFO] Building Python extension project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
-echo Call cmake build
+REM Call cmake build
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Python extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-echo Copy DLL, LIB, etc files out of debug/debug and release/release into the build output folder
+REM Copy DLL, LIB, etc files out of debug/debug and release/release into the build output folder
 REM
 copy %BUILD_OUTPUT%\%CMAKE_CONFIGURATION%\* %BUILD_OUTPUT%\
 
-echo This will create the Python extension package with unsigned binaries, this is used for local development and non-release builds.
+REM This will create the Python extension package with unsigned binaries, this is used for local development and non-release builds.
 REM Release builds will call create-python-extension-zip.cmd after the binaries have been signed and this will be included in the zip
 REM
 IF /I %CMAKE_CONFIGURATION%==debug (
@@ -150,11 +145,11 @@ IF /I %CMAKE_CONFIGURATION%==debug (
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to create zip for Python extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
-echo Advance arg passed to build-pythonextension.cmd
+REM Advance arg passed to build-pythonextension.cmd
 REM
 SHIFT
 
-echo Continue building using more configs until argv has been exhausted
+REM Continue building using more configs until argv has been exhausted
 REM
 IF NOT "%~1"=="" GOTO LOOP
 
