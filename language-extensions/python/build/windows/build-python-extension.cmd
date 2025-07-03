@@ -18,6 +18,13 @@ SET DEFAULT_BOOST_PYTHON_ROOT=%DEFAULT_BOOST_ROOT%\stage\lib
 SET DEFAULT_PYTHONHOME=C:\Python310
 SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
+for /f "tokens=1 delims=" %%i in ('where python') do (
+	set DEFAULT_PYTHONHOME=%%~dpi
+	goto done
+)
+:done
+echo Python installation path is: %DEFAULT_PYTHONHOME%
+
 REM Find boost, python, and cmake paths from user, or set to default for tests.
 REM
 SET ENVVAR_NOT_FOUND=203
