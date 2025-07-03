@@ -18,14 +18,16 @@ To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial
 
 2. Run [restore-packages.cmd](./build/windows/restore-packages.cmd) which will restore the packages needed for the extension
 
-3. Run [build-dotnet-core-CSharp-extension.cmd](./build/windows/build-dotnet-core-CSharp-extension.cmd) which will generate: \
+3. Run 'dotnet restore <PATH\TO\ENLISTMENT\language-extensions\dotnet-core-CSharp\src\managed\Microsoft.SqlServer.CSharpExtension.csproj\Microsoft.SqlServer.CSharpExtension.csproj>'
+
+4. Run [build-dotnet-core-CSharp-extension.cmd](./build/windows/build-dotnet-core-CSharp-extension.cmd) which will generate: \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\nativecsharpextension.dll \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\hostfxr.dll \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.dll \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json\
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.deps.json
 
-4. Run [create-dotnet-core-CSharp-extension-zip.cmd](./build/windows/create-dotnet-core-CSharp-extension-zip.cmd) which will generate: \
+5. Run [create-dotnet-core-CSharp-extension-zip.cmd](./build/windows/create-dotnet-core-CSharp-extension-zip.cmd) which will generate: \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\target\debug\dotnet-core-CSharp-lang-extension.zip
         This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
