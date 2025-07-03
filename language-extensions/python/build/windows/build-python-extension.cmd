@@ -51,8 +51,8 @@ IF "%BOOST_PYTHON_ROOT%" == "" (
 	)
 )
 
-echo Setting python home
-IF "%PYTHONHOME%" == "" (
+echo Setting python home as - %PYTHONHOME%
+rem IF "%PYTHONHOME%" == "" (
 	echo Checking if python home is set to default
 	IF EXIST "%DEFAULT_PYTHONHOME%" (
 		echo python home is set to default
@@ -60,7 +60,7 @@ IF "%PYTHONHOME%" == "" (
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: PYTHONHOME variable must be set to build the python extension" || EXIT /b %ENVVAR_NOT_FOUND%
 	)
-)
+rem )
 
 echo Setting cmake root
 IF "%CMAKE_ROOT%" == "" (
