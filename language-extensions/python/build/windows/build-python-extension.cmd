@@ -53,7 +53,8 @@ IF "%BOOST_PYTHON_ROOT%" == "" (
 
 echo Setting python home
 IF "%PYTHONHOME%" == "" (
-	IF EXIST %DEFAULT_PYTHONHOME% (
+	echo Checking if python home is set to default
+	IF EXIST "%DEFAULT_PYTHONHOME%" (
 		echo python home is set to default
 		SET PYTHONHOME=%DEFAULT_PYTHONHOME%
 	) ELSE (
