@@ -21,9 +21,8 @@ SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
 
 for /f "tokens=1 delims=" %%i in ('where python') do (
 	set DEFAULT_PYTHONHOME=%%~dpi
-	goto done
 )
-:done
+
 echo Python installation path is: %DEFAULT_PYTHONHOME%
 
 REM Find boost, python, and cmake paths from user, or set to default for tests.

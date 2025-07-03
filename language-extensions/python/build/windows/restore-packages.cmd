@@ -28,9 +28,8 @@ REM curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
 
 for /f "tokens=1 delims=" %%i in ('where python') do (
 	set PYTHON_INSTALLATION_PATH=%%~dpi
-	goto done
 )
-:done
+
 echo Python installation path is: %PYTHON_INSTALLATION_PATH%
 
 SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
