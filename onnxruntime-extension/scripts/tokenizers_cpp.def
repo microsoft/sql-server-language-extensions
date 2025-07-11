@@ -1,0 +1,3 @@
+LIBRARY tokenizers_cpp
+EXPORTS
+    ?FromBlobJSON@Tokenizer@tokenizers@@SA?AV?$unique_ptr@VTokenizer@tokenizers@@U?$default_delete@VTokenizer@tokenizers@@@std@@@std@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@@Z
