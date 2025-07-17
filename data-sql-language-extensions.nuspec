@@ -26,6 +26,10 @@
           target="build\java-extension\debug" />
         <file src="..\..\_Data-SQL-Language-Extensions-Official\drop_Phase_1\package\out\java-extension\packages\release\java-lang-extension.zip"
           target="build\java-extension\release" />
+        <file src="..\..\_Data-SQL-Language-Extensions-Official\drop_Build_onnx_extension\package\out\onnxextension\packages\debug\onnxruntime-extension.zip"
+          target="build\onnxextension\debug" />
+        <file src="..\..\_Data-SQL-Language-Extensions-Official\drop_Build_onnx_extension\package\out\onnxextension\packages\release\onnxruntime-extension.zip"
+          target="build\onnxextension\release" />
         <file src="..\..\_Data-SQL-Language-Extensions-Official\drop_Phase_1\package\out\pythonextension\packages\debug\python-lang-extension.zip"
           target="build\pythonextension\debug" />
         <file src="..\..\_Data-SQL-Language-Extensions-Official\drop_Phase_1\package\out\pythonextension\packages\release\python-lang-extension.zip"

@@ -604,3 +604,122 @@ extends:
               SourceFolder: '$(Build.SourcesDirectory)\out'
               Contents: 'TestReport_dotnet-core-csharp-extension-test.xml'
               TargetFolder: '$(Build.SourcesDirectory)\out\test\_post_command__test_dotnetcore_csharp_extension\_testresults\out'
+
+    - stage: Build_ONNXRuntime_Extension
+
+      jobs:
+      - job: ONNXRuntime_Extension
+        pool:
+          type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
+
+        variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
+          ob_outputDirectory: '$(Build.SourcesDirectory)\out' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
+          ob_artifactBaseName: 'drop_Build_ONNXRuntime_Extension'
+          WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest'
+          CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: '$(Build.SourcesDirectory)'
+
+        steps:
+          - task: onebranch.pipeline.version@1 # generates automatic version. For other versioning options check https://aka.ms/obpipelines/versioning
+            displayName: 'Setup BuildNumber'
+            inputs:
+              system: 'RevisionCounter'
+              major: '1'
+              minor: '0'
+              tag: 'alpha'
+              name: 'onnxruntime-extension'
+              exclude_commit: false
+
+          - task: CmdLine@2
+            displayName: 'Restore ONNX Runtime Packages'
+            inputs:
+              script: '$(Build.SourcesDirectory)\onnxruntime-extension\build\windows\restore-packages.cmd'
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: true
+
+          - task: CmdLine@2
+            displayName: 'Build ONNXRuntime extension'
+            inputs:
+              script: '$(Build.SourcesDirectory)\onnxruntime-extension\build\windows\build-onnxruntime-extension.cmd debug release'
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: true
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign ONNXRuntime extension - debug'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: 'external_distribution'
+              files_to_sign: '*.dll;' 
+              search_root: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Debug'
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign ONNXRuntime extension - release'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: 'external_distribution'
+              files_to_sign: '*.dll;' 
+              search_root: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension Symbols (debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Debug'
+              Contents: |
+                *.pdb
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\ONNXRuntime_Extension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension (debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Debug'
+              Contents: |
+                *.dll
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension Symbols (release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
+              Contents: |
+                *.pdb
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\ONNXRuntime_Extension\release\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension (release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
+              Contents: |
+                *.dll
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\release\symbols'
+
+          - task: CmdLine@2
+            displayName: 'Create ONNXRuntime extension zip'
+            inputs:
+              script: '$(Build.SourcesDirectory)\onnxruntime-extension\build\windows\create-onnxruntime-extension-zip.cmd debug release'
+              workingDirectory: '$(Build.SourcesDirectory)'
+              failOnStderr: true
+
+          - task: onebranch.pipeline.signing@1
+            displayName: 'Sign ONNXRuntime extension zip'
+            inputs:
+              command: 'sign'
+              signing_environment: 'azure-ado'
+              signing_profile: 'external_distribution'
+              # cp_code: '135020002'
+              files_to_sign: '**\**\*.zip' 
+              search_root: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows'
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension zip(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows\debug\packages'
+              Contents: '**\*.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxruntime-extension\packages\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension zip(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows\release\packages'
+              Contents: '**\*.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxruntime-extension\packages\release'

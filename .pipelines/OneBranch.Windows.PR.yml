@@ -464,3 +464,79 @@ extends:
               SourceFolder: '$(Build.SourcesDirectory)\out'
               Contents: 'TestReport_dotnet-core-csharp-extension-test.xml'
               TargetFolder: '$(Build.SourcesDirectory)\out\test\_post_command__test_dotnetcore_csharp_extension\_testresults\out'
+
+    - stage: Build_OnnxRuntime_Extension
+      jobs:
+      - job: OnnxRuntime_Extension
+        pool:
+          type: windows
+
+        variables:
+          ob_outputDirectory: '$(Build.SourcesDirectory)\out'
+          ob_artifactBaseName: 'drop_Build_OnnxRuntime_Extension'
+          WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest'
+          CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: '$(Build.SourcesDirectory)'
+
+        steps:
+          - task: CmdLine@2
+            displayName: 'Restore OnnxRuntime Extension Packages'
+            inputs:
+              script: '$(Build.SourcesDirectory)\onnxruntime-extension\build\windows\restore-packages.cmd'
+              workingDirectory: '$(Build.SourcesDirectory)\onnxruntime-extension'
+              failOnStderr: true
+
+          - task: CmdLine@2
+            displayName: 'Build OnnxRuntime Extension'
+            inputs:
+              script: '$(Build.SourcesDirectory)\onnxruntime-extension\build\windows\build-onnxruntime-extension.cmd debug release'
+              workingDirectory: '$(Build.SourcesDirectory)\onnxruntime-extension'
+              failOnStderr: true
+
+          - task: CopyFiles@2
+            displayName: 'Copy OnnxRuntime Extension DLL (Debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Debug'
+              Contents: 'onnxextension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\debug'
+
+          - task: CopyFiles@2
+            displayName: 'Copy OnnxRuntime Extension DLL (Debug Symbols)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Debug'
+              Contents: 'onnxextension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\debug\symbols'
+
+          - task: CopyFiles@2
+            displayName: 'Copy OnnxRuntime Extension DLL (Release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
+              Contents: 'onnxextension.dll'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\release'
+
+          - task: CopyFiles@2
+            displayName: 'Copy OnnxRuntime Extension DLL (Release Symbols)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
+              Contents: 'onnxextension.pdb'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\release\symbols'
+          
+          - task: CmdLine@2
+            displayName: 'Create ONNXRuntime extension zip'
+            inputs:
+              script: '$(Build.SourcesDirectory)\onnxruntime-extension\build\windows\create-onnxruntime-extension-zip.cmd'
+              workingDirectory: '$(Build.SourcesDirectory)\onnxruntime-extension'
+              failOnStderr: true
+
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension zip(debug)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows\debug\packages'
+              Contents: 'onnxruntime-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxextension\packages\debug'
+          
+          - task: CopyFiles@2
+            displayName: 'Copy ONNXRuntime extension zip(release)'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows\release\packages'
+              Contents: 'onnxruntime-extension.zip'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxextension\packages\release'
