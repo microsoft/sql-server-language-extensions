@@ -667,7 +667,7 @@ extends:
               SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Debug'
               Contents: |
                 *.pdb
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\ONNXRuntime_Extension\debug\symbols'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\debug\symbols'
 
           - task: CopyFiles@2
             displayName: 'Copy ONNXRuntime extension (debug)'
@@ -683,7 +683,7 @@ extends:
               SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
               Contents: |
                 *.pdb
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\ONNXRuntime_Extension\release\symbols'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\release\symbols'
 
           - task: CopyFiles@2
             displayName: 'Copy ONNXRuntime extension (release)'
@@ -691,7 +691,7 @@ extends:
               SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\x64\bin\Release'
               Contents: |
                 *.dll
-              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\release\symbols'
+              TargetFolder: '$(Build.SourcesDirectory)\out\build\out\onnxruntime-extension\release'
 
           - task: CmdLine@2
             displayName: 'Create ONNXRuntime extension zip'
