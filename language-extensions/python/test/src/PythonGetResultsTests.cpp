@@ -809,7 +809,7 @@ namespace ExtensionApiTest
 		bp::dict outputDataSet = bp::extract<bp::dict>(
 			bp::eval(createDictScript.c_str(), m_mainNamespace));
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			bp::dict column = bp::extract<bp::dict>(outputDataSet[columnNames[columnNumber]]);
 
@@ -994,7 +994,7 @@ namespace ExtensionApiTest
 		bp::dict outputDataSet = bp::extract<bp::dict>(
 			bp::eval(createDictScript.c_str(), m_mainNamespace));
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			char *expectedColumnData = static_cast<char *>(expectedData[columnNumber]);
 			char *columnData = static_cast<char *>(data[columnNumber]);
@@ -1094,7 +1094,7 @@ namespace ExtensionApiTest
 		bp::dict outputDataSet = bp::extract<bp::dict>(
 			bp::eval(createDictScript.c_str(), m_mainNamespace));
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			SQLCHAR *expectedColumnData = static_cast<SQLCHAR *>(expectedData[columnNumber]);
 			SQLCHAR *columnData = static_cast<SQLCHAR *>(data[columnNumber]);
@@ -1196,7 +1196,7 @@ namespace ExtensionApiTest
 		bp::dict outputDataSet = bp::extract<bp::dict>(
 			bp::eval(createDictScript.c_str(), m_mainNamespace));
 
-		for (SQLUSMALLINT columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+		for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
 		{
 			bp::dict column = bp::extract<bp::dict>(outputDataSet[columnNames[columnNumber]]);
 
