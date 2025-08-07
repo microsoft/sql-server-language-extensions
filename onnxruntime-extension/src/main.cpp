@@ -241,7 +241,7 @@ SQLRETURN InitParam(
 		}
 
 		// Validate the parameter name and argument value.
-		if (ParamNameLength <= 0 || !ArgValue || StrLen_or_Ind <= 0)
+		if (ParamNameLength <= 0 || !ArgValue)
 		{
 			TRACELOG("Invalid parameter name length or argument value.");
 			return SQL_ERROR;
