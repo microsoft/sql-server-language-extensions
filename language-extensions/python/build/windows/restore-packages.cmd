@@ -28,9 +28,6 @@ for /f "tokens=1 delims=" %%i in ('where python') do (
 	goto continue
 )
 
-echo Write all the python paths to the console
-echo %PYTHON_PATH%
-
 :continue
 IF NOT DEFINED PYTHON_PATH (
 	REM Download and install Python using curl
@@ -53,8 +50,6 @@ IF NOT DEFINED PYTHON_PATH (
 ) ELSE (
 	SET "PYTHON_INSTALLATION_PATH=%PYTHON_PATH:~0,-1%"
 )
-
-echo Python installation path: %PYTHON_INSTALLATION_PATH%
 
 SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
 
