@@ -1,3 +1,5 @@
+SETLOCAL ENABLEDELAYEDEXPANSION
+
 SET ENL_ROOT=%~dp0..\..\..\..
 CALL %ENL_ROOT%\restore-packages.cmd
 
@@ -21,34 +23,31 @@ REM Download and install Python from the official Python website
 REM
 SET PYTHON_DOWNLOAD_URL="https://www.python.org/ftp/python/%PYTHON_VERSION%/python-%PYTHON_VERSION%-amd64.exe"
 
-REM Set default python home if python is installed.
+REM If building in pipeline, Python is installed with `UsePythonVersion@0` task.
+REM We pass in the path to python installation when this script is called.
+REM Set PYTHON_INSTALLATION_PATH to the output from the task.
 REM
-for /f "tokens=1 delims=" %%i in ('where python') do (
-	SET PYTHON_PATH=%%~dpi
-	goto continue
-)
-
-:continue
-IF NOT DEFINED PYTHON_PATH (
+if "%1"=="" (
 	REM Download and install Python using curl
 	REM
-	curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
+	curl !PYTHON_DOWNLOAD_URL! -o "python-!PYTHON_VERSION!.exe"
 
-	SET PYTHON_INSTALLATION_PATH=C:\Python%PYTHON_VERSION_NO_DOT%
+	SET PYTHON_INSTALLATION_PATH=C:\Python!PYTHON_VERSION_NO_DOT!
 
 	REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
 	REM
-	"python-%PYTHON_VERSION%.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="%PYTHON_INSTALLATION_PATH%"
+	"python-!PYTHON_VERSION!.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="!PYTHON_INSTALLATION_PATH!"
 
 	REM Download and install pip
 	REM
-	curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\python.exe"
+	curl -sS https://bootstrap.pypa.io/get-pip.py |"!PYTHON_INSTALLATION_PATH!\python.exe"
 
 	REM Remove the Python installer which is no longer needed
 	REM
-	del "python-%PYTHON_VERSION%.exe"
+	del "python-!PYTHON_VERSION!.exe"
 ) ELSE (
-	SET "PYTHON_INSTALLATION_PATH=%PYTHON_PATH:~0,-1%"
+	SET PYTHON_INSTALLATION_PATH=%1
+	SETX PYTHONLOCATION %PYTHON_INSTALLATION_PATH%
 )
 
 SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
