@@ -108,10 +108,19 @@ extends:
             inputs:
               artifactFeeds: 'Data-SQL-Language-Extensions'
 
+          # Use Python version v0
+          # Use the specified version of Python from the tool cache, optionally adding it to the PATH.
+          - task: UsePythonVersion@0
+            name: 'InstallPython'
+            inputs:
+              versionSpec: '3.10.2'
+              addToPath: true
+              architecture: 'x64'
+
           - task: CmdLine@2
             displayName: 'Restore Python Packages'
             inputs:
-              script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\python\build\windows\restore-packages.cmd
+              script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\python\build\windows\restore-packages.cmd $(InstallPython.pythonLocation)
               workingDirectory: '$(Build.SourcesDirectory)'
 
           - task: CmdLine@2
@@ -276,7 +285,7 @@ extends:
               # buildPlatform: 'x64'
               # buildConfiguration: 'Release'
 
-          - task: PublishCodeCoverageResults@1
+          - task: PublishCodeCoverageResults@2
             displayName: 'Test RExtension'
             inputs:
               codeCoverageTool: 'Cobertura'
@@ -310,7 +319,7 @@ extends:
               # buildPlatform: 'x64'
               # buildConfiguration: 'Release'
 
-          - task: PublishCodeCoverageResults@1
+          - task: PublishCodeCoverageResults@2
             displayName: 'Python Tests'
             inputs:
               codeCoverageTool: 'Cobertura'
@@ -367,6 +376,15 @@ extends:
             inputs:
               script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\build\windows\restore-packages.cmd
               workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore CSharpExtension Project'
+            inputs:
+              command: 'restore'
+              projects: '$(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\src\managed\Microsoft.SqlServer.CSharpExtension.csproj'
+              feedsToUse: 'select'
+              vstsFeed: 'Data-SQL-Language-Extensions'
+              includeNuGetOrg: false
 
           - task: CmdLine@2
             displayName: 'Build .NET Core C Sharp extension'
