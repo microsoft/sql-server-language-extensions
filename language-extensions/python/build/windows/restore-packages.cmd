@@ -1,3 +1,5 @@
+SETLOCAL ENABLEDELAYEDEXPANSION
+
 SET ENL_ROOT=%~dp0..\..\..\..
 CALL %ENL_ROOT%\restore-packages.cmd
 
@@ -20,36 +22,46 @@ SET BOOST_VERSION_IN_UNDERSCORE=1_79_0
 REM Download and install Python from the official Python website
 REM
 SET PYTHON_DOWNLOAD_URL="https://www.python.org/ftp/python/%PYTHON_VERSION%/python-%PYTHON_VERSION%-amd64.exe"
-SET PYTHON_INSTALLATION_PATH=C:\Python%PYTHON_VERSION_NO_DOT%
+
+REM If building in pipeline, Python is installed with `UsePythonVersion@0` task.
+REM We pass in the path to python installation when this script is called.
+REM Set PYTHON_INSTALLATION_PATH to the output from the task.
+REM
+if "%1"=="" (
+	REM Download and install Python using curl
+	REM
+	curl !PYTHON_DOWNLOAD_URL! -o "python-!PYTHON_VERSION!.exe"
+
+	SET PYTHON_INSTALLATION_PATH=C:\Python!PYTHON_VERSION_NO_DOT!
+
+	REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
+	REM
+	"python-!PYTHON_VERSION!.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="!PYTHON_INSTALLATION_PATH!"
+
+	REM Download and install pip
+	REM
+	curl -sS https://bootstrap.pypa.io/get-pip.py |"!PYTHON_INSTALLATION_PATH!\python.exe"
+
+	REM Remove the Python installer which is no longer needed
+	REM
+	del "python-!PYTHON_VERSION!.exe"
+) ELSE (
+	SET PYTHON_INSTALLATION_PATH=%1
+	SETX PYTHONLOCATION %PYTHON_INSTALLATION_PATH%
+)
 
 SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
-
-REM Download the Python installer using curl
-REM
-curl %PYTHON_DOWNLOAD_URL% -o "python-%PYTHON_VERSION%.exe"
-
-REM Run the installer in quiet mode, install for all users, prepend Python to PATH, and specify installation directory
-REM
-"python-%PYTHON_VERSION%.exe" /quiet InstallAllUsers=1 PrependPath=1 TargetDir="%PYTHON_INSTALLATION_PATH%"
 
 REM Set the PYTHONHOME and PYTHONPATH for the build session
 REM
 SET PYTHONHOME=%PYTHON_INSTALLATION_PATH%
 SET PYTHONPATH=%PYTHON_INSTALLATION_PATH%
 
-REM Download and install pip
-REM
-curl -sS https://bootstrap.pypa.io/get-pip.py |"%PYTHON_INSTALLATION_PATH%\python.exe"
-
 REM Install numpy and pandas
 REM
 SET NUMPY_VERSION=1.22.3
 SET PANDAS_VERSION=1.4.2
 "%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
-
-REM Remove the Python installer which is no longer needed
-REM
-del "python-%PYTHON_VERSION%.exe"
 
 REM BOOST artifact download, extract, build
 REM Download the specified version of Boost from SourceForge
