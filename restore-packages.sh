@@ -10,49 +10,43 @@ add-apt-repository ppa:ubuntu-toolchain-r/test -y
 apt-get update -y
 apt-get install cmake -y
 
-
 # Install GCC-7
 #
 set -e
 
-# Update and install dependencies
+# Step 1: Install dependencies
+echo "Installing build dependencies..."
 apt-get update -y
-apt install -y \
-  libgmp-dev \
-  libmpfr-dev \
-  libmpc-dev \
-  flex \
-  bison \
-  wget \
-  curl \
-  ca-certificates \
-  git
+apt-get install -y libgmp-dev libmpfr-dev libmpc-dev flex bison wget
 
-# Download GCC 7.5.0 source
-cd /usr/local/src
+# Step 2: Download GCC 7 source
+echo "Downloading GCC 7.5.0 source..."
 wget http://ftp.gnu.org/gnu/gcc/gcc-7.5.0/gcc-7.5.0.tar.gz
 tar -xvzf gcc-7.5.0.tar.gz
 cd gcc-7.5.0
 
-# Download prerequisites
+# Step 3: Download prerequisites
+echo "Downloading prerequisites..."
 ./contrib/download_prerequisites
 
-# Create build directory
+# Step 4: Create build directory
 mkdir build && cd build
 
-# Configure build
-../configure --enable-languages=c,c++ --disable-multilib
+# Step 5: Configure with --disable-bootstrap
+echo "Configuring GCC build..."
+../configure --enable-languages=c,c++ --disable-multilib --disable-bootstrap
 
-# Compile and install
+# Step 6: Build and install
+echo "Building GCC (this may take a while)..."
 make -j$(nproc)
+
+echo "Installing GCC..."
 make install
 
-# Set GCC 7 as default (optional)
-update-alternatives --install /usr/bin/gcc gcc /usr/local/bin/gcc 100
-update-alternatives --install /usr/bin/g++ g++ /usr/local/bin/g++ 100
-
-echo "✅ GCC 7 installation complete."
+# Step 7: Verify installation
+echo "Verifying GCC installation..."
+gcc-7 --version
+g++-7 --version
 gcc --version
 
 exit $?
-
