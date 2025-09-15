@@ -10,13 +10,23 @@
 //*********************************************************************
 #pragma once
 
+#if defined(__WIN32) || defined(WINDOWS)
 #include "Windows.h"
+#else
+#define E_FAIL 0x80004005
+#endif
+
 #include <string>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
+#if defined(__WIN32) || defined(WINDOWS)
 #define STR(s) L ## s
 #define CH(c) L ## c
+#else
+#define STR(s) s
+#define CH(c) c
+#endif
 
 using namespace std;
 using string_t = std::basic_string<char_t>;

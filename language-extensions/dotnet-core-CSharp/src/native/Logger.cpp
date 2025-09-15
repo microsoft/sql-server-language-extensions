@@ -10,8 +10,6 @@
 //*********************************************************************
 #include <string>
 #include <iostream>
-#include <stdio.h>
-#include <windows.h>
 #include "Logger.h"
 
 using namespace std;
