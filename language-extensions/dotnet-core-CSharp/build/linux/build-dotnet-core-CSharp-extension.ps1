@@ -14,11 +14,12 @@ New-Item -ItemType Directory -Path $DOTNET_EXTENSION_WORKING_DIR | Out-Null
 $i = 0
 
 # Process each build configuration
-while($true) {
+while ($true) {
     $BUILD_CONFIGURATION = ""
     if ($i -lt $args.Count) {
         $BUILD_CONFIGURATION = $args[$i]
     }
+    $BUILD_CONFIGURATION = $BUILD_CONFIGURATION.ToLower()
     # Default to release if not debug
     if ($BUILD_CONFIGURATION -ne "debug") {
         $BUILD_CONFIGURATION = "release"
@@ -65,7 +66,8 @@ while($true) {
 
     if ($null -ne $env:CXX) {
         $cxx = $env:CXX
-    } else {
+    }
+    else {
         $cxx = "c++"
     }
 
