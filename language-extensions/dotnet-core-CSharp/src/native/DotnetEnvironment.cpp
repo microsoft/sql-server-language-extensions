@@ -10,16 +10,28 @@
 //*********************************************************************
 #include "DotnetEnvironment.h"
 #include "Logger.h"
+
+#if defined(_WIN32) || defined(WINDOWS)
 #include "Windows.h"
+#else
+#include <dlfcn.h>
+#endif
+
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <assert.h>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
+#if defined(__WIN32) || defined(WINDOWS)
 #define STR(s) L ## s
 #define CH(c) L ## c
+#else
+#define STR(s) s
+#define CH(c) c
+#endif
 
 using namespace std;
 using string_t = std::basic_string<char_t>;
@@ -34,7 +46,12 @@ DotnetEnvironment::DotnetEnvironment(
     std::string language_params,
     std::string language_path,
     std::string public_library_path,
-    std::string private_library_path) : m_root_path(to_utf16_str(language_path))
+    std::string private_library_path) :
+#if defined(_WIN32) || defined(WINDOWS)
+    m_root_path(to_utf16_str(language_path))
+#else
+    m_root_path(language_path)
+#endif
 {
 }
 
@@ -68,6 +85,7 @@ short DotnetEnvironment::Init()
     return S_OK;
 }
 
+#if defined(_WIN32) || defined(WINDOWS)
 //--------------------------------------------------------------------------------------------------
 // Name: DotnetEnvironment::to_utf16_str
 //
@@ -82,6 +100,7 @@ string_t DotnetEnvironment::to_utf16_str(const std::string& utf8str)
     MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, wstr.get(), wchars_num);
     return string_t(wstr.get());
 }
+#endif
 
 //--------------------------------------------------------------------------------------------------
 // Name: DotnetEnvironment::to_hex_string
@@ -106,7 +125,11 @@ string DotnetEnvironment::to_hex_string(int value)
 void* DotnetEnvironment::load_library(const char_t *path)
 {
     LOG("DotnetEnvironment::load_library");
+#if defined(_WIN32) || defined(WINDOWS)
     HMODULE h = ::LoadLibraryW(path);
+#else
+    void *h = dlopen(path, RTLD_LAZY);
+#endif
     assert(h != nullptr);
     return (void*)h;
 }
@@ -120,13 +143,17 @@ void* DotnetEnvironment::load_library(const char_t *path)
 void* DotnetEnvironment::get_export(void *h, const char *name)
 {
     LOG("DotnetEnvironment::get_export");
+#if defined(_WIN32) || defined(WINDOWS)
     void *f = ::GetProcAddress((HMODULE)h, name);
+#else
+    void *f = dlsym(h, name);
+#endif
     assert(f != nullptr);
     return f;
 }
 
 //--------------------------------------------------------------------------------------------------
-// Name: DotnetEnvironment::get_export
+// Name: DotnetEnvironment::load_hostfxr
 //
 // Description:
 // Load hostfxr and get desired exports
@@ -134,7 +161,11 @@ void* DotnetEnvironment::get_export(void *h, const char *name)
 bool DotnetEnvironment::load_hostfxr()
 {
     LOG("DotnetEnvironment::load_hostfxr");
+#if defined(_WIN32) || defined(WINDOWS)
     string_t hostfxr_location = m_root_path + STR("\\hostfxr.dll");
+#else
+    string_t hostfxr_location = STR("libhostfxr.so");
+#endif
     void *lib = load_library(hostfxr_location.c_str());
     m_init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
     m_get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
