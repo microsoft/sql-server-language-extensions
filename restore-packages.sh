@@ -5,7 +5,6 @@ apt-get -q -y install unixodbc-dev
 
 apt-get update -y
 apt-get install build-essential software-properties-common -y
-add-apt-repository ppa:ubuntu-toolchain-r/test -y 
 apt-get update -y
 #apt-get install gcc-7 g++-7 -y 
 apt-get install cmake -y
