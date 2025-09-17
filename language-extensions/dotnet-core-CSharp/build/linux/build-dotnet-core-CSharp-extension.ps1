@@ -55,11 +55,12 @@ while ($true) {
         "-shared",
         "-fPIC",
         "-o", "libnativecsharpextension.so",
-        "-I", $DOTNET_NATIVE_INCLUDE,
-        "-I", $EXTENSION_HOST_INCLUDE,
-        "-D", "LINUX"
+        "-I$DOTNET_NATIVE_INCLUDE",
+        "-I$EXTENSION_HOST_INCLUDE",
+        "-DLINUX"
     )
     $ccArgs += Get-ChildItem -Path $DOTNET_NATIVE_SRC -Filter "*.cpp" | ForEach-Object { $_.FullName }
+    $ccArgs += Join-Path -Path $DOTNET_NATIVE_LIB -ChildPath "libnethost.a"
     if ($BUILD_CONFIGURATION -eq "debug") {
         $ccArgs += "-D", "DEBUG"
     }
@@ -76,9 +77,6 @@ while ($true) {
         Write-Host "Error: Failed to build nativecsharpextension for configuration=$BUILD_CONFIGURATION"
         exit $proc.ExitCode
     }
-
-    Write-Host "[Info] Copying dependent libraries..."
-    Copy-Item (Join-Path $DOTNET_NATIVE_LIB "libhostfxr.so") $BUILD_OUTPUT -Force
 
     # Build managed code
     Write-Host "[Info] Building Microsoft.SqlServer.CSharpExtension dll..."
