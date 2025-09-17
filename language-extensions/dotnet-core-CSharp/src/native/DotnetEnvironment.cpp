@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
+#include <nethost.h>
 
 #if defined(__WIN32) || defined(WINDOWS)
 #define STR(s) L ## s
@@ -164,7 +165,12 @@ bool DotnetEnvironment::load_hostfxr()
 #if defined(_WIN32) || defined(WINDOWS)
     string_t hostfxr_location = m_root_path + STR("\\hostfxr.dll");
 #else
-    string_t hostfxr_location = STR("libhostfxr.so");
+    char buffer[4096];
+    size_t buffer_size = sizeof(buffer);
+    if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0) {
+        return false;
+    }
+    string_t hostfxr_location(buffer);
 #endif
     void *lib = load_library(hostfxr_location.c_str());
     m_init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
