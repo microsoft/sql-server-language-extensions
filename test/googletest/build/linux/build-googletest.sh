@@ -29,7 +29,8 @@ pushd ${BUILD_OUTPUT}
 
 # Compile
 #
-cmake -DCMAKE_INSTALL_PREFIX:PATH=${BUILD_OUTPUT} \
+cmake -G "Ninja Multi-Config" \
+	-DCMAKE_INSTALL_PREFIX:PATH=${BUILD_OUTPUT} \
 	-DPLATFORM=linux \
 	${GTEST_HOME}/src
 cmake --build ${BUILD_OUTPUT} --config ${CMAKE_CONFIGURATION} --target install

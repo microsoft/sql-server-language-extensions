@@ -31,7 +31,8 @@ function build {
 
 	# Compile
 	#
-	cmake -DPLATFORM=Linux \
+	cmake -G "Ninja Multi-Config" \
+		-DPLATFORM=Linux \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
 		-DPYTHONHOME=${PYTHONHOME} \

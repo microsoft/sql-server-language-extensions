@@ -7,7 +7,6 @@ apt-get --no-install-recommends -y install curl zip unzip
 
 apt-get update
 apt-get install -y software-properties-common
-add-apt-repository -y ppa:deadsnakes/ppa
 apt-get update
 
 DEFAULT_PYTHONHOME=/usr/local
