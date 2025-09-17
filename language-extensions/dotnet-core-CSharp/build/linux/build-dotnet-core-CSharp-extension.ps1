@@ -62,7 +62,7 @@ while ($true) {
     $ccArgs += Get-ChildItem -Path $DOTNET_NATIVE_SRC -Filter "*.cpp" | ForEach-Object { $_.FullName }
     $ccArgs += Join-Path -Path $DOTNET_NATIVE_LIB -ChildPath "libnethost.a"
     if ($BUILD_CONFIGURATION -eq "debug") {
-        $ccArgs += "-D", "DEBUG"
+        $ccArgs += "-D", "DEBUG", "-g"
     }
 
     if ($null -ne $env:CXX) {
