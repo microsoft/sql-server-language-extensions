@@ -5,11 +5,11 @@ Language Extensions is a feature of SQL Server used for executing external code.
 
 For more information about SQL Server Language Extensions, refer to this [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sql-server-ver15).
 
-The dotnet-core-CSharp-extension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates .NET core in SQL Server and works with .NET 6.0 in **Windows only**.
+The dotnet-core-CSharp-extension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates .NET Core in SQL Server and works with .NET 8.0 and up on Windows and Linux.
 
 Currently, the extension supports the following data types: SQL_C_SLONG, SQL_C_ULONG, SQL_C_SSHORT, SQL_C_USHORT, SQL_C_SBIGINT, SQL_C_UBIGINT, SQL_C_STINYINT, SQL_C_UTINYINT, SQL_C_BIT, SQL_C_FLOAT, SQL_C_DOUBLE, SQL_C_CHAR. It supports the following SQL data types: int, bigint, smallint, tinyint, real, float, bit, varchar(n).
 
-To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial](./sample/regex/README.md). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
+To use this `dotnet-core-CSharp-lang-extension.zip` (Windows) or `dotnet-core-CSharp-lang-extension.tar.gz` (Linux) package, follow [this tutorial](./sample/regex/README.md). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
 
 ## Building
 
@@ -24,15 +24,24 @@ To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\nativecsharpextension.dll \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\hostfxr.dll \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.dll \
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json\
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json \
         - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.deps.json
 
 5. Run [create-dotnet-core-CSharp-extension-zip.cmd](./build/windows/create-dotnet-core-CSharp-extension-zip.cmd) which will generate: \
-        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\target\debug\dotnet-core-CSharp-lang-extension.zip
+        - PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension\windows\release\packages\dotnet-core-CSharp-lang-extension.zip
         This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ### Linux
-Not Supported.
+
+1. Run [build-dotnet-core-CSharp-extension.ps1](./build/windows/build-dotnet-core-CSharp-extension.cmd) which will generate: \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/libnativecsharpextension.so \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.dll \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.runtimeconfig.json \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.deps.json
+
+2. Run [create-dotnet-core-CSharp-extension-zip.ps1](./build/windows/create-dotnet-core-CSharp-extension-zip.cmd) which will generate: \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/packages/dotnet-core-CSharp-lang-extension.tar.gz
+        This tarball can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ## Testing (Optional)
 
