@@ -75,7 +75,7 @@ short DotnetEnvironment::Init()
 
     // STEP 2: Initialize and start the .NET Core runtime
     //
-    const string_t config_path = m_root_path + STR("\\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json");
+    const string_t config_path = m_root_path + PATH_SEPARATOR + STR("Microsoft.SqlServer.CSharpExtension.runtimeconfig.json");
     hostfxr_handle cxt = get_dotnet(config_path.c_str());
     if (cxt == nullptr)
     {
