@@ -22,6 +22,11 @@ endif()
 
 # Build googletest
 #
+
+if (${PLATFORM} STREQUAL linux)
+	target_compile_options(gtest PRIVATE -w)
+endif()
+
 execute_process(COMMAND "${CMAKE_COMMAND}" --build .
 	RESULT_VARIABLE result
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
