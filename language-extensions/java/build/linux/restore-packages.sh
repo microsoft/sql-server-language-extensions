@@ -11,6 +11,11 @@ apt-get --no-install-recommends -y install curl zip unzip apt-transport-https
 #
 # add-apt-repository 'deb http://mirrors.kernel.org/ubuntu bionic main universe'
 
-apt-get install -y openjdk-17-jdk libc++1 libc6 libc++-dev libc++abi-dev libc++abi1 ninja-build
+apt-get install -y openjdk-17-jdk libc++1 libc6 libc++-dev libc++abi-dev libc++abi1
+
+# Install multiarch-support package for cmake
+#
+wget http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/multiarch-support_2.27-3ubuntu1.6_amd64.deb
+sudo apt-get install ./multiarch-support_2.27-3ubuntu1.6_amd64.deb
 
 exit $?

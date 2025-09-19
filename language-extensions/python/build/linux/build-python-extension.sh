@@ -34,12 +34,11 @@ function build {
 	cmake -DPLATFORM=Linux \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
-		-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
 		-DPYTHONHOME=${PYTHONHOME} \
 		-DBOOST_PYTHON_ROOT=${BOOST_PYTHON_ROOT} \
 		-DINCLUDE_ROOT=${INCLUDE_ROOT} \
 		${PYTHONEXTENSION_HOME}/src
-	cmake --build ${PYTHONEXTENSION_WORKING_DIR} --target install
+	cmake --build ${PYTHONEXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#
