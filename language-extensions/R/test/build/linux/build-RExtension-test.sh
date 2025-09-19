@@ -32,7 +32,7 @@ function build {
 		-DR_HOME=${R_HOME} \
 		-DR_INCLUDE_DIR=${R_INCLUDE} \
 		${REXTENSIONTEST_SRC_DIR}
-	cmake --build ${REXTENSIONTEST_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
+	cmake --build ${REXTENSIONTEST_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

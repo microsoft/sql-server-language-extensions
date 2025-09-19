@@ -42,7 +42,7 @@ function build {
 		-DENL_ROOT=${ENL_ROOT} \
 		-DPLATFORM=linux \
 		${REXTENSION_SRC_DIR}
-	cmake --build ${REXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
+	cmake --build ${REXTENSION_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#
