@@ -44,8 +44,7 @@ function build {
 
 	# Compile
 	#
-	cmake -G "Ninja Multi-Config" \
-		-DPLATFORM=Linux \
+	cmake -DPLATFORM=Linux \
 		-DENL_ROOT=${ENL_ROOT} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
 		-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
