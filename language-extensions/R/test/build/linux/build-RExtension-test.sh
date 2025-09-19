@@ -29,11 +29,12 @@ function build {
 		-DCMAKE_INSTALL_PREFIX:PATH=${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION} \
 		-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
 		-DENL_ROOT=${ENL_ROOT} \
+		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
 		-DPLATFORM=linux \
 		-DR_HOME=${R_HOME} \
 		-DR_INCLUDE_DIR=${R_INCLUDE} \
 		${REXTENSIONTEST_SRC_DIR}
-	cmake --build ${REXTENSIONTEST_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
+	cmake --build ${REXTENSIONTEST_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

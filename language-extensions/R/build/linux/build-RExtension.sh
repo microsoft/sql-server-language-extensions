@@ -33,6 +33,7 @@ function build {
 	cmake -G "Ninja Multi-Config" \
 		-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
 		-DCMAKE_INSTALL_PREFIX:PATH=${REXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION} \
+		-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
 		-DR_HOME=${R_HOME} \
 		-DR_INCLUDE_DIR=${R_INCLUDE} \
 		-DR_LIB_DIR=${R_LIB_DIR} \
@@ -43,7 +44,7 @@ function build {
 		-DENL_ROOT=${ENL_ROOT} \
 		-DPLATFORM=linux \
 		${REXTENSION_SRC_DIR}
-	cmake --build ${REXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
+	cmake --build ${REXTENSION_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

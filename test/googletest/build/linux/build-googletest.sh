@@ -32,8 +32,10 @@ pushd ${BUILD_OUTPUT}
 cmake -G "Ninja Multi-Config" \
 	-DCMAKE_INSTALL_PREFIX:PATH=${BUILD_OUTPUT} \
 	-DPLATFORM=linux \
+	-DCMAKE_BUILD_TYPE=${CMAKE_CONFIGURATION} \
+	-DCMAKE_CONFIGURATION=${CMAKE_CONFIGURATION} \
 	${GTEST_HOME}/src
-cmake --build ${BUILD_OUTPUT} --config ${CMAKE_CONFIGURATION} --target install
+cmake --build ${BUILD_OUTPUT} --target install
 
 # Check the exit code of the compiler and exit appropriately so that build will fail.
 #
