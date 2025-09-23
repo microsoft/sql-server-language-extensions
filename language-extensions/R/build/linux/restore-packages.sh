@@ -14,11 +14,14 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get --no-install-recommends -y install curl zip unzip apt-transport-https libstdc++6
 
+# Install development libraries needed for R extension compilation
+apt-get --no-install-recommends -y install libpcre3-dev liblzma-dev libbz2-dev zlib1g-dev
+
 # Add R CRAN repository.
 #
 LSB_RELEASE=$(lsb_release -cs)
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu ${LSB_RELEASE}-cran40/"
+curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | gpg --dearmor -o /usr/share/keyrings/r-project.gpg
+echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu ${LSB_RELEASE}-cran40/" > /etc/apt/sources.list.d/r-project.list
 apt-get update
 
 # Install R runtime.

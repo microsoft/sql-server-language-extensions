@@ -32,7 +32,7 @@ pushd ${BUILD_OUTPUT}
 cmake -DCMAKE_INSTALL_PREFIX:PATH=${BUILD_OUTPUT} \
 	-DPLATFORM=linux \
 	${GTEST_HOME}/src
-cmake --build ${BUILD_OUTPUT} --config ${CMAKE_CONFIGURATION} --target install
+cmake --build ${BUILD_OUTPUT} --target install
 
 # Check the exit code of the compiler and exit appropriately so that build will fail.
 #

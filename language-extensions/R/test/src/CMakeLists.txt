@@ -7,7 +7,7 @@ project(RExtension-test VERSION 1.0 LANGUAGES CXX)
 # All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
 #
 string(TOLOWER ${PLATFORM} PLATFORM)
-string(TOLOWER ${CMAKE_CONFIGURATION} CMAKE_CONFIGURATION)
+string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R REXTENSION_HOME)
 file(TO_CMAKE_PATH ${REXTENSION_HOME}/test REXTENSIONTEST_HOME)
@@ -26,7 +26,7 @@ add_executable(RExtension-test
 
 if(${PLATFORM} STREQUAL linux)
 	target_compile_options(RExtension-test PRIVATE -Wall -Wextra -g -O2 -fPIC
-		-std=c++17 -Werror -Wno-unused-parameter -fshort-wchar)
+		-std=c++17 -Werror -Wno-unused-parameter -Wno-maybe-uninitialized -Wno-cast-function-type -Wno-deprecated-copy -fshort-wchar)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' \
 		-Wl,--no-as-needed -Wl,--export-dynamic")
 
@@ -65,7 +65,7 @@ endif()
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/R/test/include/ REXTENSIONTEST_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/RExtension-test/${PLATFORM}/ REXTENSIONTEST_WORKING_DIR)
-file(TO_CMAKE_PATH ${REXTENSIONTEST_WORKING_DIR}/${CMAKE_CONFIGURATION} REXTENSIONTEST_INSTALL_DIR)
+file(TO_CMAKE_PATH ${REXTENSIONTEST_WORKING_DIR}/${CMAKE_BUILD_TYPE} REXTENSIONTEST_INSTALL_DIR)
 file(TO_CMAKE_PATH ${REXTENSION_HOME}/common/include REXTENSION_COMMON_INCLUDE)
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/${PLATFORM} GTEST_HOME)
@@ -89,7 +89,7 @@ include_directories(
 
 # The string comparison is case sensitive
 #
-if(${CMAKE_CONFIGURATION} STREQUAL debug)
+if(${CMAKE_BUILD_TYPE} STREQUAL debug)
 	add_definitions(-D_DEBUG)
 endif()
 

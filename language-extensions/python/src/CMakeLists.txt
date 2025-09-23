@@ -52,14 +52,26 @@ if (${PLATFORM} STREQUAL linux)
 	set(PYTHON_VERSION "3.12")
 	set(PYTHON_VERSION_NO_DOT "312")
 
-	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -fshort-wchar)
+	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -Wno-maybe-uninitialized -fshort-wchar)
 
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
+	# Prefer shared libraries over static libraries
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .so .so.1.0 ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	
 	set(USR_LIB_PATH /usr/local/lib)
 	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
 
-	find_library(PYTHON_LIB python${PYTHON_VERSION} ${PYTHON_LIB_PATH})
+	# For Ubuntu 24.04, look for shared Python library in system locations
+	find_library(PYTHON_LIB python${PYTHON_VERSION} PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu /lib NO_DEFAULT_PATH)
+	if(NOT PYTHON_LIB)
+		# Try with explicit .so extension
+		find_library(PYTHON_LIB libpython${PYTHON_VERSION}.so PATHS /usr/lib/x86_64-linux-gnu /usr/lib NO_DEFAULT_PATH)
+	endif()
+	if(NOT PYTHON_LIB)
+		message(STATUS "Shared Python library not found in standard locations, trying system default search")
+		find_library(PYTHON_LIB python${PYTHON_VERSION})
+	endif()
 	find_library(BOOST_PYTHON_LIB boost_python${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
 	find_library(BOOST_NUMPY_LIB boost_numpy${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
 
