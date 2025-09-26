@@ -38,7 +38,7 @@ function build {
 		-DBOOST_PYTHON_ROOT=${BOOST_PYTHON_ROOT} \
 		-DINCLUDE_ROOT=${INCLUDE_ROOT} \
 		${PYTHONEXTENSION_HOME}/src
-	cmake --build ${PYTHONEXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
+	cmake --build ${PYTHONEXTENSION_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

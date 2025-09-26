@@ -50,7 +50,7 @@ function build {
 		-DJAVA_HOME=${JAVA_HOME} \
 		-DJAVAEXTENSION_WORKING_DIR=${JAVAEXTENSION_WORKING_DIR} \
 		${JAVAEXTENSION_HOME}/src
-	cmake --build ${JAVAEXTENSION_WORKING_DIR} --config ${CMAKE_CONFIGURATION} --target install
+	cmake --build ${JAVAEXTENSION_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

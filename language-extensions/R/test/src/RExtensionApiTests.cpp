@@ -114,7 +114,23 @@ namespace ExtensionApiTest
 		{
 			DoCleanup();
 			ASSERT_NO_THROW(ReleaseHandles());
-			CleanupLibPaths();
+			
+			// Handle filesystem cleanup exceptions gracefully to prevent test suite failures
+			// in GoogleTest 1.12.1+ which is stricter about exceptions in teardown
+			try 
+			{
+				CleanupLibPaths();
+			}
+			catch (const std::exception& e)
+			{
+				// Log the cleanup failure but don't fail the test suite
+				std::cout << "Warning: Cleanup failed during test suite teardown: " << e.what() << std::endl;
+			}
+			catch (...)
+			{
+				// Catch any other exceptions during cleanup
+				std::cout << "Warning: Unknown error occurred during test suite teardown cleanup" << std::endl;
+			}
 		}
 	}
 
