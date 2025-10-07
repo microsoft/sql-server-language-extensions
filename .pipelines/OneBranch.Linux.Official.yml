@@ -286,3 +286,100 @@ extends:
               SourceFolder: '$(Build.SourcesDirectory)/out'
               Contents: 'TestReport*.xml'
               TargetFolder: '$(Build.SourcesDirectory)/out/test/_post_command__test_python/_testresults/out'
+
+    - stage: Build_ONNXRuntime_Extension_Linux
+      displayName: 'Build ONNX Runtime Extension (Linux)'
+      jobs:
+        - job: ONNXRuntime_Extension
+          displayName: 'Build and Package ONNX Runtime Extension (Linux)'
+          pool:
+            type: linux
+          variables:
+            ob_outputDirectory: '$(Build.SourcesDirectory)/out'
+            ob_artifactBaseName: 'drop_Build_OnnxRuntime_Extension_Linux'
+
+          steps:
+            - task: onebranch.pipeline.version@1
+              displayName: 'Setup BuildNumber'
+              inputs:
+                system: 'RevisionCounter'
+                major: '1'
+                minor: '0'
+                tag: 'alpha'
+                name: 'onnxruntime-extension'
+                exclude_commit: false
+
+            - script: |
+                apt-get update
+                apt-get install -y wget
+                wget https://github.com/Kitware/CMake/releases/download/v3.25.3/cmake-3.25.3-linux-x86_64.sh
+                mkdir -p /opt/cmake
+                sh cmake-3.25.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
+                echo "##vso[task.prependpath]/opt/cmake/bin"
+              displayName: 'Install CMake 3.25.3'
+
+            - task: CmdLine@2
+              displayName: 'Make restore-packages.sh executable'
+              inputs:
+                script: chmod +x $(Build.SourcesDirectory)/onnxruntime-extension/build/linux/restore-packages.sh
+                workingDirectory: '$(Build.SourcesDirectory)'
+
+            - task: CmdLine@2
+              displayName: 'Restore NuGet Packages for ONNX Runtime Extension'
+              inputs:
+                script: $(Build.SourcesDirectory)/onnxruntime-extension/build/linux/restore-packages.sh
+                workingDirectory: '$(Build.SourcesDirectory)'
+              env:
+                DEBIAN_FRONTEND: noninteractive
+
+            - task: CmdLine@2
+              displayName: 'Make build-onnxruntime-extension.sh executable'
+              inputs:
+                script: chmod +x $(Build.SourcesDirectory)/onnxruntime-extension/build/linux/build-onnxruntime-extension.sh
+                workingDirectory: '$(Build.SourcesDirectory)'
+
+            - task: CmdLine@2
+              displayName: 'Build ONNX Runtime Extension (Debug & Release)'
+              inputs:
+                script: $(Build.SourcesDirectory)/onnxruntime-extension/build/linux/build-onnxruntime-extension.sh release debug
+                workingDirectory: '$(Build.SourcesDirectory)'
+
+            - task: CopyFiles@2
+              displayName: 'Copy OnnxRuntime Extension Library (Release)'
+              inputs:
+                SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/x64/bin/Release'
+                Contents: 'libonnxextension.so'
+                TargetFolder: '$(ob_outputDirectory)/build/out/onnxruntime-extension/release'
+
+            - task: CopyFiles@2
+              displayName: 'Copy OnnxRuntime Extension Library (Debug)'
+              inputs:
+                SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/x64/bin/Debug'
+                Contents: 'libonnxextension.so'
+                TargetFolder: '$(ob_outputDirectory)/build/out/onnxruntime-extension/debug'
+
+            - task: CmdLine@2
+              displayName: 'Make create-onnx-extension-zip.sh executable'
+              inputs:
+                script: chmod +x $(Build.SourcesDirectory)/onnxruntime-extension/build/linux/create-onnx-extension-zip.sh
+                workingDirectory: '$(Build.SourcesDirectory)'
+
+            - task: CmdLine@2
+              displayName: 'Package ONNX Runtime Extension (Debug & Release)'
+              inputs:
+                script: $(Build.SourcesDirectory)/onnxruntime-extension/build/linux/create-onnx-extension-zip.sh debug release
+                workingDirectory: '$(Build.SourcesDirectory)'
+
+            - task: CopyFiles@2
+              displayName: 'Copy OnnxRuntime Extension Zip (Debug)'
+              inputs:
+                SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/build-output/onnxextension/linux/debug/packages'
+                Contents: 'onnxruntime-extension.zip'
+                TargetFolder: '$(ob_outputDirectory)/package/out/onnxruntime-extension/packages/debug'
+
+            - task: CopyFiles@2
+              displayName: 'Copy OnnxRuntime Extension Zip (Release)'
+              inputs:
+                SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/build-output/onnxextension/linux/release/packages'
+                Contents: 'onnxruntime-extension.zip'
+                TargetFolder: '$(ob_outputDirectory)/package/out/onnxruntime-extension/packages/release'

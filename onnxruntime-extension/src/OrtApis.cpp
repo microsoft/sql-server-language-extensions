@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// ONNXRuntime-extension : A language extension implementing the SQL Server AIRuntime extension 
+// ONNXRuntime-extension : A language extension implementing the SQL Server AIRuntime extension
 // for ONNX Runtime.
 // Copyright (C) 2025 Microsoft Corporation.
 //
@@ -15,16 +15,22 @@
 #include <string>
 #include <filesystem>
 #include <assert.h>
+#if defined(_WIN32)
 #include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 #include <onnxruntime_c_api.h>
 #include "util.h"
 #include "OrtApis.h"
 
-// Global variable to hold the ONNX Runtime library handle
-static HMODULE g_ortLib = nullptr;
 
-// Flag to indicate if the ONNX Runtime library has been loaded
-static BOOL fOnnxRuntimeDllLoaded = false;
+// Global variable to hold the ONNX Runtime library handle
+#if defined(_WIN32)
+HMODULE g_ortLib = nullptr;
+#else
+void *g_ortLib = nullptr;
+#endif
 
 // Global variables to hold the ONNX Runtime API functions
 PFN_OrtGetApiBase g_getApiBase = nullptr;
@@ -32,14 +38,21 @@ const OrtApi *g_ortApi = nullptr;
 OrtApiFunctions g_apiFuncs = {};
 
 // Define the ONNX Runtime DLL name
-static const WCHAR *ONNX_RUNTIME_DLL_NAME = L"onnxruntime.dll";
+const char *ONNX_RUNTIME_DLL_NAME = "onnxruntime.dll";
+
+// Define the ONNX Runtime so name in linux
+const char *ONNX_RUNTIME_SO_NAME = "libonnxruntime.so.1";
+
+// Flag to indicate if the ONNX Runtime library has been loaded
+bool isOnnxRuntimeDllLoaded = false;
 
 // Helper to check ONNX Runtime status
 void CheckStatus(OrtStatus *status)
 {
 	if (status != nullptr)
 	{
-		if (!g_ortApi) {
+		if (!g_ortApi)
+		{
 			assert(false && "g_ortApi is not initialized");
 			return;
 		}
@@ -49,15 +62,14 @@ void CheckStatus(OrtStatus *status)
 	}
 }
 
-
 // Macro to resolve and check ONNX Runtime API functions
-#define RESOLVE_API_FUNC(apiFuncs, ortApi, func, member) \
-	apiFuncs.member = reinterpret_cast<decltype(apiFuncs.member)>(ortApi->func); \
-	if (!apiFuncs.member) { \
-		LogMessage(L"Failed to resolve " L#member, LogLevel::CRITICAL_ERROR); \
-		return false; \
+#define RESOLVE_API_FUNC(apiFuncs, ortApi, func, member)                                   \
+	apiFuncs.member = reinterpret_cast<decltype(apiFuncs.member)>(ortApi->func);           \
+	if (!apiFuncs.member)                                                                  \
+	{                                                                                      \
+		LogMessage(std::string("Failed to resolve ") + #member, LogLevel::CRITICAL_ERROR); \
+		return false;                                                                      \
 	}
-
 
 // Function to resolve ONNX Runtime API functions
 // All the methods should be resolved (except AppendExecutionProviderCUDA which is optional).
@@ -81,111 +93,47 @@ bool ResolveApiFunctions(const OrtApi *ortApi, OrtApiFunctions &apiFuncs)
 	return true;
 }
 
+// Forward declarations of helper functions
+// Platform-specific implementation in platform-specific files.
+
+// Loads the ONNX Runtime DLL/shared library and sets the global handle.
+// Returns true on success, false on failure.
+bool LoadLibraryHandle(const std::string &runtimePath);
+
+// Resolves the OrtGetApiBase symbol from the loaded DLL and sets the global pointer
+bool ResolveApiBase();
+
+// Resolves all ONNX Runtime API functions and sets them in g_apiFuncs.
+// Returns true on success, false on failure.
+bool ResolveApiFunctionsGlobal();
+
+// Resolves and configures execution provider function pointers.
+// Returns true on success, false on failure.
+bool ConfigureExecutionProviders();
+
+// Unloads the ONNX Runtime DLL and cleans up all related global resources.
+void UnloadOnnxDll();
+
 // Loads the ONNX Runtime DLL and resolves the API functions.
 // Returns 0 on success, 1 on failure.
-int LoadOnnxDll(const std::wstring modelPath)
+int LoadOnnxDll(const std::string runtimePath)
 {
-	// Use std::filesystem to construct the DLL path properly
-	std::filesystem::path onnxDllPath = std::filesystem::path(modelPath) / ONNX_RUNTIME_DLL_NAME;
-
-	// Load onnxruntime.dll
-	g_ortLib = LoadLibraryW(onnxDllPath.c_str());
-	if (!g_ortLib)
-	{
-		LogMessage(L"Failed to load onnxruntime.dll: " + std::to_wstring(GetLastError()), LogLevel::CRITICAL_ERROR);
-
-		// Print the error message for common error codes
-		switch (GetLastError())
-		{
-		case ERROR_MOD_NOT_FOUND:
-			LogMessage(L"onnxruntime.dll not found. Please ensure it is in the correct directory.", LogLevel::CRITICAL_ERROR);
-			break;
-		case ERROR_INVALID_PARAMETER:
-			LogMessage(L"Invalid parameter passed to LoadLibraryW. Please check the path.", LogLevel::CRITICAL_ERROR);
-			break;
-		case ERROR_ACCESS_DENIED:
-			LogMessage(L"Access denied when trying to load onnxruntime.dll. Please check file permissions.", LogLevel::CRITICAL_ERROR);
-			break;
-		default:
-			LogMessage(L"An unknown error occurred while loading onnxruntime.dll.", LogLevel::CRITICAL_ERROR);
-			break;
-		}
-
+	// Step 1: Load the ONNX Runtime DLL/shared library and set the global handle.
+	if (!LoadLibraryHandle(runtimePath))
 		return 1;
-	}
 
-	// Set the flag to indicate the DLL is loaded
-	fOnnxRuntimeDllLoaded = true;
-
-	// Get the ONNX Runtime API
-	g_getApiBase = reinterpret_cast<PFN_OrtGetApiBase>(GetProcAddress(g_ortLib, "OrtGetApiBase"));
-	if (!g_getApiBase)
-	{
-		LogMessage(L"Failed to get OrtGetApiBase.", LogLevel::CRITICAL_ERROR);
-		FreeLibrary(g_ortLib);
+	// Step 2: Resolve the OrtGetApiBase symbol and set the global pointer.
+	if (!ResolveApiBase())
 		return 1;
-	}
 
-	g_ortApi = g_getApiBase()->GetApi(ORT_API_VERSION);
-	LogMessage(L"ONNX Runtime API version: " + std::to_wstring(ORT_API_VERSION), LogLevel::INFO);
-
-	if (!g_ortApi)
-	{
-		LogMessage(L"Failed to get ONNX Runtime API interface.", LogLevel::CRITICAL_ERROR);
-		FreeLibrary(g_ortLib);
+	// Step 3: Resolve all ONNX Runtime API functions and set them in g_apiFuncs.
+	if (!ResolveApiFunctionsGlobal())
 		return 1;
-	}
 
-	// Resolve all API functions of struct OrtApi
-	if (!ResolveApiFunctions(g_ortApi, g_apiFuncs))
-	{
-		LogMessage(L"Failed to resolve ONNX Runtime API functions", LogLevel::CRITICAL_ERROR);
-		assert(g_ortLib != nullptr);
-		FreeLibrary(g_ortLib);
+	// Step 4: Resolve and configure execution provider function pointers.
+	if (!ConfigureExecutionProviders())
 		return 1;
-	}
 
-	// Resolve OrtSessionOptionsAppendExecutionProviderCPU method which is not part of OrtApi
-	g_apiFuncs.AppendExecutionProviderCPU = reinterpret_cast<PFN_OrtSessionOptionsAppendExecutionProviderCPU>(GetProcAddress(g_ortLib, "OrtSessionOptionsAppendExecutionProvider_CPU"));
-	if (!g_apiFuncs.AppendExecutionProviderCPU)
-	{
-		LogMessage(L"Failed to resolve OrtSessionOptionsAppendExecutionProvider_CPU method", LogLevel::CRITICAL_ERROR);
-		FreeLibrary(g_ortLib);
-		return 1;
-	}
-
-	g_apiFuncs.AppendExecutionProviderCUDA = reinterpret_cast<PFN_OrtSessionOptionsAppendExecutionProviderCUDA>(GetProcAddress(g_ortLib, "OrtSessionOptionsAppendExecutionProvider_CUDA"));
-	// If AppendExecutionProviderCUDA is not available then fallback to CPU provider
-	if (!g_apiFuncs.AppendExecutionProviderCUDA)
-	{
-		LogMessage(L"OrtSessionOptionsAppendExecutionProvider_CUDA not available, falling back to CPU provider", LogLevel::INFO);
-	}
-	else
-	{
-		LogMessage(L"OrtSessionOptionsAppendExecutionProvider_CUDA resolved successfully", LogLevel::INFO);
-	}
-
+	// All steps succeeded.
 	return 0;
-}
-
-// Unloads the ONNX Runtime DLL and cleans up resources.
-// This function is idempotent and safe to call multiple times.
-void UnloadOnnxDll()
-{
-	if (!fOnnxRuntimeDllLoaded)
-		return;
-
-	// Set API pointers to nullptr
-	g_ortApi = nullptr;
-	g_getApiBase = nullptr;
-	memset(&g_apiFuncs, 0, sizeof(g_apiFuncs));
-
-	// Free the library if it was loaded
-	if (g_ortLib)
-	{
-		FreeLibrary(g_ortLib);
-		g_ortLib = nullptr;
-	}
-
-	fOnnxRuntimeDllLoaded = false;
 }

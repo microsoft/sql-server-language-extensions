@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// ONNXRuntime-extension : A language extension implementing the SQL Server AIRuntime extension 
+// ONNXRuntime-extension : A language extension implementing the SQL Server AIRuntime extension
 // for ONNX Runtime.
 // Copyright (C) 2025 Microsoft Corporation.
 //
@@ -10,36 +10,52 @@
 //
 //**************************************************************************************************
 
+
+
+
 #include <iostream>
-#include <string>
 #include <vector>
 #include <cassert>
 #include <sstream>
 #include <filesystem>
 
+#ifdef _WIN32
 // Windows headers
 #include <windows.h>
 #include <strsafe.h>
+#else
+// POSIX headers
+#include <dlfcn.h>
+#endif
 
-// SQL headers (must come after strsafe.h)
 #include <sql.h>
 #include <sqlext.h>
 
-// ONNX Runtime headers
 #include "OnnxSession.h"
 #include "util.h"
 #include "OrtApis.h"
 
+#ifndef _WIN32
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+#endif
+
 using namespace std;
 
 // Default ONNX model file name
-const wstring DEFAULT_ONNX_MODEL_FILE_NAME = L"model.onnx";
+const string DEFAULT_ONNX_MODEL_FILE_NAME = "model.onnx";
 
 // Default tokenizer JSON file name
-const wstring DEFAULT_ONNX_TOKENIZER_FILE_NAME = L"tokenizer.json";
+const string DEFAULT_ONNX_TOKENIZER_FILE_NAME = "tokenizer.json";
 
 // Default tokenizer DLL file name (Windows)
-const wstring DEFAULT_ONNX_TOKENIZER_DLL_NAME = L"tokenizers_cpp.dll";
+const string DEFAULT_ONNX_TOKENIZER_DLL_NAME_WINDOWS = "tokenizers_cpp.dll";
+// Default tokenizer DLL file name (Linux)
+const string DEFAULT_ONNX_TOKENIZER_DLL_NAME_LINUX = "libtokenizers_cpp.so";
 
 // Input and output names for the ONNX model
 const char *INPUT_NAMES[] = {"input_ids", "attention_mask"};
@@ -55,15 +71,15 @@ const char *OUTPUT_NAMES[] = {"token_embeddings", "sentence_embedding"};
 // Parameters:
 //   LocalRuntimePath - Pointer to a CHAR buffer containing the path to the ONNX Runtime DLL.
 //
-OnnxSession::OnnxSession(const CHAR *LocalRuntimePath)
+OnnxSession::OnnxSession(const char *LocalRuntimePath)
 {
 	if (LocalRuntimePath == nullptr)
 	{
 		throw std::invalid_argument("LocalRuntimePath cannot be null");
 	}
 
-	// Set the local runtime path (converts CHAR* to WCHAR* and stores internally)
-	SetLocalRuntimePath((CHAR *)LocalRuntimePath, strlen(LocalRuntimePath));
+	// Set the local runtime path
+	SetLocalRuntimePath((char *)LocalRuntimePath, strlen(LocalRuntimePath));
 
 	// Load the ONNX Runtime DLL from the specified path
 	int loadResult = LoadOnnxDll(GetLocalRuntimePath());
@@ -88,28 +104,30 @@ OnnxSession::OnnxSession(const CHAR *LocalRuntimePath)
 // Description:
 //   Destructor for the OnnxSession class. Releases all ONNX Runtime resources, including the
 //   session, session options, environment, and tokenizer DLL.
-//
 OnnxSession::~OnnxSession()
 {
 	// Release the ONNX Runtime session if it exists
-	if (m_session) {
+	if (m_session)
+	{
 		g_apiFuncs.ReleaseSession(m_session);
 		m_session = nullptr;
 	}
 
 	// Release the session options if they exist
-	if (m_session_options) {
+	if (m_session_options)
+	{
 		g_apiFuncs.ReleaseSessionOptions(m_session_options);
 		m_session_options = nullptr;
 	}
 
 	// Release the ONNX Runtime environment if it exists
-	if (m_env) {
+	if (m_env)
+	{
 		g_apiFuncs.ReleaseEnv(m_env);
 		m_env = nullptr;
 	}
 
-	// Free the tokenizer DLL/shared library if it was loaded
+		// Free the tokenizer DLL/shared library if it was loaded
 	if (m_HMTokenizerDll != nullptr)
 	{
 #ifdef _WIN32
@@ -130,6 +148,7 @@ OnnxSession::~OnnxSession()
 // Description:
 //   Sets the model location for the ONNX Runtime session.
 //   Copies the input WCHAR buffer into an internal unique_ptr for safe memory management.
+//   Method internally converts WCHAR*(modelLocation) to UTF-8 std::string and stores it internally in m_modelLocation.
 //
 // Parameters:
 //   modelLocation   - Pointer to the WCHAR buffer containing the model location path.
@@ -152,16 +171,11 @@ void OnnxSession::SetModelLocation(WCHAR *modelLocation, size_t cbModelLocation)
 		throw std::invalid_argument("SetModelLocation: sizeInWchar is zero");
 	}
 
-	// Copy the input buffer into a temporary wstring
-	std::wstring temp(modelLocation, sizeInWchar);
+	// Convert WCHAR* to UTF-8 std::string
+	std::string utf8Path = WCHAR_to_utf8_string(modelLocation, sizeInWchar);
 
-	// Allocate a new WCHAR buffer and copy the string, ensuring null-termination
-	auto newPtr = std::make_unique<WCHAR[]>(sizeInWchar + 1);
-	wmemcpy_s(newPtr.get(), sizeInWchar + 1, temp.c_str(), sizeInWchar);
-	newPtr[sizeInWchar] = L'\0';
-
-	// Store the buffer in the class member for automatic memory management
-	m_modelLocation = std::move(newPtr);
+	// Allocate a new char buffer and copy the string, ensuring null-termination
+	m_modelLocation = ConvertAndAllocateUtf8Buffer(utf8Path);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -169,13 +183,14 @@ void OnnxSession::SetModelLocation(WCHAR *modelLocation, size_t cbModelLocation)
 //
 // Description:
 //   Sets the embedding parameter for the ONNX Runtime session.
-//   Copies the input CHAR buffer into an internal unique_ptr for safe memory management.
+//   Copies the input char buffer into an internal unique_ptr for safe memory management.
+//   Function ensures string is null terminated and stored it in m_embedding_param
 //
 // Parameters:
-//   param        - Pointer to the CHAR buffer containing the embedding parameter.
+//   param        - Pointer to the char buffer containing the embedding parameter.
 //   sizeInChars  - Number of characters in the buffer.
 //
-void OnnxSession::SetEmbeddingParam(CHAR *param, size_t sizeInChars)
+void OnnxSession::SetEmbeddingParam(char *param, size_t sizeInChars)
 {
 	// Validate input arguments
 	if (param == nullptr || sizeInChars == 0)
@@ -184,12 +199,8 @@ void OnnxSession::SetEmbeddingParam(CHAR *param, size_t sizeInChars)
 	}
 
 	// Allocate a new CHAR buffer and copy the string, ensuring null-termination
-	auto newPtr = std::make_unique<CHAR[]>(sizeInChars + 1);
-	memcpy_s(newPtr.get(), (sizeInChars + 1) * sizeof(CHAR), param, sizeInChars * sizeof(CHAR));
-	newPtr[sizeInChars] = '\0';
-
-	// Store the buffer in the class member for automatic memory management
-	m_embedding_param = std::move(newPtr);
+	std::string paramStr(param, sizeInChars);
+	m_embedding_param = ConvertAndAllocateUtf8Buffer(paramStr);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -197,10 +208,10 @@ void OnnxSession::SetEmbeddingParam(CHAR *param, size_t sizeInChars)
 //
 // Description:
 //   Sets the default parameters for the ONNX Runtime session.
-//   Copies the input WCHAR buffer into an internal unique_ptr for safe memory management.
+//   Copies the input WCHAR buffer into an internal char unique_ptr array for safe memory management.
 //
 // Note:
-//   This function assumes that any CHAR* input is UTF-8 encoded. Ensure that all CHAR* strings
+//   This function assumes that any char* input is UTF-8 encoded. Ensure that all char* strings
 //   passed to this function are properly encoded as UTF-8.
 //
 // Parameters:
@@ -215,24 +226,21 @@ void OnnxSession::SetDefaultParams(WCHAR *params, size_t sizeInBytes)
 		throw std::invalid_argument("SetDefaultParams: params is null but size is not zero, or size is not a multiple of WCHAR");
 	}
 
-	std::unique_ptr<WCHAR[]> newPtr;
-
 	if (sizeInBytes == 0)
 	{
-		// If input is empty, allocate a single WCHAR for the null terminator
-		newPtr = std::make_unique<WCHAR[]>(1);
-		newPtr[0] = L'\0';
+		// If input is empty, allocate a single char for the null terminator
+		m_defaultParams = std::make_unique<char[]>(1);
+		m_defaultParams[0] = '\0';
 	}
 	else
 	{
-		// Copy the input buffer and ensure null-termination
+		// Convert WCHAR* to UTF-8 std::string
 		size_t sizeInWchar = sizeInBytes / sizeof(WCHAR);
-		newPtr = std::make_unique<WCHAR[]>(sizeInWchar + 1);
-		memset(newPtr.get(), 0, (sizeInWchar + 1) * sizeof(WCHAR));
-		memcpy_s(newPtr.get(), (sizeInWchar + 1) * sizeof(WCHAR), params, sizeInBytes);
-		newPtr[sizeInWchar] = L'\0';
+		std::string utf8Params = WCHAR_to_utf8_string(params, sizeInWchar);
+
+		// Allocate a new char buffer and copy the string, ensuring null-termination
+		m_defaultParams = ConvertAndAllocateUtf8Buffer(utf8Params);
 	}
-	m_defaultParams = std::move(newPtr);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -240,13 +248,13 @@ void OnnxSession::SetDefaultParams(WCHAR *params, size_t sizeInBytes)
 //
 // Description:
 //   Sets the local runtime path for the ONNX Runtime session.
-//   Converts the input CHAR buffer to WCHAR and stores it in an internal unique_ptr.
+//   Stores localRuntimePath to an internal char unique_ptr array named m_localRuntimePath.
 //
 // Parameters:
-//   localRuntimePath - Pointer to the CHAR buffer containing the runtime path.
+//   localRuntimePath - Pointer to the char buffer containing the runtime path.
 //   sizeInChar       - Number of characters in the buffer.
 //
-void OnnxSession::SetLocalRuntimePath(CHAR *localRuntimePath, size_t sizeInChar)
+void OnnxSession::SetLocalRuntimePath(char *localRuntimePath, size_t sizeInChar)
 {
 	// Validate input arguments
 	if (localRuntimePath == nullptr || sizeInChar == 0)
@@ -254,19 +262,73 @@ void OnnxSession::SetLocalRuntimePath(CHAR *localRuntimePath, size_t sizeInChar)
 		throw std::invalid_argument("SetLocalRuntimePath: localRuntimePath is null or size is zero");
 	}
 
-	// Convert the CHAR buffer to a wide string (WCHAR)
-	std::wstring wpath = String_to_Wstring(localRuntimePath, sizeInChar);
-	if (wpath.empty())
+	// Convert the CHAR buffer (UTF-8) to std::string
+	std::string utf8Path(localRuntimePath, sizeInChar);
+	if (utf8Path.empty())
 	{
 		throw std::invalid_argument("SetLocalRuntimePath: converted path is empty");
 	}
 
-	// Allocate a new WCHAR buffer and copy the string, ensuring null-termination
-	auto newPtr = std::make_unique<WCHAR[]>(wpath.size() + 1);
-	wcscpy_s(newPtr.get(), wpath.size() + 1, wpath.c_str());
+	// Allocate a new char buffer and copy the string, ensuring null-termination
+	m_localRuntimePath = ConvertAndAllocateUtf8Buffer(utf8Path);
+}
 
-	// Store the buffer in the class member for automatic memory management
-	m_localRuntimePath = std::move(newPtr);
+//--------------------------------------------------------------------------------------------
+// Name: OnnxSession::ResolvePaths
+//
+// Description:
+//   Determines and validates the file paths required for the ONNX session, including:
+//     - The ONNX model file
+//     - The tokenizer JSON file
+//     - The tokenizer DLL/shared library
+//   This method extracts file names from the default parameters (if provided), constructs full paths
+//   using the model location and runtime path, and checks that all required files exist. If any file
+//   is missing, it logs a critical error and returns false.
+//
+// Returns:
+//   true if all required files exist and paths are set, false otherwise.
+//
+bool OnnxSession::ResolvePaths()
+{
+	std::string modelFileName = OnnxRuntimeExtensionHelpers::ExtractJsonKey(m_defaultParams.get(), OnnxDefaultConstants::ONNX_MODEL_FILE_NAME);
+	if (!modelFileName.empty())
+		m_onnxModelFilePath = (std::filesystem::path(m_modelLocation.get()) / modelFileName).string();
+	else
+		m_onnxModelFilePath = (std::filesystem::path(m_modelLocation.get()) / DEFAULT_ONNX_MODEL_FILE_NAME).string();
+
+	std::string tokenizerFileName = OnnxRuntimeExtensionHelpers::ExtractJsonKey(m_defaultParams.get(), OnnxDefaultConstants::TOKENIZER_JSON_FILE_NAME);
+	if (!tokenizerFileName.empty())
+		m_onnxTokenizerFilePath = (std::filesystem::path(m_modelLocation.get()) / tokenizerFileName).string();
+	else
+		m_onnxTokenizerFilePath = (std::filesystem::path(m_modelLocation.get()) / DEFAULT_ONNX_TOKENIZER_FILE_NAME).string();
+
+	std::string tokenizerDllFileName = OnnxRuntimeExtensionHelpers::ExtractJsonKey(m_defaultParams.get(), OnnxDefaultConstants::TOKENIZER_DLL_FILE_NAME);
+#ifdef _WIN32
+	const std::string &defaultTokenizerDllName = DEFAULT_ONNX_TOKENIZER_DLL_NAME_WINDOWS;
+#else
+	const std::string &defaultTokenizerDllName = DEFAULT_ONNX_TOKENIZER_DLL_NAME_LINUX;
+#endif
+	if (!tokenizerDllFileName.empty())
+		m_onnxTokenizerDLLFilePath = (std::filesystem::path(GetLocalRuntimePath()) / tokenizerDllFileName).string();
+	else
+		m_onnxTokenizerDLLFilePath = (std::filesystem::path(GetLocalRuntimePath()) / defaultTokenizerDllName).string();
+
+	if (!OnnxRuntimeExtensionHelpers::DoesFileExist(m_onnxModelFilePath))
+	{
+		LogMessage("Model file not found: " + m_onnxModelFilePath, LogLevel::CRITICAL_ERROR);
+		return false;
+	}
+	if (!OnnxRuntimeExtensionHelpers::DoesFileExist(m_onnxTokenizerFilePath))
+	{
+		LogMessage("Tokenizer file not found: " + m_onnxTokenizerFilePath, LogLevel::CRITICAL_ERROR);
+		return false;
+	}
+	if (!OnnxRuntimeExtensionHelpers::DoesFileExist(m_onnxTokenizerDLLFilePath))
+	{
+		LogMessage("Tokenizer DLL file not found: " + m_onnxTokenizerDLLFilePath, LogLevel::CRITICAL_ERROR);
+		return false;
+	}
+	return true;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -280,14 +342,14 @@ void OnnxSession::SetLocalRuntimePath(CHAR *localRuntimePath, size_t sizeInChar)
 //   4. Loading the tokenizer DLL and setting up the function pointer for tokenization.
 //
 // Returns:
-//   TRUE if the session is successfully set up, FALSE otherwise.
+//   true if the session is successfully set up, false otherwise.
 //
-BOOL OnnxSession::SetupOnnxSession()
+bool OnnxSession::SetupOnnxSession()
 {
 	// If the session is already initialized, return success.
 	if (m_session != nullptr)
 	{
-		return TRUE;
+		return true;
 	}
 
 	// Ensure required members are set.
@@ -295,139 +357,32 @@ BOOL OnnxSession::SetupOnnxSession()
 	assert(m_env);
 	assert(m_session_options);
 
-	// 1. Determine model, tokenizer, and tokenizer DLL file paths.
+	// Step 1: Resolve all required file paths for the ONNX session.
+	// This step determines and validates the paths for the ONNX model file, tokenizer file, and tokenizer DLL/shared library.
+	// It ensures all necessary files exist and properly set.
+	if (!ResolvePaths())
+		return false;
 
-	// Get model file name from default parameters, or use default.
-	wstring modelFileName = OnnxRuntimeExtensionHelpers::ExtractJsonKey(m_defaultParams.get(), DEFAULT_PARAMETERS_KEYS.ONNX_MODEL_FILE_NAME);
-	if (!modelFileName.empty())
-	{
-		m_onnxModelFilePath = (std::filesystem::path(m_modelLocation.get()) / modelFileName).wstring();
-	}
-	else
-	{
-		m_onnxModelFilePath = (std::filesystem::path(m_modelLocation.get()) / DEFAULT_ONNX_MODEL_FILE_NAME).wstring();
-	}
+	// Step 2: Configure ONNX Runtime session options.
+	// This step sets optimization level, threading, execution mode, and logging severity.
+	// Returns false if configuration fails.
+	if (!ConfigureSessionOptions())
+		return false;
 
-	// Get tokenizer JSON file name from default parameters, or use default.
-	wstring tokenizerFileName = OnnxRuntimeExtensionHelpers::ExtractJsonKey(m_defaultParams.get(), DEFAULT_PARAMETERS_KEYS.TOKENIZER_JSON_FILE_NAME);
-	if (!tokenizerFileName.empty())
-	{
-		m_onnxTokenizerFilePath = (std::filesystem::path(m_modelLocation.get()) / tokenizerFileName).wstring();
-	}
-	else
-	{
-		m_onnxTokenizerFilePath = (std::filesystem::path(m_modelLocation.get()) / DEFAULT_ONNX_TOKENIZER_FILE_NAME).wstring();
-	}
+	// Step 3: Load the ONNX model into the session.
+	// This step loads the ONNX model from the resolved file path into the ONNX Runtime session.
+	// On Windows, the path is converted to a wide string; on other platforms, the UTF-8 path is used directly.
+	// Returns false if loading fails.
+	if (!LoadModel())
+		return false;
 
-	// Get tokenizer DLL file name from default parameters, or use default.
-	wstring tokenizerDllFileName = OnnxRuntimeExtensionHelpers::ExtractJsonKey(m_defaultParams.get(), DEFAULT_PARAMETERS_KEYS.TOKENIZER_DLL_FILE_NAME);
-	if (!tokenizerDllFileName.empty())
-	{
-		m_onnxTokenizerDLLFilePath = (std::filesystem::path(GetLocalRuntimePath()) / tokenizerDllFileName).wstring();
-	}
-	else
-	{
-		m_onnxTokenizerDLLFilePath = (std::filesystem::path(GetLocalRuntimePath()) / DEFAULT_ONNX_TOKENIZER_DLL_NAME).wstring();
-	}
+	// Step 4: Load the tokenizer library and function pointer.
+	// This step loads the tokenizer DLL/shared library from the resolved path and retrieves the function pointer
+	// for tokenization (LoadBlobJsonAndEncode). Returns false if loading fails or the function is not found.
+	if (!LoadTokenizer())
+		return false;
 
-	// Check if the model file exists.
-	if (!OnnxRuntimeExtensionHelpers::DoesFileExist(m_onnxModelFilePath))
-	{
-		LogMessage(L"Model file not found: " + m_onnxModelFilePath, LogLevel::CRITICAL_ERROR);
-		return FALSE;
-	}
-
-	// Check if the tokenizer JSON file exists.
-	if (!OnnxRuntimeExtensionHelpers::DoesFileExist(m_onnxTokenizerFilePath))
-	{
-		LogMessage(L"Tokenizer file not found: " + m_onnxTokenizerFilePath, LogLevel::CRITICAL_ERROR);
-		return FALSE;
-	}
-
-	// Check if the tokenizer DLL file exists.
-	if (!OnnxRuntimeExtensionHelpers::DoesFileExist(m_onnxTokenizerDLLFilePath))
-	{
-		LogMessage(L"Tokenizer DLL file not found: " + m_onnxTokenizerDLLFilePath, LogLevel::CRITICAL_ERROR);
-		return FALSE;
-	}
-
-	// 2. Configure ONNX Runtime session options.
-#ifdef _DEBUG
-	// Debug: lower optimization, single thread, verbose logging.
-	CheckStatus(g_apiFuncs.SetGraphOptimizationLevel(m_session_options, ORT_ENABLE_BASIC));
-	CheckStatus(g_apiFuncs.SetIntraOpNumThreads(m_session_options, 1));
-	CheckStatus(g_apiFuncs.SetExecutionMode(m_session_options, ORT_SEQUENTIAL));
-	CheckStatus(g_apiFuncs.SetLogSeverityLevel(m_session_options, ORT_LOGGING_LEVEL_VERBOSE));
-#else
-	// Release: full optimization, multi-threaded, warning logging.
-	CheckStatus(g_apiFuncs.SetGraphOptimizationLevel(m_session_options, ORT_ENABLE_ALL));
-	CheckStatus(g_apiFuncs.SetIntraOpNumThreads(m_session_options, 4));
-	CheckStatus(g_apiFuncs.SetExecutionMode(m_session_options, ORT_PARALLEL));
-	CheckStatus(g_apiFuncs.SetLogSeverityLevel(m_session_options, ORT_LOGGING_LEVEL_WARNING));
-#endif
-
-	// Try to use CUDA (GPU) execution provider if available.
-	bool use_gpu = false;
-	if (g_apiFuncs.AppendExecutionProviderCUDA) {
-		OrtCUDAProviderOptions cuda_options;
-		cuda_options.device_id = 0;
-		if (g_apiFuncs.AppendExecutionProviderCUDA(m_session_options, &cuda_options) == nullptr) {
-			use_gpu = true;
-			LogMessage(L"Using CUDA execution provider", LogLevel::INFO);
-		}
-	}
-
-	// Fallback to CPU execution provider if CUDA is not used.
-	if (!use_gpu) {
-		if (g_apiFuncs.AppendExecutionProviderCPU(m_session_options, 0) == nullptr) {
-			LogMessage(L"Using CPU execution provider", LogLevel::INFO);
-		} else {
-			return FALSE;
-		}
-	}
-
-	// 3. Load the ONNX model into a session.
-	CheckStatus(g_apiFuncs.CreateSession(m_env, m_onnxModelFilePath.c_str(), m_session_options, &m_session));
-
-#ifdef _WIN32
-	// 4. Load tokenizer DLL (Windows).
-	m_HMTokenizerDll = LoadLibraryExW(m_onnxTokenizerDLLFilePath.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-	if (m_HMTokenizerDll == NULL)
-	{
-		LogMessage(L"Failed to load the tokenizer DLL: " + m_onnxTokenizerDLLFilePath + L". Error: " + std::to_wstring(GetLastError()), LogLevel::CRITICAL_ERROR);
-		return FALSE;
-	}
-
-	// Get the function pointer for LoadBlobJsonAndEncode from the DLL.
-	m_pFnLoadBlobJsonAndEncode =
-		reinterpret_cast<PFN_LoadBlobJsonAndEncode>(GetProcAddress(m_HMTokenizerDll, "LoadBlobJsonAndEncode"));
-
-	if (!m_pFnLoadBlobJsonAndEncode)
-	{
-		LogMessage(L"Failed to get function address \"void LoadBlobJsonAndEncode(const std::string &, const std::string &, std::vector<int32_t> &)\"", LogLevel::CRITICAL_ERROR);
-		return FALSE;
-	}
-#else
-	// 4. Load tokenizer shared library (Linux).
-	void *handle = dlopen("tokenizers_cpp.so", RTLD_LAZY);
-	if (!handle)
-	{
-		LogMessage(L"Failed to load the shared library: " + std::wstring(dlerror()), LogLevel::CRITICAL_ERROR);
-		return FALSE;
-	}
-
-	m_pFnLoadBlobJsonAndEncode = (PFN_LoadBlobJsonAndEncode)dlsym(handle, "LoadBlobJsonAndEncode");
-
-	const char *error = dlerror();
-	if (error != NULL)
-	{
-		LogMessage(L"Failed to get function address \"void LoadBlobJsonAndEncode(const std::string &, const std::string &, std::vector<int32_t> &)\": " + std::wstring(error), LogLevel::CRITICAL_ERROR);
-		dlclose(handle);
-		return FALSE;
-	}
-#endif
-
-	return TRUE;
+	return true;
 }
 
 // OnnxSession::GenerateSingleEmbedding
@@ -435,10 +390,17 @@ BOOL OnnxSession::SetupOnnxSession()
 // Sets up the model path and tokenizer.json path, and generates embeddings.
 //
 // Returns:
-//   TRUE on success, FALSE on failure
-BOOL OnnxSession::GenerateSingleEmbedding()
+//   true on success, false on failure
+bool OnnxSession::GenerateSingleEmbedding()
 {
-	BOOL isSuccess = FALSE;
+	// Check that m_embedding_param is set
+	if (!m_embedding_param || !m_embedding_param.get() || m_embedding_param.get()[0] == '\0')
+	{
+		LogMessage("GenerateSingleEmbedding: embedding_param is not set or empty.", LogLevel::CRITICAL_ERROR);
+		return false;
+	}
+
+	bool isSuccess = false;
 	wstring result;
 
 	isSuccess = TokenizeAndGenerateEmbeddings(
@@ -470,19 +432,22 @@ BOOL OnnxSession::GenerateSingleEmbedding()
 // - fVerboseOutput: Optional flag for verbose output (default is false)
 //
 // Returns:
-//   TRUE on success, FALSE on failure
+//   true on success, false on failure
 //
 // Note: This function expects the model.onnx and tokenizer.json files to be present in the same directory.
 
-BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
+bool OnnxSession::TokenizeAndGenerateEmbeddings(
 	_In_ string userInputString,
 	_Out_ wstring &output_str,
-	_In_opt_ BOOL fVerboseOutput /* = false by default */)
+	_In_opt_ bool fVerboseOutput /* = false by default */)
 {
 	// Define custom deleters for ONNX Runtime objects to ensure proper resource management
-	auto memory_info_deleter = [](OrtMemoryInfo* p) { if (p) g_ortApi->ReleaseMemoryInfo(p); };
-	auto shape_info_deleter = [](OrtTensorTypeAndShapeInfo* p) { if (p) g_ortApi->ReleaseTensorTypeAndShapeInfo(p); };
-	auto value_deleter = [](OrtValue* p) { if (p) g_ortApi->ReleaseValue(p); };
+	auto memory_info_deleter = [](OrtMemoryInfo *p)
+	{ if (p) g_ortApi->ReleaseMemoryInfo(p); };
+	auto shape_info_deleter = [](OrtTensorTypeAndShapeInfo *p)
+	{ if (p) g_ortApi->ReleaseTensorTypeAndShapeInfo(p); };
+	auto value_deleter = [](OrtValue *p)
+	{ if (p) g_ortApi->ReleaseValue(p); };
 
 	// Smart pointers for ONNX Runtime objects with custom deleters
 	std::unique_ptr<OrtMemoryInfo, decltype(memory_info_deleter)> memory_info(nullptr, memory_info_deleter);
@@ -497,7 +462,7 @@ BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
 	try
 	{
 		// Create memory info for CPU allocator (OrtArenaAllocator, default memory type)
-		OrtMemoryInfo* raw_memory_info = nullptr;
+		OrtMemoryInfo *raw_memory_info = nullptr;
 		CheckStatus(g_ortApi->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &raw_memory_info));
 		memory_info.reset(raw_memory_info);
 
@@ -508,30 +473,29 @@ BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
 		vector<int> token_ids;
 		if (blob.empty())
 		{
-			LogMessage(L"Tokenizer JSON blob is empty. Cannot tokenize input.", LogLevel::CRITICAL_ERROR);
-			return FALSE;
+			LogMessage("Tokenizer JSON blob is empty. Cannot tokenize input.", LogLevel::CRITICAL_ERROR);
+			return false;
 		}
 		if (m_pFnLoadBlobJsonAndEncode == nullptr)
 		{
-			LogMessage(L"Tokenizer function pointer is null. Cannot tokenize input.", LogLevel::CRITICAL_ERROR);
-			return FALSE;
+			LogMessage("Tokenizer function pointer is null. Cannot tokenize input.", LogLevel::CRITICAL_ERROR);
+			return false;
 		}
 		m_pFnLoadBlobJsonAndEncode(blob, userInputString, token_ids);
+
+		// Check if tokenizer failed to generate any tokens
+		if (token_ids.empty())
+		{
+			LogMessage("Tokenizer did not generate any tokens for the input.", LogLevel::CRITICAL_ERROR);
+			return false;
+		}
 
 #ifdef _DEBUG
 		// Log the encoded token IDs if verbose output is enabled
 		if (fVerboseOutput)
 		{
-			std::wstringstream ss;
-			ss << L"Encoded token IDs: [";
-			for (size_t i = 0; i < token_ids.size(); ++i)
-			{
-				ss << token_ids[i];
-				if (i != token_ids.size() - 1)
-					ss << L", ";
-			}
-			ss << L"]";
-			LogMessage(ss.str(), LogLevel::INFO);
+			std::wstring text = L"Encoded token IDs: ";
+			LogVerboseVector(text, token_ids, LogLevel::INFO);
 		}
 #endif
 
@@ -582,14 +546,14 @@ BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
 		// Run inference on the ONNX model
 		OrtValue *raw_output_tensor = nullptr;
 		CheckStatus(g_apiFuncs.Run(
-			m_session,                // Session handle
-			nullptr,                  // Optional run options
-			INPUT_NAMES,              // Input node names
-			inputs,                   // Input tensors
-			input_ids_num_dims,       // Number of inputs
-			OUTPUT_NAMES,             // Output node names
-			1,                        // Number of outputs
-			&raw_output_tensor));     // Output tensor pointer
+			m_session,			  // Session handle
+			nullptr,			  // Optional run options
+			INPUT_NAMES,		  // Input node names
+			inputs,				  // Input tensors
+			input_ids_num_dims,	  // Number of inputs
+			OUTPUT_NAMES,		  // Output node names
+			1,					  // Number of outputs
+			&raw_output_tensor)); // Output tensor pointer
 		output_tensor.reset(raw_output_tensor);
 
 		// Extract the output data (embeddings) from the output tensor
@@ -621,8 +585,8 @@ BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
 		// Assuming the output shape is [batch_size, sequence_length, embedding_dim_count]
 		if (dims.size() < 3)
 		{
-			LogMessage(L"Output tensor does not have at least 3 dimensions.", LogLevel::CRITICAL_ERROR);
-			return FALSE;
+			LogMessage("Output tensor does not have at least 3 dimensions.", LogLevel::CRITICAL_ERROR);
+			return false;
 		}
 
 		// Extract the embedding dimension count from the output tensor shape
@@ -631,15 +595,10 @@ BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
 		// Log the embedding vector if verbose output is enabled
 		if (fVerboseOutput)
 		{
-			std::wstringstream ss;
-			ss << L"Vector embedding of dimensions " << embedding_dim_count << L" : [";
-			for (size_t i = 0; i < embedding_dim_count; ++i)
-			{
-				if (i > 0) ss << L", ";
-				ss << output_data[i];
-			}
-			ss << L"]";
-			LogMessage(ss.str(), LogLevel::INFO);
+			// Wrap output_data in a vector<float> for logging
+			std::vector<float> embedding_vec(output_data, output_data + embedding_dim_count);
+			std::wstring text = L"Vector embedding of dimensions " + std::to_wstring(embedding_dim_count) + L" : ";
+			LogVerboseVector(text, embedding_vec, LogLevel::INFO);
 		}
 
 		// Convert the float array output_data to a wide string output_str
@@ -649,14 +608,14 @@ BOOL OnnxSession::TokenizeAndGenerateEmbeddings(
 	{
 		// Log any standard exceptions as critical errors
 		LogMessage(e.what(), LogLevel::CRITICAL_ERROR);
-		return FALSE;
+		return false;
 	}
 	catch (...)
 	{
 		// Log any unknown exceptions as critical errors
 		LogMessage("ONNX Runtime error.", LogLevel::CRITICAL_ERROR);
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }

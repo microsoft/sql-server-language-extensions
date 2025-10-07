@@ -17,12 +17,12 @@
 #include <fstream>
 #include <sstream>
 #include <locale>
-#include <codecvt>
 #include <memory>
 // Windows headers
-//
+#if defined(_WIN32)
 #include <strsafe.h>
 #include <windows.h>
+#endif
 #include "sqlexternallanguage.h"
 #include "sqlexternallibrary.h"
 #include <cassert>
@@ -104,7 +104,7 @@ SQLRETURN Init(
 	try
 	{
 		// languagePath should contain the LOCAL_RUNTIME_PATH having onnxruntime.dll
-		g_onnxsession = std::make_unique<OnnxSession>(reinterpret_cast<CHAR *>(languagePath));
+		g_onnxsession = std::make_unique<OnnxSession>(reinterpret_cast<char *>(languagePath));
 	}
 	catch (exception e)
 	{
@@ -269,15 +269,17 @@ SQLRETURN InitParam(
 			memcpy(buffer.get(), ArgValue, StrLen_or_Ind);
 			buffer[cbBuffer - 1] = L'\0';
 
+			// Use cross-platform utility for conversion
+			std::string jsonString = WCHAR_to_utf8_string(buffer.get(), cbBuffer - 1);
+
 			// Extract the value of the "prompt" key from the JSON string stored in m_embedding_param
-			string jsonString = Wstring_to_String(buffer.get(), cbBuffer - 1);
 			try
 			{
 				nlohmann::json jsonObject = nlohmann::json::parse(jsonString);
 
 				if (jsonObject.contains("prompt") && jsonObject["prompt"].is_string())
 				{
-					string prompt = jsonObject["prompt"];
+					std::string prompt = jsonObject["prompt"];
 					if (!prompt.empty())
 					{
 						g_onnxsession->SetEmbeddingParam(const_cast<CHAR *>(prompt.c_str()), prompt.size());
@@ -300,7 +302,7 @@ SQLRETURN InitParam(
 				TRACELOG(e.what());
 				return SQL_ERROR;
 			}
-			catch (const exception &e)
+			catch (const std::exception &e)
 			{
 				TRACELOG("Standard exception occurred: ");
 				TRACELOG(e.what());
@@ -421,7 +423,10 @@ SQLRETURN GetResults(
 // Name: GetOutputParam
 //
 // Description:
-// This method is used to get the result vector embedding.
+// Retrieves the result vector embedding for SQL Server.
+// On Windows, returns the output buffer as a wide string (WCHAR, UTF-16) directly from m_output_str(outputStr).
+// On Linux, std::wstring uses 4-byte wchar_t (UTF-32), but SQL Server expects 2-byte WCHAR (UTF-16),
+// So the output is converted from UTF-32 to UTF-16 before returning.
 //
 // Returns:
 //	SQL_SUCCESS on success, otherwise SQL_ERROR
@@ -453,11 +458,34 @@ SQLRETURN GetOutputParam(
 				g_outputBuffer.reset();
 
 				size_t outputLength = outputStr[0].length();
+#if defined(_WIN32)
 				g_outputBuffer = std::make_unique<WCHAR[]>(outputLength + 1);
 				wcscpy_s(g_outputBuffer.get(), outputLength + 1, outputStr[0].c_str());
-
 				*ParamValue = reinterpret_cast<SQLPOINTER>(g_outputBuffer.get());
 				*StrLen_or_Ind = static_cast<SQLINTEGER>(sizeof(WCHAR) * outputLength);
+#else
+				// On Linux, std::wstring is wchar_t (UTF-32), but SQL Server expects WCHAR (UTF-16, unsigned short)
+				// Use a modern conversion utility to convert std::wstring (UTF-32) to UTF-16 (WCHAR)
+				std::u16string utf16str;
+				try
+				{
+					utf16str = ConvertUTF32ToUTF16(outputStr[0]);
+				}
+				catch (const std::exception &e)
+				{
+					TRACELOG("Exception in ConvertUTF32ToUTF16: ");
+					TRACELOG(e.what());
+					*ParamValue = nullptr;
+					*StrLen_or_Ind = SQL_NULL_DATA;
+					return SQL_ERROR;
+				}
+				g_outputBuffer = std::make_unique<WCHAR[]>(utf16str.length() + 1);
+				for (size_t i = 0; i < utf16str.length(); ++i)
+					g_outputBuffer[i] = static_cast<WCHAR>(utf16str[i]);
+				g_outputBuffer[utf16str.length()] = 0;
+				*ParamValue = reinterpret_cast<SQLPOINTER>(g_outputBuffer.get());
+				*StrLen_or_Ind = static_cast<SQLINTEGER>(sizeof(WCHAR) * utf16str.length());
+#endif
 			}
 			else
 			{

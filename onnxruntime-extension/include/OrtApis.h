@@ -19,6 +19,8 @@
 #include <string>
 #include <onnxruntime_c_api.h>
 
+inline constexpr const char* MIN_SUPPORTED_VERSION = "1.19.0";
+
 // Function pointers for ONNX Runtime API
 
 // === API Base ===
@@ -29,7 +31,12 @@ using PFN_OrtCreateEnv = OrtStatus *(ORT_API_CALL *)(OrtLoggingLevel, const char
 using PFN_OrtReleaseEnv = void(ORT_API_CALL *)(OrtEnv *);
 
 // === Session Management ===
+// The signature of OrtCreateSession is platform-specific: uses wchar_t* for Windows, char* for Linux/macOS.
+#ifdef _WIN32
 using PFN_OrtCreateSession = OrtStatus *(ORT_API_CALL *)(OrtEnv *, const wchar_t *, const OrtSessionOptions *, OrtSession **);
+#else
+using PFN_OrtCreateSession = OrtStatus *(ORT_API_CALL *)(OrtEnv *, const char *, const OrtSessionOptions *, OrtSession **);
+#endif
 using PFN_OrtCreateSessionOptions = OrtStatus *(ORT_API_CALL *)(OrtSessionOptions **);
 using PFN_OrtReleaseSession = void(ORT_API_CALL *)(OrtSession *);
 using PFN_OrtReleaseSessionOptions = void(ORT_API_CALL *)(OrtSessionOptions *);
@@ -78,13 +85,40 @@ void CheckStatus(OrtStatus *status);
 // Function to resolve ONNX Runtime API functions in struct OrtApi.
 bool ResolveApiFunctions(const OrtApi *ortApi, OrtApiFunctions &apiFuncs);
 
+// Loads the ONNX Runtime DLL/shared library and sets the global handle.
+// Returns true on success, false on failure.
+bool LoadLibraryHandle(const std::string& runtimePath);
+
+// Resolves the OrtGetApiBase symbol and sets the global pointer.
+// Returns true on success, false on failure.
+bool ResolveApiBase();
+
+// Resolves all ONNX Runtime API functions and sets them in g_apiFuncs.
+// Returns true on success, false on failure.
+bool ResolveApiFunctionsGlobal();
+
+// Resolves and configures execution provider function pointers.
+// Returns true on success, false on failure.
+bool ConfigureExecutionProviders();
+
 // Loads the ONNX Runtime DLL and resolves the API functions.
-int LoadOnnxDll(const std::wstring modelPath);
+int LoadOnnxDll(const std::string runtimePath);
 
 // Unloads the ONNX Runtime DLL and cleans up resources.
 void UnloadOnnxDll();
 
 // Global variables to hold the ONNX Runtime API functions and API interface
-extern OrtApiFunctions g_apiFuncs;
-extern const OrtApi *g_ortApi;
+#if defined(_WIN32)
+#include <windows.h>
+extern HMODULE g_ortLib;
+#else
+#include <dlfcn.h>
+extern void *g_ortLib;
+#endif
+
+extern bool isOnnxRuntimeDllLoaded;
 extern PFN_OrtGetApiBase g_getApiBase;
+extern const OrtApi *g_ortApi;
+extern OrtApiFunctions g_apiFuncs;
+extern const char *ONNX_RUNTIME_DLL_NAME;
+extern const char *ONNX_RUNTIME_SO_NAME;
