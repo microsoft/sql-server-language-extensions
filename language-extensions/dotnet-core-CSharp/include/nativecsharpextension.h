@@ -20,7 +20,7 @@
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
-#if defined(__WIN32) || defined(WINDOWS)
+#if defined(_WIN32) || defined(WINDOWS)
 #include <windows.h>
 #endif
 

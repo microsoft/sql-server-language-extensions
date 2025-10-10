@@ -10,7 +10,7 @@
 //*********************************************************************
 #pragma once
 
-#if defined(__WIN32) || defined(WINDOWS)
+#if defined(_WIN32) || defined(WINDOWS)
 #include "Windows.h"
 #else
 #define E_FAIL -1
@@ -21,7 +21,7 @@
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
-#if defined(__WIN32) || defined(WINDOWS)
+#if defined(_WIN32) || defined(WINDOWS)
 #define STR(s) L ## s
 #define CH(c) L ## c
 #define PATH_SEPARATOR CH('\\')
