@@ -14,15 +14,16 @@ function CheckError {
     }
 }
 
-
-$i = 0
+if ($args.Count -eq 0) {
+    # Default to release
+    $actualArgs = @("release")
+}
+else {
+    $actualArgs = $args
+}
 
 # Process each build configuration
-while ($true) {
-    $BUILD_CONFIGURATION = ""
-    if ($i -lt $args.Count) {
-        $BUILD_CONFIGURATION = $args[$i]
-    }
+foreach ($BUILD_CONFIGURATION in $actualArgs) {
     $BUILD_CONFIGURATION = $BUILD_CONFIGURATION.ToLower()
     # Default to release if not debug
     if ($BUILD_CONFIGURATION -ne "debug") {
@@ -56,10 +57,5 @@ while ($true) {
     }
     catch {
         CheckError 1 "Error: Failed to create zip for dotnet-core-CSharp-extension for configuration=$BUILD_CONFIGURATION"
-    }
-
-    $i++
-    if ($i -ge $args.Count) {
-        break
     }
 }
