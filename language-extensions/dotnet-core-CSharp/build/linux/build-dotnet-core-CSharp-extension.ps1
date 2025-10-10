@@ -11,14 +11,16 @@ if (Test-Path $DOTNET_EXTENSION_WORKING_DIR) {
 }
 New-Item -ItemType Directory -Path $DOTNET_EXTENSION_WORKING_DIR | Out-Null
 
-$i = 0
+if ($args.Count -eq 0) {
+    # Default to release
+    $actualArgs = @("release")
+}
+else {
+    $actualArgs = $args
+}
 
 # Process each build configuration
-while ($true) {
-    $BUILD_CONFIGURATION = ""
-    if ($i -lt $args.Count) {
-        $BUILD_CONFIGURATION = $args[$i]
-    }
+foreach ($BUILD_CONFIGURATION in $actualArgs) {
     $BUILD_CONFIGURATION = $BUILD_CONFIGURATION.ToLower()
     # Default to release if not debug
     if ($BUILD_CONFIGURATION -ne "debug") {
@@ -96,11 +98,6 @@ while ($true) {
     }
 
     Write-Host "Success: Built dotnet-core-CSharp-extension for $BUILD_CONFIGURATION configuration."
-
-    $i++
-    if ($i -ge $args.Count) {
-        break
-    }
 }
 
 exit 0
