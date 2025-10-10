@@ -26,7 +26,7 @@
 #include <hostfxr.h>
 #include <nethost.h>
 
-#if defined(__WIN32) || defined(WINDOWS)
+#if defined(_WIN32) || defined(WINDOWS)
 #define STR(s) L ## s
 #define CH(c) L ## c
 #else
