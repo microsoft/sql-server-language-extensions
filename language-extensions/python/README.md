@@ -17,8 +17,8 @@ There are two alternatives to building this project.
 A.	Using the [**restore-packages.cmd**](build/windows/restore-packages.cmd) script
 
 1.	Modify the following as appropriate
-	- `PYTHON_VERSION` on line 8 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
-	- `BOOST_VERSION` on line 14 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+	- `PYTHON_VERSION` on line 13 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
+	- `BOOST_VERSION` on line 19 in [**restore-packages.cmd**](build/windows/restore-packages.cmd)
 	- `DEFAULT_PYTHONHOME` on line 18 in [**build-python-extension.cmd**](build/windows/build-python-extension.cmd)
 	- `DEFAULT_BOOST_ROOT` on line 16 in [**build-python-extension.cmd**](build/windows/build-python-extension.cmd)
 
@@ -91,7 +91,7 @@ To unit test this extension,
 
 1. Download or build (GoogleTest)[https://github.com/google/googletest].
 
-1.	Modify `DEFAULT_PYTHONHOME` on line 17 in [**build-python-extension-test.cmd**](test/build/windows/build-pythonextension-test.cmd)
+1.	Modify `DEFAULT_PYTHONHOME` on line 19 in [**build-python-extension-test.cmd**](test/build/windows/build-pythonextension-test.cmd)
 
 1. Run [**build-pythonextension-test.cmd**](test/build/windows/build-pythonextension-test.cmd) which will generate:
 	- PATH\TO\ENLISTMENT\build-output\pythonextension-test\windows\release\pythonextension-test.exe

@@ -51,9 +51,11 @@ B.	Installing needed packages from respective sources.
 ### Linux
 There are two alternatives to building this project.
 
+Note that the bash script provided here have been tested on **Ubuntu 24.04**. For other Ubuntu versions, this script might require some modification.
+
 A.	Using the [**restore-packages.sh**](build/linux/restore-packages.sh) script
 
-1.	Modify `openjdk-17-jdk` on line 14 in [**restore-packages.sh**](build/linux/restore-packages.sh) as appropriate.
+1.	Modify `openjdk-17-jdk` on line 10 in [**restore-packages.sh**](build/linux/restore-packages.sh) as appropriate.
 
 1.	Run [**restore-packages.sh**](build/linux/restore-packages.sh)
 
