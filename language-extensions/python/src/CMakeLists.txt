@@ -62,7 +62,7 @@ if (${PLATFORM} STREQUAL linux)
 	set(USR_LIB_PATH /usr/local/lib)
 	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
 
-	# For Ubuntu 24.04, look for shared Python library in system locations
+	# Look for shared Python library in system locations
 	find_library(PYTHON_LIB python${PYTHON_VERSION} PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu /lib NO_DEFAULT_PATH)
 	if(NOT PYTHON_LIB)
 		# Try with explicit .so extension
