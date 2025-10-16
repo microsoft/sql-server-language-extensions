@@ -32,6 +32,7 @@
 #ifdef _WIN64
 #include <Windows.h>
 #else
+#include <cstdint>
 #include <iconv.h>
 #endif // _WIN64
 
