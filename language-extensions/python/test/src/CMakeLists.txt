@@ -11,7 +11,7 @@ project(pythonextension-test VERSION 1.0 LANGUAGES CXX)
 
 # All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
 #
-string(TOLOWER ${CMAKE_CONFIGURATION} CMAKE_CONFIGURATION)
+string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/extension-host EXTENSION_API_HOME)
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/python PYTHONEXTENSION_HOME)
@@ -20,9 +20,9 @@ file(TO_CMAKE_PATH ${PYTHONEXTENSION_TEST_HOME}/src PYTHONEXTENSION_TEST_SRC_DIR
 
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension/${PLATFORM} PYTHONEXTENSION_WORKING_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension-test/${PLATFORM} PYTHONEXTENSION_TEST_WORKING_DIR)
-file(TO_CMAKE_PATH ${PYTHONEXTENSION_TEST_WORKING_DIR}/${CMAKE_CONFIGURATION} PYTHONEXTENSION_TEST_INSTALL_DIR)
+file(TO_CMAKE_PATH ${PYTHONEXTENSION_TEST_WORKING_DIR}/${CMAKE_BUILD_TYPE} PYTHONEXTENSION_TEST_INSTALL_DIR)
 
-find_library(PYTHONEXTENSION_LIB PythonExtension ${PYTHONEXTENSION_WORKING_DIR}/${CMAKE_CONFIGURATION})
+find_library(PYTHONEXTENSION_LIB PythonExtension ${PYTHONEXTENSION_WORKING_DIR}/${CMAKE_BUILD_TYPE})
 
 # C++ unit tests code; only these files are compiled-in
 #
@@ -39,7 +39,7 @@ if (${PLATFORM} STREQUAL linux)
 	set(PYTHON_VERSION "3.12")
 	set(PYTHON_VERSION_NO_DOT "312")
 
-	target_compile_options(pythonextension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -fshort-wchar)
+	target_compile_options(pythonextension-test PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -Wno-maybe-uninitialized -fshort-wchar)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
 
 	set(USR_LIB_PATH /usr/local/lib)
@@ -78,11 +78,11 @@ elseif(${PLATFORM} STREQUAL windows)
 
 	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/Microsoft.googletest.v140.windesktop.msvcstl.dyn.rt-dyn.1.8.1.3 GTEST_HOME)
 	file(TO_CMAKE_PATH ${GTEST_HOME}/build/native/include GTEST_INCLUDE_DIR)
-	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/${CMAKE_CONFIGURATION} GTEST_LIB_PATH)
+	file(TO_CMAKE_PATH ${GTEST_HOME}/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/${CMAKE_BUILD_TYPE} GTEST_LIB_PATH)
 
 	# MDd is for debug DLL and MD is for release DLL
 	#
-	if (${CMAKE_CONFIGURATION} STREQUAL debug)
+	if (${CMAKE_BUILD_TYPE} STREQUAL debug)
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MDd)
 		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc142-mt-gd-x64-1_79 ${BOOST_PYTHON_ROOT})
 		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc142-mt-gd-x64-1_79 ${BOOST_PYTHON_ROOT})
@@ -120,7 +120,7 @@ include_directories(
 
 # The string comparison is case sensitive
 #
-if (${CMAKE_CONFIGURATION} STREQUAL debug)
+if (${CMAKE_BUILD_TYPE} STREQUAL debug)
 	add_definitions(-D_DEBUG)
 else()
 	add_definitions(-DNDEBUG)

@@ -43,9 +43,11 @@ B.	Installing needed packages from respective sources.
 ### Linux
 There are two alternatives to building this project.
 
+Note that the bash script provided here have been tested on **Ubuntu 24.04**. For other Ubuntu versions, this script might require some modification.
+
 A.	Using the [**restore-packages.sh**](build/linux/restore-packages.sh) script
 
-1.	Modify `DEFAULT_R_HOME` on line 29 in [**restore-packages.sh**](build/linux/restore-packages.sh) as appropriate.
+1.	Modify `DEFAULT_R_HOME` on line 32 in [**restore-packages.sh**](build/linux/restore-packages.sh) as appropriate.
 
 1.	Run [**restore-packages.sh**](build/linux/restore-packages.sh)
 
@@ -60,15 +62,16 @@ B.	Installing needed packages from respective sources.
 	sudo apt-get install build-essential software-properties-common -y
 	sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 	sudo apt-get update -y
-	sudo apt-get install gcc-7 g++-7 -y
-	sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 70 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+	apt-get install gcc-13 g++-13 -y
+	sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 70 --slave /usr/bin/g++ g++ /usr/bin/g++-13
 	```
 
 1. Install [R for Linux](https://cran.r-project.org/bin/linux/) based on your distribution. Set R_HOME to point to your installation path, by default it is /usr/lib/R. Set R_INCLUDE_HOME to point to the R include files, by default it is /usr/share/R/include
 	```
 	#bash e.g. for Ubuntu
-	sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-	sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran40/'
+	curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | gpg --dearmor -o /usr/share/keyrings/r-project.gpg
+	echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu ${LSB_RELEASE}-cran40/" > /etc/apt/sources.list.d/r-project.list
+
 	sudo apt-get update
 	sudo apt-get -y install r-base-core
 	```

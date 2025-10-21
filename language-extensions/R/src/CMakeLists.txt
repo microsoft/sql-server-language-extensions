@@ -12,7 +12,7 @@ project(RExtension VERSION ${REXTENSION_VERSION} LANGUAGES CXX)
 
 # All string comparisons are CASE SENSITIVE in CMAKE. Make all strings lower before comparisons!
 #
-string(TOLOWER ${CMAKE_CONFIGURATION} CMAKE_CONFIGURATION)
+string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 string(TOLOWER ${PLATFORM} PLATFORM)
 
 # To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
@@ -45,18 +45,19 @@ set_target_properties(RExtension
 
 if (${PLATFORM} STREQUAL linux)
 	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -fPIC -Werror
-		-std=c++17 -Wno-unused-parameter)
+		-std=c++17 -Wno-unused-parameter -Wno-cast-function-type -Wno-format-overflow 
+		-Wno-deprecated-copy -Wno-sign-conversion -Wno-conversion -Wno-maybe-uninitialized)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed \
 		-Wl,--export-dynamic -fopenmp -Wl,-rpath,'${ORIGIN}'")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES};.so.1;.so.3;.so.5")
 	set(USR_LIB_PATH "/usr/lib/x86_64-linux-gnu")
 
-	# Find dependent libraries
+	# Find dependent libraries with fallback paths
 	#
-	find_library(PCRE_LIB pcre ${USR_LIB_PATH})
-	find_library(LZMA_LIB lzma ${USR_LIB_PATH})
-	find_library(BZ2_LIB bz2 ${USR_LIB_PATH})
-	find_library(Z_LIB z ${USR_LIB_PATH})
+	find_library(PCRE_LIB NAMES pcre libpcre PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
+	find_library(LZMA_LIB NAMES lzma liblzma PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
+	find_library(BZ2_LIB NAMES bz2 libbz2 PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
+	find_library(Z_LIB NAMES z libz PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
 	find_library(RT_LIB rt ${USR_LIB_PATH})
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	find_library(M_LIB m ${USR_LIB_PATH})
@@ -103,7 +104,7 @@ target_include_directories(RExtension
 	${REXTENSION_COMMON_INCLUDE}
 )
 
-if (${CMAKE_CONFIGURATION} STREQUAL debug)
+if (${CMAKE_BUILD_TYPE} STREQUAL debug)
 	add_definitions(-D_DEBUG)
 else()
 	# Do optimizations provided by the -O2 flag only in release
