@@ -108,7 +108,6 @@ extends:
             inputs:
               artifactFeeds: 'Data-SQL-Language-Extensions'
 
-          # Use Python version v0
           # Use the specified version of Python from the tool cache, optionally adding it to the PATH.
           - task: UsePythonVersion@0
             name: 'InstallPython'
@@ -382,9 +381,9 @@ extends:
             inputs:
               command: 'restore'
               projects: '$(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\src\managed\Microsoft.SqlServer.CSharpExtension.csproj'
-              feedsToUse: 'select'
-              vstsFeed: 'Data-SQL-Language-Extensions'
-              includeNuGetOrg: false
+              feedsToUse: 'select' # This indicates that we will specify feeds to use and not a nuget.config file.
+              vstsFeed: 'Data-SQL-Language-Extensions' # The feed to restore packages from.
+              includeNuGetOrg: false # Do not include nuget.org as a package source as this is not allowed in onebranch.
 
           - task: CmdLine@2
             displayName: 'Build .NET Core C Sharp extension'
