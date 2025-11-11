@@ -363,13 +363,13 @@ extends:
             displayName: 'Copy OnnxRuntime Extension Zip (Debug)'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/build-output/onnxextension/linux/debug/packages'
-              Contents: 'onnxruntime-extension.zip'
+              Contents: 'onnxruntime-extension-linux.zip'
               TargetFolder: '$(ob_outputDirectory)/package/out/onnxruntime-extension/packages/debug'
 
           - task: CopyFiles@2
             displayName: 'Copy OnnxRuntime Extension Zip (Release)'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/build-output/onnxextension/linux/release/packages'
-              Contents: 'onnxruntime-extension.zip'
+              Contents: 'onnxruntime-extension-linux.zip'
               TargetFolder: '$(ob_outputDirectory)/package/out/onnxruntime-extension/packages/release'
 

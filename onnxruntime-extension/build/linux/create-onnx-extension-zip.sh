@@ -18,12 +18,12 @@ set -euo pipefail
 #
 #
 # INPUT:
-#   - Source binaries from: ../x64/bin/
+#   - Source binaries from: ../x64/bin/Debug/ and ../x64/bin/Release/
 #   - Build configurations: debug, release (case-insensitive)
 #
 # OUTPUT:
 #   - ZIP files created at: ../build-output/onnxextension/linux/{config}/packages/
-#   - Package name: onnxruntime-extension.zip
+#   - Package name: onnxruntime-extension-linux.zip
 #
 # DEPENDENCIES:
 #   - zip utility (for archive creation)
@@ -37,15 +37,15 @@ set -euo pipefail
 #           └── linux/
 #               ├── debug/            <- Debug configuration output
 #               │   └── packages/
-#               │       └── onnxruntime-extension.zip  <- Debug ZIP package
+#               │       └── onnxruntime-extension-linux.zip  <- Debug ZIP package
 #               └── release/          <- Release configuration output
 #                   └── packages/
-#                       └── onnxruntime-extension.zip  <- Release ZIP package
+#                       └── onnxruntime-extension-linux.zip  <- Release ZIP package
 #
 # PACKAGING PROCESS:
-#   1. Script reads from: ../x64/bin/ (all contents)
+#   1. Script reads from: ../x64/bin/Debug/ or ../x64/bin/Release/ (configuration-specific)
 #   2. Creates structure: ../build-output/onnxextension/linux/{config}/packages/
-#   3. Archives contents into: onnxruntime-extension.zip
+#   3. Archives contents into: onnxruntime-extension-linux.zip
 #   4. Each configuration gets its own ZIP in separate directory
 #
 # ============================================
@@ -54,7 +54,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR="$SCRIPT_DIR/../x64/bin"
 ZIP_DIR="$SCRIPT_DIR/../build-output/onnxextension/linux"
-ZIP_NAME="onnxruntime-extension.zip"
+ZIP_NAME="onnxruntime-extension-linux.zip"
 
 echo "[INFO] OUTPUT_DIR: $OUTPUT_DIR"
 echo "[INFO] ZIP_DIR: $ZIP_DIR"
@@ -92,7 +92,14 @@ found=0
 # ============================================
 for build_config in "${BUILD_CONFIGS[@]}"; do
     echo "[INFO] Processing build configuration: $build_config"
-    CONFIG_OUTPUT_DIR="$OUTPUT_DIR"
+    
+    # Set configuration-specific output directory
+    if [[ "${build_config,,}" == "debug" ]]; then
+        CONFIG_OUTPUT_DIR="$OUTPUT_DIR/Debug"
+    else
+        CONFIG_OUTPUT_DIR="$OUTPUT_DIR/Release"
+    fi
+    
     CONFIG_ZIP_DIR="$ZIP_DIR/$build_config/packages"
     CONFIG_ZIP_PATH="$CONFIG_ZIP_DIR/$ZIP_NAME"
 
