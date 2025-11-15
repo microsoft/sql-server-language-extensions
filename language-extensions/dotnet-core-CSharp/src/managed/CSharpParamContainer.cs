@@ -135,6 +135,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
                     break;
+                case SqlDataType.DotNetWChar:
+                    // strLenOrNullMap for wide chars is in BYTES from ODBC; convert to UTF-16 code units
+                    int charLen = strLenOrNullMap / 2;
+                    _params[paramNumber].Value = Interop.WCharPtrToStr((char*)paramValue, (ulong)charLen);
+                    break;
                 default:
                     throw new NotImplementedException("Parameter type for " + dataType.ToString() + " has not been implemented yet");
             }
@@ -210,6 +215,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     *strLenOrNullMap = (param.Value.Length < *strLenOrNullMap) ? param.Value.Length : *strLenOrNullMap;
                     ReplaceStringParam((string)param.Value, paramValue);
                     break;
+                case SqlDataType.DotNetWChar:
+                    // Capacity (*strLenOrNullMap) currently holds max bytes from metadata. Compute bytes for value.
+                    int capacityBytesW = *strLenOrNullMap;
+                    int valueBytesW = ((string)param.Value).Length * 2;
+                    *strLenOrNullMap = (valueBytesW < capacityBytesW) ? valueBytesW : capacityBytesW;
+                    ReplaceWCharParam((string)param.Value, paramValue);
+                    break;
                 default:
                     throw new NotImplementedException("Parameter type for " + param.DataType.ToString() + " has not been implemented yet");
             }
@@ -239,8 +251,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             T    value,
             void **paramValue) where T : unmanaged
         {
-            _handleList.Add(GCHandle.Alloc(value));
-            *paramValue = &value;
+            // Allocate a single-element array so we can pin stable managed memory.
+            T[] holder = new T[1];
+            holder[0] = value;
+            GCHandle handle = GCHandle.Alloc(holder, GCHandleType.Pinned);
+            _handleList.Add(handle);
+            *paramValue = (void*)handle.AddrOfPinnedObject();
         }
 
         /// <summary>
@@ -267,6 +283,33 @@ namespace Microsoft.SqlServer.CSharpExtension
                 fixed(void* strPtr = strBytes)
                 {
                     *paramValue = strPtr;
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for wide string (UTF-16) data types.
+        /// </summary>
+        private unsafe void ReplaceWCharParam(
+            string value,
+            void   **paramValue
+        )
+        {
+            if(string.IsNullOrEmpty(value))
+            {
+                _handleList.Add(GCHandle.Alloc(value));
+                fixed(void* wStrPtr = value)
+                {
+                    *paramValue = wStrPtr;
+                }
+            }
+            else
+            {
+                // For wide char we can pin the string directly (UTF-16 in .NET)
+                _handleList.Add(GCHandle.Alloc(value));
+                fixed(void* wStrPtr = value)
+                {
+                    *paramValue = wStrPtr;
                 }
             }
         }

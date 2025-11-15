@@ -56,6 +56,29 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// This method allocates a managed System.String and copies a specified
+        /// number of UTF-16 characters from an unmanaged null-terminated wide char string into it.
+        /// </summary>
+        /// <param name="wstr">Pointer to the first wide char.</param>
+        /// <returns>The managed string or null if pointer is null.</returns>
+        public static string WCharPtrToStr(char* wstr)
+        {
+            return Marshal.PtrToStringUni((IntPtr)wstr);
+        }
+
+        /// <summary>
+        /// This method allocates a managed System.String and copies a specified number
+        /// of UTF-16 characters from an unmanaged wide char buffer into it.
+        /// </summary>
+        /// <param name="wstr">Pointer to the first wide char.</param>
+        /// <param name="charLength">Number of UTF-16 code units to copy.</param>
+        /// <returns>The managed string or null if pointer is null.</returns>
+        public static string WCharPtrToStr(char* wstr, ulong charLength)
+        {
+            return Marshal.PtrToStringUni((IntPtr)wstr, (int)charLength);
+        }
+
+        /// <summary>
         /// This method copies the contents of one block of memory to a managed int array.
         /// </summary>
         /// <param name="source">

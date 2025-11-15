@@ -131,6 +131,23 @@ namespace Microsoft.SqlServer.CSharpExtension
                     Interop.Copy((int*)colMap, strLens, 0, (int)rowsNumber);
                     CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF8PtrToStr((char*)colData), strLens)));
                     break;
+                case SqlDataType.DotNetWChar:
+                    int[] wStrLens = new int[rowsNumber];
+                    Interop.Copy((int*)colMap, wStrLens, 0, (int)rowsNumber);
+
+                    // ODBC length indicators for SQL_C_WCHAR are in BYTES. Convert to UTF-16 code units for slicing.
+                    long totalCharLen = 0;
+                    for(int r = 0; r < wStrLens.Length; ++r)
+                    {
+                        if(wStrLens[r] == SQL_NULL_DATA) { continue; }
+        
+                        // Each UTF-16 code unit is 2 bytes.
+                        wStrLens[r] /= 2;
+                        totalCharLen += wStrLens[r];
+                    }
+                    string wideConcat = (colData != null && totalCharLen > 0) ? Interop.WCharPtrToStr((char*)colData, (ulong)totalCharLen) : null;
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(wideConcat, wStrLens)));
+                    break;
                 default:
                     throw new NotImplementedException("Column type for " + _columns[columnNumber].DataType.ToString() + " has not been implemented yet");
             }

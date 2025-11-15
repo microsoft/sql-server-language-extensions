@@ -176,6 +176,16 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
+                case SqlDataType.DotNetWChar:
+                    // Wide char size based on max length (UTF-16 code units)
+                    int maxWStrLen = colMap.Max();
+                    if(maxWStrLen > 0)
+                    {
+                        _columns[columnNumber].Size = (ulong)maxWStrLen;
+                    }
+
+                    SetDataPtrs<char>(columnNumber, GetWCharArray(column));
+                    break;
                 default:
                     throw new NotImplementedException("Parameter type for " + DataTypeMap[column.DataType].ToString() + " has not been implemented yet");
             }
@@ -240,6 +250,23 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// This method builds a concatenated UTF-16 string and returns the underlying char[] for wide char output.
+        /// Null entries are skipped similar to UTF-8 path.
+        /// </summary>
+        private char[] GetWCharArray(DataFrameColumn column)
+        {
+            StringBuilder builder = new StringBuilder();
+            for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if(column[rowNumber] != null)
+                {
+                    builder.Append(column[rowNumber]);
+                }
+            }
+            return builder.ToString().ToCharArray();
+        }
+
+        /// <summary>
         /// This method gets the StrLenNullMap from a DataFrameColumn Column.
         /// </summary>
         private int[] GetStrLenNullMap(DataFrameColumn column)
@@ -260,6 +287,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                     {
                         case SqlDataType.DotNetChar:
                             colMap[rowNumber] = ((string)column[rowNumber]).Length;
+                            break;
+                        case SqlDataType.DotNetWChar:
+                            // Store length in BYTES for wide chars (UTF-16 code units * 2)
+                            colMap[rowNumber] = ((string)column[rowNumber]).Length * 2;
                             break;
                         default:
                             colMap[rowNumber] = DataTypeSize[dataType];
