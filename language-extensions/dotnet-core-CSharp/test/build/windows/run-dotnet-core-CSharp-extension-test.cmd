@@ -19,6 +19,17 @@ REM CMAKE_CONFIGURATION is debug by default if not defined.
 REM
 IF NOT DEFINED CMAKE_CONFIGURATION (SET CMAKE_CONFIGURATION=release)
 
+REM Check for .NET runtime availability
+REM
+WHERE dotnet >nul 2>nul
+IF %ERRORLEVEL% EQU 0 (
+    echo Checking .NET runtime version...
+    dotnet --list-runtimes | findstr "Microsoft.NETCore.App"
+    IF %ERRORLEVEL% NEQ 0 (
+        echo WARNING: .NET runtime not found. Tests may fail.
+    )
+)
+
 PUSHD %DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
 COPY %GTEST_LIB_PATH%\%CMAKE_CONFIGURATION%\gtest*.dll .
 dotnet-core-CSharp-extension-test.exe --gtest_output=xml:%ENL_ROOT%\out\TestReport_dotnet-core-csharp-extension-test.xml
