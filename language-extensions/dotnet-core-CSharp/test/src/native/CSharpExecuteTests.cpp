@@ -388,6 +388,60 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: ExecuteNVarcharColumnsTest
+    //
+    // Description:
+    //  Test Execute with default script using an InputDataSet of NVARCHAR columns.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteNVarcharColumnsTest)
+    {
+        InitializeSession(
+            2,               // inputSchemaColumnsNumber
+            0,               // parametersNumber
+            m_scriptString); // scriptString
+
+        string nvarcharColumn1Name = "NVarcharColumn1";
+        InitializeColumn(0, nvarcharColumn1Name, SQL_C_WCHAR, sizeof(wchar_t));
+
+        string nvarcharColumn2Name = "NVarcharColumn2";
+        InitializeColumn(1, nvarcharColumn2Name, SQL_C_WCHAR, sizeof(wchar_t));
+
+        vector<const wchar_t*> nvarcharCol1{ L"Hello", L"World", L"Test" };
+        vector<const wchar_t*> nvarcharCol2{ L"Data", L"NVARCHAR", nullptr };
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(wcslen(nvarcharCol1[0]) * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(wcslen(nvarcharCol1[1]) * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(wcslen(nvarcharCol1[2]) * sizeof(wchar_t)) };
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { static_cast<SQLINTEGER>(wcslen(nvarcharCol2[0]) * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(wcslen(nvarcharCol2[1]) * sizeof(wchar_t)),
+          SQL_NULL_DATA };
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
+            strLenOrIndCol2.data() };
+
+        // Coalesce the arrays of each row of each column
+        // into a contiguous array for each column.
+        //
+        vector<wchar_t> nvarcharCol1Data = GenerateContiguousData<wchar_t>(nvarcharCol1, strLenOrIndCol1.data());
+        vector<wchar_t> nvarcharCol2Data = GenerateContiguousData<wchar_t>(nvarcharCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { nvarcharCol1Data.data(),
+                            nvarcharCol2Data.data() };
+
+        int rowsNumber = nvarcharCol1.size();
+
+        vector<string> columnNames{ nvarcharColumn1Name, nvarcharColumn2Name };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: ExecuteNullColumnsTest
     //
     // Description:
