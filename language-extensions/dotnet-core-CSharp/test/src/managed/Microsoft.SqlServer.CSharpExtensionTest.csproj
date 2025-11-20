@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
   <PropertyGroup>
     <OutputPath>$(BinRoot)/$(Configuration)/</OutputPath>
