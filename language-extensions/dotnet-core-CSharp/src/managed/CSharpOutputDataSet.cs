@@ -286,7 +286,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     switch(dataType)
                     {
                         case SqlDataType.DotNetChar:
-                            colMap[rowNumber] = ((string)column[rowNumber]).Length;
+                            colMap[rowNumber] = Encoding.UTF8.GetByteCount((string)column[rowNumber]);
                             break;
                         case SqlDataType.DotNetWChar:
                             // Store length in BYTES for wide chars (UTF-16 code units * 2)

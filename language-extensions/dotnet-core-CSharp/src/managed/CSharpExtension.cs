@@ -105,6 +105,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             ulong privateLibraryPathLen)
         {
             Logging.Trace("CSharpExtension::Init");
+            Console.SetOut(new InteropTextWriter(1));
+            Console.SetError(new InteropTextWriter(2));
             return ExceptionUtils.WrapError(() =>
             {
                 _languageParams = (languageParams == null) ? "" : Interop.UTF8PtrToStr(languageParams, languageParamsLen);
@@ -183,6 +185,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             ushort outputDataNameLength)
         {
             Logging.Trace("CSharpExtension::InitSession");
+            Console.SetOut(new InteropTextWriter(1));
+            Console.SetError(new InteropTextWriter(2));
             return ExceptionUtils.WrapError(() =>
             {
                 string scriptStr = (script != null) ? Interop.UTF8PtrToStr(script, scriptLength) : string.Empty;
@@ -637,5 +641,56 @@ namespace Microsoft.SqlServer.CSharpExtension
                 _currentSession = null;
             });
         }
+    }
+
+    /// <summary>
+    /// Custom TextWriter to redirect Console output to native file descriptors.
+    /// </summary>
+    internal class InteropTextWriter : System.IO.TextWriter
+    {
+        private readonly int _fd;
+
+        public InteropTextWriter(int fd)
+        {
+            _fd = fd;
+        }
+
+        public override System.Text.Encoding Encoding => System.Text.Encoding.UTF8;
+
+        public override void Write(string value)
+        {
+            if (value == null) return;
+            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(value);
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                IntPtr handle = IntPtr.Zero;
+                if (_fd == 1) handle = GetStdHandle(-11); // STD_OUTPUT_HANDLE
+                else if (_fd == 2) handle = GetStdHandle(-12); // STD_ERROR_HANDLE
+                
+                if (handle != IntPtr.Zero && handle != (IntPtr)(-1))
+                {
+                    uint written;
+                    WriteFile(handle, buffer, (uint)buffer.Length, out written, IntPtr.Zero);
+                }
+            }
+            else
+            {
+                write(_fd, buffer, (uint)buffer.Length);
+            }
+        }
+
+        public override void WriteLine(string value)
+        {
+            Write(value + Environment.NewLine);
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool WriteFile(IntPtr hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, IntPtr lpOverlapped);
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetStdHandle(int nStdHandle);
+
+        [System.Runtime.InteropServices.DllImport("libc", EntryPoint = "write")]
+        private static extern int write(int fd, byte[] buffer, uint count);
     }
 }

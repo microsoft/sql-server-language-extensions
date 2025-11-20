@@ -38,6 +38,11 @@ namespace Microsoft.SqlServer.CSharpExtension
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
             foreach(string dllPath in dllList)
             {
+                if (Path.GetFileName(dllPath).StartsWith("gtest", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 // Catch unexpected exception while loading other dlls
                 //
                 try
@@ -49,6 +54,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                         return userExecutorClass;
                     }
                 }
+                catch (BadImageFormatException)
+                {
+                    // Ignore BadImageFormatException (e.g. native DLLs)
+                }
                 catch (Exception e)
                 {
                     // Catch unexpected exception without throwing the exception so that
@@ -58,8 +67,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
             }
 
-            string msg = "Unable to find user class with full name: " + userClassName + "\nPlease provide user class in the form of LibraryName;Namespace.Classname or Namespace.Classname";
-            throw new Exception(msg);
+            if (dllList.Count == 0)
+            {
+                string msg = "Unable to find user dll under " + string.Join(", ", dllList);
+                throw new Exception(msg);
+            }
+
+            string msg2 = "Unable to find user class with full name: " + userClassName + "\nPlease provide user class in the form of LibraryName;Namespace.Classname or Namespace.Classname";
+            throw new Exception(msg2);
         }
 
         /// <summary>

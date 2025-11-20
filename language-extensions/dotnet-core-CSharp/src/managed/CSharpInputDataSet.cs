@@ -127,9 +127,29 @@ namespace Microsoft.SqlServer.CSharpExtension
                     AddDataFrameColumn<float>(columnNumber, rowsNumber, colData, colMap);
                     break;
                 case SqlDataType.DotNetChar:
+                    if (colData == null)
+                    {
+                        CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, new string[rowsNumber]));
+                        break;
+                    }
                     int[] strLens = new int[rowsNumber];
                     Interop.Copy((int*)colMap, strLens, 0, (int)rowsNumber);
-                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF8PtrToStr((char*)colData), strLens)));
+                    string[] strArray = new string[rowsNumber];
+                    byte* currentPtr = (byte*)colData;
+                    for(int i = 0; i < (int)rowsNumber; ++i)
+                    {
+                        int len = strLens[i];
+                        if (len == SQL_NULL_DATA)
+                        {
+                            strArray[i] = null;
+                        }
+                        else
+                        {
+                            strArray[i] = Interop.UTF8PtrToStr((char*)currentPtr, (ulong)len);
+                            currentPtr += len;
+                        }
+                    }
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, strArray));
                     break;
                 case SqlDataType.DotNetWChar:
                     int[] wStrLens = new int[rowsNumber];
