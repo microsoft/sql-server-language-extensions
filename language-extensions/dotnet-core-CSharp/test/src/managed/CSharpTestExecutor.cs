@@ -9,8 +9,10 @@
 //
 //*********************************************************************
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Text;
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
 
@@ -18,8 +20,56 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
 {
     public class CSharpTestExecutor: AbstractSqlServerExtensionExecutor
     {
+        private delegate int WriteDelegate(int fd, [MarshalAs(UnmanagedType.LPArray)] byte[] buffer, int count);
+        private static readonly WriteDelegate _write;
+
+        static CSharpTestExecutor()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                IntPtr libHandle = IntPtr.Zero;
+                if (!NativeLibrary.TryLoad("ucrtbased.dll", out libHandle))
+                {
+                    NativeLibrary.TryLoad("ucrtbase.dll", out libHandle);
+                }
+
+                if (libHandle != IntPtr.Zero)
+                {
+                    if (NativeLibrary.TryGetExport(libHandle, "_write", out IntPtr writeAddr))
+                    {
+                        _write = Marshal.GetDelegateForFunctionPointer<WriteDelegate>(writeAddr);
+                    }
+                }
+            }
+        }
+
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
-            Console.WriteLine("Hello .NET Core CSharpExtension!");
+            string message = "Hello .NET Core CSharpExtension!";
+            try
+            {
+                // Console.WriteLine(message);
+                if (_write != null)
+                {
+                    byte[] buffer = Encoding.UTF8.GetBytes(message + Environment.NewLine);
+                    _write(1, buffer, buffer.Length);
+                }
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    if (_write != null)
+                    {
+                        byte[] buffer = Encoding.UTF8.GetBytes(message + Environment.NewLine);
+                        _write(1, buffer, buffer.Length);
+                    }
+                }
+                catch
+                {
+                    // Ignore
+                }
+            }
+
             return input;
         }
     }

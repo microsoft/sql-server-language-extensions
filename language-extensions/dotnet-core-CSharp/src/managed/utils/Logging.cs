@@ -11,6 +11,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -20,6 +22,43 @@ namespace Microsoft.SqlServer.CSharpExtension
     /// </summary>
     class Logging
     {
+        private delegate int WriteDelegate(int fd, [MarshalAs(UnmanagedType.LPArray)] byte[] buffer, int count);
+        private static readonly WriteDelegate _write;
+
+        static Logging()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                IntPtr libHandle = IntPtr.Zero;
+                if (!NativeLibrary.TryLoad("ucrtbased.dll", out libHandle))
+                {
+                    NativeLibrary.TryLoad("ucrtbase.dll", out libHandle);
+                }
+
+                if (libHandle != IntPtr.Zero)
+                {
+                    if (NativeLibrary.TryGetExport(libHandle, "_write", out IntPtr writeAddr))
+                    {
+                        _write = Marshal.GetDelegateForFunctionPointer<WriteDelegate>(writeAddr);
+                    }
+                }
+            }
+        }
+
+        private static void WriteToFd(int fd, string message)
+        {
+            if (_write == null) return;
+            try
+            {
+                byte[] buffer = Encoding.UTF8.GetBytes(message + Environment.NewLine);
+                _write(fd, buffer, buffer.Length);
+            }
+            catch
+            {
+                // Ignore native write errors
+            }
+        }
+
         /// <summary>
         /// This method logs a message to stdout.
         /// </summary>
@@ -29,7 +68,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         public static void Trace(string message)
         {
         #if DEBUG
-            Console.WriteLine(message);
+            WriteToFd(1, message);
         #endif
         }
 
@@ -41,7 +80,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </param>
         public static void Error(string message)
         {
-            Console.Error.WriteLine(message);
+            WriteToFd(2, message);
         }
     }
 }

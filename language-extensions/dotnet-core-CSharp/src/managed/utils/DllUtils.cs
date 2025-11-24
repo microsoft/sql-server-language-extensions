@@ -59,6 +59,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             string msg = "Unable to find user class with full name: " + userClassName + "\nPlease provide user class in the form of LibraryName;Namespace.Classname or Namespace.Classname";
+            Logging.Trace("Throwing exception in GetUserDll: " + msg);
             throw new Exception(msg);
         }
 
@@ -81,12 +82,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 if (!string.IsNullOrEmpty(privatePath))
                 {
-                    dllList.AddRange(Directory.GetFiles(privatePath));
+                    dllList.AddRange(Directory.GetFiles(privatePath, "*.dll"));
                 }
 
                 if (!string.IsNullOrEmpty(publicPath))
                 {
-                    dllList.AddRange(Directory.GetFiles(publicPath));
+                    dllList.AddRange(Directory.GetFiles(publicPath, "*.dll"));
                 }
             }
             else
