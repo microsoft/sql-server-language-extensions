@@ -30,9 +30,15 @@ namespace Microsoft.SqlServer.CSharpExtension
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 IntPtr libHandle = IntPtr.Zero;
-                if (!NativeLibrary.TryLoad("ucrtbased.dll", out libHandle))
+#if DEBUG
+                NativeLibrary.TryLoad("ucrtbased.dll", out libHandle);
+#endif
+                if (libHandle == IntPtr.Zero)
                 {
-                    NativeLibrary.TryLoad("ucrtbase.dll", out libHandle);
+                    if (!NativeLibrary.TryLoad("ucrtbase.dll", out libHandle))
+                    {
+                        NativeLibrary.TryLoad("msvcrt.dll", out libHandle);
+                    }
                 }
 
                 if (libHandle != IntPtr.Zero)
@@ -67,9 +73,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </param>
         public static void Trace(string message)
         {
-        #if DEBUG
             WriteToFd(1, message);
-        #endif
         }
 
         /// <summary>
