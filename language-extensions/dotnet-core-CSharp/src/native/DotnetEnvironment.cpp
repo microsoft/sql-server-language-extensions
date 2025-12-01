@@ -178,11 +178,26 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
 hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     LOG("DotnetEnvironment::get_dotnet");
     hostfxr_handle cxt = nullptr;
-    int rc = m_init_fptr(config_path, nullptr, &cxt);
+
+    hostfxr_initialize_parameters params = { 0 };
+    params.size = sizeof(hostfxr_initialize_parameters);
+    params.host_path = nullptr;
+    params.dotnet_root = nullptr;
+
+    // The maximum size of a user-defined environment variable is 32,767 characters, including the null-terminating character.
+    // This is the limit enforced by the Windows API (GetEnvironmentVariable).
+    const int MAX_ENV_VAR_SIZE = 32767;
+    wchar_t dotnet_root_buffer[MAX_ENV_VAR_SIZE];
+    if (GetEnvironmentVariableW(L"DOTNET_ROOT", dotnet_root_buffer, MAX_ENV_VAR_SIZE) > 0)
+    {
+        params.dotnet_root = dotnet_root_buffer;
+    }
+
+    int rc = m_init_fptr(config_path, &params, &cxt);
     if (rc != 0 || cxt == nullptr)
     {
         LOG_ERROR("Init failed: " + to_hex_string(rc));
-        m_close_fptr(cxt);
+        if (cxt) m_close_fptr(cxt);
         return nullptr;
     }
     return cxt;
