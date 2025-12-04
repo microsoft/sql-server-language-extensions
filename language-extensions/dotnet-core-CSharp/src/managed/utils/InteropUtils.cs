@@ -33,6 +33,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </returns>
         public static string UTF8PtrToStr(char* str)
         {
+            if (str == null) return null;
             return Marshal.PtrToStringUTF8((IntPtr)str);
         }
 
@@ -52,49 +53,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </returns>
         public static string UTF8PtrToStr(char* str, ulong length)
         {
+            if (str == null) return null;
+            if (length > int.MaxValue) throw new ArgumentOutOfRangeException(nameof(length), "Length exceeds supported range.");
             return Marshal.PtrToStringUTF8((IntPtr)str, (int) length);
-        }
-
-        /// <summary>
-        /// This method allocates a managed System.String and copies a specified
-        /// number of UTF-16 characters from an unmanaged null-terminated wide char string into it.
-        /// </summary>
-        /// <param name="wstr">Pointer to the first wide char.</param>
-        /// <returns>The managed string or null if pointer is null.</returns>
-        public static string WCharPtrToStr(char* wstr)
-        {
-            return Marshal.PtrToStringUni((IntPtr)wstr);
-        }
-
-        /// <summary>
-        /// This method allocates a managed System.String and copies a specified number
-        /// of UTF-16 characters from an unmanaged wide char buffer into it.
-        /// </summary>
-        /// <param name="wstr">Pointer to the first wide char.</param>
-        /// <param name="charLength">Number of UTF-16 code units to copy.</param>
-        /// <returns>The managed string or null if pointer is null.</returns>
-        public static string WCharPtrToStr(char* wstr, ulong charLength)
-        {
-            return Marshal.PtrToStringUni((IntPtr)wstr, (int)charLength);
-        }
-
-        /// <summary>
-        /// This method allocates a managed System.String and copies a specified number of bytes from
-        /// an unmanaged null-terminated ANSI string into it.
-        /// </summary>
-        /// <param name="str">
-        /// The address of the first character of the unmanaged string.
-        /// </param>
-        /// <param name="length">
-        /// The length of the unmanaged string.
-        /// </param>
-        /// <returns>
-        /// A managed string that holds a copy of the unmanaged string if the value of the
-        /// ptr parameter is not null; otherwise, this method returns null.
-        /// </returns>
-        public static string AnsiPtrToStr(char* str, ulong length)
-        {
-            return Marshal.PtrToStringAnsi((IntPtr)str, (int)length);
         }
 
         /// <summary>

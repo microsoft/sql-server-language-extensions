@@ -9,10 +9,9 @@
 //
 //*********************************************************************
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
-using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -58,9 +57,10 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 Console.Error.WriteLine(message);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Ignore exceptions during error logging
+                // Ignore exceptions during error logging but log to debug output
+                Debug.WriteLine($"Error logging failed: {ex}");
             }
         }
 
@@ -70,7 +70,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// output redirection might not work as expected in the embedded environment
         /// where the .NET runtime is hosted by SQL Server.
         /// </summary>
-        private class InteropTextWriter : System.IO.TextWriter
+        private class InteropTextWriter : TextWriter
         {
             private readonly int _fd;
 
@@ -94,7 +94,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             /// <param name="value">The character to write.</param>
             public override void Write(char value)
             {
-                Write(value.ToString());
+                Write(new string(value, 1));
             }
 
             /// <summary>
@@ -109,21 +109,22 @@ namespace Microsoft.SqlServer.CSharpExtension
                 if (string.IsNullOrEmpty(value)) return;
 
                 byte[] buffer = Encoding.UTF8.GetBytes(value);
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                try
                 {
-                    // STD_OUTPUT_HANDLE = -11
-                    // STD_ERROR_HANDLE = -12
-                    IntPtr handle = GetStdHandle(_fd == 1 ? -11 : -12);
-                    if (handle != IntPtr.Zero && handle != (IntPtr)(-1))
+                    using (Stream stream = _fd == 1 ? Console.OpenStandardOutput() : Console.OpenStandardError())
                     {
-                        uint bytesWritten;
-                        WriteFile(handle, buffer, (uint)buffer.Length, out bytesWritten, IntPtr.Zero);
+                        stream.Write(buffer, 0, buffer.Length);
+                        stream.Flush();
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    // On Linux, write directly to the file descriptor (1 for stdout, 2 for stderr)
-                    write(_fd, buffer, (IntPtr)buffer.Length);
+                    // Fallback to standard .NET Console as last resort
+                    try
+                    {
+                        Console.Error.WriteLine($"Writing to console stream failed with error: {ex.Message}");
+                    }
+                    catch { }
                 }
             }
 
@@ -135,30 +136,6 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 Write(value + Environment.NewLine);
             }
-
-            /// <summary>
-            /// Retrieves a handle to the specified standard device (standard input, standard output, or standard error).
-            /// This is used to bypass the .NET Console abstraction and write directly to the OS handle,
-            /// ensuring output is captured correctly by the SQL Server host process.
-            /// </summary>
-            [DllImport("kernel32.dll", SetLastError = true)]
-            private static extern IntPtr GetStdHandle(int nStdHandle);
-
-            /// <summary>
-            /// Writes data to the specified file or input/output (I/O) device.
-            /// Used to write directly to the standard output/error handles on Windows,
-            /// bypassing potential redirection issues in the managed runtime.
-            /// </summary>
-            [DllImport("kernel32.dll", SetLastError = true)]
-            private static extern bool WriteFile(IntPtr hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, IntPtr lpOverlapped);
-
-            /// <summary>
-            /// Writes to a file descriptor.
-            /// Used on Linux to write directly to stdout (1) or stderr (2),
-            /// ensuring output reaches the SQL Server host process reliably.
-            /// </summary>
-            [DllImport("libc", SetLastError = true)]
-            private static extern IntPtr write(int fd, byte[] buf, IntPtr count);
         }
     }
 }
