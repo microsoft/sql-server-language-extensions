@@ -21,6 +21,16 @@ namespace Microsoft.SqlServer.CSharpExtension
     class Logging
     {
         /// <summary>
+        /// File descriptor for standard output.
+        /// </summary>
+        private const int StdOut = 1;
+
+        /// <summary>
+        /// File descriptor for standard error.
+        /// </summary>
+        private const int StdErr = 2;
+
+        /// <summary>
         /// Static constructor to initialize the custom text writers for stdout and stderr.
         /// This ensures that any Console.WriteLine or Console.Error.WriteLine calls
         /// are routed through our InteropTextWriter, which bypasses the .NET Console
@@ -28,8 +38,8 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         static Logging()
         {
-            Console.SetOut(new InteropTextWriter(1));
-            Console.SetError(new InteropTextWriter(2));
+            Console.SetOut(new InteropTextWriter(StdOut));
+            Console.SetError(new InteropTextWriter(StdErr));
         }
 
         /// <summary>
@@ -111,7 +121,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 byte[] buffer = Encoding.UTF8.GetBytes(value);
                 try
                 {
-                    using (Stream stream = _fd == 1 ? Console.OpenStandardOutput() : Console.OpenStandardError())
+                    using (Stream stream = _fd == StdOut ? Console.OpenStandardOutput() : Console.OpenStandardError())
                     {
                         stream.Write(buffer, 0, buffer.Length);
                         stream.Flush();
