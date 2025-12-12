@@ -33,6 +33,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </returns>
         public static string UTF8PtrToStr(char* str)
         {
+            if (str == null) return null;
             return Marshal.PtrToStringUTF8((IntPtr)str);
         }
 
@@ -52,6 +53,8 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </returns>
         public static string UTF8PtrToStr(char* str, ulong length)
         {
+            if (str == null) return null;
+            if (length > int.MaxValue) throw new ArgumentOutOfRangeException(nameof(length), "Length exceeds supported range.");
             return Marshal.PtrToStringUTF8((IntPtr)str, (int) length);
         }
 

@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <assert.h>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
@@ -58,6 +59,11 @@ short DotnetEnvironment::Init()
     //
     const string_t config_path = m_root_path + STR("\\Microsoft.SqlServer.CSharpExtension.runtimeconfig.json");
     hostfxr_handle cxt = get_dotnet(config_path.c_str());
+    if (cxt == nullptr)
+    {
+        return E_FAIL;
+    }
+
     m_load_assembly_and_get_function_pointer = get_dotnet_load_assembly(cxt);
 
     if (m_load_assembly_and_get_function_pointer == nullptr)
@@ -173,16 +179,34 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
 // Name: DotnetEnvironment::get_dotnet
 //
 // Description:
-// load the .NET from the path and get the hostfxr handle
+// Load the .NET runtime from the configuration path and DOTNET_ROOT environment variable, and get the hostfxr handle.
 //
 hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     LOG("DotnetEnvironment::get_dotnet");
     hostfxr_handle cxt = nullptr;
-    int rc = m_init_fptr(config_path, nullptr, &cxt);
+
+    hostfxr_initialize_parameters params = { 0 };
+    params.size = sizeof(hostfxr_initialize_parameters);
+    params.host_path = nullptr;
+    params.dotnet_root = nullptr;
+
+    // Get the required size for the environment variable
+    DWORD requiredSize = GetEnvironmentVariableW(L"DOTNET_ROOT", nullptr, 0);
+    std::vector<wchar_t> dotnet_root_buffer;
+    if (requiredSize > 0)
+    {
+        dotnet_root_buffer.resize(requiredSize);
+        if (GetEnvironmentVariableW(L"DOTNET_ROOT", dotnet_root_buffer.data(), requiredSize) > 0)
+        {
+            params.dotnet_root = dotnet_root_buffer.data();
+        }
+    }
+
+    int rc = m_init_fptr(config_path, &params, &cxt);
     if (rc != 0 || cxt == nullptr)
     {
         LOG_ERROR("Init failed: " + to_hex_string(rc));
-        m_close_fptr(cxt);
+        if (cxt) m_close_fptr(cxt);
         return nullptr;
     }
     return cxt;
