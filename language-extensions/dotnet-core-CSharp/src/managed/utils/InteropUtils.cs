@@ -59,6 +59,44 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// This method allocates a managed System.String and copies a specified
+        /// number of bytes from an unmanaged null-terminated UTF16 (Unicode) string into it.
+        /// </summary>
+        /// <param name="str">
+        /// The address of the first character of the unmanaged Unicode string.
+        /// </param>
+        /// <returns>
+        /// A managed string that holds a copy of the unmanaged string if the value of the
+        /// ptr parameter is not null; otherwise, this method returns null.
+        /// </returns>
+        public static string UTF16PtrToStr(char* str)
+        {
+            if (str == null) return null;
+            return Marshal.PtrToStringUni((IntPtr)str);
+        }
+
+        /// <summary>
+        /// This method allocates a managed System.String and copies a specified number of characters from
+        /// an unmanaged UTF16 (Unicode) string into it.
+        /// </summary>
+        /// <param name="str">
+        /// The address of the first character of the unmanaged Unicode string.
+        /// </param>
+        /// <param name="length">
+        /// The number of Unicode characters to copy.
+        /// </param>
+        /// <returns>
+        /// A managed string that holds a copy of the unmanaged string if the value of the
+        /// ptr parameter is not null; otherwise, this method returns null.
+        /// </returns>
+        public static string UTF16PtrToStr(char* str, int length)
+        {
+            if (str == null) return null;
+            if (length < 0) throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+            return Marshal.PtrToStringUni((IntPtr)str, length);
+        }
+
+        /// <summary>
         /// This method copies the contents of one block of memory to a managed int array.
         /// </summary>
         /// <param name="source">

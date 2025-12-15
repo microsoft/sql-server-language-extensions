@@ -120,4 +120,17 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             return null;
         }
     }
+
+    public class CSharpTestExecutorWStringParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            sqlParams["@param0"] = "HELLO";
+            sqlParams["@param1"] = "C#Extension";
+            sqlParams["@param2"] = "";
+            sqlParams["@param3"] = "WORLD";
+            sqlParams["@param4"] = null;
+            sqlParams["@param5"] = null;
+            return null;
+        }
+    }
 }

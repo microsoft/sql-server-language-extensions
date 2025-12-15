@@ -135,6 +135,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
                     break;
+                case SqlDataType.DotNetWChar:
+                    // For NCHAR/WCHAR, strLenOrNullMap contains byte length, divide by 2 to get character count
+                    //
+                    _params[paramNumber].Value = Interop.UTF16PtrToStr((char*)paramValue, strLenOrNullMap / sizeof(char));
+                    break;
                 default:
                     throw new NotImplementedException("Parameter type for " + dataType.ToString() + " has not been implemented yet");
             }
@@ -210,6 +215,15 @@ namespace Microsoft.SqlServer.CSharpExtension
                     *strLenOrNullMap = (param.Value.Length < *strLenOrNullMap) ? param.Value.Length : *strLenOrNullMap;
                     ReplaceStringParam((string)param.Value, paramValue);
                     break;
+                case SqlDataType.DotNetWChar:
+                    // For NCHAR/WCHAR, strLenOrNullMap is in bytes
+                    // param.Size is in characters, so convert to bytes for comparison
+                    //
+                    int wcharByteLen = param.Value.Length * sizeof(char);
+                    int maxByteLen = (int)param.Size * sizeof(char);
+                    *strLenOrNullMap = (wcharByteLen < maxByteLen) ? wcharByteLen : maxByteLen;
+                    ReplaceUnicodeStringParam((string)param.Value, paramValue);
+                    break;
                 default:
                     throw new NotImplementedException("Parameter type for " + param.DataType.ToString() + " has not been implemented yet");
             }
@@ -263,6 +277,34 @@ namespace Microsoft.SqlServer.CSharpExtension
             else
             {
                 byte[] strBytes = Encoding.UTF8.GetBytes(value);
+                _handleList.Add(GCHandle.Alloc(strBytes));
+                fixed(void* strPtr = strBytes)
+                {
+                    *paramValue = strPtr;
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for Unicode string data types.
+        /// If the string is not empty, the address of underlying Unicode bytes will be assigned to paramValue.
+        /// </summary>
+        private unsafe void ReplaceUnicodeStringParam(
+            string value,
+            void   **paramValue
+        )
+        {
+            if(string.IsNullOrEmpty(value))
+            {
+                _handleList.Add(GCHandle.Alloc(value));
+                fixed(void* strPtr = value)
+                {
+                    *paramValue = strPtr;
+                }
+            }
+            else
+            {
+                byte[] strBytes = Encoding.Unicode.GetBytes(value);
                 _handleList.Add(GCHandle.Alloc(strBytes));
                 fixed(void* strPtr = strBytes)
                 {

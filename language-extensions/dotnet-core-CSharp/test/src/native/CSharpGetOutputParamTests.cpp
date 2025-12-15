@@ -509,6 +509,96 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetWStringOutputParamTest
+    //
+    // Description:
+    // Test multiple Unicode string values
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringOutputParamTest)
+    {
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorWStringParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
+
+        // Initialize with a Session that executes the above script
+        // that sets output parameters.
+        //
+        InitializeSession(
+            0,   // parametersNumber
+            6,   // inputSchemaColumnsNumber
+            scriptString);
+
+        // Note: The behavior of fixed and varying character types is same when it comes to output
+        // parameters. So it doesn't matter if we initialize these output parameters as fixed type.
+        //
+        vector<bool> isFixedType = { true, false, true, false, true, true };
+        vector<SQLINTEGER> paramSizes = { 5, 6, 10, 5, 5, 5 };
+
+        for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+        {
+            InitWStringParameter(
+                paramNumber,
+                L"",            // paramValue
+                paramSizes[paramNumber],
+                isFixedType[paramNumber],
+                SQL_PARAM_INPUT_OUTPUT);
+        }
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+        const vector<wstring> ExpectedParamValueStrings = {
+            // Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
+            //
+            L"HELLO",
+            // Test NVARCHAR(6) value with string length more than the type allows - expected truncation.
+            //
+            L"C#Exte",
+            // Test a 0 length string
+            //
+            L"" ,
+            // Test NCHAR(10) value with string length less than the type allows.
+            //
+            L"WORLD"};
+
+        vector<const wchar_t*> expectedParamValues = {
+            ExpectedParamValueStrings[0].c_str(),
+            ExpectedParamValueStrings[1].c_str(),
+            ExpectedParamValueStrings[2].c_str(),
+            ExpectedParamValueStrings[3].c_str(),
+
+            // Test None returned in a NVARCHAR(5) parameter.
+            //
+            nullptr,
+
+            // Test None NCHAR(5) value.
+            //
+            nullptr };
+
+        // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
+        //
+        vector<SQLINTEGER> expectedStrLenOrInd = {
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length() * sizeof(wchar_t)),
+            SQL_NULL_DATA,
+            SQL_NULL_DATA };
+
+        GetWStringOutputParam(
+            expectedParamValues,
+            expectedStrLenOrInd);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: CSharpExtensionApiTest::GetOutputParam
     //
     // Description:
@@ -589,6 +679,55 @@ namespace ExtensionApiTest
                     strLen_or_Ind);
                 string expectedParamValueString(expectedParamValues[paramNumber],
                     expectedStrLenOrInd[paramNumber]);
+
+                EXPECT_EQ(paramValueString, expectedParamValueString);
+            }
+            else
+            {
+                EXPECT_EQ(paramValue, nullptr);
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::GetWStringOutputParam
+    //
+    // Description:
+    // Get and test Unicode string output param value and strLenOrInd is as expected.
+    //
+    void CSharpExtensionApiTests::GetWStringOutputParam(
+        vector<const wchar_t*> expectedParamValues,
+        vector<SQLINTEGER>     expectedStrLenOrInd)
+    {
+        ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
+        for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+        {
+            SQLPOINTER paramValue = nullptr;
+            SQLINTEGER strLen_or_Ind = 0;
+            SQLRETURN result = SQL_ERROR;
+
+            result = (*sm_getOutputParamFuncPtr)(
+                *m_sessionId,
+                m_taskId,
+                paramNumber,
+                &paramValue,
+                &strLen_or_Ind);
+            ASSERT_EQ(result, SQL_SUCCESS);
+
+            EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+            if (expectedParamValues[paramNumber] != nullptr)
+            {
+                EXPECT_NE(paramValue, nullptr);
+
+                // strLen_or_Ind is in bytes, divide by sizeof(wchar_t) to get character count
+                //
+                SQLINTEGER charCount = strLen_or_Ind / sizeof(wchar_t);
+                wstring paramValueString(static_cast<wchar_t*>(paramValue), charCount);
+
+                SQLINTEGER expectedCharCount = expectedStrLenOrInd[paramNumber] / sizeof(wchar_t);
+                wstring expectedParamValueString(expectedParamValues[paramNumber], expectedCharCount);
 
                 EXPECT_EQ(paramValueString, expectedParamValueString);
             }

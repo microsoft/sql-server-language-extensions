@@ -129,7 +129,25 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     int[] strLens = new int[rowsNumber];
                     Interop.Copy((int*)colMap, strLens, 0, (int)rowsNumber);
-                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF8PtrToStr((char*)colData), strLens)));
+
+                    // Use byte-based splitting to properly handle multi-byte UTF-8 characters
+                    //
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.UTF8ByteSplitToArray((byte*)colData, strLens)));
+                    break;
+                case SqlDataType.DotNetWChar:
+                    int[] wcharStrLens = new int[rowsNumber];
+                    Interop.Copy((int*)colMap, wcharStrLens, 0, (int)rowsNumber);
+    
+                    // For NCHAR/WCHAR, the strLenOrNullMap contains byte lengths, but we need character counts for UTF16PtrToStr
+                    // Each Unicode character is 2 bytes (sizeof(wchar_t)), so divide by 2 to get character count
+                    //
+                    int[] wcharCharLens = new int[rowsNumber];
+                    for (int i = 0; i < (int)rowsNumber; i++)
+                    {
+                        wcharCharLens[i] = wcharStrLens[i] > 0 ? wcharStrLens[i] / sizeof(char) : wcharStrLens[i];
+                    }
+
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF16PtrToStr((char*)colData), wcharCharLens)));
                     break;
                 default:
                     throw new NotImplementedException("Column type for " + _columns[columnNumber].DataType.ToString() + " has not been implemented yet");
