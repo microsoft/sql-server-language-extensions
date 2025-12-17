@@ -216,8 +216,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                     ReplaceStringParam((string)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetWChar:
-                    // For NCHAR/WCHAR, strLenOrNullMap is in bytes
-                    // param.Size is in characters, so convert to bytes for comparison
+                    // For NCHAR/NVARCHAR, strLenOrNullMap must be in bytes (UTF-16: 2 bytes per character).
+                    // In C#, sizeof(char) = 2 bytes (equivalent to WCHAR/wchar_t in C++).
+                    // param.Size is the declared parameter size in characters (from SQL Server's NCHAR(n)/NVARCHAR(n)),
+                    // so we multiply by sizeof(char) to convert to bytes.
+                    // Unlike DotNetChar where param.Size equals max bytes (UTF-8: 1 byte per ASCII char),
+                    // here we must account for the 2-byte-per-character encoding.
+                    // Note: *strLenOrNullMap was pre-set to param.Size on line 176, but that value is in
+                    // characters, not bytes, so we recalculate the max byte length here.
                     //
                     int wcharByteLen = param.Value.Length * sizeof(char);
                     int maxByteLen = (int)param.Size * sizeof(char);
@@ -248,13 +254,19 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method replaces parameter value for numeric data types.
+        /// Uses proper memory pinning to ensure the value remains valid after method returns.
         /// </summary>
         private unsafe void ReplaceNumericParam<T>(
             T    value,
             void **paramValue) where T : unmanaged
         {
-            _handleList.Add(GCHandle.Alloc(value));
-            *paramValue = &value;
+            // Box the value into a single-element array to create a heap-allocated copy, then pin it.
+            // This ensures the pointer remains valid after the method returns.
+            //
+            T[] valueArray = new T[1] { value };
+            GCHandle handle = GCHandle.Alloc(valueArray, GCHandleType.Pinned);
+            _handleList.Add(handle);
+            *paramValue = (void*)handle.AddrOfPinnedObject();
         }
 
         /// <summary>
@@ -268,20 +280,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             if(string.IsNullOrEmpty(value))
             {
-                _handleList.Add(GCHandle.Alloc(value));
-                fixed(void* strPtr = value)
-                {
-                    *paramValue = strPtr;
-                }
+                // For empty/null strings, allocate a single null byte
+                //
+                byte[] emptyBytes = new byte[1];
+                GCHandle handle = GCHandle.Alloc(emptyBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
             }
             else
             {
                 byte[] strBytes = Encoding.UTF8.GetBytes(value);
-                _handleList.Add(GCHandle.Alloc(strBytes));
-                fixed(void* strPtr = strBytes)
-                {
-                    *paramValue = strPtr;
-                }
+                GCHandle handle = GCHandle.Alloc(strBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
             }
         }
 
@@ -296,20 +307,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             if(string.IsNullOrEmpty(value))
             {
-                _handleList.Add(GCHandle.Alloc(value));
-                fixed(void* strPtr = value)
-                {
-                    *paramValue = strPtr;
-                }
+                // For empty/null strings, allocate a single null wchar
+                //
+                byte[] emptyBytes = new byte[2];
+                GCHandle handle = GCHandle.Alloc(emptyBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
             }
             else
             {
                 byte[] strBytes = Encoding.Unicode.GetBytes(value);
-                _handleList.Add(GCHandle.Alloc(strBytes));
-                fixed(void* strPtr = strBytes)
-                {
-                    *paramValue = strPtr;
-                }
+                GCHandle handle = GCHandle.Alloc(strBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
             }
         }
     }

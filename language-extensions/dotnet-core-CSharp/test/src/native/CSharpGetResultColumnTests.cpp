@@ -368,6 +368,111 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetWStringResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn with an InputDataSet of nvarchar/nchar (Unicode) columns.
+    //  Tests nullptr, empty strings, accented characters, emojis, and mixed scripts.
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringResultColumnsTest)
+    {
+        InitializeSession(
+            3, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            m_scriptString);
+
+        string wstringColumn1Name = "WStringColumn1";
+        InitializeColumn(0, wstringColumn1Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn2Name = "WStringColumn2";
+        InitializeColumn(1, wstringColumn2Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn3Name = "WStringColumn3";
+        InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
+
+        // Test data including: basic strings, empty, null, accented chars, emojis, mixed scripts
+        //
+        vector<const wchar_t*> wstringCol1{
+            L"Hello",
+            L"Café",           // Accented characters
+            L"Hello世界",       // Mixed Latin and Chinese
+            L"\U0001F600Test", // Emoji (surrogate pair) + text
+            L"naïve"           // More accented chars
+        };
+        vector<const wchar_t*> wstringCol2{
+            L"",               // Empty string
+            nullptr,           // Null value
+            L"€100£50¥",       // Currency symbols
+            L"verify",
+            L"HELLO"           // Uppercase (for case sensitivity check)
+        };
+
+        int rowsNumber = wstringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),   // "Hello"
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),   // "Café"
+          static_cast<SQLINTEGER>(7 * sizeof(wchar_t)),   // "Hello世界"
+          static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),   // emoji(2) + "Test"(4)
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)) }; // "naïve"
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { 0,
+          SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(8 * sizeof(wchar_t)),   // "€100£50¥"
+          static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),   // "verify"
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)) }; // "HELLO"
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
+            strLenOrIndCol2.data(), nullptr };
+
+        // Coalesce the arrays of each row of each column
+        // into a contiguous array for each column.
+        //
+        vector<wchar_t> wstringCol1Data = GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+        vector<wchar_t> wstringCol2Data = GenerateContiguousData<wchar_t>(wstringCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { wstringCol1Data.data(),
+                            wstringCol2Data.data(),
+                            nullptr };
+
+        vector<string> columnNames{ wstringColumn1Name, wstringColumn2Name, wstringColumn3Name };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // For nvarchar output, the extension preserves the input type.
+        // Get max byte length and convert to character count for column size.
+        //
+        SQLULEN maxCol1ByteLen = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+        SQLULEN maxCol2ByteLen = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+
+        GetResultColumn(
+            0,                                           // columnNumber
+            SQL_C_WCHAR,                                 // dataType
+            maxCol1ByteLen / sizeof(wchar_t),            // columnSize (in characters)
+            0,                                           // decimalDigits
+            SQL_NO_NULLS);                               // nullable
+
+        GetResultColumn(
+            1,                                           // columnNumber
+            SQL_C_WCHAR,                                 // dataType
+            maxCol2ByteLen / sizeof(wchar_t),            // columnSize (in characters)
+            0,                                           // decimalDigits
+            SQL_NULLABLE);                               // nullable
+
+        GetResultColumn(
+            2,                                           // columnNumber
+            SQL_C_WCHAR,                                 // dataType
+            sizeof(wchar_t) / sizeof(wchar_t),           // columnSize (1 character for null column)
+            0,                                           // decimalDigits
+            SQL_NULLABLE);                               // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: GetResultColumn
     //
     // Description:

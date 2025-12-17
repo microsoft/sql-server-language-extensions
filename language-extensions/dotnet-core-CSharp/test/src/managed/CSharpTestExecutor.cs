@@ -126,10 +126,64 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
             sqlParams["@param0"] = "HELLO";
             sqlParams["@param1"] = "C#Extension";
-            sqlParams["@param2"] = "";
+            sqlParams["@param2"] = string.Empty;
             sqlParams["@param3"] = "WORLD";
             sqlParams["@param4"] = null;
             sqlParams["@param5"] = null;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor for NVARCHAR(MAX) scenarios with large strings.
+    /// </summary>
+    public class CSharpTestExecutorWStringMaxParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            // Generate a large string (10,000 characters) to test NVARCHAR(MAX) handling
+            //
+            sqlParams["@param0"] = new string('A', 10000);
+
+            // Generate a string with repeating Unicode pattern (5,000 characters)
+            //
+            string unicodePattern = "你好世界€";  // 5 characters
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < 1000; i++)
+            {
+                sb.Append(unicodePattern);
+            }
+            sqlParams["@param1"] = sb.ToString();
+
+            // Test null for NVARCHAR(MAX)
+            //
+            sqlParams["@param2"] = null;
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor for Unicode variety: emojis, accented characters, mixed scripts.
+    /// </summary>
+    public class CSharpTestExecutorWStringUnicodeParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            // Test emoji characters (surrogate pairs in UTF-16)
+            //
+            sqlParams["@param0"] = "Hi\U0001F600\U0001F44D";  // "Hi" + grinning face + thumbs up
+
+            // Test accented/European characters
+            //
+            sqlParams["@param1"] = "Café résumé naïve";
+
+            // Test mixed scripts (Latin, Chinese, Japanese, Korean)
+            //
+            sqlParams["@param2"] = "Hello世界こんにちは";
+
+            // Test currency and special symbols
+            //
+            sqlParams["@param3"] = "€100 £50 ¥1000 ©®™";
+
             return null;
         }
     }

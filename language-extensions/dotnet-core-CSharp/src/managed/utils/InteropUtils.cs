@@ -59,11 +59,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method allocates a managed System.String and copies a specified
-        /// number of bytes from an unmanaged null-terminated UTF16 (Unicode) string into it.
+        /// This method allocates a managed System.String and copies characters from
+        /// an unmanaged null-terminated UTF16 (Unicode) string into it.
+        /// The string must be null-terminated as this overload reads until the null terminator.
         /// </summary>
         /// <param name="str">
-        /// The address of the first character of the unmanaged Unicode string.
+        /// The address of the first character of the unmanaged null-terminated Unicode string.
         /// </param>
         /// <returns>
         /// A managed string that holds a copy of the unmanaged string if the value of the
@@ -78,6 +79,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method allocates a managed System.String and copies a specified number of characters from
         /// an unmanaged UTF16 (Unicode) string into it.
+        /// This overload does not require null termination as it reads exactly the specified number of characters.
         /// </summary>
         /// <param name="str">
         /// The address of the first character of the unmanaged Unicode string.

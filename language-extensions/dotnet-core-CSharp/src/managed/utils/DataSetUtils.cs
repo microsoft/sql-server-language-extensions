@@ -19,6 +19,11 @@ namespace Microsoft.SqlServer.CSharpExtension
     internal class DataSetUtils
     {
         /// <summary>
+        /// Value indicating a null string in the strLens/byteLens array.
+        /// </summary>
+        public const int NullStringIndicator = -1;
+
+        /// <summary>
         /// This method splits a string to an array of substring according to lengths.
         /// </summary>
         /// <param name="str">
@@ -41,7 +46,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             int startIndex = 0;
             for (int i = 0; i < strLens.Length; ++i)
             {
-                if(strLens[i] == -1)
+                if(strLens[i] == NullStringIndicator)
                 {
                     strArray[i] = null;
                     continue;
@@ -62,16 +67,30 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method splits a UTF-8 byte buffer into an array of strings according to byte lengths.
-        /// Unlike StringSplitToArray, this properly handles multi-byte UTF-8 characters by
-        /// decoding each segment independently based on byte lengths.
+        /// SQL Server sends UTF-8 encoded string data with byte lengths in the strLenOrNullMap.
+        /// We decode each segment directly from the byte buffer to properly handle multi-byte
+        /// UTF-8 characters (e.g., Chinese characters, Euro symbol) where character count != byte count.
         /// </summary>
         /// <param name="data">
         /// Pointer to the raw UTF-8 byte data
         /// </param>
         /// <param name="byteLens">
-        /// An array of integers representing the byte lengths of each string segment
+        /// An array of integers representing the byte lengths of each string segment.
+        /// A value of NullStringIndicator (-1) indicates a null string.
         /// </param>
-        public static unsafe string[] UTF8ByteSplitToArray(byte* data, int[] byteLens)
+        /// <param name="totalBufferSize">
+        /// Total size of the buffer in bytes for bounds checking.
+        /// When provided (non-zero), the method validates that pointer arithmetic stays within
+        /// valid memory and throws ArgumentException if a buffer overrun would occur.
+        /// Callers should provide this value when available to guard against corrupted length data.
+        /// </param>
+        /// <returns>
+        /// An array of decoded strings, with null entries for null indicators.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when totalBufferSize is provided and the cumulative byte offset would exceed it.
+        /// </exception>
+        public static unsafe string[] UTF8ByteSplitToArray(byte* data, int[] byteLens, int totalBufferSize = 0)
         {
             string[] strArray = new string[byteLens.Length];
 
@@ -85,7 +104,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             int byteOffset = 0;
             for (int i = 0; i < byteLens.Length; ++i)
             {
-                if (byteLens[i] == -1)
+                if (byteLens[i] == NullStringIndicator)
                 {
                     strArray[i] = null;
                     continue;
@@ -97,9 +116,87 @@ namespace Microsoft.SqlServer.CSharpExtension
                     continue;
                 }
 
+                // Validate bounds if buffer size is provided
+                //
+                if (totalBufferSize > 0 && byteOffset + byteLens[i] > totalBufferSize)
+                {
+                    throw new ArgumentException(
+                        $"Buffer overrun detected: offset {byteOffset} + length {byteLens[i]} exceeds buffer size {totalBufferSize}");
+                }
+
                 // Decode the UTF-8 bytes for this segment.
                 //
                 strArray[i] = Encoding.UTF8.GetString(data + byteOffset, byteLens[i]);
+                byteOffset += byteLens[i];
+            }
+
+            return strArray;
+        }
+
+        /// <summary>
+        /// This method splits a UTF-16 byte buffer into an array of strings according to byte lengths.
+        /// SQL Server sends UTF-16 (nvarchar/nchar) encoded string data with byte lengths in the strLenOrNullMap.
+        /// We decode each segment directly from the byte buffer to properly handle multi-byte
+        /// sequences where the entire buffer may contain multiple strings separated by their byte offsets.
+        /// </summary>
+        /// <param name="data">
+        /// Pointer to the raw UTF-16 byte data (wchar_t buffer)
+        /// </param>
+        /// <param name="byteLens">
+        /// An array of integers representing the byte lengths of each string segment.
+        /// A value of NullStringIndicator (-1) indicates a null string.
+        /// </param>
+        /// <param name="totalBufferSize">
+        /// Total size of the buffer in bytes for bounds checking.
+        /// When provided (non-zero), the method validates that pointer arithmetic stays within
+        /// valid memory and throws ArgumentException if a buffer overrun would occur.
+        /// Callers should provide this value when available to guard against corrupted length data.
+        /// </param>
+        /// <returns>
+        /// An array of decoded strings, with null entries for null indicators.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when totalBufferSize is provided and the cumulative byte offset would exceed it.
+        /// </exception>
+        public static unsafe string[] UTF16ByteSplitToArray(byte* data, int[] byteLens, int totalBufferSize = 0)
+        {
+            string[] strArray = new string[byteLens.Length];
+
+            // Return empty string list if the data is null
+            //
+            if (data == null)
+            {
+                return strArray;
+            }
+
+            int byteOffset = 0;
+            for (int i = 0; i < byteLens.Length; ++i)
+            {
+                if (byteLens[i] == NullStringIndicator)
+                {
+                    strArray[i] = null;
+                    continue;
+                }
+
+                if (byteLens[i] == 0)
+                {
+                    strArray[i] = string.Empty;
+                    continue;
+                }
+
+                // Validate bounds if buffer size is provided
+                //
+                if (totalBufferSize > 0 && byteOffset + byteLens[i] > totalBufferSize)
+                {
+                    throw new ArgumentException(
+                        $"Buffer overrun detected: offset {byteOffset} + length {byteLens[i]} exceeds buffer size {totalBufferSize}");
+                }
+
+                // Decode the UTF-16 bytes for this segment.
+                // UTF-16 uses 2 bytes per character (for BMP characters), so char count = byte count / 2
+                //
+                int charCount = byteLens[i] / sizeof(char);
+                strArray[i] = new string((char*)(data + byteOffset), 0, charCount);
                 byteOffset += byteLens[i];
             }
 

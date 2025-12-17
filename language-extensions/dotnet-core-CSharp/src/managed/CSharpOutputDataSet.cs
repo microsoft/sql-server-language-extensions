@@ -42,19 +42,20 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method extracts metadata and actual data for each column supplied
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
-        /// <param name="CSharpDataFrame">The DataFrame containing the output data.</param>
+        /// <param name="dataFrame">The DataFrame containing the output data.</param>
         /// <param name="inputColumns">
-        /// Optional dictionary of input column metadata (not used - C# extension always outputs ANSI strings
-        /// like Python/R extensions).
+        /// Optional dictionary of input column metadata. When provided, preserves the original SQL data type
+        /// (e.g., nvarchar/DotNetWChar vs varchar/DotNetChar) from the input columns. If not provided,
+        /// string columns default to DotNetChar (UTF-8 encoded varchar).
         /// </param>
-        public unsafe void ExtractColumns(DataFrame CSharpDataFrame, Dictionary<ushort, CSharpColumn> inputColumns = null)
+        public unsafe void ExtractColumns(DataFrame dataFrame, Dictionary<ushort, CSharpColumn> inputColumns = null)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
             _strLenOrNullMapPtrs = new int*[ColumnsNumber];
             _dataPtrs = new void*[ColumnsNumber];
             for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
-                DataFrameColumn column = CSharpDataFrame.Columns[columnNumber];
+                DataFrameColumn column = dataFrame.Columns[columnNumber];
 
                 // Determine the SQL data type for this column
                 // Prefer the incoming input column metadata when available so nvarchar metadata is preserved.
@@ -62,10 +63,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                 //
                 SqlDataType dataType = DataTypeMap[column.DataType];
                 ulong columnSize = (ulong)DataTypeSize[dataType];
-                if(inputColumns != null && inputColumns.ContainsKey(columnNumber))
+                if(inputColumns != null && inputColumns.TryGetValue(columnNumber, out var inputColumn))
                 {
-                    dataType = inputColumns[columnNumber].DataType;
-                    columnSize = inputColumns[columnNumber].Size;
+                    dataType = inputColumn.DataType;
+                    columnSize = inputColumn.Size;
                 }
 
                 // Add column metadata to a CSharpColumn dictionary
@@ -185,8 +186,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                     break;
                 case SqlDataType.DotNetChar:
                     // Modify the size of the string column to be the max size of bytes.
+                    // Handle all-null columns by checking if any positive values exist.
                     //
-                    int maxStrLen = colMap.Max();
+                    int maxStrLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
                     if(maxStrLen > 0)
                     {
                         _columns[columnNumber].Size = (ulong)maxStrLen;
@@ -196,11 +198,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     break;
                 case SqlDataType.DotNetWChar:
                     // Preserve nvarchar metadata by emitting UTF-16 data and byte counts.
+                    // Handle all-null columns by checking if any positive values exist.
+                    // Column size is reported in characters (byte length / 2 for UTF-16).
                     //
-                    int maxUnicodeStrLen = colMap.Max();
-                    if(maxUnicodeStrLen > 0)
+                    int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
+                    if(maxUnicodeByteLen > 0)
                     {
-                        _columns[columnNumber].Size = (ulong)maxUnicodeStrLen;
+                        _columns[columnNumber].Size = (ulong)(maxUnicodeByteLen / sizeof(char));
                     }
 
                     SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
@@ -252,8 +256,15 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method gets the array from a DataFrameColumn Column for string types by
         /// building a long string from the column and returning the underlying bytes as an array.
         /// </summary>
+        /// <param name="column">The DataFrameColumn containing string data.</param>
+        /// <returns>A byte array containing all non-null string values as UTF-8 encoded bytes.</returns>
         private byte[] GetStringArray(DataFrameColumn column)
         {
+            if (column == null)
+            {
+                return Array.Empty<byte>();
+            }
+
             StringBuilder builder = new StringBuilder();
             int totalBytes = 0;
             for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
@@ -282,8 +293,15 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method builds a contiguous UTF-16 buffer for string types (nvarchar/nchar).
         /// </summary>
+        /// <param name="column">The DataFrameColumn containing string data.</param>
+        /// <returns>A char array containing all non-null string values concatenated.</returns>
         private char[] GetUnicodeStringArray(DataFrameColumn column)
         {
+            if (column == null)
+            {
+                return Array.Empty<char>();
+            }
+
             StringBuilder builder = new StringBuilder();
             int totalBytes = 0;
             for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
@@ -339,11 +357,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                             Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");
                             break;
                         default:
-                            if(!DataTypeSize.ContainsKey(dataType))
+                            if(!DataTypeSize.TryGetValue(dataType, out short size))
                             {
-                                throw new NotImplementedException("Parameter type for " + dataType.ToString() + " has not been implemented yet");
+                                throw new NotImplementedException("Parameter type for " + dataType + " has not been implemented yet");
                             }
-                            colMap[rowNumber] = DataTypeSize[dataType];
+                            colMap[rowNumber] = size;
                             break;
                     }
                 }
