@@ -135,6 +135,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
                     break;
+                case SqlDataType.DotNetWChar:
+                    // For NCHAR/NVARCHAR, strLenOrNullMap contains byte length.
+                    // In C#, sizeof(char) is always 2 bytes (UTF-16), regardless of platform.
+                    // Note: C++ wchar_t is 2 bytes on Windows but 4 bytes on Linux - this extension only supports Windows.
+                    // The cast to (char*) is correct here because C# char is UTF-16 (same as Windows wchar_t).
+                    //
+                    _params[paramNumber].Value = Interop.UTF16PtrToStr((char*)paramValue, strLenOrNullMap / sizeof(char));
+                    break;
                 default:
                     throw new NotImplementedException("Parameter type for " + dataType.ToString() + " has not been implemented yet");
             }
@@ -152,13 +160,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    *strLenOrNullMap)
         {
             Logging.Trace("CSharpParamContainer::ReplaceParam");
-            if(!UserParams.ContainsKey(_params[paramNumber].Name))
+            if(!UserParams.TryGetValue(_params[paramNumber].Name, out object paramValue_))
             {
                 *strLenOrNullMap = SQL_NULL_DATA;
                 return;
             }
 
-            _params[paramNumber].Value = UserParams[_params[paramNumber].Name];
+            _params[paramNumber].Value = paramValue_;
             CSharpParam param = _params[paramNumber];
             if(param.Value == null)
             {
@@ -207,8 +215,26 @@ namespace Microsoft.SqlServer.CSharpExtension
                     ReplaceNumericParam<bool>(boolValue, paramValue);
                     break;
                 case SqlDataType.DotNetChar:
-                    *strLenOrNullMap = (param.Value.Length < *strLenOrNullMap) ? param.Value.Length : *strLenOrNullMap;
+                    // For CHAR/VARCHAR, strLenOrNullMap is in bytes (1 byte per character for ANSI).
+                    // param.Size is the declared parameter size in characters (from SQL Server's CHAR(n)/VARCHAR(n)).
+                    // For ANSI strings, character count equals byte count.
+                    //
+                    int charByteLen = param.Value.Length;
+                    int charMaxByteLen = (int)param.Size;
+                    *strLenOrNullMap = (charByteLen < charMaxByteLen) ? charByteLen : charMaxByteLen;
                     ReplaceStringParam((string)param.Value, paramValue);
+                    break;
+                case SqlDataType.DotNetWChar:
+                    // For NCHAR/NVARCHAR, strLenOrNullMap must be in bytes (UTF-16: 2 bytes per character).
+                    // In C#, sizeof(char) is always 2 bytes (UTF-16), regardless of platform.
+                    // Note: C++ wchar_t is 2 bytes on Windows but 4 bytes on Linux - this extension only supports Windows.
+                    // param.Size is the declared parameter size in characters (from SQL Server's NCHAR(n)/NVARCHAR(n)),
+                    // so we multiply by sizeof(char) to convert to bytes.
+                    //
+                    int wcharByteLen = param.Value.Length * sizeof(char);
+                    int wcharMaxByteLen = (int)param.Size * sizeof(char);
+                    *strLenOrNullMap = (wcharByteLen < wcharMaxByteLen) ? wcharByteLen : wcharMaxByteLen;
+                    ReplaceUnicodeStringParam((string)param.Value, paramValue);
                     break;
                 default:
                     throw new NotImplementedException("Parameter type for " + param.DataType.ToString() + " has not been implemented yet");
@@ -234,13 +260,19 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method replaces parameter value for numeric data types.
+        /// Uses proper memory pinning to ensure the value remains valid after method returns.
         /// </summary>
         private unsafe void ReplaceNumericParam<T>(
             T    value,
             void **paramValue) where T : unmanaged
         {
-            _handleList.Add(GCHandle.Alloc(value));
-            *paramValue = &value;
+            // Box the value into a single-element array to create a heap-allocated copy, then pin it.
+            // This ensures the pointer remains valid after the method returns.
+            //
+            T[] valueArray = new T[1] { value };
+            GCHandle handle = GCHandle.Alloc(valueArray, GCHandleType.Pinned);
+            _handleList.Add(handle);
+            *paramValue = (void*)handle.AddrOfPinnedObject();
         }
 
         /// <summary>
@@ -254,20 +286,46 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             if(string.IsNullOrEmpty(value))
             {
-                _handleList.Add(GCHandle.Alloc(value));
-                fixed(void* strPtr = value)
-                {
-                    *paramValue = strPtr;
-                }
+                // For empty/null strings, allocate a single null byte
+                //
+                byte[] emptyBytes = new byte[1];
+                GCHandle handle = GCHandle.Alloc(emptyBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
             }
             else
             {
                 byte[] strBytes = Encoding.UTF8.GetBytes(value);
-                _handleList.Add(GCHandle.Alloc(strBytes));
-                fixed(void* strPtr = strBytes)
-                {
-                    *paramValue = strPtr;
-                }
+                GCHandle handle = GCHandle.Alloc(strBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
+            }
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for Unicode string data types.
+        /// If the string is not empty, the address of underlying Unicode bytes will be assigned to paramValue.
+        /// </summary>
+        private unsafe void ReplaceUnicodeStringParam(
+            string value,
+            void   **paramValue
+        )
+        {
+            if(string.IsNullOrEmpty(value))
+            {
+                // For empty/null strings, allocate a single null wchar
+                //
+                byte[] emptyBytes = new byte[2];
+                GCHandle handle = GCHandle.Alloc(emptyBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
+            }
+            else
+            {
+                byte[] strBytes = Encoding.Unicode.GetBytes(value);
+                GCHandle handle = GCHandle.Alloc(strBytes, GCHandleType.Pinned);
+                _handleList.Add(handle);
+                *paramValue = (void*)handle.AddrOfPinnedObject();
             }
         }
     }

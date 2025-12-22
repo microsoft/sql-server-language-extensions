@@ -46,5 +46,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This dictionary contains all the columns metadata as CSharpColumn objects.
         /// </summary>
         protected Dictionary<ushort, CSharpColumn> _columns = new Dictionary<ushort, CSharpColumn>();
+
+        /// <summary>
+        /// Gets the columns metadata dictionary.
+        /// </summary>
+        public Dictionary<ushort, CSharpColumn> Columns => _columns;
     }
 }

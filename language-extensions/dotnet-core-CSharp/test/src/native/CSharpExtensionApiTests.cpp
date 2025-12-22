@@ -489,4 +489,8 @@ namespace ExtensionApiTest
     template vector<char> CSharpExtensionApiTests::GenerateContiguousData(
         vector<const char*> columnVector,
         SQLINTEGER          *strLenOrInd);
+
+    template vector<wchar_t> CSharpExtensionApiTests::GenerateContiguousData(
+        vector<const wchar_t*> columnVector,
+        SQLINTEGER             *strLenOrInd);
 }

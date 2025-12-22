@@ -281,6 +281,12 @@ namespace ExtensionApiTest
             std::vector<const char*> expectedParamValueVector,
             std::vector<SQLINTEGER>  expectedStrLenOrIndVector);
 
+        // Test output Unicode string param value and strLenOrInd is as expected.
+        //
+        void GetWStringOutputParam(
+            std::vector<const wchar_t*> expectedParamValueVector,
+            std::vector<SQLINTEGER>     expectedStrLenOrIndVector);
+
         // Test GetResults to verify the expected string results are obtained.
         //
         void GetStringResults(
