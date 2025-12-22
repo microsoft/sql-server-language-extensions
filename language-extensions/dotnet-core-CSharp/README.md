@@ -7,7 +7,7 @@ For more information about SQL Server Language Extensions, refer to this [docume
 
 The dotnet-core-CSharp-extension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates .NET core in SQL Server and works with .NET 6.0 in **Windows only**.
 
-Currently, the extension supports the following data types: SQL_C_SLONG, SQL_C_ULONG, SQL_C_SSHORT, SQL_C_USHORT, SQL_C_SBIGINT, SQL_C_UBIGINT, SQL_C_STINYINT, SQL_C_UTINYINT, SQL_C_BIT, SQL_C_FLOAT, SQL_C_DOUBLE, SQL_C_CHAR, SQL_C_WCHAR. It supports the following SQL data types: int, bigint, smallint, tinyint, real, float, bit, varchar(n), nvarchar(n).
+Currently, the extension supports the following data types: SQL_C_SLONG, SQL_C_ULONG, SQL_C_SSHORT, SQL_C_USHORT, SQL_C_SBIGINT, SQL_C_UBIGINT, SQL_C_STINYINT, SQL_C_UTINYINT, SQL_C_BIT, SQL_C_FLOAT, SQL_C_DOUBLE, SQL_C_CHAR, and SQL_C_WCHAR. It supports the following SQL data types: int, bigint, smallint, tinyint, real, float, bit, char(n), varchar(n), nchar(n), and nvarchar(n).
 
 To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial](./sample/regex/README.md). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
 
