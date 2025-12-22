@@ -29,14 +29,16 @@ namespace Microsoft.SqlServer.CSharpExtension
         private List<GCHandle> _handleList = new List<GCHandle>();
 
         /// <summary>
-        /// An array of int pointers containing strLenOrNullMap for each column.
+        /// An array of IntPtr containing strLenOrNullMap pointers for each column.
+        /// IntPtr is blittable and can be pinned with GCHandle.
         /// </summary>
-        private unsafe int*[] _strLenOrNullMapPtrs;
+        private IntPtr[] _strLenOrNullMapPtrs;
 
         /// <summary>
-        /// An array of void pointers containing data for each column.
+        /// An array of IntPtr containing data pointers for each column.
+        /// IntPtr is blittable and can be pinned with GCHandle.
         /// </summary>
-        private unsafe void*[] _dataPtrs;
+        private IntPtr[] _dataPtrs;
 
         /// <summary>
         /// This method extracts metadata and actual data for each column supplied
@@ -45,8 +47,8 @@ namespace Microsoft.SqlServer.CSharpExtension
         public unsafe void ExtractColumns(DataFrame dataFrame)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
-            _strLenOrNullMapPtrs = new int*[ColumnsNumber];
-            _dataPtrs = new void*[ColumnsNumber];
+            _strLenOrNullMapPtrs = new IntPtr[ColumnsNumber];
+            _dataPtrs = new IntPtr[ColumnsNumber];
             for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
                 DataFrameColumn column = dataFrame.Columns[columnNumber];
@@ -123,7 +125,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             Logging.Trace("CSharpOutputDataSet::ExtractColumn");
             int[] colMap = GetStrLenNullMap(columnNumber, column);
             GCHandle colMapHandle = GCHandle.Alloc(colMap, GCHandleType.Pinned);
-            _strLenOrNullMapPtrs[columnNumber] = (int*)colMapHandle.AddrOfPinnedObject();
+            _strLenOrNullMapPtrs[columnNumber] = colMapHandle.AddrOfPinnedObject();
             _handleList.Add(colMapHandle);
 
             // Use the data type already determined in ExtractColumns (which preserves nvarchar/varchar distinction)
@@ -206,7 +208,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         ) where T : unmanaged
         {
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            _dataPtrs[columnNumber] = (void*)handle.AddrOfPinnedObject();
+            _dataPtrs[columnNumber] = handle.AddrOfPinnedObject();
             _handleList.Add(handle);
         }
 
