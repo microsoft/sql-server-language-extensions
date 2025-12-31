@@ -116,6 +116,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </exception>
         public static unsafe string[] UTF8ByteSplitToArray(byte* data, int[] byteLens, int totalBufferSize = 0)
         {
+            // Return empty array if byteLens is null or empty
+            //
+            if (byteLens == null || byteLens.Length == 0)
+            {
+                return Array.Empty<string>();
+            }
+
             string[] strArray = new string[byteLens.Length];
 
             // Return empty string list if the data is null

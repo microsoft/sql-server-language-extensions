@@ -29,38 +29,59 @@ namespace Microsoft.SqlServer.CSharpExtension
         private List<GCHandle> _handleList = new List<GCHandle>();
 
         /// <summary>
-        /// An array of int pointers containing strLenOrNullMap for each column.
+        /// An array of IntPtr containing strLenOrNullMap pointers for each column.
+        /// IntPtr is blittable and can be pinned with GCHandle.
         /// </summary>
-        private unsafe int*[] _strLenOrNullMapPtrs;
+        private IntPtr[] _strLenOrNullMapPtrs;
 
         /// <summary>
-        /// An array of void pointers containing data for each column.
+        /// An array of IntPtr containing data pointers for each column.
+        /// IntPtr is blittable and can be pinned with GCHandle.
         /// </summary>
-        private unsafe void*[] _dataPtrs;
+        private IntPtr[] _dataPtrs;
 
         /// <summary>
         /// This method extracts metadata and actual data for each column supplied
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
-        public unsafe void ExtractColumns(DataFrame dataFrame)
+        /// <param name="dataFrame">The DataFrame containing the output data.</param>
+        /// <param name="inputColumns">
+        /// Optional dictionary of input column metadata. When provided, the data type and size
+        /// from input columns are preserved for matching column indices. This is necessary because
+        /// .NET strings cannot distinguish between varchar and nvarchar - both are just System.String.
+        /// By passing the input column metadata, we can preserve the original SQL data type.
+        /// </param>
+        public unsafe void ExtractColumns(DataFrame dataFrame, Dictionary<ushort, CSharpColumn> inputColumns = null)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
-            _strLenOrNullMapPtrs = new int*[ColumnsNumber];
-            _dataPtrs = new void*[ColumnsNumber];
+            _strLenOrNullMapPtrs = new IntPtr[ColumnsNumber];
+            _dataPtrs = new IntPtr[ColumnsNumber];
             for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
                 DataFrameColumn column = dataFrame.Columns[columnNumber];
 
-                // Add column metadata to a CSharpColumn dictionary
+                // Determine the SQL data type for this column.
+                // Default mapping: .NET string -> DotNetChar (varchar/ANSI).
+                // If input column metadata is provided and has a matching column, preserve its data type
+                // and size. This allows nvarchar input columns to remain nvarchar in the output.
                 //
                 SqlDataType dataType = DataTypeMap[column.DataType];
+                ulong columnSize = (ulong)DataTypeSize[dataType];
+                if (inputColumns != null && inputColumns.TryGetValue(columnNumber, out CSharpColumn inputCol))
+                {
+                    dataType = inputCol.DataType;
+                    columnSize = inputCol.Size;
+                }
+
+                // Add column metadata to a CSharpColumn dictionary
+                //
                 _columns[columnNumber] = new CSharpColumn
                 {
                     Name = column.Name,
                     DataType = dataType,
                     Nullable = (short)(column.NullCount > 0 ? 1 : 0),
                     DecimalDigits = 0,
-                    Size = (ulong)DataTypeSize[dataType],
+                    Size = columnSize,
                     Id = columnNumber
                 };
 
@@ -123,7 +144,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             Logging.Trace("CSharpOutputDataSet::ExtractColumn");
             int[] colMap = GetStrLenNullMap(columnNumber, column);
             GCHandle colMapHandle = GCHandle.Alloc(colMap, GCHandleType.Pinned);
-            _strLenOrNullMapPtrs[columnNumber] = (int*)colMapHandle.AddrOfPinnedObject();
+            _strLenOrNullMapPtrs[columnNumber] = colMapHandle.AddrOfPinnedObject();
             _handleList.Add(colMapHandle);
 
             // Use the data type already determined in ExtractColumns (which preserves nvarchar/varchar distinction)
@@ -168,11 +189,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
                 case SqlDataType.DotNetChar:
-                    // Modify the size of the string column to be the max size of bytes.
+                    // For string columns, only update the size if it's the default minimum.
+                    // If the size was set from input column metadata,
+                    // preserve the original declared size rather than recalculating from actual data.
                     // Handle all-null columns by checking if any positive values exist.
                     //
                     int maxStrLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    if(maxStrLen > 0)
+                    if (maxStrLen > 0 && _columns[columnNumber].Size <= (ulong)MinUtf8CharSize)
                     {
                         _columns[columnNumber].Size = (ulong)maxStrLen;
                     }
@@ -180,12 +203,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
                 case SqlDataType.DotNetWChar:
-                    // Preserve nvarchar metadata by emitting UTF-16 data and byte counts.
-                    // Handle all-null columns by checking if any positive values exist.
+                    // For nvarchar columns, only update the size if it's the default minimum.
+                    // If the size was set from input column metadata,
+                    // preserve the original declared size rather than recalculating from actual data.
                     // Column size is reported in characters (byte length / 2 for UTF-16).
+                    // Handle all-null columns by checking if any positive values exist.
                     //
                     int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    if(maxUnicodeByteLen > 0)
+                    if (maxUnicodeByteLen > 0 && _columns[columnNumber].Size <= (ulong)MinUtf16CharSize)
                     {
                         _columns[columnNumber].Size = (ulong)(maxUnicodeByteLen / sizeof(char));
                     }
@@ -206,7 +231,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         ) where T : unmanaged
         {
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            _dataPtrs[columnNumber] = (void*)handle.AddrOfPinnedObject();
+            _dataPtrs[columnNumber] = handle.AddrOfPinnedObject();
             _handleList.Add(handle);
         }
 
