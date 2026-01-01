@@ -128,8 +128,8 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param1"] = "C#Extension";
             sqlParams["@param2"] = string.Empty;
             sqlParams["@param3"] = "WORLD";
-            sqlParams["@param4"] = null;
-            sqlParams["@param5"] = null;
+            sqlParams["@param4"] = null;  // null NVARCHAR (variable-length)
+            sqlParams["@param5"] = null;  // null NCHAR (fixed-length)
             return null;
         }
     }

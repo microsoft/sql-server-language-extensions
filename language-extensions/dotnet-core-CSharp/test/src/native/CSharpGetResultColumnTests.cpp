@@ -374,7 +374,7 @@ namespace ExtensionApiTest
     //  Test GetResultColumn with an InputDataSet of nvarchar/nchar (Unicode) columns.
     //  Tests nullptr, empty strings, and basic Unicode characters.
     //  Note: Output columns are returned as SQL_C_CHAR (UTF-8 encoded) regardless
-    //  of input type, since C# DataFrame internally stores strings as System.String.
+    //  of input type, since .NET strings are always output as varchar.
     //
     TEST_F(CSharpExtensionApiTests, GetWStringResultColumnsTest)
     {

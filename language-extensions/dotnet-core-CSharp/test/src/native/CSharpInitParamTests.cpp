@@ -523,7 +523,7 @@ namespace ExtensionApiTest
         InitWStringParameter(
             0,                    // paramNumber
             L"Hello世界こんにちは안녕",  // paramValue - English, Chinese, Japanese, Korean
-            15,                   // paramSize
+            14,                   // paramSize
             false);               // isFixedType
 
         // Test NVARCHAR value with emoji (Note: Some emoji are surrogate pairs in UTF-16)

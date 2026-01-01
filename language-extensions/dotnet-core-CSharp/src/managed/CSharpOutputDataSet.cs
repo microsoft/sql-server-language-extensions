@@ -45,13 +45,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
         /// <param name="dataFrame">The DataFrame containing the output data.</param>
-        /// <param name="inputColumns">
-        /// Optional dictionary of input column metadata. When provided, the data type and size
-        /// from input columns are preserved for matching column indices. This is necessary because
-        /// .NET strings cannot distinguish between varchar and nvarchar - both are just System.String.
-        /// By passing the input column metadata, we can preserve the original SQL data type.
-        /// </param>
-        public unsafe void ExtractColumns(DataFrame dataFrame, Dictionary<ushort, CSharpColumn> inputColumns = null)
+        public unsafe void ExtractColumns(DataFrame dataFrame)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
             _strLenOrNullMapPtrs = new IntPtr[ColumnsNumber];
@@ -61,17 +55,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                 DataFrameColumn column = dataFrame.Columns[columnNumber];
 
                 // Determine the SQL data type for this column.
-                // Default mapping: .NET string -> DotNetChar (varchar/ANSI).
-                // If input column metadata is provided and has a matching column, preserve its data type
-                // and size. This allows nvarchar input columns to remain nvarchar in the output.
+                // All .NET strings are output as DotNetChar (varchar/UTF-8).
                 //
                 SqlDataType dataType = DataTypeMap[column.DataType];
                 ulong columnSize = (ulong)DataTypeSize[dataType];
-                if (inputColumns != null && inputColumns.TryGetValue(columnNumber, out CSharpColumn inputCol))
-                {
-                    dataType = inputCol.DataType;
-                    columnSize = inputCol.Size;
-                }
 
                 // Add column metadata to a CSharpColumn dictionary
                 //
@@ -147,8 +134,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             _strLenOrNullMapPtrs[columnNumber] = colMapHandle.AddrOfPinnedObject();
             _handleList.Add(colMapHandle);
 
-            // Use the data type already determined in ExtractColumns (which preserves nvarchar/varchar distinction)
-            // instead of DataTypeMap[column.DataType] which always maps string to DotNetChar
+            // Process column based on its data type
             //
             switch(_columns[columnNumber].DataType)
             {
@@ -189,9 +175,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
                 case SqlDataType.DotNetChar:
-                    // For string columns, only update the size if it's the default minimum.
-                    // If the size was set from input column metadata,
-                    // preserve the original declared size rather than recalculating from actual data.
+                    // For string columns, calculate the max UTF-8 byte length from actual data.
                     // Handle all-null columns by checking if any positive values exist.
                     //
                     int maxStrLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
@@ -203,9 +187,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
                 case SqlDataType.DotNetWChar:
-                    // For nvarchar columns, only update the size if it's the default minimum.
-                    // If the size was set from input column metadata,
-                    // preserve the original declared size rather than recalculating from actual data.
+                    // For nvarchar columns, calculate the max UTF-16 byte length from actual data.
                     // Column size is reported in characters (byte length / 2 for UTF-16).
                     // Handle all-null columns by checking if any positive values exist.
                     //
@@ -369,7 +351,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                             Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");
                             break;
                         case SqlDataType.DotNetWChar:
-                            // For nvarchar output, report UTF-16 byte length to match the emitted buffer.
+                            // Report the byte length of the UTF-16 encoded string (2 bytes per code unit).
+                            // This must match the buffer size emitted by GetUnicodeStringArray().
                             //
                             colMap[rowNumber] = Encoding.Unicode.GetByteCount((string)column[rowNumber]);
                             Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");

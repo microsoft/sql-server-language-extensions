@@ -734,7 +734,7 @@ namespace ExtensionApiTest
         const vector<wstring> ExpectedParamValueStrings = {
             L"Hi\U0001F600\U0001F44D",       // "Hi" + grinning face + thumbs up (6 UTF-16 code units)
             L"Café résumé naïve",            // Accented characters (17 chars)
-            L"Hello世界こんにちは",            // Mixed scripts (14 chars)
+            L"Hello世界こんにちは",            // Mixed scripts (12 chars)
             L"€100 £50 ¥1000 ©®™"            // Currency and special symbols (18 chars)
         };
 

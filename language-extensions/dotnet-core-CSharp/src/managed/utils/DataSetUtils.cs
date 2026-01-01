@@ -93,7 +93,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method splits a UTF-8 byte buffer into an array of strings according to byte lengths.
         /// SQL Server sends UTF-8 encoded string data with byte lengths in the strLenOrNullMap.
         /// We decode each segment directly from the byte buffer to properly handle multi-byte
-        /// UTF-8 characters (e.g., Chinese characters, Euro symbol) where character count != byte count.
+        /// UTF-8 characters (e.g., Chinese characters, Euro symbol), where character count != byte count.
         /// </summary>
         /// <param name="data">
         /// Pointer to the raw UTF-8 byte data

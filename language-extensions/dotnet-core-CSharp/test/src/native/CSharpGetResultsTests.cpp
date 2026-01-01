@@ -297,7 +297,7 @@ namespace ExtensionApiTest
     // Description:
     //  Test GetResults with default script expecting an OutputDataSet of NVarChar/NChar columns.
     //  Input is provided as UTF-16 (SQL_C_WCHAR), output is verified as UTF-8 (SQL_C_CHAR)
-    //  to match the C# extension's design which always outputs UTF-8 strings.
+    //  since the C# extension always outputs strings as varchar.
     //
     TEST_F(CSharpExtensionApiTests, GetWStringResultsTest)
     {
