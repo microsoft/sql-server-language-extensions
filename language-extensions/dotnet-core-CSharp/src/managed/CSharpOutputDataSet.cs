@@ -175,27 +175,23 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
                 case SqlDataType.DotNetChar:
-                    // For string columns, calculate the max UTF-8 byte length from actual data.
-                    // Handle all-null columns by checking if any positive values exist.
+                    // Calculate column size from actual data.
+                    // columnSize = max UTF-8 byte length across all rows.
+                    // Minimum size is 1 byte (char(0) is illegal in SQL).
                     //
                     int maxStrLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    if (maxStrLen > 0 && _columns[columnNumber].Size <= (ulong)MinUtf8CharSize)
-                    {
-                        _columns[columnNumber].Size = (ulong)maxStrLen;
-                    }
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxStrLen, MinUtf8CharSize);
 
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
                 case SqlDataType.DotNetWChar:
-                    // For nvarchar columns, calculate the max UTF-16 byte length from actual data.
-                    // Column size is reported in characters (byte length / 2 for UTF-16).
-                    // Handle all-null columns by checking if any positive values exist.
+                    // Calculate column size from actual data.
+                    // columnSize = max character count (UTF-16 byte length / 2).
+                    // Minimum size is 1 character (nchar(0) is illegal in SQL).
                     //
                     int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    if (maxUnicodeByteLen > 0 && _columns[columnNumber].Size <= (ulong)MinUtf16CharSize)
-                    {
-                        _columns[columnNumber].Size = (ulong)(maxUnicodeByteLen / sizeof(char));
-                    }
+                    int maxCharCount = maxUnicodeByteLen / sizeof(char);
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxCharCount, MinUtf16CharSize);
 
                     SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
                     break;
