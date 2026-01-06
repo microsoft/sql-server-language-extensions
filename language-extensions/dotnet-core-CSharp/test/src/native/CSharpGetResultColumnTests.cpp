@@ -368,6 +368,106 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetWStringResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn with an InputDataSet of nvarchar/nchar (Unicode) columns.
+    //  Tests nullptr, empty strings, and basic Unicode characters.
+    //  Note: Output columns are returned as SQL_C_CHAR (UTF-8 encoded) regardless
+    //  of input type, since .NET strings are always output as varchar.
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringResultColumnsTest)
+    {
+        InitializeSession(
+            3, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            m_scriptString);
+
+        string wstringColumn1Name = "WStringColumn1";
+        InitializeColumn(0, wstringColumn1Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn2Name = "WStringColumn2";
+        InitializeColumn(1, wstringColumn2Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn3Name = "WStringColumn3";
+        InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
+
+        // Use simple ASCII strings to make UTF-8 size calculation straightforward.
+        // For ASCII characters, UTF-8 byte length == character count.
+        //
+        vector<const wchar_t*> wstringCol1{ L"Hello", L"test", L"data", L"World", L"abc" };
+        vector<const wchar_t*> wstringCol2{ L"", nullptr, nullptr, L"verify", L"-1" };
+
+        int rowsNumber = wstringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),   // "Hello"
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),   // "test"
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),   // "data"
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),   // "World"
+          static_cast<SQLINTEGER>(3 * sizeof(wchar_t)) }; // "abc"
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { 0,
+          SQL_NULL_DATA,
+          SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),   // "verify"
+          static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) }; // "-1"
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
+            strLenOrIndCol2.data(), nullptr };
+
+        // Coalesce the arrays of each row of each column
+        // into a contiguous array for each column.
+        //
+        vector<wchar_t> wstringCol1Data = GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+        vector<wchar_t> wstringCol2Data = GenerateContiguousData<wchar_t>(wstringCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { wstringCol1Data.data(),
+                            wstringCol2Data.data(),
+                            nullptr };
+
+        vector<string> columnNames{ wstringColumn1Name, wstringColumn2Name, wstringColumn3Name };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // C# outputs all string columns as SQL_C_CHAR (UTF-8).
+        // For ASCII strings, UTF-8 byte length == character count.
+        // We divide by sizeof(wchar_t) to get character count from UTF-16 byte length.
+        //
+        SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber) / sizeof(wchar_t);
+        SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber) / sizeof(wchar_t);
+
+        // Output is SQL_C_CHAR (UTF-8), column size is max UTF-8 byte length
+        // For ASCII strings, this equals the character count
+        //
+        GetResultColumn(
+            0,                                           // columnNumber
+            SQL_C_CHAR,                                  // dataType (UTF-8 output)
+            maxCol1Len,                                  // columnSize
+            0,                                           // decimalDigits
+            SQL_NO_NULLS);                               // nullable
+
+        GetResultColumn(
+            1,                                           // columnNumber
+            SQL_C_CHAR,                                  // dataType (UTF-8 output)
+            maxCol2Len,                                  // columnSize
+            0,                                           // decimalDigits
+            SQL_NULLABLE);                               // nullable
+
+        GetResultColumn(
+            2,                                           // columnNumber
+            SQL_C_CHAR,                                  // dataType (UTF-8 output)
+            sizeof(SQLCHAR),                             // columnSize (1 for null column)
+            0,                                           // decimalDigits
+            SQL_NULLABLE);                               // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: GetResultColumn
     //
     // Description:

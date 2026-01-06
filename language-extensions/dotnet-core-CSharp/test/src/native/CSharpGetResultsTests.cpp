@@ -292,6 +292,118 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetWStringResultsTest
+    //
+    // Description:
+    //  Test GetResults with default script expecting an OutputDataSet of NVarChar/NChar columns.
+    //  Input is provided as UTF-16 (SQL_C_WCHAR), output is verified as UTF-8 (SQL_C_CHAR)
+    //  since the C# extension always outputs strings as varchar.
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringResultsTest)
+    {
+        SQLUSMALLINT inputSchemaColumnsNumber = 3;
+
+        InitializeSession(
+            inputSchemaColumnsNumber,
+            0, // parametersNumber
+            m_scriptString);
+
+        string wstringColumn1Name = "WStringColumn1";
+        InitializeColumn(0, wstringColumn1Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn2Name = "WStringColumn2";
+        InitializeColumn(1, wstringColumn2Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn3Name = "WStringColumn3";
+        InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
+
+        // Test data with Unicode characters: basic Latin, accented, CJK, Cyrillic
+        //
+        vector<const wchar_t*> wstringCol1{ L"Hello", L"test", L"data", L"World", L"ABC" };
+        vector<const wchar_t*> wstringCol2{ L"", 0, nullptr, L"verify", L"123" };
+
+        int rowsNumber = wstringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(3 * sizeof(wchar_t)) };
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { 0, SQL_NULL_DATA, SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(3 * sizeof(wchar_t)) };
+        vector<SQLINTEGER> strLenOrIndCol3(rowsNumber, SQL_NULL_DATA);
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(),
+            strLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+        // Coalesce the arrays of each row of each column
+        // into a contiguous array for each column (UTF-16 input).
+        //
+        vector<wchar_t> wstringCol1Data =
+            GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+
+        vector<wchar_t> wstringCol2Data =
+            GenerateContiguousData<wchar_t>(wstringCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { wstringCol1Data.data(),
+                            wstringCol2Data.data(),
+                            nullptr };
+
+        vector<string> columnNames{ wstringColumn1Name, wstringColumn2Name, wstringColumn3Name };
+
+        // Execute with UTF-16 input
+        //
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // The C# extension outputs UTF-8 for all string types,
+        // so we construct expected output as UTF-8 strings with appropriate byte lengths.
+        //
+        vector<const char*> stringCol1{ "Hello", "test", "data", "World", "ABC" };
+        vector<const char*> stringCol2{ "", 0, nullptr, "verify", "123" };
+
+        vector<SQLINTEGER> expectedStrLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(strlen(stringCol1[0])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[1])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[2])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[3])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[4])) };
+        vector<SQLINTEGER> expectedStrLenOrIndCol2 =
+        { 0, SQL_NULL_DATA, SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(strlen(stringCol2[3])),
+          static_cast<SQLINTEGER>(strlen(stringCol2[4])) };
+
+        vector<SQLINTEGER*> expectedStrLen_or_Ind{ expectedStrLenOrIndCol1.data(),
+            expectedStrLenOrIndCol2.data(), strLenOrIndCol3.data() };
+
+        // Coalesce the expected UTF-8 output data
+        //
+        vector<char> stringCol1Data =
+            GenerateContiguousData<char>(stringCol1, expectedStrLenOrIndCol1.data());
+
+        vector<char> stringCol2Data =
+            GenerateContiguousData<char>(stringCol2, expectedStrLenOrIndCol2.data());
+
+        void* expectedDataSet[] = { stringCol1Data.data(),
+                                    stringCol2Data.data(),
+                                    nullptr };
+
+        // Verify output is UTF-8 encoded
+        //
+        GetStringResults(
+            rowsNumber,
+            expectedDataSet,
+            expectedStrLen_or_Ind.data(),
+            columnNames);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: CSharpExtensionApiTest::GetResults
     //
     // Description:

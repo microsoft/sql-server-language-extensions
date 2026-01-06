@@ -129,7 +129,32 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetChar:
                     int[] strLens = new int[rowsNumber];
                     Interop.Copy((int*)colMap, strLens, 0, (int)rowsNumber);
-                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.StringSplitToArray(Interop.UTF8PtrToStr((char*)colData), strLens)));
+
+                    // Calculate total buffer size from the sum of all positive (non-null) byte lengths.
+                    // This enables bounds checking in UTF8ByteSplitToArray to guard against corrupted length data.
+                    //
+                    int charTotalBufferSize = DataSetUtils.CalculateTotalBufferSize(strLens);
+
+                    // SQL Server sends UTF-8 encoded strings with byte lengths in strLenOrNullMap.
+                    // We decode each segment directly from the byte buffer to properly handle
+                    // multi-byte UTF-8 characters where byte count != character count.
+                    //
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.UTF8ByteSplitToArray((byte*)colData, strLens, charTotalBufferSize)));
+                    break;
+                case SqlDataType.DotNetWChar:
+                    int[] wcharByteLens = new int[rowsNumber];
+                    Interop.Copy((int*)colMap, wcharByteLens, 0, (int)rowsNumber);
+
+                    // Calculate total buffer size from the sum of all positive (non-null) byte lengths.
+                    // This enables bounds checking in UTF16ByteSplitToArray to guard against corrupted length data.
+                    //
+                    int wcharTotalBufferSize = DataSetUtils.CalculateTotalBufferSize(wcharByteLens);
+
+                    // SQL Server sends UTF-16 (nvarchar/nchar) encoded strings with byte lengths in strLenOrNullMap.
+                    // We decode each segment directly from the byte buffer to properly handle
+                    // multi-string buffers where strings are concatenated without null terminators.
+                    //
+                    CSharpDataFrame.Columns.Add(new StringDataFrameColumn(_columns[columnNumber].Name, DataSetUtils.UTF16ByteSplitToArray((byte*)colData, wcharByteLens, wcharTotalBufferSize)));
                     break;
                 default:
                     throw new NotImplementedException("Column type for " + _columns[columnNumber].DataType.ToString() + " has not been implemented yet");

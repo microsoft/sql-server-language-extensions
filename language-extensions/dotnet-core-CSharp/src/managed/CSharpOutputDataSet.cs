@@ -29,37 +29,46 @@ namespace Microsoft.SqlServer.CSharpExtension
         private List<GCHandle> _handleList = new List<GCHandle>();
 
         /// <summary>
-        /// An array of int pointers containing strLenOrNullMap for each column.
+        /// An array of IntPtr containing strLenOrNullMap pointers for each column.
+        /// IntPtr is blittable and can be pinned with GCHandle.
         /// </summary>
-        private unsafe int*[] _strLenOrNullMapPtrs;
+        private IntPtr[] _strLenOrNullMapPtrs;
 
         /// <summary>
-        /// An array of void pointers containing data for each column.
+        /// An array of IntPtr containing data pointers for each column.
+        /// IntPtr is blittable and can be pinned with GCHandle.
         /// </summary>
-        private unsafe void*[] _dataPtrs;
+        private IntPtr[] _dataPtrs;
 
         /// <summary>
         /// This method extracts metadata and actual data for each column supplied
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
-        public unsafe void ExtractColumns(DataFrame CSharpDataFrame)
+        /// <param name="dataFrame">The DataFrame containing the output data.</param>
+        public unsafe void ExtractColumns(DataFrame dataFrame)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
-            _strLenOrNullMapPtrs = new int*[ColumnsNumber];
-            _dataPtrs = new void*[ColumnsNumber];
+            _strLenOrNullMapPtrs = new IntPtr[ColumnsNumber];
+            _dataPtrs = new IntPtr[ColumnsNumber];
             for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
-                DataFrameColumn column = CSharpDataFrame.Columns[columnNumber];
+                DataFrameColumn column = dataFrame.Columns[columnNumber];
+
+                // Determine the SQL data type for this column.
+                // All .NET strings are output as DotNetChar (varchar/UTF-8).
+                //
+                SqlDataType dataType = DataTypeMap[column.DataType];
+                ulong columnSize = (ulong)DataTypeSize[dataType];
 
                 // Add column metadata to a CSharpColumn dictionary
                 //
                 _columns[columnNumber] = new CSharpColumn
                 {
                     Name = column.Name,
-                    DataType = DataTypeMap[column.DataType],
+                    DataType = dataType,
                     Nullable = (short)(column.NullCount > 0 ? 1 : 0),
                     DecimalDigits = 0,
-                    Size = (ulong)DataTypeSize[DataTypeMap[column.DataType]],
+                    Size = columnSize,
                     Id = columnNumber
                 };
 
@@ -79,17 +88,16 @@ namespace Microsoft.SqlServer.CSharpExtension
         )
         {
             Logging.Trace("CSharpOutputDataSet::RetrieveColumns");
-            fixed (void** ptrptr = _dataPtrs)
-            {
-                _handleList.Add(GCHandle.Alloc(_dataPtrs));
-                *data = ptrptr;
-            }
+            
+            // Pin the pointer arrays and get their addresses
+            //
+            GCHandle dataHandle = GCHandle.Alloc(_dataPtrs, GCHandleType.Pinned);
+            *data = (void**)dataHandle.AddrOfPinnedObject();
+            _handleList.Add(dataHandle);
 
-            fixed (int** ptrptr = _strLenOrNullMapPtrs)
-            {
-                _handleList.Add(GCHandle.Alloc(_strLenOrNullMapPtrs));
-                *strLenOrNullMap = ptrptr;
-            }
+            GCHandle strLenHandle = GCHandle.Alloc(_strLenOrNullMapPtrs, GCHandleType.Pinned);
+            *strLenOrNullMap = (int**)strLenHandle.AddrOfPinnedObject();
+            _handleList.Add(strLenHandle);
         }
 
         /// <summary>
@@ -121,13 +129,14 @@ namespace Microsoft.SqlServer.CSharpExtension
         )
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumn");
-            int[] colMap = GetStrLenNullMap(column);
-            fixed(int* len = colMap)
-            {
-                _strLenOrNullMapPtrs[columnNumber] = len;
-            }
+            int[] colMap = GetStrLenNullMap(columnNumber, column);
+            GCHandle colMapHandle = GCHandle.Alloc(colMap, GCHandleType.Pinned);
+            _strLenOrNullMapPtrs[columnNumber] = colMapHandle.AddrOfPinnedObject();
+            _handleList.Add(colMapHandle);
 
-            switch(DataTypeMap[column.DataType])
+            // Process column based on its data type
+            //
+            switch(_columns[columnNumber].DataType)
             {
                 case SqlDataType.DotNetInteger:
                     SetDataPtrs<int>(columnNumber, GetArray<int>(column));
@@ -166,18 +175,28 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
                 case SqlDataType.DotNetChar:
-                    // Modify the size of the string column to be the max size of bytes.
+                    // Calculate column size from actual data.
+                    // columnSize = max UTF-8 byte length across all rows.
+                    // Minimum size is 1 byte (char(0) is illegal in SQL).
                     //
-                    int maxStrLen = colMap.Max();
-                    if(maxStrLen > 0)
-                    {
-                        _columns[columnNumber].Size = (ulong)maxStrLen;
-                    }
+                    int maxStrLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxStrLen, MinUtf8CharSize);
 
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
+                case SqlDataType.DotNetWChar:
+                    // Calculate column size from actual data.
+                    // columnSize = max character count (UTF-16 byte length / 2).
+                    // Minimum size is 1 character (nchar(0) is illegal in SQL).
+                    //
+                    int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
+                    int maxCharCount = maxUnicodeByteLen / sizeof(char);
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxCharCount, MinUtf16CharSize);
+
+                    SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
+                    break;
                 default:
-                    throw new NotImplementedException("Parameter type for " + DataTypeMap[column.DataType].ToString() + " has not been implemented yet");
+                    throw new NotImplementedException("Parameter type for " + DataTypeMap[column.DataType] + " has not been implemented yet");
             }
         }
 
@@ -190,7 +209,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         ) where T : unmanaged
         {
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            _dataPtrs[columnNumber] = (void*)handle.AddrOfPinnedObject();
+            _dataPtrs[columnNumber] = handle.AddrOfPinnedObject();
             _handleList.Add(handle);
         }
 
@@ -199,6 +218,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         private T[] GetArray<T>(DataFrameColumn column) where T : unmanaged
         {
+            if (column == null)
+            {
+                return Array.Empty<T>();
+            }
+
             T[] columnArray = new T[column.Length];
             for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
@@ -223,52 +247,125 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method gets the array from a DataFrameColumn Column for string types by
         /// building a long string from the column and returning the underlying bytes as an array.
         /// </summary>
+        /// <param name="column">The DataFrameColumn containing string data.</param>
+        /// <returns>A byte array containing all non-null string values as UTF-8 encoded bytes.</returns>
         private byte[] GetStringArray(DataFrameColumn column)
         {
+            if (column == null)
+            {
+                return Array.Empty<byte>();
+            }
+
             StringBuilder builder = new StringBuilder();
+            int totalBytes = 0;
             for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
                 // In case of null strings, nothing will be added to the returned data.
                 //
                 if(column[rowNumber] != null)
                 {
-                    builder.Append(column[rowNumber]);
+                    string value = (string)column[rowNumber];
+                    int byteLen = Encoding.UTF8.GetByteCount(value);
+                    Logging.Trace($"GetStringArray: Row {rowNumber}, Value='{value}', ByteLen={byteLen}, CurrentOffset={totalBytes}");
+                    builder.Append(value);
+                    totalBytes += byteLen;
+                }
+                else
+                {
+                    Logging.Trace($"GetStringArray: Row {rowNumber} is NULL");
                 }
             }
 
-            return Encoding.UTF8.GetBytes(builder.ToString());
+            byte[] result = Encoding.UTF8.GetBytes(builder.ToString());
+            Logging.Trace($"GetStringArray: Total buffer size={result.Length}, TotalBytesCalculated={totalBytes}");
+            return result;
+        }
+
+        /// <summary>
+        /// This method builds a contiguous UTF-16 buffer for string types (nvarchar/nchar).
+        /// </summary>
+        /// <param name="column">The DataFrameColumn containing string data.</param>
+        /// <returns>A char array containing all non-null string values concatenated.</returns>
+        private char[] GetUnicodeStringArray(DataFrameColumn column)
+        {
+            if (column == null)
+            {
+                return Array.Empty<char>();
+            }
+
+            StringBuilder builder = new StringBuilder();
+            int totalBytes = 0;
+            for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if(column[rowNumber] != null)
+                {
+                    string value = (string)column[rowNumber];
+                    int byteLen = Encoding.Unicode.GetByteCount(value);
+                    Logging.Trace($"GetUnicodeStringArray: Row {rowNumber}, Value='{value}', ByteLen={byteLen}, CurrentOffset={totalBytes}");
+                    builder.Append(value);
+                    totalBytes += byteLen;
+                }
+                else
+                {
+                    Logging.Trace($"GetUnicodeStringArray: Row {rowNumber} is NULL");
+                }
+            }
+
+            char[] result = builder.ToString().ToCharArray();
+            Logging.Trace($"GetUnicodeStringArray: Total buffer size={result.Length * sizeof(char)}, TotalBytesCalculated={totalBytes}");
+            return result;
         }
 
         /// <summary>
         /// This method gets the StrLenNullMap from a DataFrameColumn Column.
         /// </summary>
-        private int[] GetStrLenNullMap(DataFrameColumn column)
+        /// <param name="columnNumber">The column index, used to look up the correct data type from _columns</param>
+        /// <param name="column">The DataFrameColumn containing the data</param>
+        /// <returns>Array of string lengths or null indicators for each row</returns>
+        private int[] GetStrLenNullMap(ushort columnNumber, DataFrameColumn column)
         {
+            if (column == null)
+            {
+                return Array.Empty<int>();
+            }
+
             int[] colMap = new int[column.Length];
-            _handleList.Add(GCHandle.Alloc(colMap, GCHandleType.Pinned));
+            
+            SqlDataType dataType = _columns[columnNumber].DataType;
+            Logging.Trace($"GetStrLenNullMap: Column {columnNumber}, DataType={dataType}, RowCount={column.Length}");
+            
             for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
                 if(column[rowNumber] != null)
                 {
-                    if(!DataTypeMap.ContainsKey(column.DataType))
-                    {
-                        throw new NotImplementedException("Parameter type for " + column.DataType.ToString() + " has not been implemented yet");
-                    }
-
-                    SqlDataType dataType = DataTypeMap[column.DataType];
                     switch(dataType)
                     {
                         case SqlDataType.DotNetChar:
-                            colMap[rowNumber] = ((string)column[rowNumber]).Length;
+                            // Must match the actual byte count from Encoding.UTF8.GetBytes()
+                            //
+                            colMap[rowNumber] = Encoding.UTF8.GetByteCount((string)column[rowNumber]);
+                            Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");
+                            break;
+                        case SqlDataType.DotNetWChar:
+                            // Report the byte length of the UTF-16 encoded string (2 bytes per code unit).
+                            // This must match the buffer size emitted by GetUnicodeStringArray().
+                            //
+                            colMap[rowNumber] = Encoding.Unicode.GetByteCount((string)column[rowNumber]);
+                            Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");
                             break;
                         default:
-                            colMap[rowNumber] = DataTypeSize[dataType];
+                            if(!DataTypeSize.TryGetValue(dataType, out short size))
+                            {
+                                throw new NotImplementedException("Parameter type for " + dataType + " has not been implemented yet");
+                            }
+                            colMap[rowNumber] = size;
                             break;
                     }
                 }
                 else
                 {
                     colMap[rowNumber] = SQL_NULL_DATA;
+                    Logging.Trace($"GetStrLenNullMap: Row {rowNumber} is NULL");
                 }
             }
 

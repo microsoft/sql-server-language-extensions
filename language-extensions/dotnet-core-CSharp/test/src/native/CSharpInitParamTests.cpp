@@ -426,15 +426,137 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, InitWStringParamTest)
     {
+        InitializeSession(
+            0,  // inputSchemaColumnsNumber
+            1); // parametersNumber
+
         // Test simple NCHAR(5) value
         //
         InitWStringParameter(
-            0,                      // paramNumber
-            L"HELLO",               // paramValue
-            5,                      // paramSize
-            true,                   // isFixedType
-            SQL_PARAM_INPUT_OUTPUT, // inputOutputType
-            SQL_ERROR);             // WString parameter type is not implemented yet
+            0,        // paramNumber
+            L"HELLO", // paramValue
+            5,        // paramSize
+            true);    // isFixedType
+
+        // Test simple NCHAR(6) value with parameter length less than size - should be padded.
+        //
+        InitWStringParameter(
+            0,        // paramNumber
+            L"WORLD", // paramValue
+            6,        // paramSize
+            true);    // isFixedType
+
+        // Test NCHAR(6) value with parameter length more than size - should be truncated.
+        //
+        InitWStringParameter(
+            0,                  // paramNumber
+            L"DOTNETEXTENSION", // paramValue
+            6,                  // paramSize
+            true);              // isFixedType
+
+        // Test null NCHAR(5) value
+        //
+        InitWStringParameter(
+            0,        // paramNumber
+            nullptr,  // paramValue
+            5,        // paramSize
+            true);    // isFixedType
+
+        // Test simple NVARCHAR(6) value
+        //
+        InitWStringParameter(
+            0,         // paramNumber
+            L"WORLD!", // paramValue
+            6,         // paramSize
+            false);    // isFixedType
+
+        // Test simple NVARCHAR(8) value with parameter length less than size - NO padding.
+        //
+        InitWStringParameter(
+            0,        // paramNumber
+            L"WORLD", // paramValue
+            8,        // paramSize
+            false);   // isFixedType
+
+        // Test NVARCHAR(6) value with parameter length more than size - should be truncated.
+        //
+        InitWStringParameter(
+            0,                  // paramNumber
+            L"DOTNETEXTENSION", // paramValue
+            6,                  // paramSize
+            false);             // isFixedType
+
+        // Test null NVARCHAR(5) value
+        //
+        InitWStringParameter(
+            0,        // paramNumber
+            nullptr,  // paramValue
+            5,        // paramSize
+            false);   // isFixedType
+
+        // Test NCHAR value with Unicode characters (Chinese)
+        //
+        InitWStringParameter(
+            0,            // paramNumber
+            L"中文编码",  // paramValue
+            4,            // paramSize
+            true);        // isFixedType
+
+        // Test NVARCHAR value with Unicode characters (Cyrillic)
+        //
+        InitWStringParameter(
+            0,        // paramNumber
+            L"абвг",  // paramValue
+            4,        // paramSize
+            false);   // isFixedType
+
+        // Test NVARCHAR value with Euro sign and currency symbols
+        //
+        InitWStringParameter(
+            0,            // paramNumber
+            L"€100£50¥",  // paramValue - Euro, Pound, Yen
+            8,            // paramSize
+            false);       // isFixedType
+
+        // Test NVARCHAR value with mixed languages (English, Chinese, Japanese, Korean)
+        //
+        InitWStringParameter(
+            0,                    // paramNumber
+            L"Hello世界こんにちは안녕",  // paramValue - English, Chinese, Japanese, Korean
+            14,                   // paramSize
+            false);               // isFixedType
+
+        // Test NVARCHAR value with emoji (Note: Some emoji are surrogate pairs in UTF-16)
+        //
+        InitWStringParameter(
+            0,              // paramNumber
+            L"Hi\U0001F600\U0001F44D",  // paramValue - "Hi" + grinning face + thumbs up emoji
+            6,              // paramSize (2 chars + 2 surrogate pairs = 6 UTF-16 code units)
+            false);         // isFixedType
+
+        // Test NVARCHAR value with accented characters (European languages)
+        //
+        InitWStringParameter(
+            0,                  // paramNumber
+            L"àéîõüñçß",        // paramValue - Various accented chars
+            8,                  // paramSize
+            false);             // isFixedType
+
+        // Test NVARCHAR value with leading, trailing, and embedded spaces
+        //
+        InitWStringParameter(
+            0,                  // paramNumber
+            L" with spaces ",   // paramValue - spaces at start, middle, and end
+            13,                 // paramSize
+            false);             // isFixedType
+
+        // Test NCHAR value with spaces (should be preserved, not trimmed)
+        //
+        InitWStringParameter(
+            0,                  // paramNumber
+            L"  padded  ",      // paramValue - multiple spaces
+            10,                 // paramSize
+            true);              // isFixedType
     }
 
     //----------------------------------------------------------------------------------------------

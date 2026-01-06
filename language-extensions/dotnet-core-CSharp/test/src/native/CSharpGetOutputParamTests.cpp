@@ -509,6 +509,255 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetWStringOutputParamTest
+    //
+    // Description:
+    // Test multiple Unicode string values
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringOutputParamTest)
+    {
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorWStringParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
+
+        // Initialize with a Session that executes the above script
+        // that sets output parameters.
+        //
+        InitializeSession(
+            0,   // parametersNumber
+            6,   // inputSchemaColumnsNumber
+            scriptString);
+
+        // Note: For OUTPUT parameters, the behavior of fixed (NCHAR) and varying (NVARCHAR) types
+        // is the same because the extension returns the actual string value set by the C# code:
+        // 1. The extension does not pad NCHAR output strings to the declared size - padding is
+        //    SQL Server's responsibility when it receives the output.
+        // 2. strLenOrNullMap reports the actual byte length of the output string, not the declared size.
+        // 3. The isFixedType flag only affects INPUT parameter handling (padding with spaces).
+        // We still test both types here for coverage, but the expected values are the same.
+        //
+        vector<bool> isFixedType = { true, false, true, false, false, true };
+        vector<SQLINTEGER> paramSizes = { 5, 6, 10, 5, 5, 5 };
+
+        for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+        {
+            InitWStringParameter(
+                paramNumber,
+                L"",            // paramValue
+                paramSizes[paramNumber],
+                isFixedType[paramNumber],
+                SQL_PARAM_INPUT_OUTPUT);
+        }
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+        const vector<wstring> ExpectedParamValueStrings = {
+            // Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
+            //
+            L"HELLO",
+            // Test NVARCHAR(6) value with string length more than the type allows - expected truncation.
+            //
+            L"C#Exte",
+            // Test a 0 length string
+            //
+            L"" ,
+            // Test NCHAR(10) value with string length less than the type allows.
+            //
+            L"WORLD"};
+
+        vector<const wchar_t*> expectedParamValues = {
+            ExpectedParamValueStrings[0].c_str(),
+            ExpectedParamValueStrings[1].c_str(),
+            ExpectedParamValueStrings[2].c_str(),
+            ExpectedParamValueStrings[3].c_str(),
+
+            // Test None returned in a NVARCHAR(5) parameter.
+            //
+            nullptr,
+
+            // Test None NCHAR(5) value.
+            //
+            nullptr };
+
+        // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
+        //
+        vector<SQLINTEGER> expectedStrLenOrInd = {
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length() * sizeof(wchar_t)),
+            SQL_NULL_DATA,
+            SQL_NULL_DATA };
+
+        GetWStringOutputParam(
+            expectedParamValues,
+            expectedStrLenOrInd);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetWStringMaxOutputParamTest
+    //
+    // Description:
+    // Test NVARCHAR(MAX) with large string values to ensure proper handling of strings
+    // exceeding typical nvarchar limits.
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringMaxOutputParamTest)
+    {
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorWStringMaxParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
+
+        // Initialize with a Session that executes the above script
+        // that sets large output parameters.
+        //
+        InitializeSession(
+            0,   // parametersNumber
+            3,   // inputSchemaColumnsNumber
+            scriptString);
+
+        // Use large sizes to simulate NVARCHAR(MAX) behavior
+        // SQL Server NVARCHAR(MAX) can hold up to 2^30-1 characters
+        //
+        vector<bool> isFixedType = { false, false, false };
+        vector<SQLINTEGER> paramSizes = { 10000, 5000, 10000 };
+
+        for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+        {
+            InitWStringParameter(
+                paramNumber,
+                L"",            // paramValue - empty, will be set by executor
+                paramSizes[paramNumber],
+                isFixedType[paramNumber],
+                SQL_PARAM_INPUT_OUTPUT);
+        }
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+        // Build expected values to match what the C# executor returns
+        //
+        wstring largeAsciiString(10000, L'A');
+
+        // Build Unicode pattern string: "你好世界€" repeated 1000 times = 5000 characters
+        //
+        wstring unicodePattern = L"你好世界€";
+        wstring largeUnicodeString;
+        largeUnicodeString.reserve(5000);
+        for (int i = 0; i < 1000; i++)
+        {
+            largeUnicodeString += unicodePattern;
+        }
+
+        vector<const wchar_t*> expectedParamValues = {
+            largeAsciiString.c_str(),
+            largeUnicodeString.c_str(),
+            nullptr };
+
+        // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
+        //
+        vector<SQLINTEGER> expectedStrLenOrInd = {
+            static_cast<SQLINTEGER>(largeAsciiString.length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(largeUnicodeString.length() * sizeof(wchar_t)),
+            SQL_NULL_DATA };
+
+        GetWStringOutputParam(
+            expectedParamValues,
+            expectedStrLenOrInd);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetWStringUnicodeOutputParamTest
+    //
+    // Description:
+    // Test Unicode variety: emojis, accented characters, mixed scripts, and special symbols.
+    //
+    TEST_F(CSharpExtensionApiTests, GetWStringUnicodeOutputParamTest)
+    {
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorWStringUnicodeParam";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
+
+        // Initialize with a Session that executes the above script
+        // that sets Unicode output parameters.
+        //
+        InitializeSession(
+            0,   // parametersNumber
+            4,   // inputSchemaColumnsNumber
+            scriptString);
+
+        // All NVARCHAR with sizes large enough to hold the test strings
+        //
+        vector<bool> isFixedType = { false, false, false, false };
+        vector<SQLINTEGER> paramSizes = { 20, 20, 20, 20 };
+
+        for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
+        {
+            InitWStringParameter(
+                paramNumber,
+                L"",            // paramValue - empty, will be set by executor
+                paramSizes[paramNumber],
+                isFixedType[paramNumber],
+                SQL_PARAM_INPUT_OUTPUT);
+        }
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+        // Build expected values to match what the C# executor returns
+        // Note: Emoji are surrogate pairs in UTF-16, so 😀 = 2 wchar_t, 👍 = 2 wchar_t
+        //
+        const vector<wstring> ExpectedParamValueStrings = {
+            L"Hi\U0001F600\U0001F44D",       // "Hi" + grinning face + thumbs up (6 UTF-16 code units)
+            L"Café résumé naïve",            // Accented characters (17 chars)
+            L"Hello世界こんにちは",            // Mixed scripts (12 chars)
+            L"€100 £50 ¥1000 ©®™"            // Currency and special symbols (18 chars)
+        };
+
+        vector<const wchar_t*> expectedParamValues = {
+            ExpectedParamValueStrings[0].c_str(),
+            ExpectedParamValueStrings[1].c_str(),
+            ExpectedParamValueStrings[2].c_str(),
+            ExpectedParamValueStrings[3].c_str() };
+
+        // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
+        //
+        vector<SQLINTEGER> expectedStrLenOrInd = {
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length() * sizeof(wchar_t)) };
+
+        GetWStringOutputParam(
+            expectedParamValues,
+            expectedStrLenOrInd);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: CSharpExtensionApiTest::GetOutputParam
     //
     // Description:
@@ -589,6 +838,55 @@ namespace ExtensionApiTest
                     strLen_or_Ind);
                 string expectedParamValueString(expectedParamValues[paramNumber],
                     expectedStrLenOrInd[paramNumber]);
+
+                EXPECT_EQ(paramValueString, expectedParamValueString);
+            }
+            else
+            {
+                EXPECT_EQ(paramValue, nullptr);
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::GetWStringOutputParam
+    //
+    // Description:
+    // Get and test Unicode string output param value and strLenOrInd is as expected.
+    //
+    void CSharpExtensionApiTests::GetWStringOutputParam(
+        vector<const wchar_t*> expectedParamValues,
+        vector<SQLINTEGER>     expectedStrLenOrInd)
+    {
+        ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
+
+        for (size_t paramNumber = 0; paramNumber < expectedParamValues.size(); ++paramNumber)
+        {
+            SQLPOINTER paramValue = nullptr;
+            SQLINTEGER strLen_or_Ind = 0;
+            SQLRETURN result = SQL_ERROR;
+
+            result = (*sm_getOutputParamFuncPtr)(
+                *m_sessionId,
+                m_taskId,
+                paramNumber,
+                &paramValue,
+                &strLen_or_Ind);
+            ASSERT_EQ(result, SQL_SUCCESS);
+
+            EXPECT_EQ(strLen_or_Ind, expectedStrLenOrInd[paramNumber]);
+
+            if (expectedParamValues[paramNumber] != nullptr)
+            {
+                EXPECT_NE(paramValue, nullptr);
+
+                // strLen_or_Ind is in bytes, divide by sizeof(wchar_t) to get character count
+                //
+                SQLINTEGER charCount = strLen_or_Ind / sizeof(wchar_t);
+                wstring paramValueString(static_cast<wchar_t*>(paramValue), charCount);
+
+                SQLINTEGER expectedCharCount = expectedStrLenOrInd[paramNumber] / sizeof(wchar_t);
+                wstring expectedParamValueString(expectedParamValues[paramNumber], expectedCharCount);
 
                 EXPECT_EQ(paramValueString, expectedParamValueString);
             }
