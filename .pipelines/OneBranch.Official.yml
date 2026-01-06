@@ -601,9 +601,11 @@ extends:
           - task: CmdLine@2
             displayName: 'Test DotNetCore CSharp Extension'
             inputs:
-              script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\test\build\windows\run-dotnet-core-CSharp-extension-test.cmd debug release | exit /b 0
+              script: $(Build.SourcesDirectory)\sql-server-language-extensions\language-extensions\dotnet-core-CSharp\test\build\windows\run-dotnet-core-CSharp-extension-test.cmd debug release
               workingDirectory: '$(Build.SourcesDirectory)'
               failOnStderr: false
+            env:
+              DOTNET_ROOT: $(Build.SourcesDirectory)\sql-server-language-extensions\build-output
 
           - task: PublishTestResults@2
             displayName: 'All Tests'
