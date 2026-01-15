@@ -10,13 +10,26 @@
 //*********************************************************************
 #pragma once
 
+#if defined(_WIN32) || defined(WINDOWS)
 #include "Windows.h"
+#else
+#define E_FAIL -1
+#define S_OK 0
+#endif
+
 #include <string>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
+#if defined(_WIN32) || defined(WINDOWS)
 #define STR(s) L ## s
 #define CH(c) L ## c
+#define PATH_SEPARATOR CH('\\')
+#else
+#define STR(s) s
+#define CH(c) c
+#define PATH_SEPARATOR CH('/')
+#endif
 
 using namespace std;
 using string_t = std::basic_string<char_t>;
@@ -46,10 +59,14 @@ public:
         // Load managed assembly and get function pointer to a managed method
         //
         const string_t ManagedExtensionName = STR("Microsoft.SqlServer.CSharpExtension");
-        const string_t ManagedExtensionPath = m_root_path + STR("\\") + ManagedExtensionName + STR(".dll");
+        const string_t ManagedExtensionPath = m_root_path + PATH_SEPARATOR + ManagedExtensionName + STR(".dll");
         const string_t ManagedExtensionType = ManagedExtensionName + STR(".CSharpExtension, ") + ManagedExtensionName;
+#if defined(_WIN32) || defined(WINDOWS)
         const string_t ManagedExtensionMethod = to_utf16_str(method_name);
-        const string_t DelegateTypeName = ManagedExtensionName + STR(".CSharpExtension+") + to_utf16_str(method_name) + STR("Delegate, ") + ManagedExtensionName;
+#else
+        const string_t ManagedExtensionMethod = method_name;
+#endif
+        const string_t DelegateTypeName = ManagedExtensionName + STR(".CSharpExtension+") + ManagedExtensionMethod + STR("Delegate, ") + ManagedExtensionName;
         int rc = m_load_assembly_and_get_function_pointer(
             ManagedExtensionPath.c_str(),
             ManagedExtensionType.c_str(),
