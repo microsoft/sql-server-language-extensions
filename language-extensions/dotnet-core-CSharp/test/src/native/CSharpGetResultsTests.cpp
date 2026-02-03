@@ -296,8 +296,8 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Test GetResults with default script expecting an OutputDataSet of NVarChar/NChar columns.
-    //  Input is provided as UTF-16 (SQL_C_WCHAR), output is verified as UTF-8 (SQL_C_CHAR)
-    //  since the C# extension always outputs strings as varchar.
+    //  Input is provided as UTF-16 (SQL_C_WCHAR), and output preserves the type as UTF-16
+    //  since the C# extension now preserves input column types.
     //
     TEST_F(CSharpExtensionApiTests, GetWStringResultsTest)
     {
@@ -317,7 +317,7 @@ namespace ExtensionApiTest
         string wstringColumn3Name = "WStringColumn3";
         InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
 
-        // Test data with Unicode characters: basic Latin, accented, CJK, Cyrillic
+        // Test data with simple ASCII characters
         //
         vector<const wchar_t*> wstringCol1{ L"Hello", L"test", L"data", L"World", L"ABC" };
         vector<const wchar_t*> wstringCol2{ L"", 0, nullptr, L"verify", L"123" };
@@ -362,41 +362,19 @@ namespace ExtensionApiTest
             strLen_or_Ind.data(),
             columnNames);
 
-        // The C# extension outputs UTF-8 for all string types,
-        // so we construct expected output as UTF-8 strings with appropriate byte lengths.
+        // The C# extension now preserves input column types,
+        // so output is also UTF-16 (SQL_C_WCHAR) with byte lengths.
         //
-        vector<const char*> stringCol1{ "Hello", "test", "data", "World", "ABC" };
-        vector<const char*> stringCol2{ "", 0, nullptr, "verify", "123" };
+        vector<SQLINTEGER*> expectedStrLen_or_Ind{ strLenOrIndCol1.data(),
+            strLenOrIndCol2.data(), strLenOrIndCol3.data() };
 
-        vector<SQLINTEGER> expectedStrLenOrIndCol1 =
-        { static_cast<SQLINTEGER>(strlen(stringCol1[0])),
-          static_cast<SQLINTEGER>(strlen(stringCol1[1])),
-          static_cast<SQLINTEGER>(strlen(stringCol1[2])),
-          static_cast<SQLINTEGER>(strlen(stringCol1[3])),
-          static_cast<SQLINTEGER>(strlen(stringCol1[4])) };
-        vector<SQLINTEGER> expectedStrLenOrIndCol2 =
-        { 0, SQL_NULL_DATA, SQL_NULL_DATA,
-          static_cast<SQLINTEGER>(strlen(stringCol2[3])),
-          static_cast<SQLINTEGER>(strlen(stringCol2[4])) };
-
-        vector<SQLINTEGER*> expectedStrLen_or_Ind{ expectedStrLenOrIndCol1.data(),
-            expectedStrLenOrIndCol2.data(), strLenOrIndCol3.data() };
-
-        // Coalesce the expected UTF-8 output data
-        //
-        vector<char> stringCol1Data =
-            GenerateContiguousData<char>(stringCol1, expectedStrLenOrIndCol1.data());
-
-        vector<char> stringCol2Data =
-            GenerateContiguousData<char>(stringCol2, expectedStrLenOrIndCol2.data());
-
-        void* expectedDataSet[] = { stringCol1Data.data(),
-                                    stringCol2Data.data(),
+        void* expectedDataSet[] = { wstringCol1Data.data(),
+                                    wstringCol2Data.data(),
                                     nullptr };
 
-        // Verify output is UTF-8 encoded
+        // Verify output is UTF-16 encoded (same as input)
         //
-        GetStringResults(
+        GetWStringResults(
             rowsNumber,
             expectedDataSet,
             expectedStrLen_or_Ind.data(),
@@ -586,6 +564,99 @@ namespace ExtensionApiTest
                     }
 
                     cumulativeLength += expectedColumnStrLenOrInd[index];
+                }
+            }
+            else
+            {
+                EXPECT_EQ(columnStrLenOrInd[index], SQL_NULL_DATA);
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::GetWStringResults
+    //
+    // Description:
+    //  Test GetResults to verify the expected results are obtained for wide character data (UTF-16).
+    //
+    void CSharpExtensionApiTests::GetWStringResults(
+        SQLULEN        expectedRowsNumber,
+        SQLPOINTER     *expectedData,
+        SQLINTEGER     **expectedStrLen_or_Ind,
+        vector<string> columnNames)
+    {
+        SQLULEN    rowsNumber = 0;
+        SQLPOINTER *data = nullptr;
+        SQLINTEGER **strLen_or_Ind = nullptr;
+        SQLRETURN result = (*sm_getResultsFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            &rowsNumber,
+            &data,
+            &strLen_or_Ind);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(rowsNumber, expectedRowsNumber);
+
+        for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+        {
+            wchar_t *expectedColumnData = static_cast<wchar_t *>(expectedData[columnNumber]);
+            wchar_t *columnData = static_cast<wchar_t *>(data[columnNumber]);
+
+            SQLINTEGER *expectedColumnStrLenOrInd = expectedStrLen_or_Ind[columnNumber];
+            SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
+
+            CheckWStringDataEquality(
+                rowsNumber,
+                expectedColumnData,
+                columnData,
+                expectedColumnStrLenOrInd,
+                columnStrLenOrInd);
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::CheckWStringDataEquality
+    //
+    // Description:
+    //  Compare the given wide character data & nullMap with rowsNumber for equality.
+    //
+    void CSharpExtensionApiTests::CheckWStringDataEquality(
+        SQLULEN    rowsNumber,
+        wchar_t    *expectedColumnData,
+        wchar_t    *columnData,
+        SQLINTEGER *expectedColumnStrLenOrInd,
+        SQLINTEGER *columnStrLenOrInd)
+    {
+        SQLINTEGER cumulativeByteLength = 0;
+        if (rowsNumber == 0)
+        {
+            EXPECT_EQ(columnData, nullptr);
+            EXPECT_EQ(columnStrLenOrInd, nullptr);
+        }
+
+        for (SQLULEN index = 0; index < rowsNumber; ++index)
+        {
+            if (expectedColumnStrLenOrInd != nullptr)
+            {
+                EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
+
+                if (columnStrLenOrInd[index] != SQL_NULL_DATA)
+                {
+                    // Convert byte length to character count for wchar_t comparison
+                    //
+                    SQLINTEGER charCount = columnStrLenOrInd[index] / sizeof(wchar_t);
+                    SQLINTEGER charOffset = cumulativeByteLength / sizeof(wchar_t);
+
+                    // Compare the two wide strings character by character
+                    //
+                    for (SQLINTEGER charIndex = 0; charIndex < charCount; ++charIndex)
+                    {
+                        EXPECT_EQ((expectedColumnData + charOffset)[charIndex],
+                            (columnData + charOffset)[charIndex]);
+                    }
+
+                    cumulativeByteLength += expectedColumnStrLenOrInd[index];
                 }
             }
             else

@@ -373,8 +373,8 @@ namespace ExtensionApiTest
     // Description:
     //  Test GetResultColumn with an InputDataSet of nvarchar/nchar (Unicode) columns.
     //  Tests nullptr, empty strings, and basic Unicode characters.
-    //  Note: Output columns are returned as SQL_C_CHAR (UTF-8 encoded) regardless
-    //  of input type, since .NET strings are always output as varchar.
+    //  Output columns preserve the input type (SQL_C_WCHAR/UTF-16) when the column
+    //  name matches an input column.
     //
     TEST_F(CSharpExtensionApiTests, GetWStringResultColumnsTest)
     {
@@ -392,8 +392,7 @@ namespace ExtensionApiTest
         string wstringColumn3Name = "WStringColumn3";
         InitializeColumn(2, wstringColumn3Name, SQL_C_WCHAR, m_CharSize);
 
-        // Use simple ASCII strings to make UTF-8 size calculation straightforward.
-        // For ASCII characters, UTF-8 byte length == character count.
+        // Use simple ASCII strings to make size calculation straightforward.
         //
         vector<const wchar_t*> wstringCol1{ L"Hello", L"test", L"data", L"World", L"abc" };
         vector<const wchar_t*> wstringCol2{ L"", nullptr, nullptr, L"verify", L"-1" };
@@ -435,34 +434,32 @@ namespace ExtensionApiTest
             strLen_or_Ind.data(),
             columnNames);
 
-        // C# outputs all string columns as SQL_C_CHAR (UTF-8).
-        // For ASCII strings, UTF-8 byte length == character count.
-        // We divide by sizeof(wchar_t) to get character count from UTF-16 byte length.
+        // C# now preserves input column types - nvarchar input produces nvarchar output.
+        // Column size for SQL_C_WCHAR is the max character count (byte length / sizeof(wchar_t)).
         //
         SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber) / sizeof(wchar_t);
         SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber) / sizeof(wchar_t);
 
-        // Output is SQL_C_CHAR (UTF-8), column size is max UTF-8 byte length
-        // For ASCII strings, this equals the character count
+        // Output is SQL_C_WCHAR (UTF-16), column size is max character count
         //
         GetResultColumn(
             0,                                           // columnNumber
-            SQL_C_CHAR,                                  // dataType (UTF-8 output)
-            maxCol1Len,                                  // columnSize
+            SQL_C_WCHAR,                                 // dataType (UTF-16 output, preserved from input)
+            maxCol1Len,                                  // columnSize (character count)
             0,                                           // decimalDigits
             SQL_NO_NULLS);                               // nullable
 
         GetResultColumn(
             1,                                           // columnNumber
-            SQL_C_CHAR,                                  // dataType (UTF-8 output)
-            maxCol2Len,                                  // columnSize
+            SQL_C_WCHAR,                                 // dataType (UTF-16 output, preserved from input)
+            maxCol2Len,                                  // columnSize (character count)
             0,                                           // decimalDigits
             SQL_NULLABLE);                               // nullable
 
         GetResultColumn(
             2,                                           // columnNumber
-            SQL_C_CHAR,                                  // dataType (UTF-8 output)
-            sizeof(SQLCHAR),                             // columnSize (1 for null column)
+            SQL_C_WCHAR,                                 // dataType (UTF-16 output, preserved from input)
+            sizeof(wchar_t) / sizeof(wchar_t),           // columnSize (1 character for null column)
             0,                                           // decimalDigits
             SQL_NULLABLE);                               // nullable
     }

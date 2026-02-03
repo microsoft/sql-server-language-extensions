@@ -41,6 +41,100 @@ namespace Microsoft.SqlServer.CSharpExtension
         private IntPtr[] _dataPtrs;
 
         /// <summary>
+        /// Input column metadata dictionary, used to preserve SQL types for output columns.
+        /// Key is column name, value is the SQL data type from the input.
+        /// </summary>
+        private Dictionary<string, SqlDataType> _inputColumnTypes;
+
+        /// <summary>
+        /// Explicit output column types specified by the user via AbstractSqlServerExtensionExecutor.OutputColumnTypes.
+        /// Key is column name (case-insensitive), value is the SQL type (e.g., SqlTypes.NVARCHAR).
+        /// </summary>
+        private Dictionary<string, int> _explicitOutputColumnTypes;
+
+        /// <summary>
+        /// Sets the input column metadata to enable type preservation for output columns.
+        /// When an output column has the same name as an input column, the input's SQL type
+        /// (e.g., DotNetWChar for nvarchar) will be used instead of the default mapping.
+        /// </summary>
+        /// <param name="inputColumns">Dictionary of input column metadata keyed by column number.</param>
+        public void SetInputColumnMetadata(Dictionary<ushort, CSharpColumn> inputColumns)
+        {
+            Logging.Trace("CSharpOutputDataSet::SetInputColumnMetadata");
+            _inputColumnTypes = new Dictionary<string, SqlDataType>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kvp in inputColumns)
+            {
+                _inputColumnTypes[kvp.Value.Name] = kvp.Value.DataType;
+                Logging.Trace($"  Input column '{kvp.Value.Name}' has type {kvp.Value.DataType}");
+            }
+        }
+
+        /// <summary>
+        /// Sets explicit output column types specified by the user.
+        /// These take priority over input column type preservation.
+        /// </summary>
+        /// <param name="outputColumnTypes">Dictionary from AbstractSqlServerExtensionExecutor.OutputColumnTypes</param>
+        public void SetExplicitOutputColumnTypes(Dictionary<string, int> outputColumnTypes)
+        {
+            Logging.Trace("CSharpOutputDataSet::SetExplicitOutputColumnTypes");
+            _explicitOutputColumnTypes = outputColumnTypes;
+            if (outputColumnTypes != null)
+            {
+                foreach (var kvp in outputColumnTypes)
+                {
+                    Logging.Trace($"  Explicit output column '{kvp.Key}' has type {kvp.Value}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines the SQL data type for a string column.
+        /// Priority: 1) Explicit user-specified type, 2) Input column type preservation, 3) Default to UTF-8.
+        /// </summary>
+        private SqlDataType GetStringColumnType(string columnName)
+        {
+            // Priority 1: Check if user explicitly specified the output type via OutputColumnTypes
+            //
+            if (_explicitOutputColumnTypes != null &&
+                _explicitOutputColumnTypes.TryGetValue(columnName, out int explicitType))
+            {
+                // Map SqlTypes constants to SqlDataType
+                // SqlTypes.NVARCHAR = -9, SqlTypes.NCHAR = -15 -> DotNetWChar (UTF-16)
+                // SqlTypes.VARCHAR = 12, SqlTypes.CHAR = 1 -> DotNetChar (UTF-8)
+                //
+                if (explicitType == SDK.SqlTypes.NVARCHAR || explicitType == SDK.SqlTypes.NCHAR)
+                {
+                    Logging.Trace($"GetStringColumnType: Column '{columnName}' using explicit type NVARCHAR/NCHAR -> DotNetWChar");
+                    return SqlDataType.DotNetWChar;
+                }
+                else if (explicitType == SDK.SqlTypes.VARCHAR || explicitType == SDK.SqlTypes.CHAR)
+                {
+                    Logging.Trace($"GetStringColumnType: Column '{columnName}' using explicit type VARCHAR/CHAR -> DotNetChar");
+                    return SqlDataType.DotNetChar;
+                }
+            }
+
+            // Priority 2: Check if this column name matches an input column
+            //
+            if (_inputColumnTypes != null && 
+                _inputColumnTypes.TryGetValue(columnName, out SqlDataType inputType))
+            {
+                // If input was a string type, preserve it
+                //
+                if (inputType == SqlDataType.DotNetChar || inputType == SqlDataType.DotNetWChar)
+                {
+                    Logging.Trace($"GetStringColumnType: Column '{columnName}' preserving input type {inputType}");
+                    return inputType;
+                }
+            }
+
+            // Priority 3: Default to UTF-8 (varchar) for new string columns
+            //
+            Logging.Trace($"GetStringColumnType: Column '{columnName}' using default DotNetChar");
+            return SqlDataType.DotNetChar;
+        }
+
+        /// <summary>
         /// This method extracts metadata and actual data for each column supplied
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
@@ -55,9 +149,17 @@ namespace Microsoft.SqlServer.CSharpExtension
                 DataFrameColumn column = dataFrame.Columns[columnNumber];
 
                 // Determine the SQL data type for this column.
-                // All .NET strings are output as DotNetChar (varchar/UTF-8).
+                // For string columns, check if we should preserve the input column's type.
                 //
-                SqlDataType dataType = DataTypeMap[column.DataType];
+                SqlDataType dataType;
+                if (column.DataType == typeof(string))
+                {
+                    dataType = GetStringColumnType(column.Name);
+                }
+                else
+                {
+                    dataType = DataTypeMap[column.DataType];
+                }
                 ulong columnSize = (ulong)DataTypeSize[dataType];
 
                 // Add column metadata to a CSharpColumn dictionary
@@ -88,7 +190,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         )
         {
             Logging.Trace("CSharpOutputDataSet::RetrieveColumns");
-            
+
             // Pin the pointer arrays and get their addresses
             //
             GCHandle dataHandle = GCHandle.Alloc(_dataPtrs, GCHandleType.Pinned);
@@ -191,7 +293,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                     //
                     int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
                     int maxCharCount = maxUnicodeByteLen / sizeof(char);
-                    _columns[columnNumber].Size = (ulong)Math.Max(maxCharCount, MinUtf16CharSize);
+
+                    // Minimum column size is 1 character (not MinUtf16CharSize which is 2 bytes)
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxCharCount, 1);
 
                     SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
                     break;
@@ -330,10 +434,10 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             int[] colMap = new int[column.Length];
-            
+
             SqlDataType dataType = _columns[columnNumber].DataType;
             Logging.Trace($"GetStrLenNullMap: Column {columnNumber}, DataType={dataType}, RowCount={column.Length}");
-            
+
             for(int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
                 if(column[rowNumber] != null)

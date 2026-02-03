@@ -76,17 +76,19 @@ namespace Microsoft.SqlServer.CSharpExtension
             string privatePath,
             string userLibName)
         {
-            List<string>dllList = new List<string>();
-            if(string.IsNullOrEmpty(userLibName))
+            List<string> dllList = new List<string>();
+            if (string.IsNullOrEmpty(userLibName))
             {
+                // Only search for .dll files to avoid trying to load non-.NET files
+                // like .vcxproj, .exe, .pdb, etc.
                 if (!string.IsNullOrEmpty(privatePath))
                 {
-                    dllList.AddRange(Directory.GetFiles(privatePath));
+                    dllList.AddRange(Directory.GetFiles(privatePath, "*.dll"));
                 }
 
                 if (!string.IsNullOrEmpty(publicPath))
                 {
-                    dllList.AddRange(Directory.GetFiles(publicPath));
+                    dllList.AddRange(Directory.GetFiles(publicPath, "*.dll"));
                 }
             }
             else

@@ -1,4 +1,4 @@
-﻿//*********************************************************************
+//*********************************************************************
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
@@ -193,6 +193,16 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 _outputDataSet.ColumnsNumber = (ushort)_outputDataSet.CSharpDataFrame.Columns.Count;
 
+                // Pass explicit output column types from user executor (e.g., SqlTypes.NVARCHAR)
+                //
+                if (_userDll.UserExecutor != null && _userDll.UserExecutor.OutputColumnTypes.Count > 0)
+                {
+                    _outputDataSet.SetExplicitOutputColumnTypes(_userDll.UserExecutor.OutputColumnTypes);
+                }
+
+                // Pass input column metadata to preserve SQL types (e.g., nvarchar) for output columns
+                //
+                _outputDataSet.SetInputColumnMetadata(_inputDataSet.Columns);
                 _outputDataSet.ExtractColumns(_outputDataSet.CSharpDataFrame);
                 *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
             }

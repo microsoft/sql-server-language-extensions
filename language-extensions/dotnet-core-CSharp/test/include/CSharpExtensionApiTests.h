@@ -295,12 +295,29 @@ namespace ExtensionApiTest
             SQLINTEGER               **expectedStrLen_or_Ind,
             std::vector<std::string> columnNames);
 
+        // Test GetResults to verify the expected wide string (UTF-16) results are obtained.
+        //
+        void GetWStringResults(
+            SQLULEN                  expectedRowsNumber,
+            SQLPOINTER               *expectedData,
+            SQLINTEGER               **expectedStrLen_or_Ind,
+            std::vector<std::string> columnNames);
+
         // Compare the given string column data and nullMap for equality.
         //
         void CheckStringDataEquality(
             SQLULEN    rowsNumber,
             char       *expectedColumnData,
             char       *columnData,
+            SQLINTEGER *expectedColumnStrLenOrInd,
+            SQLINTEGER *columnStrLenOrInd);
+
+        // Compare the given wide string column data and nullMap for equality.
+        //
+        void CheckWStringDataEquality(
+            SQLULEN    rowsNumber,
+            wchar_t    *expectedColumnData,
+            wchar_t    *columnData,
             SQLINTEGER *expectedColumnStrLenOrInd,
             SQLINTEGER *columnStrLenOrInd);
 
