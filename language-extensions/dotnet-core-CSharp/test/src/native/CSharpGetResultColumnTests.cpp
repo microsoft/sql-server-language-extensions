@@ -465,6 +465,303 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetVarcharToNvarcharResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn when executor explicitly converts VARCHAR input to NVARCHAR output
+    //  using OutputColumnTypes. Input is UTF-8 (SQL_C_CHAR), output should be UTF-16 (SQL_C_WCHAR).
+    //
+    TEST_F(CSharpExtensionApiTests, GetVarcharToNvarcharResultColumnsTest)
+    {
+        // Use the executor that explicitly sets OutputColumnTypes to NVARCHAR
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorVarcharToNvarchar";
+
+        InitializeSession(
+            2, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            userClassFullName);
+
+        // Input is VARCHAR (UTF-8)
+        string stringColumn1Name = "StringColumn1";
+        InitializeColumn(0, stringColumn1Name, SQL_C_CHAR, m_CharSize);
+
+        string stringColumn2Name = "StringColumn2";
+        InitializeColumn(1, stringColumn2Name, SQL_C_CHAR, m_CharSize);
+
+        vector<const char*> stringCol1{ "Hello", "World", "Test" };
+        vector<const char*> stringCol2{ "Data", nullptr, "Value" };
+
+        int rowsNumber = stringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(strlen(stringCol1[0])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[1])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[2])) };
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { static_cast<SQLINTEGER>(strlen(stringCol2[0])),
+          SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(strlen(stringCol2[2])) };
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), strLenOrIndCol2.data() };
+
+        vector<char> stringCol1Data = GenerateContiguousData<char>(stringCol1, strLenOrIndCol1.data());
+        vector<char> stringCol2Data = GenerateContiguousData<char>(stringCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { stringCol1Data.data(), stringCol2Data.data() };
+        vector<string> columnNames{ stringColumn1Name, stringColumn2Name };
+
+        Execute<SQLCHAR, SQL_C_CHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // Output should be NVARCHAR (SQL_C_WCHAR) because executor sets OutputColumnTypes
+        // Column size is max character count for SQL_C_WCHAR
+        SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+        SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+
+        GetResultColumn(
+            0,                 // columnNumber
+            SQL_C_WCHAR,       // dataType (explicitly converted to NVARCHAR/UTF-16)
+            maxCol1Len,        // columnSize (character count, same as byte length for ASCII)
+            0,                 // decimalDigits
+            SQL_NO_NULLS);     // nullable
+
+        GetResultColumn(
+            1,                 // columnNumber
+            SQL_C_WCHAR,       // dataType (explicitly converted to NVARCHAR/UTF-16)
+            maxCol2Len,        // columnSize (character count)
+            0,                 // decimalDigits
+            SQL_NULLABLE);     // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetNvarcharToVarcharResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn when executor explicitly converts NVARCHAR input to VARCHAR output
+    //  using OutputColumnTypes. Input is UTF-16 (SQL_C_WCHAR), output should be UTF-8 (SQL_C_CHAR).
+    //
+    TEST_F(CSharpExtensionApiTests, GetNvarcharToVarcharResultColumnsTest)
+    {
+        // Use the executor that explicitly sets OutputColumnTypes to VARCHAR
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorNvarcharToVarchar";
+
+        InitializeSession(
+            2, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            userClassFullName);
+
+        // Input is NVARCHAR (UTF-16)
+        string wstringColumn1Name = "WStringColumn1";
+        InitializeColumn(0, wstringColumn1Name, SQL_C_WCHAR, m_CharSize);
+
+        string wstringColumn2Name = "WStringColumn2";
+        InitializeColumn(1, wstringColumn2Name, SQL_C_WCHAR, m_CharSize);
+
+        vector<const wchar_t*> wstringCol1{ L"Hello", L"World", L"Test" };
+        vector<const wchar_t*> wstringCol2{ L"Data", nullptr, L"Value" };
+
+        int rowsNumber = wstringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)) };
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+          SQL_NULL_DATA,
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)) };
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), strLenOrIndCol2.data() };
+
+        vector<wchar_t> wstringCol1Data = GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+        vector<wchar_t> wstringCol2Data = GenerateContiguousData<wchar_t>(wstringCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { wstringCol1Data.data(), wstringCol2Data.data() };
+        vector<string> columnNames{ wstringColumn1Name, wstringColumn2Name };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // Output should be VARCHAR (SQL_C_CHAR) because executor sets OutputColumnTypes
+        // For ASCII text, character count = byte length
+        SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber) / sizeof(wchar_t);
+        SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber) / sizeof(wchar_t);
+
+        GetResultColumn(
+            0,                 // columnNumber
+            SQL_C_CHAR,        // dataType (explicitly converted to VARCHAR/UTF-8)
+            maxCol1Len,        // columnSize (byte length = char count for ASCII)
+            0,                 // decimalDigits
+            SQL_NO_NULLS);     // nullable
+
+        GetResultColumn(
+            1,                 // columnNumber
+            SQL_C_CHAR,        // dataType (explicitly converted to VARCHAR/UTF-8)
+            maxCol2Len,        // columnSize (byte length = char count for ASCII)
+            0,                 // decimalDigits
+            SQL_NULLABLE);     // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetMixedStringTypesResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn when executor explicitly sets mixed output types:
+    //  first column as NVARCHAR, second column as VARCHAR.
+    //
+    TEST_F(CSharpExtensionApiTests, GetMixedStringTypesResultColumnsTest)
+    {
+        // Use the executor that alternates NVARCHAR/VARCHAR for string columns
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorMixedStringTypes";
+
+        InitializeSession(
+            2, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            userClassFullName);
+
+        // Input columns - both VARCHAR for this test
+        string stringColumn1Name = "StringColumn1";
+        InitializeColumn(0, stringColumn1Name, SQL_C_CHAR, m_CharSize);
+
+        string stringColumn2Name = "StringColumn2";
+        InitializeColumn(1, stringColumn2Name, SQL_C_CHAR, m_CharSize);
+
+        vector<const char*> stringCol1{ "Hello", "World" };
+        vector<const char*> stringCol2{ "Data", "Value" };
+
+        int rowsNumber = stringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(strlen(stringCol1[0])),
+          static_cast<SQLINTEGER>(strlen(stringCol1[1])) };
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { static_cast<SQLINTEGER>(strlen(stringCol2[0])),
+          static_cast<SQLINTEGER>(strlen(stringCol2[1])) };
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), strLenOrIndCol2.data() };
+
+        vector<char> stringCol1Data = GenerateContiguousData<char>(stringCol1, strLenOrIndCol1.data());
+        vector<char> stringCol2Data = GenerateContiguousData<char>(stringCol2, strLenOrIndCol2.data());
+
+        void* dataSet[] = { stringCol1Data.data(), stringCol2Data.data() };
+        vector<string> columnNames{ stringColumn1Name, stringColumn2Name };
+
+        Execute<SQLCHAR, SQL_C_CHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
+        SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
+
+        // First column should be NVARCHAR (index 0 % 2 == 0)
+        GetResultColumn(
+            0,                 // columnNumber
+            SQL_C_WCHAR,       // dataType (NVARCHAR for first string column)
+            maxCol1Len,        // columnSize (character count)
+            0,                 // decimalDigits
+            SQL_NO_NULLS);     // nullable
+
+        // Second column should be VARCHAR (index 1 % 2 == 1)
+        GetResultColumn(
+            1,                 // columnNumber
+            SQL_C_CHAR,        // dataType (VARCHAR for second string column)
+            maxCol2Len,        // columnSize (byte length = char count for ASCII)
+            0,                 // decimalDigits
+            SQL_NO_NULLS);     // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetPrimitiveDatasetNvarcharResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn when executor uses PrimitiveDataset with explicit NVARCHAR column.
+    //  Output schema is defined by PrimitiveDataset, not input schema.
+    //
+    TEST_F(CSharpExtensionApiTests, GetPrimitiveDatasetNvarcharResultColumnsTest)
+    {
+        // Use the executor that creates output via PrimitiveDataset with NVARCHAR
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorPrimitiveDatasetNvarchar";
+
+        InitializeSession(
+            0, // inputSchemaColumnsNumber (no input columns needed)
+            0, // parametersNumber
+            userClassFullName);
+
+        // No input data - just execute
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // data
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+        EXPECT_EQ(outputSchemaColumnsNumber, 1);
+
+        // The executor creates: "UnicodeOutput" column with NVARCHAR type
+        // Data: { "Hello世界", "Café", "日本語", null, "Test" }
+        // "Hello世界" = 7 characters (longest non-null)
+        GetResultColumn(
+            0,                 // columnNumber
+            SQL_C_WCHAR,       // dataType (NVARCHAR from PrimitiveDataset)
+            7,                 // columnSize (max character count: "Hello世界" = 7 chars)
+            0,                 // decimalDigits
+            SQL_NULLABLE);     // nullable (has null value)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetPrimitiveDatasetVarcharResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn when executor uses PrimitiveDataset with explicit VARCHAR column.
+    //  Output schema is defined by PrimitiveDataset, not input schema.
+    //
+    TEST_F(CSharpExtensionApiTests, GetPrimitiveDatasetVarcharResultColumnsTest)
+    {
+        // Use the executor that creates output via PrimitiveDataset with VARCHAR
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorPrimitiveDatasetVarchar";
+
+        InitializeSession(
+            0, // inputSchemaColumnsNumber (no input columns needed)
+            0, // parametersNumber
+            userClassFullName);
+
+        // No input data - just execute
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // data
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+        EXPECT_EQ(outputSchemaColumnsNumber, 1);
+
+        // The executor creates: "AsciiOutput" column with VARCHAR type
+        // Data: { "Hello", "World", "Test", null, "Data" }
+        // "Hello" and "World" = 5 bytes (longest non-null)
+        GetResultColumn(
+            0,                 // columnNumber
+            SQL_C_CHAR,        // dataType (VARCHAR from PrimitiveDataset)
+            5,                 // columnSize (max byte count: "Hello" or "World" = 5 bytes)
+            0,                 // decimalDigits
+            SQL_NULLABLE);     // nullable (has null value)
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: GetResultColumn
     //
     // Description:

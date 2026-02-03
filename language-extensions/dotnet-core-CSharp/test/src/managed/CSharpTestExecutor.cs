@@ -187,4 +187,140 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             return null;
         }
     }
+
+    /// <summary>
+    /// Test executor that explicitly converts VARCHAR input to NVARCHAR output
+    /// using OutputColumnTypes. Input is UTF-8, output should be UTF-16.
+    /// </summary>
+    public class CSharpTestExecutorVarcharToNvarchar : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+
+            // Explicitly request NVARCHAR (UTF-16) output for string columns
+            // even though input was VARCHAR (UTF-8)
+            foreach (DataFrameColumn column in input.Columns)
+            {
+                if (column.DataType == typeof(string))
+                {
+                    OutputColumnTypes[column.Name] = SqlTypes.NVARCHAR;
+                }
+            }
+
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that explicitly converts NVARCHAR input to VARCHAR output
+    /// using OutputColumnTypes. Input is UTF-16, output should be UTF-8.
+    /// </summary>
+    public class CSharpTestExecutorNvarcharToVarchar : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+
+            // Explicitly request VARCHAR (UTF-8) output for string columns
+            // even though input was NVARCHAR (UTF-16)
+            foreach (DataFrameColumn column in input.Columns)
+            {
+                if (column.DataType == typeof(string))
+                {
+                    OutputColumnTypes[column.Name] = SqlTypes.VARCHAR;
+                }
+            }
+
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that outputs mixed types: some columns as NVARCHAR, some as VARCHAR.
+    /// First column is NVARCHAR, second column is VARCHAR.
+    /// </summary>
+    public class CSharpTestExecutorMixedStringTypes : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+
+            int columnIndex = 0;
+            foreach (DataFrameColumn column in input.Columns)
+            {
+                if (column.DataType == typeof(string))
+                {
+                    // Alternate: first string column = NVARCHAR, second = VARCHAR
+                    OutputColumnTypes[column.Name] = (columnIndex % 2 == 0)
+                        ? SqlTypes.NVARCHAR
+                        : SqlTypes.VARCHAR;
+                    columnIndex++;
+                }
+            }
+
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that uses PrimitiveDataset with explicit NVARCHAR column types.
+    /// Creates new output columns not in input schema.
+    /// </summary>
+    public class CSharpTestExecutorPrimitiveDatasetNvarchar : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            PrimitiveDataset output = new PrimitiveDataset();
+
+            // Add column metadata with explicit NVARCHAR type
+            output.AddColumnMetadata(0, "UnicodeOutput", SqlTypes.NVARCHAR);
+
+            // Add data rows
+            output.AddColumn<string>(0, new string[] { "Hello世界", "Café", "日本語", null, "Test" });
+
+            return output.ToDataFrame(this);
+        }
+    }
+
+    /// <summary>
+    /// Test executor that uses PrimitiveDataset with explicit VARCHAR column types.
+    /// Creates new output columns not in input schema.
+    /// </summary>
+    public class CSharpTestExecutorPrimitiveDatasetVarchar : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            PrimitiveDataset output = new PrimitiveDataset();
+
+            // Add column metadata with explicit VARCHAR type (UTF-8)
+            output.AddColumnMetadata(0, "AsciiOutput", SqlTypes.VARCHAR);
+
+            // Add data rows - ASCII only for VARCHAR
+            output.AddColumn<string>(0, new string[] { "Hello", "World", "Test", null, "Data" });
+
+            return output.ToDataFrame(this);
+        }
+    }
+
+    /// <summary>
+    /// Test executor that processes input with Unicode characters and outputs NVARCHAR.
+    /// This tests that Unicode is preserved correctly through the pipeline.
+    /// </summary>
+    public class CSharpTestExecutorUnicodePreservation : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // Ensure all string columns are output as NVARCHAR to preserve Unicode
+            foreach (DataFrameColumn column in input.Columns)
+            {
+                if (column.DataType == typeof(string))
+                {
+                    OutputColumnTypes[column.Name] = SqlTypes.NVARCHAR;
+                }
+            }
+
+            return input;
+        }
+    }
 }
