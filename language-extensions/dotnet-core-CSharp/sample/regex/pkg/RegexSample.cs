@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
 using System.Text.RegularExpressions;
+using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace UserExecutor
 {
@@ -59,6 +60,11 @@ namespace UserExecutor
             //
             sqlParams["@rowsCount"]  = output.Rows.Count;
             sqlParams["@regexExpr"] = "Success!";
+
+            // Specify that "text" column should be output as NVARCHAR (UTF-16)
+            // This is optional - if not specified, strings default to VARCHAR (UTF-8)
+            //
+            OutputColumnDataTypes["text"] = SqlDataType.DotNetWChar;
 
             // Return output dataset as a DataFrame
             //

@@ -373,8 +373,8 @@ namespace ExtensionApiTest
     // Description:
     //  Test GetResultColumn with an InputDataSet of nvarchar/nchar (Unicode) columns.
     //  Tests nullptr, empty strings, and basic Unicode characters.
-    //  Note: Output columns are returned as SQL_C_CHAR (UTF-8 encoded) regardless
-    //  of input type, since .NET strings are always output as varchar.
+    //  Note: Without explicit OutputColumnDataTypes configuration, string columns
+    //  default to SQL_C_CHAR (VARCHAR) output, regardless of input type.
     //
     TEST_F(CSharpExtensionApiTests, GetWStringResultColumnsTest)
     {
@@ -435,36 +435,173 @@ namespace ExtensionApiTest
             strLen_or_Ind.data(),
             columnNames);
 
-        // C# outputs all string columns as SQL_C_CHAR (UTF-8).
-        // For ASCII strings, UTF-8 byte length == character count.
-        // We divide by sizeof(wchar_t) to get character count from UTF-16 byte length.
+        // NVARCHAR input columns are converted to SQL_C_CHAR output by default.
+        // To preserve NVARCHAR, use OutputColumnDataTypes["columnName"] = SqlDataType.DotNetWChar.
+        // Column size is byte count for VARCHAR.
         //
-        SQLULEN maxCol1Len = GetMaxLength(strLenOrIndCol1.data(), rowsNumber) / sizeof(wchar_t);
-        SQLULEN maxCol2Len = GetMaxLength(strLenOrIndCol2.data(), rowsNumber) / sizeof(wchar_t);
+        SQLULEN maxCol1ByteCount = GetMaxLength(strLenOrIndCol1.data(), rowsNumber) / sizeof(wchar_t);
+        SQLULEN maxCol2ByteCount = GetMaxLength(strLenOrIndCol2.data(), rowsNumber) / sizeof(wchar_t);
 
-        // Output is SQL_C_CHAR (UTF-8), column size is max UTF-8 byte length
-        // For ASCII strings, this equals the character count
+        // Output is SQL_C_CHAR (VARCHAR default), column size is max byte count
         //
         GetResultColumn(
             0,                                           // columnNumber
-            SQL_C_CHAR,                                  // dataType (UTF-8 output)
-            maxCol1Len,                                  // columnSize
+            SQL_C_CHAR,                                  // dataType (default VARCHAR)
+            maxCol1ByteCount,                            // columnSize (byte count)
             0,                                           // decimalDigits
             SQL_NO_NULLS);                               // nullable
 
         GetResultColumn(
             1,                                           // columnNumber
-            SQL_C_CHAR,                                  // dataType (UTF-8 output)
-            maxCol2Len,                                  // columnSize
+            SQL_C_CHAR,                                  // dataType (default VARCHAR)
+            maxCol2ByteCount,                            // columnSize (byte count)
             0,                                           // decimalDigits
             SQL_NULLABLE);                               // nullable
 
         GetResultColumn(
             2,                                           // columnNumber
-            SQL_C_CHAR,                                  // dataType (UTF-8 output)
-            sizeof(SQLCHAR),                             // columnSize (1 for null column)
+            SQL_C_CHAR,                                  // dataType (default VARCHAR)
+            sizeof(wchar_t) / sizeof(wchar_t),           // columnSize (minimum 1 byte for null column)
             0,                                           // decimalDigits
             SQL_NULLABLE);                               // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetNVarcharOutputResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn with an InputDataSet of nvarchar columns where the executor
+    //  explicitly specifies NVARCHAR output using OutputColumns.Add().
+    //  This verifies that user-specified column metadata is correctly applied.
+    //
+    TEST_F(CSharpExtensionApiTests, GetNVarcharOutputResultColumnsTest)
+    {
+        // Use the executor that explicitly sets OutputColumns.Add("text", SqlStringType.NVarchar)
+        //
+        string scriptNVarcharOutput = m_UserLibName + m_Separator +
+            "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorNVarcharOutput";
+
+        InitializeSession(
+            1, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            scriptNVarcharOutput);
+
+        string textColumnName = "text";
+        InitializeColumn(0, textColumnName, SQL_C_WCHAR, m_CharSize);
+
+        // Input data as UTF-16 (nvarchar)
+        //
+        vector<const wchar_t*> wstringCol1{ L"Hello", L"World", L"Test", L"Unicode", L"\x4F60\x597D" };  // Last one is Chinese for "Hello"
+        int rowsNumber = wstringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),   // "Hello"
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),   // "World"
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),   // "Test"
+          static_cast<SQLINTEGER>(7 * sizeof(wchar_t)),   // "Unicode"
+          static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) }; // Chinese chars
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data() };
+
+        vector<wchar_t> wstringCol1Data = GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+
+        void* dataSet[] = { wstringCol1Data.data() };
+
+        vector<string> columnNames{ textColumnName };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // With OutputColumns.Add("text", SqlStringType.NVarchar), output should be SQL_C_WCHAR
+        // Column size is max byte count (like Java does - matching extension host expectations)
+        //
+        SQLULEN maxCol1ByteLen = 7 * sizeof(wchar_t);  // "Unicode" is the longest at 7 characters * 2 bytes
+
+        GetResultColumn(
+            0,                                           // columnNumber
+            SQL_C_WCHAR,                                 // dataType (UTF-16 output due to NVarchar setting)
+            maxCol1ByteLen,                              // columnSize (byte count)
+            0,                                           // decimalDigits
+            SQL_NO_NULLS);                               // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: GetPreserveNVarcharTypeResultColumnsTest
+    //
+    // Description:
+    //  Test GetResultColumn where input columns are NVARCHAR but output defaults to VARCHAR
+    //  since no explicit OutputColumnDataTypes configuration is provided.
+    //  Uses CSharpTestExecutorPreserveInputTypes which doesn't set explicit column metadata.
+    //
+    TEST_F(CSharpExtensionApiTests, GetPreserveNVarcharTypeResultColumnsTest)
+    {
+        // Use the executor that just returns input unchanged without explicit OutputColumns config
+        //
+        string scriptPreserve = m_UserLibName + m_Separator +
+            "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorPreserveInputTypes";
+
+        InitializeSession(
+            2, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            scriptPreserve);
+
+        string nvarcharColumnName = "nvarchar_col";
+        string varcharColumnName = "varchar_col";
+        InitializeColumn(0, nvarcharColumnName, SQL_C_WCHAR, m_CharSize);  // NVARCHAR input
+        InitializeColumn(1, varcharColumnName, SQL_C_CHAR, m_CharSize);    // VARCHAR input
+
+        // Input data
+        //
+        vector<const wchar_t*> wstringCol{ L"Hello", L"World", L"Test", L"Data", L"Row5" };
+        vector<const char*> stringCol{ "ASCII1", "ASCII2", "ASCII3", "ASCII4", "ASCII5" };
+        int rowsNumber = wstringCol.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)) };
+
+        vector<SQLINTEGER> strLenOrIndCol2 =
+        { 6, 6, 6, 6, 6 };  // All strings are 6 bytes
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data(), strLenOrIndCol2.data() };
+
+        vector<wchar_t> wstringColData = GenerateContiguousData<wchar_t>(wstringCol, strLenOrIndCol1.data());
+        vector<char> stringColData = GenerateContiguousData<char>(stringCol, strLenOrIndCol2.data());
+
+        void* dataSet[] = { wstringColData.data(), stringColData.data() };
+
+        vector<string> columnNames{ nvarcharColumnName, varcharColumnName };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // Column 0: Input was NVARCHAR, but output defaults to SQL_C_CHAR (VARCHAR)
+        // since no OutputColumnDataTypes configuration is provided.
+        //
+        GetResultColumn(
+            0,                                           // columnNumber
+            SQL_C_CHAR,                                  // dataType (default VARCHAR)
+            5,                                           // columnSize (max char count)
+            0,                                           // decimalDigits
+            SQL_NO_NULLS);                               // nullable
+
+        // Column 1: Input was VARCHAR, output should be SQL_C_CHAR
+        //
+        GetResultColumn(
+            1,                                           // columnNumber
+            SQL_C_CHAR,                                  // dataType (preserved from input)
+            6,                                           // columnSize (max byte length)
+            0,                                           // decimalDigits
+            SQL_NO_NULLS);                               // nullable
     }
 
     //----------------------------------------------------------------------------------------------
