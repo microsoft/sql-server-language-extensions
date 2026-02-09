@@ -10,6 +10,7 @@
 //*********************************************************************
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
+using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension.SDK
 {
@@ -22,6 +23,13 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// Supported versions of the .NET Core C# extension
         /// </summary>
         public readonly int SQLSERVER_DOTNET_LANG_EXTENSION_V1 = 1;
+
+        /// <summary>
+        /// Optional: Specify SQL data types for output columns by name.
+        /// Use this to output string columns as NVARCHAR (DotNetWChar) instead of the default VARCHAR (DotNetChar).
+        /// Example: OutputColumnDataTypes["text"] = SqlDataType.DotNetWChar;
+        /// </summary>
+        public Dictionary<string, SqlDataType> OutputColumnDataTypes { get; } = new Dictionary<string, SqlDataType>();
 
         /// <summary>
         /// Default constructor for AbstractSqlServerExtensionExecutor
