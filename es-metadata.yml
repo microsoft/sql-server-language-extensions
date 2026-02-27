@@ -1,0 +1,12 @@
+schemaVersion: 1.0.0
+providers:
+- provider: InventoryAsCode
+  version: 1.0.0
+  metadata:
+    isProduction: true
+    accountableOwners:
+      service: f418a5b4-60c9-42a3-a843-996167aec644
+    routing:
+      defaultAreaPath:
+        org: msdata
+        path: Database Systems\SQL Server\Extensibility\SQL Extensibility
