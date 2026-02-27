@@ -16,8 +16,8 @@ SET PYTHON_VERSION_NO_DOT=310
 
 REM Specify the Boost version to be downloaded and installed
 REM
-SET BOOST_VERSION=1.79.0
-SET BOOST_VERSION_IN_UNDERSCORE=1_79_0
+SET BOOST_VERSION=1.90.0
+SET BOOST_VERSION_IN_UNDERSCORE=1_90_0
 
 REM Download and install Python from the official Python website
 REM
