@@ -98,6 +98,12 @@ REM bootstrap - "vc142"
 REM b2.exe "toolset=msvc-14.2"
 echo -- Beginning Boost b2.exe build -- Time: %time% --
 CALL bootstrap.bat vc142
+
+REM bootstrap.bat may change the working directory (e.g. into tools\build\src\engine).
+REM Restore it to the Boost root so b2.exe can find Jamroot and build correctly.
+REM
+cd /d %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
+
 echo -- Beginning Boost build using compiled b2.exe-- Time: %time% --
 b2.exe -j12 --prefix=%PACKAGES_ROOT%\output --with-python --user-config="%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\user-config.jam" --debug-configuration -dp0 toolset=msvc-14.2
 echo -- Finished Boost build -- Time: %time% --
