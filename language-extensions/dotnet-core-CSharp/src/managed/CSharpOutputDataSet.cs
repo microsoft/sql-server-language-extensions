@@ -45,19 +45,42 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
         /// <param name="dataFrame">The DataFrame containing the output data.</param>
-        public unsafe void ExtractColumns(DataFrame dataFrame)
+        /// <param name="outputColumnDataTypes">Optional user-specified column data types by name.</param>
+        public unsafe void ExtractColumns(
+            DataFrame dataFrame,
+            Dictionary<string, SqlDataType> outputColumnDataTypes = null)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
             _strLenOrNullMapPtrs = new IntPtr[ColumnsNumber];
             _dataPtrs = new IntPtr[ColumnsNumber];
+
             for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
                 DataFrameColumn column = dataFrame.Columns[columnNumber];
 
                 // Determine the SQL data type for this column.
-                // All .NET strings are output as DotNetChar (varchar/UTF-8).
+                // Default behavior: map .NET types to SQL types (strings -> DotNetChar/varchar).
                 //
                 SqlDataType dataType = DataTypeMap[column.DataType];
+
+                // For string columns, check for user-specified type override
+                //
+                if (column.DataType == typeof(string) && outputColumnDataTypes != null)
+                {
+                    if (outputColumnDataTypes.TryGetValue(column.Name, out var userType))
+                    {
+                        if (userType != SqlDataType.DotNetChar && userType != SqlDataType.DotNetWChar)
+                        {
+                            throw new ArgumentException(
+                                $"Invalid type override '{userType}' for string column '{column.Name}'. " +
+                                $"Only DotNetChar and DotNetWChar are supported for string columns.");
+                        }
+
+                        dataType = userType;
+                        Logging.Trace($"ExtractColumns: Column '{column.Name}' using user-specified type: {dataType}");
+                    }
+                }
+
                 ulong columnSize = (ulong)DataTypeSize[dataType];
 
                 // Add column metadata to a CSharpColumn dictionary
@@ -186,12 +209,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                     break;
                 case SqlDataType.DotNetWChar:
                     // Calculate column size from actual data.
-                    // columnSize = max character count (UTF-16 byte length / 2).
-                    // Minimum size is 1 character (nchar(0) is illegal in SQL).
+                    // For WCHAR types, column size should be the max byte length.
+                    // Minimum size is 2 bytes (1 UTF-16 character).
                     //
                     int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    int maxCharCount = maxUnicodeByteLen / sizeof(char);
-                    _columns[columnNumber].Size = (ulong)Math.Max(maxCharCount, MinUtf16CharSize);
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxUnicodeByteLen, MinUtf16CharSize);
 
                     SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
                     break;

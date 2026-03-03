@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
+using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtensionTest
 {
@@ -185,6 +186,51 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param3"] = "€100 £50 ¥1000 ©®™";
 
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor demonstrating NVARCHAR output support for DataFrame columns.
+    /// Uses OutputColumnDataTypes to specify that string columns should be NVARCHAR.
+    /// </summary>
+    public class CSharpTestExecutorNVarcharOutput: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+            // Specify that output column "text" should be NVARCHAR (UTF-16)
+            OutputColumnDataTypes["text"] = SqlDataType.DotNetWChar;
+            
+            // Return input unchanged - the column type will be NVARCHAR instead of VARCHAR
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor demonstrating mixed VARCHAR and NVARCHAR output columns.
+    /// </summary>
+    public class CSharpTestExecutorMixedStringOutput: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+            // Column "ascii_col" stays VARCHAR (default, no need to specify)
+            
+            // Column "unicode_col" should be NVARCHAR (by name)
+            OutputColumnDataTypes["unicode_col"] = SqlDataType.DotNetWChar;
+            
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor for basic pass-through (no NVARCHAR configuration).
+    /// </summary>
+    public class CSharpTestExecutorPreserveInputTypes: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine("Hello .NET Core CSharpExtension!");
+            // No explicit OutputColumnDataTypes configuration.
+            // All string columns will be VARCHAR (default).
+            return input;
         }
     }
 }
