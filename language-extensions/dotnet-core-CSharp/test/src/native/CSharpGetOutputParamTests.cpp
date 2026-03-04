@@ -560,25 +560,19 @@ namespace ExtensionApiTest
 
         EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-        const vector<wstring> ExpectedParamValueStrings = {
-            // Test simple NCHAR(5) value with exact string length as the type allows i.e. here 5.
-            //
-            L"HELLO",
-            // Test NVARCHAR(6) value with string length more than the type allows - expected truncation.
-            //
-            L"C#Exte",
-            // Test a 0 length string
-            //
-            L"" ,
-            // Test NCHAR(10) value with string length less than the type allows.
-            //
-            L"WORLD"};
+        // Use raw wchar_t* pointers instead of std::wstring to avoid ABI
+        // issues with -fshort-wchar on Linux.
+        //
+        const wchar_t* expectedStr0 = L"HELLO";
+        const wchar_t* expectedStr1 = L"C#Exte";
+        const wchar_t* expectedStr2 = L"";
+        const wchar_t* expectedStr3 = L"WORLD";
 
         vector<const wchar_t*> expectedParamValues = {
-            ExpectedParamValueStrings[0].c_str(),
-            ExpectedParamValueStrings[1].c_str(),
-            ExpectedParamValueStrings[2].c_str(),
-            ExpectedParamValueStrings[3].c_str(),
+            expectedStr0,
+            expectedStr1,
+            expectedStr2,
+            expectedStr3,
 
             // Test None returned in a NVARCHAR(5) parameter.
             //
@@ -591,10 +585,10 @@ namespace ExtensionApiTest
         // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
         //
         vector<SQLINTEGER> expectedStrLenOrInd = {
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr0) * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr1) * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr2) * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr3) * sizeof(wchar_t)),
             SQL_NULL_DATA,
             SQL_NULL_DATA };
 
@@ -651,30 +645,34 @@ namespace ExtensionApiTest
 
         EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-        // Build expected values to match what the C# executor returns
+        // Build expected values to match what the C# executor returns.
+        // Use vector<wchar_t> instead of wstring to avoid ABI issues with -fshort-wchar on Linux.
         //
-        wstring largeAsciiString(10000, L'A');
+        vector<wchar_t> largeAsciiData(10000, L'A');
+        largeAsciiData.push_back(L'\0');
 
         // Build Unicode pattern string: "你好世界€" repeated 1000 times = 5000 characters
         //
-        wstring unicodePattern = L"你好世界€";
-        wstring largeUnicodeString;
-        largeUnicodeString.reserve(5000);
+        const wchar_t unicodePattern[] = L"你好世界€";
+        SQLINTEGER patternLen = GetWStringLength(unicodePattern);
+        vector<wchar_t> largeUnicodeData;
+        largeUnicodeData.reserve(5001);
         for (int i = 0; i < 1000; i++)
         {
-            largeUnicodeString += unicodePattern;
+            largeUnicodeData.insert(largeUnicodeData.end(), unicodePattern, unicodePattern + patternLen);
         }
+        largeUnicodeData.push_back(L'\0');
 
         vector<const wchar_t*> expectedParamValues = {
-            largeAsciiString.c_str(),
-            largeUnicodeString.c_str(),
+            largeAsciiData.data(),
+            largeUnicodeData.data(),
             nullptr };
 
         // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
         //
         vector<SQLINTEGER> expectedStrLenOrInd = {
-            static_cast<SQLINTEGER>(largeAsciiString.length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(largeUnicodeString.length() * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(10000 * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>((largeUnicodeData.size() - 1) * sizeof(wchar_t)),
             SQL_NULL_DATA };
 
         GetWStringOutputParam(
@@ -728,29 +726,29 @@ namespace ExtensionApiTest
 
         EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
-        // Build expected values to match what the C# executor returns
+        // Build expected values to match what the C# executor returns.
+        // Use raw wchar_t* pointers instead of std::wstring to avoid ABI
+        // issues with -fshort-wchar on Linux.
         // Note: Emoji are surrogate pairs in UTF-16, so 😀 = 2 wchar_t, 👍 = 2 wchar_t
         //
-        const vector<wstring> ExpectedParamValueStrings = {
-            L"Hi\U0001F600\U0001F44D",       // "Hi" + grinning face + thumbs up (6 UTF-16 code units)
-            L"Café résumé naïve",            // Accented characters (17 chars)
-            L"Hello世界こんにちは",            // Mixed scripts (12 chars)
-            L"€100 £50 ¥1000 ©®™"            // Currency and special symbols (18 chars)
-        };
+        const wchar_t* expectedStr0 = L"Hi\U0001F600\U0001F44D";       // "Hi" + grinning face + thumbs up (6 UTF-16 code units)
+        const wchar_t* expectedStr1 = L"Café résumé naïve";            // Accented characters (17 chars)
+        const wchar_t* expectedStr2 = L"Hello世界こんにちは";            // Mixed scripts (12 chars)
+        const wchar_t* expectedStr3 = L"€100 £50 ¥1000 ©®™";          // Currency and special symbols (18 chars)
 
         vector<const wchar_t*> expectedParamValues = {
-            ExpectedParamValueStrings[0].c_str(),
-            ExpectedParamValueStrings[1].c_str(),
-            ExpectedParamValueStrings[2].c_str(),
-            ExpectedParamValueStrings[3].c_str() };
+            expectedStr0,
+            expectedStr1,
+            expectedStr2,
+            expectedStr3 };
 
         // strLenOrInd is in bytes for NCHAR/NVARCHAR, so multiply by sizeof(wchar_t)
         //
         vector<SQLINTEGER> expectedStrLenOrInd = {
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[0].length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[1].length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length() * sizeof(wchar_t)),
-            static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length() * sizeof(wchar_t)) };
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr0) * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr1) * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr2) * sizeof(wchar_t)),
+            static_cast<SQLINTEGER>(GetWStringLength(expectedStr3) * sizeof(wchar_t)) };
 
         GetWStringOutputParam(
             expectedParamValues,
@@ -880,15 +878,12 @@ namespace ExtensionApiTest
             {
                 EXPECT_NE(paramValue, nullptr);
 
-                // strLen_or_Ind is in bytes, divide by sizeof(wchar_t) to get character count
+                // Compare raw UTF-16 bytes directly (avoids std::wstring which is
+                // ABI-incompatible with -fshort-wchar on Linux).
                 //
-                SQLINTEGER charCount = strLen_or_Ind / sizeof(wchar_t);
-                wstring paramValueString(static_cast<wchar_t*>(paramValue), charCount);
-
-                SQLINTEGER expectedCharCount = expectedStrLenOrInd[paramNumber] / sizeof(wchar_t);
-                wstring expectedParamValueString(expectedParamValues[paramNumber], expectedCharCount);
-
-                EXPECT_EQ(paramValueString, expectedParamValueString);
+                EXPECT_EQ(memcmp(paramValue,
+                                 expectedParamValues[paramNumber],
+                                 expectedStrLenOrInd[paramNumber]), 0);
             }
             else
             {

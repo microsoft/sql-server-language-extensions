@@ -1,0 +1,41 @@
+# Dockerfile for building and testing the C# language extension on Linux
+# Usage:
+#   docker build -f docker-test/Dockerfile.linux-csharp -t csharp-ext-linux .
+#   docker run --rm csharp-ext-linux
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+# Install C++ compiler, build essentials, cmake, git, make, and unixODBC headers (for sql.h, sqltypes.h)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends g++ unixodbc-dev cmake git make && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+# Copy libnethost.a from the .NET SDK runtime packs into the extension's lib directory.
+# The SDK ships this as part of the AppHost pack.
+RUN NETHOST_DIR=$(find /usr/share/dotnet -path "*/runtimes/linux-x64/native/libnethost.a" -print -quit) && \
+    if [ -z "$NETHOST_DIR" ]; then \
+        echo "ERROR: libnethost.a not found in .NET SDK"; exit 1; \
+    fi && \
+    echo "Found libnethost.a at: $NETHOST_DIR" && \
+    cp "$NETHOST_DIR" /src/language-extensions/dotnet-core-CSharp/lib/libnethost.a
+
+# Fix line endings for all shell scripts (Windows CRLF -> Unix LF)
+RUN find /src -name "*.sh" -exec sed -i 's/\r$//' {} +
+
+# Build the extension (native .so + managed .dll)
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/build-dotnet-core-CSharp-extension.sh release
+
+# Build Google Test from source (required for Linux test builds)
+RUN /src/test/googletest/build/linux/build-googletest.sh
+
+# Build the test project (native test executable + managed test DLL)
+RUN /src/language-extensions/dotnet-core-CSharp/test/build/linux/build-dotnet-core-CSharp-extension-test.sh release
+
+# Run the tests
+RUN mkdir -p /src/out && \
+    /src/language-extensions/dotnet-core-CSharp/test/build/linux/run-dotnet-core-CSharp-extension-test.sh release
+
+CMD ["echo", "Linux C# extension build and tests completed successfully."]

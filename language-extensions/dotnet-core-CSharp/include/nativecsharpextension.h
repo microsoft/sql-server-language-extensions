@@ -20,7 +20,10 @@
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
+
 #include <sql.h>
 #include "sqlexternallanguage.h"
 #include "sqlexternallibrary.h"

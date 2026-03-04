@@ -38,7 +38,15 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	SET VSINSTALLPATH=
+	FOR /F "usebackq tokens=*" %%i IN (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) DO SET VSINSTALLPATH=%%i
+)
+IF NOT DEFINED DevEnvDir (
+	IF NOT DEFINED VSINSTALLPATH (
+		ECHO Error: Could not find a Visual Studio installation with C++ tools.
+		EXIT /b 1
+	)
+	CALL "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 REM VSCMD_START_DIR set the working directory to this variable after calling VsDevCmd.bat
@@ -59,9 +67,9 @@ SET EXTENSION_HOST_INCLUDE=%ENL_ROOT%\extension-host\include
 SET DOTNET_NATIVE_LIB=%DOTNET_EXTENSION_HOME%\lib
 
 IF /I %BUILD_CONFIGURATION%==debug (
-	cl.exe /LD %DOTNET_NATIVE_SRC%\nativecsharpextension.cpp %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /D DEBUG /EHsc /Zi
+	cl.exe /LD %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /D DEBUG /EHsc /Zi /Fe:nativecsharpextension.dll
 ) ELSE (
-	cl.exe /LD %DOTNET_NATIVE_SRC%\nativecsharpextension.cpp %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /EHsc /Zi
+	cl.exe /LD %DOTNET_NATIVE_SRC%\*.cpp /I %DOTNET_NATIVE_INCLUDE% /I %EXTENSION_HOST_INCLUDE% /D WINDOWS /EHsc /Zi /Fe:nativecsharpextension.dll
 )
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build nativecsharpextension for configuration=%BUILD_CONFIGURATION%" || EXIT /b %ERRORLEVEL%

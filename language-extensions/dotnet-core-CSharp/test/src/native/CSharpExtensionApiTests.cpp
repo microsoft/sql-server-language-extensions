@@ -12,7 +12,11 @@
 #include "CSharpExtensionApiTests.h"
 
 using namespace std;
+#ifdef _WIN32
 namespace fs = experimental::filesystem;
+#else
+namespace fs = filesystem;
+#endif
 
 namespace ExtensionApiTest
 {
@@ -90,6 +94,7 @@ namespace ExtensionApiTest
     //
     void CSharpExtensionApiTests::SetUpPath()
     {
+#ifdef _WIN32
         char path[MAX_PATH+1] = {0};
         GetModuleFileName(NULL, path, MAX_PATH);
         fs::path exePath = path;
@@ -100,6 +105,19 @@ namespace ExtensionApiTest
         sm_extensionPath = (buildOutputPath / "dotnet-core-CSharp-extension/windows/release").string();
     #endif
         sm_libPath = exePath.parent_path().string();
+#else
+        char path[PATH_MAX] = {0};
+        ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+        if (len != -1) path[len] = '\0';
+        fs::path exePath = path;
+        fs::path buildOutputPath = exePath.parent_path().parent_path().parent_path().parent_path();
+    #if defined(_DEBUG)
+        sm_extensionPath = (buildOutputPath / "dotnet-core-CSharp-extension/linux/debug").string();
+    #else
+        sm_extensionPath = (buildOutputPath / "dotnet-core-CSharp-extension/linux/release").string();
+    #endif
+        sm_libPath = exePath.parent_path().string();
+#endif
     }
 
     // Name: CSharpExtensionApiTest::SetupVariables
@@ -218,6 +236,7 @@ namespace ExtensionApiTest
     //
     void CSharpExtensionApiTests::GetHandles()
     {
+#ifdef _WIN32
         sm_libHandle = LoadLibrary((sm_extensionPath+"\\nativecsharpextension.dll").c_str());
         EXPECT_TRUE(sm_libHandle != nullptr);
 
@@ -250,6 +269,40 @@ namespace ExtensionApiTest
 
         sm_cleanupFuncPtr = reinterpret_cast<FN_cleanup*>(GetProcAddress(sm_libHandle, "Cleanup"));
         EXPECT_TRUE(sm_cleanupFuncPtr != nullptr);
+#else
+        sm_libHandle = dlopen((sm_extensionPath+"/libnativecsharpextension.so").c_str(), RTLD_LAZY);
+        EXPECT_TRUE(sm_libHandle != nullptr) << "dlopen failed: " << dlerror();
+
+        sm_initFuncPtr = reinterpret_cast<FN_init*>(dlsym(sm_libHandle, "Init"));
+        EXPECT_TRUE(sm_initFuncPtr != nullptr);
+
+        sm_initSessionFuncPtr = reinterpret_cast<FN_initSession*>(dlsym(sm_libHandle, "InitSession"));
+        EXPECT_TRUE(sm_initSessionFuncPtr != nullptr);
+
+        sm_initColumnFuncPtr = reinterpret_cast<FN_initColumn*>(dlsym(sm_libHandle, "InitColumn"));
+        EXPECT_TRUE(sm_initColumnFuncPtr != nullptr);
+
+        sm_initParamFuncPtr = reinterpret_cast<FN_initParam*>(dlsym(sm_libHandle, "InitParam"));
+        EXPECT_TRUE(sm_initParamFuncPtr != nullptr);
+
+        sm_executeFuncPtr = reinterpret_cast<FN_execute*>(dlsym(sm_libHandle, "Execute"));
+        EXPECT_TRUE(sm_executeFuncPtr != nullptr);
+
+        sm_getResultColumnFuncPtr = reinterpret_cast<FN_getResultColumn*>(dlsym(sm_libHandle, "GetResultColumn"));
+        EXPECT_TRUE(sm_getResultColumnFuncPtr != nullptr);
+
+        sm_getResultsFuncPtr = reinterpret_cast<FN_getResults*>(dlsym(sm_libHandle, "GetResults"));
+        EXPECT_TRUE(sm_getResultsFuncPtr != nullptr);
+
+        sm_getOutputParamFuncPtr = reinterpret_cast<FN_getOutputParam*>(dlsym(sm_libHandle, "GetOutputParam"));
+        EXPECT_TRUE(sm_getOutputParamFuncPtr != nullptr);
+
+        sm_cleanupSessionFuncPtr = reinterpret_cast<FN_cleanupSession*>(dlsym(sm_libHandle, "CleanupSession"));
+        EXPECT_TRUE(sm_cleanupSessionFuncPtr != nullptr);
+
+        sm_cleanupFuncPtr = reinterpret_cast<FN_cleanup*>(dlsym(sm_libHandle, "Cleanup"));
+        EXPECT_TRUE(sm_cleanupFuncPtr != nullptr);
+#endif
     }
 
     //----------------------------------------------------------------------------------------------

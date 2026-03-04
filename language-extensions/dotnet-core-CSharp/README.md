@@ -5,11 +5,11 @@ Language Extensions is a feature of SQL Server used for executing external code.
 
 For more information about SQL Server Language Extensions, refer to this [documentation](https://docs.microsoft.com/en-us/sql/language-extensions/language-extensions-overview?view=sql-server-ver15).
 
-The dotnet-core-CSharp-extension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates .NET core in SQL Server and works with .NET 6.0 in **Windows only**.
+The dotnet-core-CSharp-extension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates .NET Core in SQL Server and works with .NET 8.0 and up on Windows and Linux.
 
 Currently, the extension supports the following data types: SQL_C_SLONG, SQL_C_ULONG, SQL_C_SSHORT, SQL_C_USHORT, SQL_C_SBIGINT, SQL_C_UBIGINT, SQL_C_STINYINT, SQL_C_UTINYINT, SQL_C_BIT, SQL_C_FLOAT, SQL_C_DOUBLE, SQL_C_CHAR, and SQL_C_WCHAR. It supports the following SQL data types: int, bigint, smallint, tinyint, real, float, bit, char(n), varchar(n), nchar(n), and nvarchar(n).
 
-To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial](./sample/regex/README.md). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
+To use the `dotnet-core-CSharp-lang-extension.zip` (Windows) or `dotnet-core-CSharp-lang-extension.tar.gz` (Linux) package, follow [this tutorial](./sample/regex/README.md). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
 
 ## Building
 
@@ -32,7 +32,18 @@ To use this dotnet-core-CSharp-lang-extension.zip package, follow [this tutorial
         This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ### Linux
-Not Supported.
+
+1. Ensure you have a C++ compiler (g++ or clang++), the .NET 8.0 SDK, and the `libnethost.a` static library from the .NET runtime installed. Place `libnethost.a` in the `lib/` directory.
+
+2. Run [build-dotnet-core-CSharp-extension.sh](./build/linux/build-dotnet-core-CSharp-extension.sh) which will generate: \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/libnativecsharpextension.so \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.dll \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.runtimeconfig.json \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.deps.json
+
+3. Run [create-dotnet-core-CSharp-extension-tar.sh](./build/linux/create-dotnet-core-CSharp-extension-tar.sh) which will generate: \
+        - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/packages/dotnet-core-CSharp-lang-extension.tar.gz
+        This tarball can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
 ## Testing (Optional)
 
@@ -44,9 +55,9 @@ PATH\TO\ENLISTMENT\build-output\dotnet-core-CSharp-extension-test\windows\releas
 3. Run [run-dotnet-core-CSharp-extension-test.cmd](./test/build/windows/run-dotnet-core-CSharp-extension-test.cmd) to run all the unit tests.
 
 ### Linux
-Not Supported.
+Not yet supported for automated testing. Manual testing can be done by deploying the tarball to a SQL Server on Linux instance with the extensibility framework enabled.
 
 ## Usage
-After downloading or building the dotnet-core-CSharp-lang-extension.zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to register the language with SQL Server 2019 CU3+.
+After downloading or building the `dotnet-core-CSharp-lang-extension.zip` (Windows) or `dotnet-core-CSharp-lang-extension.tar.gz` (Linux), use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to register the language with SQL Server 2019 CU3+.
 
 This [tutorial](./sample/regex/README.md) will walk you through an end to end sample using the .NET Core C# language extension.
