@@ -80,6 +80,7 @@ for BUILD_CONFIGURATION in "$@"; do
         -m \
         -c "$BUILD_CONFIGURATION" \
         -o "$BUILD_OUTPUT" \
+        --no-restore \
         --no-dependencies
 
     echo "Success: Built dotnet-core-CSharp-extension for $BUILD_CONFIGURATION configuration."
