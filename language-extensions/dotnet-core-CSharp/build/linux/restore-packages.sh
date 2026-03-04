@@ -50,9 +50,21 @@ check_exit_code "Success: Copied libnethost.a to extension lib directory" "Error
 # OneBranch enables network isolation after package-restore phases,
 # so dotnet restore must happen here rather than during the build step.
 #
+# Use the parent repo's NuGet.Config which points to the ADO artifact feed
+# (with nuget.org as upstream) rather than the submodule's NuGet.Config
+# which points directly to nuget.org (unreachable from OneBranch containers).
+#
 MANAGED_PROJ="${DOTNET_EXTENSION_HOME}/src/managed/Microsoft.SqlServer.CSharpExtension.csproj"
+PARENT_NUGET_CONFIG="${ENL_ROOT}/../NuGet.Config"
+
 echo "Info: Restoring NuGet packages for Microsoft.SqlServer.CSharpExtension..."
-dotnet restore "$MANAGED_PROJ"
+if [ -f "$PARENT_NUGET_CONFIG" ]; then
+    echo "Info: Using NuGet.Config from parent repo: $PARENT_NUGET_CONFIG"
+    dotnet restore "$MANAGED_PROJ" --configfile "$PARENT_NUGET_CONFIG"
+else
+    echo "Info: Parent NuGet.Config not found, using default"
+    dotnet restore "$MANAGED_PROJ"
+fi
 check_exit_code "Success: NuGet packages restored" "Error: Failed to restore NuGet packages"
 
 exit $?
