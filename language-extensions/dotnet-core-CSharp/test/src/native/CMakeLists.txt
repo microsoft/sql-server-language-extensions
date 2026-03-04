@@ -54,14 +54,12 @@ else()
 	# On Linux, use the googletest built from source (installed into build-output/googletest/linux/)
 	#
 	file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/googletest/linux GTEST_BUILD_ROOT)
-	file(TO_CMAKE_PATH ${GTEST_BUILD_ROOT}/lib GTEST_LIB_PATH)
-	file(TO_CMAKE_PATH ${GTEST_BUILD_ROOT}/include GTEST_INCLUDE_DIR)
+	file(TO_CMAKE_PATH ${GTEST_BUILD_ROOT}/googletest-src/googletest/include GTEST_INCLUDE_DIR)
 
-	if (${CMAKE_CONFIGURATION} STREQUAL debug)
-		find_library(GTEST_LIB gtestd ${GTEST_LIB_PATH})
-	else()
-		find_library(GTEST_LIB gtest ${GTEST_LIB_PATH})
-	endif()
+	# The Linux googletest build produces libgtest.a for all configurations
+	# (no separate debug/release naming convention).
+	#
+	file(TO_CMAKE_PATH ${GTEST_BUILD_ROOT}/lib/libgtest.a GTEST_LIB)
 
 	# Use -fshort-wchar so wchar_t is 2 bytes, matching SQL Server's UTF-16
 	# and the managed C# extension (consistent with R/Python/Java extensions).

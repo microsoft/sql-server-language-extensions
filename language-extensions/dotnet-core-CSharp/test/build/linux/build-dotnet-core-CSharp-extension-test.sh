@@ -44,6 +44,7 @@ for CMAKE_CONFIGURATION in "$@"; do
         -m \
         -c "$CMAKE_CONFIGURATION" \
         -o "$BUILD_OUTPUT" \
+        --no-restore \
         --no-dependencies
 
     # Delete Microsoft.SqlServer.CSharpExtension.dll to avoid test executor referencing it
