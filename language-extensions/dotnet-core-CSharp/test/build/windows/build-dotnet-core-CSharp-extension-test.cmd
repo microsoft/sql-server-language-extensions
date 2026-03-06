@@ -60,7 +60,8 @@ ECHO "[INFO] Generating dotnet-core-CSharp-extension test project build files us
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 16 2019" ^
+	-G "NMake Makefiles" ^
+	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\\%CMAKE_CONFIGURATION%" ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
@@ -69,6 +70,11 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[INFO] Building dotnet-core-CSharp-extension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
+
+REM Build with nmake
+REM
+CALL nmake install
+CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build native tests for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Call dotnet build
 REM

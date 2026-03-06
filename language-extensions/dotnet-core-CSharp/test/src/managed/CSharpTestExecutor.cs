@@ -108,6 +108,39 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    public class CSharpTestExecutorDecimalParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            // Test maximum C# decimal value (decimal.MaxValue = 79228162514264337593543950335)
+            // Note: C# decimal supports ~29 digits, even though SQL NUMERIC can support up to 38 digits
+            sqlParams["@param0"] = decimal.MaxValue;
+            
+            // Test minimum value (negative max)
+            sqlParams["@param1"] = decimal.MinValue;
+            
+            // Test high scale value (DECIMAL(38, 10))
+            // Using 18 significant digits to stay within C# decimal range
+            sqlParams["@param2"] = 12345678.1234567890m;
+            
+            // Test zero
+            sqlParams["@param3"] = 0m;
+            
+            // Test small value with high precision (28 decimal places, max for C# decimal)
+            sqlParams["@param4"] = 0.1234567890123456789012345678m;
+            
+            // Test typical financial value (DECIMAL(19, 4))
+            sqlParams["@param5"] = 123456789012345.6789m;
+            
+            // Test negative financial value
+            sqlParams["@param6"] = -123456789012345.6789m;
+            
+            // Test null (last parameter)
+            sqlParams["@param7"] = null;
+            
+            return null;
+        }
+    }
+
     public class CSharpTestExecutorStringParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
