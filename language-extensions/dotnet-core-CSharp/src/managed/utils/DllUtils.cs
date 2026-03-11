@@ -91,14 +91,15 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             else
             {
+                // Search for files matching the library name pattern (e.g. "regex.*")
                 if (!string.IsNullOrEmpty(privatePath))
                 {
-                    dllList.AddRange(Directory.GetFiles(privatePath, userLibName));
+                    dllList.AddRange(Directory.GetFiles(privatePath, userLibName + ".*"));
                 }
 
                 if (!string.IsNullOrEmpty(publicPath))
                 {
-                    dllList.AddRange(Directory.GetFiles(publicPath, userLibName));
+                    dllList.AddRange(Directory.GetFiles(publicPath, userLibName + ".*"));
                 }
             }
 

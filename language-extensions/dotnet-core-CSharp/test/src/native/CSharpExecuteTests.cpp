@@ -103,9 +103,9 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, ExecuteInvalidLibraryNameScriptTest)
     {
-        // Unmatched library name with the dll file name.
+        // Use a library name that doesn't match any DLL file in the library path.
         //
-        string userLibName = "Microsoft.SqlServer.CSharpExtensionTest";
+        string userLibName = "NonExistentLibrary";
         string scriptString = userLibName + m_Separator + m_UserClassFullName;
         InitializeSession(
             0,   // inputSchemaColumnsNumber
