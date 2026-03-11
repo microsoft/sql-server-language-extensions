@@ -142,6 +142,33 @@ SQLEXTENSION_INTERFACE SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT 
 //
 SQLEXTENSION_INTERFACE SQLRETURN Cleanup();
 
+//  Installs an external library to the specified directory.
+//  The library file is expected to be a zip. If it contains an inner zip,
+//  that zip is extracted to the install directory. Otherwise, all files
+//  are copied directly.
+//
+SQLEXTENSION_INTERFACE SQLRETURN InstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryFile,
+    SQLINTEGER libraryFileLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength);
+
+//  Uninstalls an external library from the specified directory.
+//
+SQLEXTENSION_INTERFACE SQLRETURN UninstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength);
+
 //  Dotnet environment pointer
 //
 static DotnetEnvironment* g_dotnet_runtime = nullptr;

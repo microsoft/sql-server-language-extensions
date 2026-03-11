@@ -9,6 +9,8 @@
 //
 //*********************************************************************
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
@@ -636,6 +638,224 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                 _currentSession = null;
             });
+        }
+
+        /// <summary>
+        /// This delegate declares the delegate type of InstallExternalLibrary.
+        /// </summary>
+        public delegate short InstallExternalLibraryDelegate(
+            Guid setupSessionId,
+            char *libraryName,
+            int  libraryNameLength,
+            char *libraryFile,
+            int  libraryFileLength,
+            char *libraryInstallDirectory,
+            int  libraryInstallDirectoryLength,
+            char **libraryError,
+            int  *libraryErrorLength);
+
+        /// <summary>
+        /// This method implements InstallExternalLibrary API.
+        /// Installs an external library to the specified directory.
+        /// The library file is expected to be a zip. If it contains an inner zip,
+        /// that zip is extracted to the install directory. Otherwise, all files
+        /// are copied directly.
+        /// </summary>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
+        public static short InstallExternalLibrary(
+            Guid setupSessionId,
+            char *libraryName,
+            int  libraryNameLength,
+            char *libraryFile,
+            int  libraryFileLength,
+            char *libraryInstallDirectory,
+            int  libraryInstallDirectoryLength,
+            char **libraryError,
+            int  *libraryErrorLength)
+        {
+            Logging.Trace("CSharpExtension::InstallExternalLibrary");
+
+            short result = SQL_SUCCESS;
+            string tempFolder = null;
+
+            try
+            {
+                string libFilePath = Interop.UTF8PtrToStr(libraryFile, (ulong)libraryFileLength);
+                string installDir = Interop.UTF8PtrToStr(libraryInstallDirectory, (ulong)libraryInstallDirectoryLength);
+
+                tempFolder = Path.Combine(installDir, Guid.NewGuid().ToString());
+
+                // Extract the outer zip to a temp directory.
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+
+                ZipFile.ExtractToDirectory(libFilePath, tempFolder);
+
+                // Verify the archive contained at least one entry
+                if (Directory.GetFiles(tempFolder).Length == 0 &&
+                    Directory.GetDirectories(tempFolder).Length == 0)
+                {
+                    throw new InvalidOperationException(
+                        "The library archive contains no entries. Nothing to install.");
+                }
+
+                // Look for an inner zip file
+                string innerZipPath = null;
+                foreach (string file in Directory.GetFiles(tempFolder))
+                {
+                    if (Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        innerZipPath = file;
+                        break;
+                    }
+                }
+
+                if (!Directory.Exists(installDir))
+                {
+                    Directory.CreateDirectory(installDir);
+                }
+
+                if (innerZipPath != null)
+                {
+                    // Extract the inner zip to the install directory
+                    ZipFile.ExtractToDirectory(innerZipPath, installDir, true);
+                }
+                else
+                {
+                    // Copy all extracted files directly to the install directory
+                    foreach (string file in Directory.GetFiles(tempFolder))
+                    {
+                        string destFile = Path.Combine(installDir, Path.GetFileName(file));
+                        File.Copy(file, destFile, true);
+                    }
+
+                    // Copy subdirectories
+                    foreach (string dir in Directory.GetDirectories(tempFolder))
+                    {
+                        string destDir = Path.Combine(installDir, Path.GetFileName(dir));
+                        CopyDirectory(dir, destDir);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                var stackTracePart = string.IsNullOrEmpty(e.StackTrace) ? string.Empty : e.StackTrace + Environment.NewLine;
+                Logging.Error(stackTracePart + "Error: " + e.Message);
+                SetLibraryError(e.Message, libraryError, libraryErrorLength);
+                result = SQL_ERROR;
+            }
+            finally
+            {
+                // Clean up the temp folder
+                if (tempFolder != null && Directory.Exists(tempFolder))
+                {
+                    try { Directory.Delete(tempFolder, true); }
+                    catch { /* Best effort cleanup */ }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// This delegate declares the delegate type of UninstallExternalLibrary.
+        /// </summary>
+        public delegate short UninstallExternalLibraryDelegate(
+            Guid setupSessionId,
+            char *libraryName,
+            int  libraryNameLength,
+            char *libraryInstallDirectory,
+            int  libraryInstallDirectoryLength,
+            char **libraryError,
+            int  *libraryErrorLength);
+
+        /// <summary>
+        /// This method implements UninstallExternalLibrary API.
+        /// Uninstalls an external library from the specified directory.
+        /// </summary>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
+        public static short UninstallExternalLibrary(
+            Guid setupSessionId,
+            char *libraryName,
+            int  libraryNameLength,
+            char *libraryInstallDirectory,
+            int  libraryInstallDirectoryLength,
+            char **libraryError,
+            int  *libraryErrorLength)
+        {
+            Logging.Trace("CSharpExtension::UninstallExternalLibrary");
+
+            short result = SQL_SUCCESS;
+
+            try
+            {
+                string installDir = Interop.UTF8PtrToStr(libraryInstallDirectory, (ulong)libraryInstallDirectoryLength);
+
+                if (Directory.Exists(installDir))
+                {
+                    // Delete all contents within the install directory
+                    foreach (string file in Directory.GetFiles(installDir))
+                    {
+                        File.Delete(file);
+                    }
+
+                    foreach (string dir in Directory.GetDirectories(installDir))
+                    {
+                        Directory.Delete(dir, true);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                string stackTracePart = string.IsNullOrEmpty(e.StackTrace) ? string.Empty : e.StackTrace + Environment.NewLine;
+                Logging.Error(stackTracePart + "Error: " + e.Message);
+                SetLibraryError(e.Message, libraryError, libraryErrorLength);
+                result = SQL_ERROR;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Allocates an unmanaged error string and populates the error output parameters.
+        /// </summary>
+        private static void SetLibraryError(string errorMessage, char **libraryError, int *libraryErrorLength)
+        {
+            if (libraryError != null && libraryErrorLength != null)
+            {
+                byte[] errorBytes = System.Text.Encoding.UTF8.GetBytes(errorMessage);
+                IntPtr errorPtr = Marshal.AllocHGlobal(errorBytes.Length + 1);
+                Marshal.Copy(errorBytes, 0, errorPtr, errorBytes.Length);
+                ((byte*)errorPtr)[errorBytes.Length] = 0;
+                *libraryError = (char*)errorPtr;
+                *libraryErrorLength = errorBytes.Length;
+            }
+        }
+
+        /// <summary>
+        /// Recursively copies a directory and its contents.
+        /// </summary>
+        private static void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            foreach (string dir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(dir));
+                CopyDirectory(dir, destSubDir);
+            }
         }
     }
 }

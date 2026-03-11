@@ -341,3 +341,120 @@ SQLRETURN Cleanup()
     delete g_dotnet_runtime;
     return SQL_SUCCESS;
 }
+
+//--------------------------------------------------------------------------------------------------
+// Name: SetLibraryError
+//
+// Description:
+//  Helper to populate the library error output parameters.
+//
+static void SetLibraryError(
+    const std::string &errorString,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength)
+{
+    if (!errorString.empty())
+    {
+        *libraryErrorLength = static_cast<SQLINTEGER>(errorString.length());
+        std::string *pError = new std::string(errorString);
+        *libraryError = const_cast<SQLCHAR*>(
+            reinterpret_cast<const SQLCHAR *>(pError->c_str()));
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: InstallExternalLibrary
+//
+// Description:
+//  Installs an external library to the specified directory.
+//  The library file is expected to be a zip containing the library files.
+//  If it contains an inner zip, that zip is extracted to the install directory.
+//  Otherwise, all files are copied directly.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN InstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryFile,
+    SQLINTEGER libraryFileLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength)
+{
+    LOG("nativecsharpextension::InstallExternalLibrary");
+
+    SQLRETURN result = SQL_ERROR;
+
+    if (g_dotnet_runtime == nullptr)
+    {
+        SetLibraryError(
+            "Extension not initialized. Call Init before InstallExternalLibrary.",
+            libraryError,
+            libraryErrorLength);
+    }
+    else
+    {
+        result = g_dotnet_runtime->call_managed_method<decltype(&InstallExternalLibrary)>(
+            nameof(InstallExternalLibrary),
+            setupSessionId,
+            libraryName,
+            libraryNameLength,
+            libraryFile,
+            libraryFileLength,
+            libraryInstallDirectory,
+            libraryInstallDirectoryLength,
+            libraryError,
+            libraryErrorLength);
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: UninstallExternalLibrary
+//
+// Description:
+//  Uninstalls an external library from the specified directory.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN UninstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength)
+{
+    LOG("nativecsharpextension::UninstallExternalLibrary");
+
+    SQLRETURN result = SQL_ERROR;
+
+    if (g_dotnet_runtime == nullptr)
+    {
+        SetLibraryError(
+            "Extension not initialized. Call Init before UninstallExternalLibrary.",
+            libraryError,
+            libraryErrorLength);
+    }
+    else
+    {
+        result = g_dotnet_runtime->call_managed_method<decltype(&UninstallExternalLibrary)>(
+            nameof(UninstallExternalLibrary),
+            setupSessionId,
+            libraryName,
+            libraryNameLength,
+            libraryInstallDirectory,
+            libraryInstallDirectoryLength,
+            libraryError,
+            libraryErrorLength);
+    }
+
+    return result;
+}
