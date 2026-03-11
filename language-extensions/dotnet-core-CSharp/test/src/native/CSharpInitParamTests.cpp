@@ -771,4 +771,13 @@ namespace ExtensionApiTest
 
         return distance;
     }
+
+    // Explicit template instantiations
+    //
+    template void CSharpExtensionApiTests::InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        int paramNumber,
+        SQL_NUMERIC_STRUCT paramValue,
+        bool isNull,
+        SQLSMALLINT inputOutputType,
+        SQLRETURN SQLResult);
 }

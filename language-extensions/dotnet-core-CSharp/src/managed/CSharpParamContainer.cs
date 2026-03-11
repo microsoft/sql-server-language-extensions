@@ -132,6 +132,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetBit:
                     _params[paramNumber].Value = *(bool*)paramValue;
                     break;
+                case SqlDataType.DotNetNumeric:
+                    // Convert SQL_NUMERIC_STRUCT to C# decimal
+                    SqlNumericStruct* numericPtr = (SqlNumericStruct*)paramValue;
+                    _params[paramNumber].Value = SqlNumericStructToDecimal(*numericPtr);
+                    break;
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
                     break;
@@ -214,6 +219,23 @@ namespace Microsoft.SqlServer.CSharpExtension
                     bool boolValue = Convert.ToBoolean(param.Value);
                     ReplaceNumericParam<bool>(boolValue, paramValue);
                     break;
+                case SqlDataType.DotNetNumeric:
+                    // Convert C# decimal to SQL_NUMERIC_STRUCT
+                    // Use the precision and scale from the parameter metadata
+                    decimal decimalValue = Convert.ToDecimal(param.Value);
+                    // WHY hardcode precision to 38?
+                    // - param.Size may contain column size, not necessarily precision
+                    // - Using maximum precision (38) ensures we never truncate significant digits
+                    // - SQL Server will handle precision validation based on the actual parameter declaration
+                    byte precision = 38; // SQL Server max precision for NUMERIC/DECIMAL
+                    byte scale = (byte)param.DecimalDigits;
+                    // WHY set strLenOrNullMap to 19?
+                    // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
+                    // - SQL_NUMERIC_STRUCT is exactly 19 bytes: precision(1) + scale(1) + sign(1) + val(16)
+                    // - This tells ODBC how many bytes to read from the paramValue pointer
+                    *strLenOrNullMap = 19; // sizeof(SqlNumericStruct)
+                    ReplaceNumericStructParam(decimalValue, precision, scale, paramValue);
+                    break;
                 case SqlDataType.DotNetChar:
                     // For CHAR/VARCHAR, strLenOrNullMap is in bytes (1 byte per character for ANSI).
                     // param.Size is the declared parameter size in characters (from SQL Server's CHAR(n)/VARCHAR(n)).
@@ -273,6 +295,50 @@ namespace Microsoft.SqlServer.CSharpExtension
             GCHandle handle = GCHandle.Alloc(valueArray, GCHandleType.Pinned);
             _handleList.Add(handle);
             *paramValue = (void*)handle.AddrOfPinnedObject();
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for NUMERIC/DECIMAL data types.
+        /// Converts C# decimal to SQL_NUMERIC_STRUCT and uses proper memory pinning.
+        /// Follows the same pattern as Java extension's numeric parameter handling.
+        /// </summary>
+        /// <param name="value">The C# decimal value to convert.</param>
+        /// <param name="precision">Total number of digits (1-38).</param>
+        /// <param name="scale">Number of digits after decimal point (0-precision).</param>
+        /// <param name="paramValue">Output pointer to receive the pinned SqlNumericStruct.</param>
+        private unsafe void ReplaceNumericStructParam(
+            decimal value,
+            byte    precision,
+            byte    scale,
+            void    **paramValue)
+        {
+            // Convert C# decimal to SQL_NUMERIC_STRUCT
+            SqlNumericStruct numericStruct = DecimalToSqlNumericStruct(value, precision, scale);
+            
+            // Box the struct into a single-element array to create a heap-allocated copy, then pin it.
+            // 
+            // WHY box into an array before pinning?
+            // - Local struct 'numericStruct' is stack-allocated and will be destroyed when method returns
+            // - We need a heap-allocated copy that survives after this method returns
+            // - GCHandle.Alloc requires a heap object; structs must be boxed first
+            // - Single-element array is the simplest way to create a heap-allocated struct
+            //
+            // WHY pin with GCHandle?
+            // - Native code will dereference the paramValue pointer during execution
+            // - Without pinning, garbage collector could move the object, invalidating the pointer
+            // - GCHandleType.Pinned prevents GC from moving the object until we free the handle
+            //
+            // WHY add handle to _handleList?
+            // - If we don't keep a reference, GC could free the handle immediately
+            // - _handleList keeps handles alive until container is disposed/reset
+            // - Handles are freed in ResetParams or class disposal, ensuring proper cleanup
+            //
+            SqlNumericStruct[] valueArray = new SqlNumericStruct[1] { numericStruct };
+            GCHandle handle = GCHandle.Alloc(valueArray, GCHandleType.Pinned);
+            _handleList.Add(handle);
+            *paramValue = (void*)handle.AddrOfPinnedObject();
+            
+            Logging.Trace($"ReplaceNumericStructParam: Converted decimal {value} to SqlNumericStruct (precision={precision}, scale={scale})");
         }
 
         /// <summary>
