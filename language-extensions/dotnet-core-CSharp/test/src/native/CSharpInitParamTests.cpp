@@ -772,6 +772,62 @@ namespace ExtensionApiTest
         return distance;
     }
 
+    //----------------------------------------------------------------------------------------------
+    // Name: InitParam (Template Specialization for SQL_NUMERIC_STRUCT)
+    //
+    // Description:
+    // Specialized template for SQL_NUMERIC_STRUCT that correctly passes precision and scale
+    // from the struct to InitParam. The generic template passes decimalDigits=0, which
+    // causes InitParam to reject NUMERIC parameters with non-zero scale.
+    //
+    // Note: For output parameters with uninitialized structs (precision=0), uses defaults:
+    // precision=38, scale=0 to allow the C# executor to set the actual values later.
+    //
+    template<>
+    void CSharpExtensionApiTests::InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        int paramNumber,
+        SQL_NUMERIC_STRUCT paramValue,
+        bool isNull,
+        SQLSMALLINT inputOutputType,
+        SQLRETURN SQLResult)
+    {
+        string paramName = "param" + to_string(paramNumber);
+        string atParam = "@" + paramName;
+        SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
+            static_cast<void *>(const_cast<char *>(atParam.c_str())));
+
+        int paramNameLength = atParam.length();
+
+        SQL_NUMERIC_STRUCT *pParamValue = nullptr;
+
+        if (!isNull)
+        {
+            pParamValue = &(paramValue);
+        }
+
+        // For uninitialized structs (precision=0), use defaults for output parameters
+        // The C# executor will set the actual values during execution.
+        // NOTE: In production T-SQL, SQL Server always provides proper precision/scale metadata.
+        // This handles test scenarios where OUTPUT parameters are initialized with default structs.
+        SQLULEN precision = (isNull || paramValue.precision == 0) ? 38 : paramValue.precision;
+        SQLSMALLINT scale = (isNull || paramValue.precision == 0) ? 0 : paramValue.scale;
+
+        SQLRETURN result = (*sm_initParamFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            paramNumber,
+            unsignedParamName,
+            paramNameLength,
+            SQL_C_NUMERIC,
+            precision,                                              // paramSize = precision (not sizeof)
+            scale,                                                   // decimalDigits = scale from struct
+            pParamValue,                                // paramValue
+            pParamValue != nullptr ? sizeof(SQL_NUMERIC_STRUCT) : SQL_NULL_DATA, // strLenOrInd = 19 bytes
+            inputOutputType);                           // inputOutputType
+
+        EXPECT_EQ(result, SQLResult);
+    }
+
     // Explicit template instantiations
     //
     template void CSharpExtensionApiTests::InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(

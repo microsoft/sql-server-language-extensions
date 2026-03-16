@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -317,7 +318,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 if (column[rowNumber] != null)
                 {
                     decimal value = (decimal)column[rowNumber];
-                    numericArray[rowNumber] = DecimalToSqlNumericStruct(value, precision, scale);
+                    numericArray[rowNumber] = FromDecimal(value, precision, scale);
                     Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value} converted to SqlNumericStruct");
                 }
                 else
