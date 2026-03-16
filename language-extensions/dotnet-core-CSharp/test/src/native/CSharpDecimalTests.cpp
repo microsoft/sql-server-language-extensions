@@ -22,29 +22,11 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, InitNumericParamTest)
     {
+        using TestHelpers::CreateNumericStruct;
+
         InitializeSession(
             0,  // inputSchemaColumnsNumber
             5); // parametersNumber
-
-        // Helper lambda to create SQL_NUMERIC_STRUCT from decimal value
-        //
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            // Convert mantissa to little-endian byte array
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
 
         // Test NUMERIC(10,2) value: 12345.67
         // Stored as: mantissa = 1234567, scale = 2
@@ -213,26 +195,11 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, DecimalPrecisionScaleTest)
     {
+        using TestHelpers::CreateNumericStruct;
+
         InitializeSession(
             0,  // inputSchemaColumnsNumber
             6); // parametersNumber
-
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
 
         // NUMERIC(38, 0) - maximum precision, no decimal places
         SQL_NUMERIC_STRUCT p0 = CreateNumericStruct(12345678901234567LL, 38, 0, false);
@@ -267,26 +234,11 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, DecimalBoundaryValuesTest)
     {
+        using TestHelpers::CreateNumericStruct;
+
         InitializeSession(
             0,  // inputSchemaColumnsNumber
             6); // parametersNumber
-
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
 
         // Test zero
         SQL_NUMERIC_STRUCT zero = CreateNumericStruct(0, 10, 2, false);
@@ -375,26 +327,12 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetDecimalInputColumnsTest)
     {
+        using TestHelpers::CreateNumericStruct;
+
         // Initialize test data for decimal columns
         // Column 1: DecimalColumn1 (non-nullable, NUMERIC(19,4))
         // Column 2: DecimalColumn2 (nullable, NUMERIC(38,10))
         //
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
 
         // Column 1 data: Non-nullable, NUMERIC(19, 4)
         // Values: 12345.6789, 9876543.2100, 0.1234, -555.5000, 999999999.9999
@@ -500,23 +438,9 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, GetDecimalResultColumnsTest)
     {
+        using TestHelpers::CreateNumericStruct;
+
         // Create decimal column data for testing output
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
 
         // Result Column 1: NUMERIC(18, 2) - typical financial data
         // Maximum value in data: 999999999999999.99 requires precision 18
@@ -610,22 +534,7 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, MultipleDecimalColumnsTest)
     {
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
+        using TestHelpers::CreateNumericStruct;
 
         // Column 1: NUMERIC(19, 4) - extended money values
         // Represents amounts like: $123,456,789,012.3456
@@ -713,22 +622,7 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, DecimalColumnsWithNullsTest)
     {
-        auto CreateNumericStruct = [](long long mantissa, SQLCHAR precision, SQLSCHAR scale, bool isNegative) -> SQL_NUMERIC_STRUCT
-        {
-            SQL_NUMERIC_STRUCT result;
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            
-            unsigned long long absMantissa = abs(mantissa);
-            for (int i = 0; i < 16; i++)
-            {
-                result.val[i] = (SQLCHAR)(absMantissa & 0xFF);
-                absMantissa >>= 8;
-            }
-            
-            return result;
-        };
+        using TestHelpers::CreateNumericStruct;
 
         // Column 1: First and last NULL (NUMERIC(28, 6))
         // Pattern: NULL, 12345.678900, 98765.432100, 0.000001, NULL
