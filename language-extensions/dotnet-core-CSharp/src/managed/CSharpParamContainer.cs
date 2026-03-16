@@ -223,11 +223,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // Convert C# decimal to SQL_NUMERIC_STRUCT
                     // Use the precision and scale from the parameter metadata
                     decimal decimalValue = Convert.ToDecimal(param.Value);
-                    // WHY hardcode precision to 38?
-                    // - param.Size may contain column size, not necessarily precision
-                    // - Using maximum precision (38) ensures we never truncate significant digits
-                    // - SQL Server will handle precision validation based on the actual parameter declaration
-                    byte precision = 38; // SQL Server max precision for NUMERIC/DECIMAL
+                    // WHY use param.Size for precision?
+                    // - For DECIMAL/NUMERIC parameters, param.Size contains the declared precision (not bytes)
+                    // - This follows standard ODBC behavior where ColumnSize = precision for SQL_NUMERIC/SQL_DECIMAL
+                    // - CRITICAL: The SqlNumericStruct precision MUST match the declared parameter precision
+                    //   or SQL Server rejects it with "Invalid data for type decimal" (Msg 9803)
+                    // - Example: DECIMAL(3,3) parameter MUST have precision=3 in the struct, not precision=38
+                    byte precision = (byte)param.Size;
                     byte scale = (byte)param.DecimalDigits;
                     // WHY set strLenOrNullMap to 19?
                     // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size

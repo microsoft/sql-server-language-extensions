@@ -10,6 +10,7 @@
 //*********************************************************************
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -303,74 +304,93 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <exception cref="OverflowException">Thrown when the value exceeds C# decimal range.</exception>
         public static decimal SqlNumericStructToDecimal(SqlNumericStruct numeric)
         {
-            // Convert little-endian byte array (16 bytes) to a scaled integer value.
-            // The val array contains the absolute value scaled by 10^scale.
-            // For example, for numeric(10,2) value 123.45:
-            //   scale = 2, val represents 12345 (123.45 * 10^2)
-            
-            // Build the integer value from little-endian bytes
-            // We read up to 16 bytes (128 bits) which can represent very large numbers
-            //
-            // WHY multiply by 256 for each byte position?
-            // - SQL_NUMERIC_STRUCT stores the value as little-endian base-256 representation
-            // - Each byte represents one "digit" in base 256 (not base 10)
-            // - Example: bytes [0x39, 0x30] = 0x39 + (0x30 * 256) = 57 + 12288 = 12345
-            // - This matches how ODBC and SQL Server store NUMERIC internally
-            //
-            // WHY process from end to beginning?
-            // - Find the highest non-zero byte first to determine actual value size
-            // - Avoids computing unnecessarily large multipliers that would overflow decimal
-            // - For most practical values, only first 12-13 bytes are used
-            //
-            decimal scaledValue = 0m;
-            
-            // Find the last non-zero byte to avoid unnecessary iterations
-            int lastNonZeroByte = -1;
-            for (int i = 15; i >= 0; i--)
+            try
             {
-                if (numeric.GetVal(i) != 0)
+                // Convert little-endian byte array (16 bytes) to a scaled integer value.
+                // The val array contains the absolute value scaled by 10^scale.
+                // For example, for numeric(10,2) value 123.45:
+                //   scale = 2, val represents 12345 (123.45 * 10^2)
+                
+                // Build the integer value from little-endian bytes
+                // We read up to 16 bytes (128 bits) which can represent very large numbers
+                //
+                // WHY multiply by 256 for each byte position?
+                // - SQL_NUMERIC_STRUCT stores the value as little-endian base-256 representation
+                // - Each byte represents one "digit" in base 256 (not base 10)
+                // - Example: bytes [0x39, 0x30] = 0x39 + (0x30 * 256) = 57 + 12288 = 12345
+                // - This matches how ODBC and SQL Server store NUMERIC internally
+                //
+                // WHY process from end to beginning?
+                // - Find the highest non-zero byte first to determine actual value size
+                // - Avoids computing unnecessarily large multipliers that would overflow decimal
+                // - For most practical values, only first 12-13 bytes are used
+                //
+                decimal scaledValue = 0m;
+                
+                // Find the last non-zero byte to avoid unnecessary iterations
+                int lastNonZeroByte = -1;
+                for (int i = 15; i >= 0; i--)
                 {
-                    lastNonZeroByte = i;
-                    break;
+                    if (numeric.GetVal(i) != 0)
+                    {
+                        lastNonZeroByte = i;
+                        break;
+                    }
                 }
-            }
-            
-            // If all bytes are zero, return 0
-            if (lastNonZeroByte == -1)
-            {
-                return 0m;
-            }
-            
-            // Build value from highest byte down to avoid large intermediate multipliers
-            // This prevents decimal overflow when processing high-precision SQL numerics
-            for (int i = lastNonZeroByte; i >= 0; i--)
-            {
-                scaledValue = scaledValue * 256m + numeric.GetVal(i);
-            }
+                
+                // If all bytes are zero, return 0
+                if (lastNonZeroByte == -1)
+                {
+                    return 0m;
+                }
+                
+                // Build value from highest byte down to avoid large intermediate multipliers
+                // This prevents decimal overflow when processing high-precision SQL numerics
+                for (int i = lastNonZeroByte; i >= 0; i--)
+                {
+                    scaledValue = scaledValue * 256m + numeric.GetVal(i);
+                }
 
-            // Scale down by dividing by 10^scale to get the actual decimal value
-            decimal result;
-            if (numeric.scale >= 0 && numeric.scale < PowersOf10.Length)
-            {
-                result = scaledValue / PowersOf10[numeric.scale];
-            }
-            else if (numeric.scale == 0)
-            {
-                result = scaledValue;
-            }
-            else
-            {
-                // For scales beyond our lookup table, use Math.Pow (slower but rare)
-                result = scaledValue / (decimal)Math.Pow(10, numeric.scale);
-            }
+                // Scale down by dividing by 10^scale to get the actual decimal value
+                decimal result;
+                if (numeric.scale >= 0 && numeric.scale < PowersOf10.Length)
+                {
+                    result = scaledValue / PowersOf10[numeric.scale];
+                }
+                else if (numeric.scale == 0)
+                {
+                    result = scaledValue;
+                }
+                else
+                {
+                    // For scales beyond our lookup table, use Math.Pow (slower but rare)
+                    result = scaledValue / (decimal)Math.Pow(10, numeric.scale);
+                }
 
-            // Apply sign: 1 = positive, 0 = negative
-            if (numeric.sign == 0)
-            {
-                result = -result;
-            }
+                // Apply sign: 1 = positive, 0 = negative
+                if (numeric.sign == 0)
+                {
+                    result = -result;
+                }
 
-            return result;
+                return result;
+            }
+            catch (OverflowException)
+            {
+                // SQL Server DECIMAL(38,scale) can represent values much larger than C# decimal's range.
+                // C# decimal maximum: ±79,228,162,514,264,337,593,543,950,335 (approx ±7.9 × 10^28)
+                // SQL DECIMAL(38,0) maximum: ±10^38 - 1
+                //
+                // This overflow typically occurs with DECIMAL(30+, scale) parameters containing values
+                // that exceed 29 significant digits total.
+                string valHex = string.Join("", Enumerable.Range(0, 16).Select(i => numeric.GetVal(i).ToString("X2")));
+                throw new OverflowException(
+                    $"SQL DECIMAL/NUMERIC value exceeds C# decimal range. " +
+                    $"Precision={numeric.precision}, Scale={numeric.scale}, Sign={numeric.sign}, " +
+                    $"Val={valHex}. " +
+                    $"C# decimal supports up to 29 significant digits (±7.9×10^28). " +
+                    $"Consider using lower precision parameters or handle large numerics differently.");
+            }
         }
 
         /// <summary>
