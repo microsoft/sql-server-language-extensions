@@ -11,6 +11,7 @@
 using System;
 using Microsoft.Data.Analysis;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -226,7 +227,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 {
                     // Convert SQL_NUMERIC_STRUCT to C# decimal
                     // The conversion handles precision, scale, sign, and the 16-byte integer value
-                    colDataFrame[i] = SqlNumericStructToDecimal(numericArray[i]);
+                    colDataFrame[i] = ToDecimal(numericArray[i]);
                 }
                 // If null, the PrimitiveDataFrameColumn<decimal> slot remains as null
             }

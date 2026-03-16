@@ -14,6 +14,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -135,7 +136,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetNumeric:
                     // Convert SQL_NUMERIC_STRUCT to C# decimal
                     SqlNumericStruct* numericPtr = (SqlNumericStruct*)paramValue;
-                    _params[paramNumber].Value = SqlNumericStructToDecimal(*numericPtr);
+                    _params[paramNumber].Value = ToDecimal(*numericPtr);
                     break;
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
@@ -315,7 +316,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             void    **paramValue)
         {
             // Convert C# decimal to SQL_NUMERIC_STRUCT
-            SqlNumericStruct numericStruct = DecimalToSqlNumericStruct(value, precision, scale);
+            SqlNumericStruct numericStruct = FromDecimal(value, precision, scale);
             
             // Box the struct into a single-element array to create a heap-allocated copy, then pin it.
             // 
