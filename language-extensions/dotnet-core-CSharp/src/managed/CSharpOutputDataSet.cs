@@ -235,45 +235,78 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             // For NUMERIC/DECIMAL, we need to determine appropriate precision and scale from the data.
             // SQL Server supports precision 1-38 and scale 0-precision.
-            // We'll use the DecimalDigits from the column metadata (if set), or calculate from actual values.
+            // We'll calculate both precision and scale by examining the actual decimal values.
             //
-            // WHY default precision to 38?
-            // - 38 is the maximum precision SQL Server NUMERIC/DECIMAL supports
-            // - Using maximum precision ensures we never lose significant digits
-            // - SQL Server will handle storage optimization internally
-            byte precision = 38;
+            // WHY calculate from data instead of hardcoding?
+            // - The extension doesn't have access to the input column's original precision
+            // - SQL Server validates returned precision against WITH RESULT SETS declaration
+            // - Using precision=38 for all values causes "Invalid data for type numeric" errors
+            // - We must calculate the minimum precision needed to represent the data
+            //
+            byte precision = 0;
             byte scale = (byte)_columns[columnNumber].DecimalDigits;
             
-            // If scale is 0 but we have actual decimal values, calculate appropriate scale
-            // by examining all non-null values to ensure we don't lose precision
+            // Calculate precision and scale by examining all non-null values
+            // We need to find the maximum precision and scale to ensure no data loss
             //
             // WHY examine ALL rows instead of just sampling?
             // - A previous implementation only checked first 10 rows (optimization attempt)
-            // - This caused data loss when higher-scale values appeared later in the dataset
-            // - Example: rows 1-10 have scale 2 (e.g., 123.45), but row 100 has scale 4 (e.g., 123.4567)
-            // - If we use scale=2 for the entire column, row 100 gets rounded to 123.46 (data loss!)
-            // - Must examine ALL rows to find maximum scale and preserve all decimal places
+            // - This caused data loss when higher-precision values appeared later in the dataset
+            // - Example: rows 1-10 need precision 6, but row 100 needs precision 14
+            // - If we use precision=6 for the entire column, row 100 gets truncated (data loss!)
+            // - Must examine ALL rows to find maximum precision and scale
             //
-            if (scale == 0)
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
-                for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+                if (column[rowNumber] != null)
                 {
-                    if (column[rowNumber] != null)
+                    decimal value = (decimal)column[rowNumber];
+                    
+                    // Get the scale from the decimal value itself
+                    // Scale is in bits 16-23 of flags field (bits[3])
+                    int[] bits = decimal.GetBits(value);
+                    byte valueScale = (byte)((bits[3] >> 16) & 0x7F);
+                    scale = Math.Max(scale, valueScale);
+                    
+                    // Calculate precision by counting significant digits
+                    // Remove the scale (decimal places) to get the integer part,
+                    // then count digits in both parts
+                    decimal absValue = Math.Abs(value);
+                    decimal integerPart = Math.Truncate(absValue);
+                    
+                    // Count digits in integer part (or 1 if zero)
+                    byte integerDigits;
+                    if (integerPart == 0)
                     {
-                        decimal value = (decimal)column[rowNumber];
-                        // Get the scale from the decimal value itself
-                        // 
-                        // WHY use decimal.GetBits and bit shifting?
-                        // - C# decimal is stored as 128-bit: sign (1 bit), scale (8 bits), mantissa (96 bits)
-                        // - GetBits returns 4 ints: [0-2] = mantissa low/mid/high, [3] = flags (sign + scale)
-                        // - Scale is in bits 16-23 of flags field (bits[3])
-                        // - Bit shift >> 16 moves scale to low byte, & 0x7F masks to get 7-bit scale value
-                        int[] bits = decimal.GetBits(value);
-                        byte valueScale = (byte)((bits[3] >> 16) & 0x7F);
-                        scale = Math.Max(scale, valueScale);
+                        integerDigits = 1;
                     }
+                    else
+                    {
+                        // Log10 gives us the magnitude, +1 for digit count
+                        integerDigits = (byte)(Math.Floor(Math.Log10((double)integerPart)) + 1);
+                    }
+                    
+                    // Precision = digits before decimal + digits after decimal
+                    byte valuePrecision = (byte)(integerDigits + valueScale);
+                    precision = Math.Max(precision, valuePrecision);
                 }
             }
+            
+            // Ensure minimum precision of 1 and maximum of 38
+            precision = Math.Max(precision, (byte)1);
+            precision = Math.Min(precision, (byte)38);
+            
+            // Ensure scale doesn't exceed precision
+            if (scale > precision)
+            {
+                precision = scale;
+            }
+
+            // Update column metadata with calculated precision and scale
+            // Size contains the precision for DECIMAL/NUMERIC types (not bytes)
+            // DecimalDigits contains the scale
+            _columns[columnNumber].Size = precision;
+            _columns[columnNumber].DecimalDigits = scale;
 
             Logging.Trace($"ExtractNumericColumn: Column {columnNumber}, Precision={precision}, Scale={scale}, RowCount={column.Length}");
 
