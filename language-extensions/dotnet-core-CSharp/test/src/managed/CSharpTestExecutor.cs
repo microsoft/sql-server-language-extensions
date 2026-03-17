@@ -141,6 +141,43 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    /// <summary>
+    /// Test executor for decimal OUTPUT parameters with maximum precision (29 digits).
+    /// Tests the FromDecimal() conversion for values at the edge of C# decimal's capability.
+    /// 
+    /// Note: C# decimal normalizes values - the scale is determined by the value's actual
+    /// precision requirements, not by a declared scale. This tests high-precision conversions.
+    /// </summary>
+    public class CSharpTestExecutorDecimalHighScaleParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // Set high-precision decimal values (29 significant digits total)
+            // These exercise the FromDecimal() conversion for C# decimal's maximum capability
+            // C# decimal can represent values with up to 29 significant digits
+            
+            // param0: Maximum precision with integer and fractional parts
+            sqlParams["@param0"] = 12345678901234567.890123456789m; // 29 total digits
+            
+            // param1: Large fractional precision
+            sqlParams["@param1"] = 1.2345678901234567890123456789m; // 29 total digits
+            
+            // param2: Different high-precision pattern
+            sqlParams["@param2"] = 123.45678901234567890123456789m; // 29 total digits
+            
+            // param3: Maximum fractional precision
+            sqlParams["@param3"] = 0.12345678901234567890123456789m; // 29 total digits
+            
+            // param4: Negative high-precision value
+            sqlParams["@param4"] = -987.65432109876543210987654321m; // 29 total digits
+            
+            // param5: Zero value for validation
+            sqlParams["@param5"] = 0.0m;
+            
+            return null;
+        }
+    }
+
     public class CSharpTestExecutorStringParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){

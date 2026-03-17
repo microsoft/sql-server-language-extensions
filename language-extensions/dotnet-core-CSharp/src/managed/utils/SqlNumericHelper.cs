@@ -22,7 +22,7 @@ namespace Microsoft.SqlServer.CSharpExtension
     public static class SqlNumericHelper
     {
         /// <summary>
-        /// Maximum number of powers of 10 in the PowersOf10 lookup table.
+        /// Maximum number of powers of 10 in the "PowersOf10" lookup table.
         /// C# decimal supports up to 28-29 significant digits, so we store 10^0 through 10^28 (29 entries).
         /// This covers all possible scale values (0-38) within C# decimal's precision range.
         /// Array index corresponds to the exponent: PowersOf10[n] = 10^n.
@@ -195,37 +195,32 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// Converts SQL_NUMERIC_STRUCT to C# decimal.
-        /// Follows the same conversion logic as Java extension's NumericStructToBigDecimal.
         /// </summary>
         /// <param name="numeric">The SQL numeric structure from ODBC.</param>
         /// <returns>The equivalent C# decimal value.</returns>
         /// <exception cref="OverflowException">Thrown when the value exceeds C# decimal range.</exception>
         public static decimal ToDecimal(SqlNumericStruct numeric)
         {
+            decimal result;
+            
             try
             {
                 // Convert little-endian byte array (16 bytes) to a scaled integer value.
                 // The val array contains the absolute value scaled by 10^scale.
                 // For example, for numeric(10,2) value 123.45:
                 //   scale = 2, val represents 12345 (123.45 * 10^2)
-                
-                // Build the integer value from little-endian bytes
-                // We read up to 16 bytes (128 bits) which can represent very large numbers.
                 //
-                // Why multiply by 256 for each byte position?
-                // - SQL_NUMERIC_STRUCT stores the value as little-endian base-256 representation.
-                // - Each byte represents one "digit" in base 256 (not base 10).
-                // - Example: bytes [0x39, 0x30] = 0x39 + (0x30 * 256) = 57 + 12288 = 12345
-                // - This matches how ODBC and SQL Server store NUMERIC internally.
-                //
-                // Why process from end to beginning?
-                // - Find the highest non-zero byte first to determine actual value size.
-                // - Avoids computing unnecessarily large multipliers that would overflow decimal.
-                // - For most practical values, only first 12-13 bytes are used.
+                // Little-endian storage layout:
+                // - val[0] = least significant byte (LSB)
+                // - val[15] = most significant byte (MSB)
+                // - Each byte represents one "digit" in base-256 representation
+                // - Example: bytes [0x39, 0x30, 0x00, ...] = 0x39 + (0x30 * 256) = 57 + 12288 = 12345
                 //
                 decimal scaledValue = 0m;
                 
-                // Find the last non-zero byte to avoid unnecessary iterations
+                // Find the most significant non-zero byte (highest index) to optimize the conversion.
+                // This avoids processing unnecessary high-order zero bytes and prevents potential
+                // overflow when building large values. Most practical values use only 12-13 bytes.
                 int lastNonZeroByte = -1;
                 for (int i = 15; i >= 0; i--)
                 {
@@ -236,47 +231,54 @@ namespace Microsoft.SqlServer.CSharpExtension
                     }
                 }
                 
-                // If all bytes are zero, return 0
+                // If all bytes are zero, result is 0
                 if (lastNonZeroByte == -1)
                 {
-                    return 0m;
-                }
-                
-                // Build value from highest byte down to avoid large intermediate multipliers
-                // This prevents decimal overflow when processing high-precision SQL numerics
-                for (int i = lastNonZeroByte; i >= 0; i--)
-                {
-                    scaledValue = scaledValue * 256m + numeric.GetVal(i);
-                }
-
-                // Scale down by dividing by 10^scale to get the actual decimal value
-                decimal result;
-                if (numeric.scale >= 0 && numeric.scale < PowersOf10.Length)
-                {
-                    result = scaledValue / PowersOf10[numeric.scale];
-                }
-                else if (numeric.scale == 0)
-                {
-                    result = scaledValue;
+                    result = 0m;
                 }
                 else
                 {
-                    // For scales beyond our lookup table, use repeated division by 10
-                    // Cannot use Math.Pow(10, scale) because values > 10^28 overflow when converting double→decimal
-                    result = scaledValue;
-                    for (int i = 0; i < numeric.scale; i++)
+                    // Build the integer value by processing from MSB (highest index) to LSB (index 0).
+                    // Algorithm: Start with MSB, then for each subsequent byte toward LSB,
+                    // multiply current value by 256 and add the next byte.
+                    // This approach avoids large intermediate multipliers that could overflow decimal.
+                    for (int i = lastNonZeroByte; i >= 0; i--)
                     {
-                        result /= 10m;
+                        scaledValue = scaledValue * 256m + numeric.GetVal(i);
+                    }
+
+                    // Scale down by dividing by 10^scale to get the actual decimal value.
+                    // The scaledValue contains the integer representation; we need to divide by 10^scale.
+                    // For example, if scaledValue=12345 and scale=2, result = 12345 / 100 = 123.45
+                    if (numeric.scale >= 0 && numeric.scale < PowersOf10.Length)
+                    {
+                        // Use pre-computed lookup table for scales 0-28 (fast path)
+                        result = scaledValue / PowersOf10[numeric.scale];
+                    }
+                    else if (numeric.scale == 0)
+                    {
+                        // No scaling needed - value is already an integer
+                        result = scaledValue;
+                    }
+                    else
+                    {
+                        // For scales beyond our lookup table (29-38), use repeated division by 10.
+                        // We cannot use Math.Pow(10, scale) because:
+                        // - Math.Pow returns double, and values > 10^28 overflow when converting double→decimal
+                        // - Repeated division maintains decimal precision without overflow
+                        result = scaledValue;
+                        for (int i = 0; i < numeric.scale; i++)
+                        {
+                            result /= 10m;
+                        }
+                    }
+
+                    // Apply sign: 1 = positive, 0 = negative
+                    if (numeric.sign == 0)
+                    {
+                        result = -result;
                     }
                 }
-
-                // Apply sign: 1 = positive, 0 = negative
-                if (numeric.sign == 0)
-                {
-                    result = -result;
-                }
-
-                return result;
             }
             catch (OverflowException)
             {
@@ -294,6 +296,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                     $"C# decimal supports up to 29 significant digits (±7.9×10^28). " +
                     $"Consider using lower precision parameters or handle large numerics differently.");
             }
+            
+            return result;
         }
 
         /// <summary>
@@ -319,7 +323,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             SqlNumericStruct result = new SqlNumericStruct
             {
                 precision = precision,
-                scale = (sbyte)scale,
+                scale = (sbyte)scale, // Safe cast: scale validated and the max is 38 < 127.
                 sign = (byte)(value >= 0 ? 1 : 0)
             };
 

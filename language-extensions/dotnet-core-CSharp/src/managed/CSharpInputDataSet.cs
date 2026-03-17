@@ -193,11 +193,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method adds NUMERIC/DECIMAL column data by converting from SQL_NUMERIC_STRUCT
         /// to C# decimal values, creating a PrimitiveDataFrameColumn<decimal>, and adding it to the DataFrame.
-        /// Follows the same pattern as Java extension's numeric handling.
         /// </summary>
         /// <param name="columnNumber">The column index.</param>
         /// <param name="rowsNumber">Number of rows in this column.</param>
-        /// <param name="colData">Pointer to array of SQL_NUMERIC_STRUCT structures (19 bytes each).</param>
+        /// <param name="colData">Pointer to array of SQL_NUMERIC_STRUCT structures.</param>
         /// <param name="colMap">Pointer to null indicator array (SQL_NULL_DATA for null values).</param>
         private unsafe void AddNumericDataFrameColumn(
             ushort columnNumber,
@@ -218,7 +217,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 // Check if this row has a null value
                 // 
-                // WHY check both Nullable == 0 and SQL_NULL_DATA?
+                // Why check both Nullable == 0 and SQL_NULL_DATA?
                 // - Nullable == 0 means column is declared NOT NULL (cannot contain nulls)
                 // - For NOT NULL columns, skip null checking for performance (nullSpan[i] is undefined)
                 // - For nullable columns (Nullable != 0), check if nullSpan[i] == SQL_NULL_DATA (-1)
@@ -226,10 +225,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                 if (_columns[columnNumber].Nullable == 0 || nullSpan[i] != SQL_NULL_DATA)
                 {
                     // Convert SQL_NUMERIC_STRUCT to C# decimal
-                    // The conversion handles precision, scale, sign, and the 16-byte integer value
                     colDataFrame[i] = ToDecimal(numericArray[i]);
                 }
-                // If null, the PrimitiveDataFrameColumn<decimal> slot remains as null
             }
 
             CSharpDataFrame.Columns.Add(colDataFrame);
