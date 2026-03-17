@@ -207,7 +207,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method sets data pointer for the column and append the array to the handle list.
         /// </summary>
-        private unsafe void SetDataPtrs<T>(
+        private void SetDataPtrs<T>(
             ushort  columnNumber,
             T[]     array
         ) where T : unmanaged
@@ -220,19 +220,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method extracts NUMERIC/DECIMAL column data by converting C# decimal values
         /// to SQL_NUMERIC_STRUCT array, pinning it, and storing the pointer.
-        /// Follows the same pattern as Java extension's numeric handling.
         /// </summary>
         /// <param name="columnNumber">The column index.</param>
         /// <param name="column">The DataFrameColumn containing decimal values.</param>
-        private unsafe void ExtractNumericColumn(
+        private void ExtractNumericColumn(
             ushort          columnNumber,
             DataFrameColumn column)
         {
             if (column == null)
             {
                 SetDataPtrs<SqlNumericStruct>(columnNumber, Array.Empty<SqlNumericStruct>());
-                return;
             }
+            else
+            {
 
             // For NUMERIC/DECIMAL, we need to determine appropriate precision and scale from the data.
             // SQL Server supports precision 1-38 and scale 0-precision.
@@ -341,8 +341,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
             }
 
-            // Pin the SqlNumericStruct array and store pointer
-            SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
+                // Pin the SqlNumericStruct array and store pointer
+                SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
+            }
         }
 
         /// <summary>
