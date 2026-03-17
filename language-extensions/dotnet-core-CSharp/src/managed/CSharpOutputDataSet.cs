@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -174,6 +175,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetDouble:
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
+                case SqlDataType.DotNetNumeric:
+                    ExtractNumericColumn(columnNumber, column);
+                    break;
                 case SqlDataType.DotNetChar:
                     // Calculate column size from actual data.
                     // columnSize = max UTF-8 byte length across all rows.
@@ -203,7 +207,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method sets data pointer for the column and append the array to the handle list.
         /// </summary>
-        private unsafe void SetDataPtrs<T>(
+        private void SetDataPtrs<T>(
             ushort  columnNumber,
             T[]     array
         ) where T : unmanaged
@@ -211,6 +215,135 @@ namespace Microsoft.SqlServer.CSharpExtension
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             _dataPtrs[columnNumber] = handle.AddrOfPinnedObject();
             _handleList.Add(handle);
+        }
+
+        /// <summary>
+        /// This method extracts NUMERIC/DECIMAL column data by converting C# decimal values
+        /// to SQL_NUMERIC_STRUCT array, pinning it, and storing the pointer.
+        /// </summary>
+        /// <param name="columnNumber">The column index.</param>
+        /// <param name="column">The DataFrameColumn containing decimal values.</param>
+        private void ExtractNumericColumn(
+            ushort          columnNumber,
+            DataFrameColumn column)
+        {
+            if (column == null)
+            {
+                SetDataPtrs<SqlNumericStruct>(columnNumber, Array.Empty<SqlNumericStruct>());
+            }
+            else
+            {
+
+            // For NUMERIC/DECIMAL, we need to determine appropriate precision and scale from the data.
+            // SQL Server supports precision 1-38 and scale 0-precision.
+            // We'll calculate both precision and scale by examining the actual decimal values.
+            //
+            // WHY calculate from data instead of hardcoding?
+            // - The extension doesn't have access to the input column's original precision
+            // - SQL Server validates returned precision against WITH RESULT SETS declaration
+            // - Using precision=38 for all values causes "Invalid data for type numeric" errors
+            // - We must calculate the minimum precision needed to represent the data
+            //
+            byte precision = 0;
+            byte scale = (byte)_columns[columnNumber].DecimalDigits;
+            
+            // Calculate precision and scale by examining all non-null values
+            // We need to find the maximum precision and scale to ensure no data loss
+            //
+            // WHY examine ALL rows instead of just sampling?
+            // - A previous implementation only checked first 10 rows (optimization attempt)
+            // - This caused data loss when higher-precision values appeared later in the dataset
+            // - Example: rows 1-10 need precision 6, but row 100 needs precision 14
+            // - If we use precision=6 for the entire column, row 100 gets truncated (data loss!)
+            // - Must examine ALL rows to find maximum precision and scale
+            //
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if (column[rowNumber] != null)
+                {
+                    decimal value = (decimal)column[rowNumber];
+                    
+                    // Get the scale from the decimal value itself
+                    // Scale is in bits 16-23 of flags field (bits[3])
+                    int[] bits = decimal.GetBits(value);
+                    byte valueScale = (byte)((bits[3] >> 16) & 0x7F);
+                    scale = Math.Max(scale, valueScale);
+                    
+                    // Calculate precision by counting significant digits
+                    // Remove the scale (decimal places) to get the integer part,
+                    // then count digits in both parts
+                    decimal absValue = Math.Abs(value);
+                    decimal integerPart = Math.Truncate(absValue);
+                    
+                    // Count digits in integer part (or 1 if zero)
+                    byte integerDigits;
+                    if (integerPart == 0)
+                    {
+                        integerDigits = 1;
+                    }
+                    else
+                    {
+                        // Log10 gives us the magnitude, +1 for digit count
+                        integerDigits = (byte)(Math.Floor(Math.Log10((double)integerPart)) + 1);
+                    }
+                    
+                    // Precision = digits before decimal + digits after decimal
+                    byte valuePrecision = (byte)(integerDigits + valueScale);
+                    precision = Math.Max(precision, valuePrecision);
+                }
+            }
+            
+            // Ensure minimum precision of 1 and maximum of 38
+            precision = Math.Max(precision, (byte)1);
+            precision = Math.Min(precision, (byte)38);
+            
+            // Ensure scale doesn't exceed precision
+            if (scale > precision)
+            {
+                precision = scale;
+            }
+
+            // Update column metadata with calculated precision and scale
+            // Size contains the precision for DECIMAL/NUMERIC types (not bytes)
+            // DecimalDigits contains the scale
+            _columns[columnNumber].Size = precision;
+            _columns[columnNumber].DecimalDigits = scale;
+
+            Logging.Trace($"ExtractNumericColumn: Column {columnNumber}, Precision={precision}, Scale={scale}, RowCount={column.Length}");
+
+            // Convert each decimal value to SQL_NUMERIC_STRUCT
+            SqlNumericStruct[] numericArray = new SqlNumericStruct[column.Length];
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if (column[rowNumber] != null)
+                {
+                    decimal value = (decimal)column[rowNumber];
+                    numericArray[rowNumber] = FromDecimal(value, precision, scale);
+                    Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value} converted to SqlNumericStruct");
+                }
+                else
+                {
+                    // For null values, create a zero-initialized struct
+                    // The null indicator in strLenOrNullMap will mark this as SQL_NULL_DATA
+                    //
+                    // WHY create a struct for NULL values instead of leaving uninitialized?
+                    // - ODBC requires a valid struct pointer even for NULL values
+                    // - The strLenOrNullMap array separately tracks which values are NULL
+                    // - Native code reads from the struct pointer, so it must be valid memory
+                    // - We use sign=1 (positive) by convention for NULL placeholders
+                    numericArray[rowNumber] = new SqlNumericStruct
+                    {
+                        precision = precision,
+                        scale = (sbyte)scale,
+                        sign = 1  // Positive sign convention for NULL placeholders
+                    };
+                    Logging.Trace($"ExtractNumericColumn: Row {rowNumber} is NULL");
+                }
+            }
+
+                // Pin the SqlNumericStruct array and store pointer
+                SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
+            }
         }
 
         /// <summary>

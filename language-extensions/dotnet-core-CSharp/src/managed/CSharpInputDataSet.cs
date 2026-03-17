@@ -11,6 +11,7 @@
 using System;
 using Microsoft.Data.Analysis;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -126,6 +127,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetReal:
                     AddDataFrameColumn<float>(columnNumber, rowsNumber, colData, colMap);
                     break;
+                case SqlDataType.DotNetNumeric:
+                    AddNumericDataFrameColumn(columnNumber, rowsNumber, colData, colMap);
+                    break;
                 case SqlDataType.DotNetChar:
                     int[] strLens = new int[rowsNumber];
                     Interop.Copy((int*)colMap, strLens, 0, (int)rowsNumber);
@@ -180,6 +184,48 @@ namespace Microsoft.SqlServer.CSharpExtension
                 if(_columns[columnNumber].Nullable == 0 || nullSpan[i] != SQL_NULL_DATA)
                 {
                     colDataFrame[i] = colSpan[i];
+                }
+            }
+
+            CSharpDataFrame.Columns.Add(colDataFrame);
+        }
+
+        /// <summary>
+        /// This method adds NUMERIC/DECIMAL column data by converting from SQL_NUMERIC_STRUCT
+        /// to C# decimal values, creating a PrimitiveDataFrameColumn<decimal>, and adding it to the DataFrame.
+        /// </summary>
+        /// <param name="columnNumber">The column index.</param>
+        /// <param name="rowsNumber">Number of rows in this column.</param>
+        /// <param name="colData">Pointer to array of SQL_NUMERIC_STRUCT structures.</param>
+        /// <param name="colMap">Pointer to null indicator array (SQL_NULL_DATA for null values).</param>
+        private unsafe void AddNumericDataFrameColumn(
+            ushort columnNumber,
+            ulong  rowsNumber,
+            void   *colData,
+            int    *colMap)
+        {
+            // Cast the raw pointer to SQL_NUMERIC_STRUCT array
+            SqlNumericStruct* numericArray = (SqlNumericStruct*)colData;
+            
+            // Create a DataFrame column for decimal values
+            PrimitiveDataFrameColumn<decimal> colDataFrame = 
+                new PrimitiveDataFrameColumn<decimal>(_columns[columnNumber].Name, (int)rowsNumber);
+            
+            // Convert each SQL_NUMERIC_STRUCT to decimal, handling nulls
+            Span<int> nullSpan = new Span<int>(colMap, (int)rowsNumber);
+            for (int i = 0; i < (int)rowsNumber; ++i)
+            {
+                // Check if this row has a null value
+                // 
+                // Why check both Nullable == 0 and SQL_NULL_DATA?
+                // - Nullable == 0 means column is declared NOT NULL (cannot contain nulls)
+                // - For NOT NULL columns, skip null checking for performance (nullSpan[i] is undefined)
+                // - For nullable columns (Nullable != 0), check if nullSpan[i] == SQL_NULL_DATA (-1)
+                // - This matches the pattern used by other numeric types in the codebase
+                if (_columns[columnNumber].Nullable == 0 || nullSpan[i] != SQL_NULL_DATA)
+                {
+                    // Convert SQL_NUMERIC_STRUCT to C# decimal
+                    colDataFrame[i] = ToDecimal(numericArray[i]);
                 }
             }
 

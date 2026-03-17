@@ -481,4 +481,58 @@ namespace ExtensionApiTest
         std::vector<SQLSMALLINT> m_nullable;
         std::vector<SQLSMALLINT> m_partitionByIndexes;
     };
+
+    //----------------------------------------------------------------------------------------------
+    // TestHelpers namespace - Utility functions for test data generation
+    //
+    namespace TestHelpers
+    {
+        //----------------------------------------------------------------------------------------------
+        // Name: CreateNumericStruct
+        //
+        // Description:
+        //  Helper function to create SQL_NUMERIC_STRUCT from decimal value components.
+        //  Creates a properly initialized ODBC numeric structure with little-endian mantissa encoding.
+        //
+        // Arguments:
+        //  mantissa - The unscaled integer value (e.g., 123456789 for 12345.6789 with scale=4)
+        //  precision - Total number of digits (1-38, as per SQL NUMERIC/DECIMAL spec)
+        //  scale - Number of digits after decimal point (0-precision)
+        //  isNegative - true for negative values, false for positive/zero
+        //
+        // Returns:
+        //  SQL_NUMERIC_STRUCT - Fully initialized 19-byte ODBC numeric structure
+        //
+        // Example:
+        //  CreateNumericStruct(1234567, 10, 2, false) → represents 12345.67
+        //  CreateNumericStruct(5555000, 19, 4, true)  → represents -555.5000
+        //
+        inline SQL_NUMERIC_STRUCT CreateNumericStruct(
+            long long mantissa,
+            SQLCHAR precision,
+            SQLSCHAR scale,
+            bool isNegative)
+        {
+            // Zero-initialize all fields for safety
+            SQL_NUMERIC_STRUCT result{};
+            
+            result.precision = precision;
+            result.scale = scale;
+            result.sign = isNegative ? 0 : 1;  // 0 = negative, 1 = positive (ODBC convention)
+            
+            // Convert mantissa to little-endian byte array in val[0..15]
+            // Use std::abs for long long (not plain abs which is for int)
+            unsigned long long absMantissa = static_cast<unsigned long long>(std::abs(mantissa));
+            
+            // Extract bytes in little-endian order
+            // Use sizeof for self-documenting code instead of magic number 16
+            for (size_t i = 0; i < sizeof(result.val); i++)
+            {
+                result.val[i] = static_cast<SQLCHAR>(absMantissa & 0xFF);
+                absMantissa >>= 8;
+            }
+            
+            return result;
+        }
+    }
 }

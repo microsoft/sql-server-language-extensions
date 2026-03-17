@@ -5,12 +5,13 @@
 // @File: Sql.cs
 //
 // Purpose:
-//  This is the the main include for SqlDataType and Sql return values
+//  SQL data type definitions, ODBC constants, and type mapping dictionaries.
+//  For NUMERIC/DECIMAL conversion utilities, see SqlNumericHelper.cs.
 //
 //*********************************************************************
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -27,6 +28,15 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         public const short MinUtf8CharSize = 1;
         public const short MinUtf16CharSize = 2;
+        
+        /// <summary>
+        /// Size of SQL_NUMERIC_STRUCT in bytes (ODBC specification).
+        /// Calculated from SqlNumericHelper.SqlNumericStruct layout:
+        /// precision(1) + scale(1) + sign(1) + val0-val15(16) = 19 bytes.
+        /// Must match the exact size of ODBC's SQL_NUMERIC_STRUCT for binary compatibility.
+        /// </summary>
+        public static readonly short SqlNumericStructSize = (short)Marshal.SizeOf<SqlNumericHelper.SqlNumericStruct>();
+        
         public enum SqlDataType: short
         {
             DotNetBigInt = -5 + SQL_SIGNED_OFFSET, //SQL_C_SBIGINT + SQL_SIGNED_OFFSET
@@ -68,7 +78,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             {typeof(float), SqlDataType.DotNetReal},
             {typeof(double), SqlDataType.DotNetDouble},
             {typeof(bool), SqlDataType.DotNetBit},
-            {typeof(string), SqlDataType.DotNetChar}
+            {typeof(string), SqlDataType.DotNetChar},
+            {typeof(decimal), SqlDataType.DotNetNumeric}
         };
 
         /// <summary>
@@ -89,7 +100,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             {SqlDataType.DotNetDouble, sizeof(double)},
             {SqlDataType.DotNetBit, sizeof(bool)},
             {SqlDataType.DotNetChar, MinUtf8CharSize},
-            {SqlDataType.DotNetWChar, MinUtf16CharSize}
+            {SqlDataType.DotNetWChar, MinUtf16CharSize},
+            {SqlDataType.DotNetNumeric, SqlNumericStructSize}
         };
 
         /// <summary>

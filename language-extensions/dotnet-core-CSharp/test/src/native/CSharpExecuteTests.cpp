@@ -528,4 +528,12 @@ namespace ExtensionApiTest
             EXPECT_TRUE(error.find("Error: Unable to find user class with full name:") != string::npos);
         }
     }
+
+    // Explicit template instantiations
+    template void CSharpExtensionApiTests::Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        SQLULEN        rowsNumber,
+        void           **dataSet,
+        SQLINTEGER     **strLen_or_Ind,
+        vector<string> columnNames,
+        SQLRETURN      SQLResult);
 }

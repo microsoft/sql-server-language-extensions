@@ -391,6 +391,46 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>
+    //
+    // Description:
+    //  Template specialization for SQL_NUMERIC_STRUCT to extract precision from the struct
+    //  instead of using sizeof() which gives the struct size (19 bytes).
+    //
+    template<>
+    void CSharpExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        ColumnInfo<SQL_NUMERIC_STRUCT> *columnInfo)
+    {
+        SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
+        for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
+        {
+            // For NUMERIC columns, extract precision from the first non-NULL value in the column
+            // columnSize for NUMERIC represents precision (1-38), not bytes
+            SQLULEN precision = 38; // default
+            const SQL_NUMERIC_STRUCT* columnData = 
+                static_cast<const SQL_NUMERIC_STRUCT*>(columnInfo->m_dataSet[columnNumber]);
+            SQLINTEGER* strLenOrInd = columnInfo->m_strLen_or_Ind[columnNumber];
+            
+            // Find first non-NULL value to get precision
+            for (SQLULEN row = 0; row < ColumnInfo<SQL_NUMERIC_STRUCT>::sm_rowsNumber; ++row)
+            {
+                if (strLenOrInd[row] != SQL_NULL_DATA)
+                {
+                    precision = columnData[row].precision;
+                    break;
+                }
+            }
+            
+            InitializeColumn(columnNumber,
+                columnInfo->m_columnNames[columnNumber],
+                SQL_C_NUMERIC,
+                precision,
+                columnInfo->m_nullable[columnNumber],
+                columnInfo->m_partitionByIndexes[columnNumber]);
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: ColumnInfo::ColumnInfo
     //
     // Description:
@@ -485,6 +525,8 @@ namespace ExtensionApiTest
         ColumnInfo<SQLSMALLINT> *ColumnInfo);
     template void CSharpExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
         ColumnInfo<SQLCHAR> *ColumnInfo);
+    template void CSharpExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        ColumnInfo<SQL_NUMERIC_STRUCT> *ColumnInfo);
 
     template vector<char> CSharpExtensionApiTests::GenerateContiguousData(
         vector<const char*> columnVector,
