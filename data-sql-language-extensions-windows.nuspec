@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<package >
+    <metadata minClientVersion="2.5">
+        <id>data-sql-language-extensions-windows</id>
+        <version>1.0</version>
+        <authors>extclrcommitters</authors>
+        <owners>extclrcommitters</owners>
+        <description>SQL Language Extensions - Windows</description>
+    </metadata>
+    <files>
+        <!-- Windows build outputs -->
+        <file src="drop_Build_DotNetCore_CSharp_Extension\build\out\**\debug\**\*.*" target="build" />
+        <file src="drop_Build_ONNXRuntime_Extension\build\out\**\debug\**\*.*" target="build" />
+        <file src="drop_Phase_1\build\out\**\debug\**\*.*" target="build" />
+        <file src="drop_Build_DotNetCore_CSharp_Extension\build\out\**\release\**\*.*" target="build" />
+        <file src="drop_Build_ONNXRuntime_Extension\build\out\**\release\**\*.*" target="build" />
+        <file src="drop_Phase_1\build\out\**\release\**\*.*" target="build" />
+
+        <!-- Windows extension zips -->
+        <file src="drop_Build_DotNetCore_CSharp_Extension\package\out\dotnet-core-CSharp-extension\packages\debug\dotnet-core-CSharp-lang-extension.zip"
+          target="build\dotnet-core-CSharp-extension\debug" />
+        <file src="drop_Build_DotNetCore_CSharp_Extension\package\out\dotnet-core-CSharp-extension\packages\release\dotnet-core-CSharp-lang-extension.zip"
+          target="build\dotnet-core-CSharp-extension\release" />
+        <file src="drop_Phase_1\package\out\java-extension\packages\debug\java-lang-extension.zip"
+          target="build\java-extension\debug" />
+        <file src="drop_Phase_1\package\out\java-extension\packages\release\java-lang-extension.zip"
+          target="build\java-extension\release" />
+        <file src="drop_Build_ONNXRuntime_Extension\package\out\onnxruntime-extension\packages\debug\onnxruntime-extension.zip"
+          target="build\onnxruntime-extension\debug" />
+        <file src="drop_Build_ONNXRuntime_Extension\package\out\onnxruntime-extension\packages\release\onnxruntime-extension.zip"
+          target="build\onnxruntime-extension\release" />
+        <file src="drop_Phase_1\package\out\pythonextension\packages\debug\python-lang-extension.zip"
+          target="build\pythonextension\debug" />
+        <file src="drop_Phase_1\package\out\pythonextension\packages\release\python-lang-extension.zip"
+          target="build\pythonextension\release" />
+        <file src="drop_Phase_1\package\out\RExtension\packages\debug\R-lang-extension.zip"
+          target="build\RExtension\debug" />
+        <file src="drop_Phase_1\package\out\RExtension\packages\release\R-lang-extension.zip"
+          target="build\RExtension\release" />
+    </files>
+</package>

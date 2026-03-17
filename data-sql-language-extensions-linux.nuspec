@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package >
+    <metadata minClientVersion="2.5">
+        <id>data-sql-language-extensions-linux</id>
+        <version>1.0</version>
+        <authors>extclrcommitters</authors>
+        <owners>extclrcommitters</owners>
+        <description>SQL Language Extensions - Linux</description>
+    </metadata>
+    <files>
+        <!-- Linux build outputs -->
+        <file src="drop\build\out\**\debug\**\*.*" target="build" />
+        <file src="drop\build\out\**\release\**\*.*" target="build" />
+        <file src="drop_Build_OnnxRuntime_Extension_Linux\build\out\**\debug\**\*.*" target="build" />
+        <file src="drop_Build_OnnxRuntime_Extension_Linux\build\out\**\release\**\*.*" target="build" />
+
+        <!-- Linux extension zips -->
+        <file src="drop\package\out\java-extension\packages\debug\java-lang-extension-linux.zip" target="build\java-extension\debug" />
+        <file src="drop\package\out\java-extension\packages\release\java-lang-extension-linux.zip" target="build\java-extension\release" />
+        <file src="drop_Build_OnnxRuntime_Extension_Linux\package\out\onnxruntime-extension\packages\debug\onnxruntime-extension-linux.zip" target="build\onnxruntime-extension\debug" />
+        <file src="drop_Build_OnnxRuntime_Extension_Linux\package\out\onnxruntime-extension\packages\release\onnxruntime-extension-linux.zip" target="build\onnxruntime-extension\release" />
+        <file src="drop\package\out\pythonextension\packages\debug\python-lang-extension-linux.zip" target="build\pythonextension\debug" />
+        <file src="drop\package\out\pythonextension\packages\release\python-lang-extension-linux.zip" target="build\pythonextension\release" />
+        <file src="drop\package\out\RExtension\packages\debug\R-lang-extension-linux.zip" target="build\RExtension\debug" />
+        <file src="drop\package\out\RExtension\packages\release\R-lang-extension-linux.zip" target="build\RExtension\release" />
+    </files>
+</package>

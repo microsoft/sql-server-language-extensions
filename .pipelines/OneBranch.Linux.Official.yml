@@ -19,6 +19,7 @@ parameters: # parameters are shown up in ADO UI in a build queue time
 variables:
   CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)] # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
   LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2404:latest' # Docker image which is used to build the project https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2019:latest' # Needed for NuGet Pack/Push stage which runs on Windows
   DEBIAN_FRONTEND: noninteractive
   ROOT: $(Build.SourcesDirectory)
   REPOROOT: $(Build.SourcesDirectory)
@@ -164,7 +165,7 @@ extends:
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)'
               Contents: |
-                data-sql-language-extensions.nuspec
+                data-sql-language-extensions-linux.nuspec
               TargetFolder: '$(Build.SourcesDirectory)/out'
 
           - task: CmdLine@2
@@ -383,3 +384,50 @@ extends:
                 SourceFolder: '$(Build.SourcesDirectory)/onnxruntime-extension/build/build-output/onnxextension/linux/release/packages'
                 Contents: 'onnxruntime-extension-linux.zip'
                 TargetFolder: '$(ob_outputDirectory)/package/out/onnxruntime-extension/packages/release'
+
+    - stage: NuGet_Pack_Push_Linux
+      displayName: 'NuGet Pack and Push (Linux)'
+      dependsOn:
+      - linux_stage
+      - Build_ONNXRuntime_Extension_Linux
+      jobs:
+      - job: NuGet_Linux
+        displayName: 'NuGet Pack and Push (Linux)'
+        pool:
+          type: windows
+        variables:
+          ob_outputDirectory: '$(Build.SourcesDirectory)\out'
+          ob_artifactBaseName: 'drop_NuGet_Linux'
+        steps:
+          - download: current
+            artifact: drop
+
+          - download: current
+            artifact: drop_Build_OnnxRuntime_Extension_Linux
+
+          - task: NuGetToolInstaller@1
+            displayName: 'Install NuGet'
+
+          - task: CopyFiles@2
+            displayName: 'Copy nuspec to workspace root'
+            inputs:
+              SourceFolder: '$(Pipeline.Workspace)\drop'
+              Contents: 'data-sql-language-extensions-linux.nuspec'
+              TargetFolder: '$(Pipeline.Workspace)'
+
+          - task: CmdLine@2
+            displayName: 'NuGet Pack'
+            inputs:
+              script: nuget pack "$(Pipeline.Workspace)\data-sql-language-extensions-linux.nuspec" -OutputDirectory "$(Build.SourcesDirectory)\out" -Version $(Build.BuildNumber) -NoDefaultExcludes
+              workingDirectory: '$(Pipeline.Workspace)'
+
+          - task: NuGetAuthenticate@1
+            displayName: 'NuGet Authenticate'
+
+          - task: NuGetCommand@2
+            displayName: 'NuGet Push'
+            inputs:
+              command: 'push'
+              packagesToPush: '$(Build.SourcesDirectory)\out\*.nupkg'
+              nuGetFeedType: 'internal'
+              publishVstsFeed: 'Data-SQL-Language-Extensions'

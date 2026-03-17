@@ -43,7 +43,7 @@ extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
   parameters:
     git:
-      fetchDepth: -1
+      fetchDepth: 1
       longpaths: true  
     globalSdl: # https://aka.ms/obpipelines/sdl
       tsa:

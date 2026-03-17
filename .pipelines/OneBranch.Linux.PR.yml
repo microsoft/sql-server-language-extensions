@@ -161,7 +161,7 @@ extends:
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)'
               Contents: |
-                data-sql-language-extensions.nuspec
+                data-sql-language-extensions-linux.nuspec
               TargetFolder: '$(Build.SourcesDirectory)/out'
 
           - task: CmdLine@2
