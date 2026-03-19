@@ -331,3 +331,4 @@ ASALocalRun/
 
 # Visual Studio build files
 *.vcxproj
+.nuget/
