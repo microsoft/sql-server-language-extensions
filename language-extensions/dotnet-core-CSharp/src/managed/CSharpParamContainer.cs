@@ -9,6 +9,7 @@
 //
 //*************************************************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Runtime;
 using System.Text;
 using System.Collections.Generic;
@@ -134,9 +135,20 @@ namespace Microsoft.SqlServer.CSharpExtension
                     _params[paramNumber].Value = *(bool*)paramValue;
                     break;
                 case SqlDataType.DotNetNumeric:
-                    // Convert SQL_NUMERIC_STRUCT to C# decimal
+                    // Convert SQL_NUMERIC_STRUCT to SqlDecimal
+                    // Special handling for OUTPUT parameters: if precision=0, treat as uninitialized
                     SqlNumericStruct* numericPtr = (SqlNumericStruct*)paramValue;
-                    _params[paramNumber].Value = ToDecimal(*numericPtr);
+                    if (numericPtr->precision == 0)
+                    {
+                        // OUTPUT parameter with uninitialized struct - use SqlDecimal.Null
+                        // The C# executor will set the actual value
+                        _params[paramNumber].Value = SqlDecimal.Null;
+                    }
+                    else
+                    {
+                        // INPUT or INPUT_OUTPUT parameter with valid value
+                        _params[paramNumber].Value = ToSqlDecimal(*numericPtr);
+                    }
                     break;
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
@@ -174,7 +186,17 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             _params[paramNumber].Value = paramValue_;
             CSharpParam param = _params[paramNumber];
-            if(param.Value == null)
+            
+            // Use null-coalescing pattern for safer null checking with value types
+            // SqlDecimal is a struct, so we need to check both object null and SqlDecimal.IsNull
+            if(ReferenceEquals(param.Value, null))
+            {
+                *strLenOrNullMap = SQL_NULL_DATA;
+                return;
+            }
+            
+            // Special handling for SqlDecimal.Null (SqlDecimal is a struct, not a class)
+            if(param.DataType == SqlDataType.DotNetNumeric && param.Value is SqlDecimal sqlDecVal && sqlDecVal.IsNull)
             {
                 *strLenOrNullMap = SQL_NULL_DATA;
                 return;
@@ -221,23 +243,30 @@ namespace Microsoft.SqlServer.CSharpExtension
                     ReplaceNumericParam<bool>(boolValue, paramValue);
                     break;
                 case SqlDataType.DotNetNumeric:
-                    // Convert C# decimal to SQL_NUMERIC_STRUCT
+                    // Convert SqlDecimal to SQL_NUMERIC_STRUCT
                     // Use the precision and scale from the parameter metadata
-                    decimal decimalValue = Convert.ToDecimal(param.Value);
-                    // WHY use param.Size for precision?
-                    // - For DECIMAL/NUMERIC parameters, param.Size contains the declared precision (not bytes)
-                    // - This follows standard ODBC behavior where ColumnSize = precision for SQL_NUMERIC/SQL_DECIMAL
-                    // - CRITICAL: The SqlNumericStruct precision MUST match the declared parameter precision
-                    //   or SQL Server rejects it with "Invalid data for type decimal" (Msg 9803)
-                    // - Example: DECIMAL(3,3) parameter MUST have precision=3 in the struct, not precision=38
-                    byte precision = (byte)param.Size;
-                    byte scale = (byte)param.DecimalDigits;
-                    // WHY set strLenOrNullMap to 19?
-                    // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
-                    // - SQL_NUMERIC_STRUCT is exactly 19 bytes: precision(1) + scale(1) + sign(1) + val(16)
-                    // - This tells ODBC how many bytes to read from the paramValue pointer
-                    *strLenOrNullMap = 19; // sizeof(SqlNumericStruct)
-                    ReplaceNumericStructParam(decimalValue, precision, scale, paramValue);
+                    // Note: param.Value could be SqlDecimal or potentially null (handled above)
+                    if (param.Value is SqlDecimal sqlDecimalValue)
+                    {
+                        // WHY use param.Size for precision?
+                        // - For DECIMAL/NUMERIC parameters, param.Size contains the declared precision (not bytes)
+                        // - This follows standard ODBC behavior where ColumnSize = precision for SQL_NUMERIC/SQL_DECIMAL
+                        // - CRITICAL: The SqlNumericStruct precision MUST match the declared parameter precision
+                        //   or SQL Server rejects it with "Invalid data for type decimal" (Msg 9803)
+                        // - Example: DECIMAL(3,3) parameter MUST have precision=3 in the struct, not precision=38
+                        byte precision = (byte)param.Size;
+                        byte scale = (byte)param.DecimalDigits;
+                        // WHY set strLenOrNullMap to 19?
+                        // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
+                        // - SQL_NUMERIC_STRUCT is exactly 19 bytes: precision(1) + scale(1) + sign(1) + val(16)
+                        // - This tells ODBC how many bytes to read from the paramValue pointer
+                        *strLenOrNullMap = 19; // sizeof(SqlNumericStruct)
+                        ReplaceNumericStructParam(sqlDecimalValue, precision, scale, paramValue);
+                    }
+                    else
+                    {
+                        throw new InvalidCastException($"Expected SqlDecimal for NUMERIC parameter, got {param.Value?.GetType().Name ?? "null"}");
+                    }
                     break;
                 case SqlDataType.DotNetChar:
                     // For CHAR/VARCHAR, strLenOrNullMap is in bytes (1 byte per character for ANSI).
@@ -302,21 +331,21 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method replaces parameter value for NUMERIC/DECIMAL data types.
-        /// Converts C# decimal to SQL_NUMERIC_STRUCT and uses proper memory pinning.
+        /// Converts SqlDecimal to SQL_NUMERIC_STRUCT and uses proper memory pinning.
         /// Follows the same pattern as Java extension's numeric parameter handling.
         /// </summary>
-        /// <param name="value">The C# decimal value to convert.</param>
+        /// <param name="value">The SqlDecimal value to convert.</param>
         /// <param name="precision">Total number of digits (1-38).</param>
         /// <param name="scale">Number of digits after decimal point (0-precision).</param>
         /// <param name="paramValue">Output pointer to receive the pinned SqlNumericStruct.</param>
         private unsafe void ReplaceNumericStructParam(
-            decimal value,
+            SqlDecimal value,
             byte    precision,
             byte    scale,
             void    **paramValue)
         {
-            // Convert C# decimal to SQL_NUMERIC_STRUCT
-            SqlNumericStruct numericStruct = FromDecimal(value, precision, scale);
+            // Convert SqlDecimal to SQL_NUMERIC_STRUCT
+            SqlNumericStruct numericStruct = FromSqlDecimal(value, precision, scale);
             
             // Box the struct into a single-element array to create a heap-allocated copy, then pin it.
             // 
@@ -341,7 +370,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             _handleList.Add(handle);
             *paramValue = (void*)handle.AddrOfPinnedObject();
             
-            Logging.Trace($"ReplaceNumericStructParam: Converted decimal {value} to SqlNumericStruct (precision={precision}, scale={scale})");
+            Logging.Trace($"ReplaceNumericStructParam: Converted SqlDecimal {value} to SqlNumericStruct (precision={precision}, scale={scale})");
         }
 
         /// <summary>

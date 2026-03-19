@@ -399,20 +399,20 @@ namespace ExtensionApiTest
             decimalInfo.m_columnNames);
 
         // Validate that columns metadata is correct
-        // NOTE: SDK calculates precision from actual data, not input metadata
-        // Column 0: DecimalColumn1, calculated precision 13 (max value 999999999.9999 = 9 digits + 4 scale)
+        // NOTE: SqlDecimal preserves input precision/scale metadata
+        // Column 0: DecimalColumn1, declared NUMERIC(19,4)
         GetResultColumn(
             0,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            13,                 // columnSize (calculated precision from data)
+            19,                 // columnSize (declared precision from input)
             4,                  // decimalDigits (scale)
             SQL_NO_NULLS);      // nullable
 
-        // Column 1: DecimalColumn2, calculated precision 19 (from actual data values)
+        // Column 1: DecimalColumn2, declared NUMERIC(38,10)
         GetResultColumn(
             1,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            19,                 // columnSize (calculated precision from data)
+            38,                 // columnSize (declared precision from input)
             10,                 // decimalDigits (scale)
             SQL_NULLABLE);      // nullable
     }
@@ -427,13 +427,11 @@ namespace ExtensionApiTest
     //
     //  WHY: E2E tests validated decimal output columns, but unit tests had no coverage
     //  for verifying the managed-to-native conversion and metadata calculation for
-    //  decimal result columns. This is CRITICAL because the SDK must dynamically
-    //  calculate precision from actual decimal data (not hardcode to 38).
+    //  decimal result columns and verifies precision/scale metadata is preserved correctly.
     //
     //  WHAT: Tests that decimal columns returned from C# have:
     //  - Correct SQL_C_NUMERIC type
-    //  - Properly calculated precision (not hardcoded to 38)
-    //  - Correct scale matching the C# decimal data
+    //  - Preserved precision/scale from SqlDecimal metadata
     //  - Proper NULL handling in nullable columns
     //
     TEST_F(CSharpExtensionApiTests, GetDecimalResultColumnsTest)
@@ -498,20 +496,20 @@ namespace ExtensionApiTest
             decimalResultInfo.m_columnNames);
 
         // Validate result column metadata
-        // This tests that CSharpOutputDataSet.ExtractNumericColumn() properly
-        // calculates precision from the actual data (not hardcoded to 38)
+        // This tests that CSharpOutputDataSet.ExtractNumericColumn() preserves
+        // SqlDecimal precision/scale from the input data
         //
         GetResultColumn(
             0,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            18,                 // columnSize (calculated precision from max value)
+            18,                 // columnSize (declared precision from input)
             2,                  // decimalDigits (scale)
             SQL_NO_NULLS);      // nullable
 
         GetResultColumn(
             1,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            10,                 // columnSize (calculated precision)
+            10,                 // columnSize (declared precision from input)
             5,                  // decimalDigits (scale)
             SQL_NULLABLE);      // nullable
     }
@@ -584,18 +582,18 @@ namespace ExtensionApiTest
             mixedDecimalInfo.m_columnNames);
 
         // Validate each column has correct precision/scale
-        // NOTE: SDK calculates precision from actual data values
+        // NOTE: SqlDecimal preserves declared precision from input
         GetResultColumn(
             0,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            19,                 // columnSize (precision for money - preserved from actual large values)
+            19,                 // columnSize (declared precision from input NUMERIC(19,4))
             4,                  // decimalDigits (scale for money)
             SQL_NO_NULLS);      // nullable
 
         GetResultColumn(
             1,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            6,                  // columnSize (calculated precision: 0.99999 = 1 + 5 scale = 6)
+            5,                  // columnSize (declared precision from input NUMERIC(5,5))
             5,                  // decimalDigits (max scale)
             SQL_NO_NULLS);      // nullable
     }
@@ -689,18 +687,18 @@ namespace ExtensionApiTest
             nullDecimalInfo.m_columnNames);
 
         // Validate metadata - both columns should be nullable
-        // NOTE: SDK calculates precision from actual non-NULL data values
+        // NOTE: SqlDecimal preserves declared precision even when NULLs present
         GetResultColumn(
             0,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            9,                  // columnSize (calculated precision from max non-NULL value)
+            28,                 // columnSize (declared precision from input NUMERIC(28,6))
             6,                  // decimalDigits (scale)
             SQL_NULLABLE);      // nullable (contains NULLs)
 
         GetResultColumn(
             1,                  // columnNumber
             SQL_C_NUMERIC,      // dataType
-            9,                  // columnSize (calculated precision from max non-NULL value)
+            15,                 // columnSize (declared precision from input NUMERIC(15,3))
             3,                  // decimalDigits (scale)
             SQL_NULLABLE);      // nullable (contains NULLs)
     }
@@ -709,20 +707,20 @@ namespace ExtensionApiTest
     // Name: DecimalHighScaleTest
     //
     // Description:
-    //  Test decimal values with scale > 28 to verify Math.Pow() fallback behavior.
+    //  Test decimal values with high scale (29-38) to verify SqlDecimal handles
+    //  extreme precision requirements correctly.
     //
-    //  WHY: SqlNumericHelper uses a PowersOf10 lookup table for scales 0-28 for performance.
-    //  For scales 29-38 (beyond the lookup table), it falls back to Math.Pow(10, scale).
+    //  WHY: SqlDecimal from Microsoft.Data.SqlClient supports scales up to 38.
     //  This test ensures:
-    //  1. Math.Pow fallback doesn't crash
-    //  2. Values are converted correctly despite potential precision loss
-    //  3. Edge case handling is robust for rare but valid SQL Server DECIMAL types
+    //  1. High scale values convert correctly between SQL_NUMERIC_STRUCT and SqlDecimal
+    //  2. Edge cases are handled gracefully for rare but valid SQL Server DECIMAL types
+    //  3. Full 38-digit precision is preserved without data loss
     //
     //  WHAT: Tests various high scale scenarios:
-    //  - NUMERIC(38, 30): Very small fractional value (fits in C# decimal)
-    //  - NUMERIC(38, 35): Extremely small fractional value (1 significant digit)
+    //  - NUMERIC(38, 30): Very small fractional values
+    //  - NUMERIC(38, 35): Extremely small fractional values (1 significant digit)
     //  - NUMERIC(38, 38): Maximum scale with minimum value (0.00...001)
-    //  - NUMERIC(38, 29): Boundary case at scale = 29 (first fallback case)
+    //  - NUMERIC(38, 29): Boundary case at scale = 29
     //
     //  PRACTICAL USAGE: While these extreme scales are rare in production databases,
     //  they're valid SQL Server types and must be handled gracefully:
@@ -738,14 +736,13 @@ namespace ExtensionApiTest
             0,  // inputSchemaColumnsNumber
             6); // parametersNumber
 
-        // Test NUMERIC(38, 29) - boundary case at scale = 29 (first fallback to Math.Pow)
+        // Test NUMERIC(38, 29) - boundary case at scale = 29
         // Value: 0.00000000000000000000000000001 (1 at 29th decimal place)
         SQL_NUMERIC_STRUCT p0 = CreateNumericStruct(1, 38, 29, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, p0);
 
         // Test NUMERIC(38, 30) - scale = 30
         // Value: 0.000000000000000000000000000123 (123 scaled by 10^-30)
-        // Small mantissa value tests Math.Pow fallback without overflow
         SQL_NUMERIC_STRUCT p1 = CreateNumericStruct(123, 38, 30, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, p1);
 
@@ -770,11 +767,9 @@ namespace ExtensionApiTest
         SQL_NUMERIC_STRUCT p5 = CreateNumericStruct(0, 38, 32, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(5, p5);
 
-        // NOTE: This test validates that the Math.Pow() fallback in ToDecimal()
-        // handles scales beyond the PowersOf10 lookup table gracefully.
-        // While Math.Pow returns double (potential precision loss), these extreme
-        // scales typically occur with very small values that fit within double's
-        // 53-bit mantissa precision, so conversion to decimal is safe.
+        // NOTE: This test validates that SqlDecimal correctly handles high scales (29-38)
+        // without precision loss. Microsoft.Data.SqlClient's SqlDecimal provides
+        // full 38-digit precision support for all valid SQL Server DECIMAL types.
     }
 
     //----------------------------------------------------------------------------------------------

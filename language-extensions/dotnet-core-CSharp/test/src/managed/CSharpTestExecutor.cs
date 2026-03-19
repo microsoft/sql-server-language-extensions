@@ -9,6 +9,7 @@
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
@@ -111,28 +112,27 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     public class CSharpTestExecutorDecimalParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
-            // Test maximum C# decimal value (decimal.MaxValue = 79228162514264337593543950335)
-            // Note: C# decimal supports ~29 digits, even though SQL NUMERIC can support up to 38 digits
-            sqlParams["@param0"] = decimal.MaxValue;
+            // Test maximum SqlDecimal value (DECIMAL(38,0) max = 99999999999999999999999999999999999999)
+            // Note: SqlDecimal supports full 38 digits, unlike C# decimal which is limited to ~29 digits
+            sqlParams["@param0"] = SqlDecimal.Parse("99999999999999999999999999999999999999");
             
             // Test minimum value (negative max)
-            sqlParams["@param1"] = decimal.MinValue;
+            sqlParams["@param1"] = SqlDecimal.Parse("-99999999999999999999999999999999999999");
             
-            // Test high scale value (DECIMAL(38, 10))
-            // Using 18 significant digits to stay within C# decimal range
-            sqlParams["@param2"] = 12345678.1234567890m;
+            // Test high scale value (DECIMAL(38, 10)) - full 38-digit precision
+            sqlParams["@param2"] = SqlDecimal.Parse("1234567890123456789012345678.1234567890");
             
             // Test zero
-            sqlParams["@param3"] = 0m;
+            sqlParams["@param3"] = new SqlDecimal(0);
             
-            // Test small value with high precision (28 decimal places, max for C# decimal)
-            sqlParams["@param4"] = 0.1234567890123456789012345678m;
+            // Test small value with high precision (DECIMAL(38, 28))
+            sqlParams["@param4"] = SqlDecimal.Parse("1234567890.1234567890123456789012345678");
             
             // Test typical financial value (DECIMAL(19, 4))
-            sqlParams["@param5"] = 123456789012345.6789m;
+            sqlParams["@param5"] = SqlDecimal.Parse("123456789012345.6789");
             
             // Test negative financial value
-            sqlParams["@param6"] = -123456789012345.6789m;
+            sqlParams["@param6"] = SqlDecimal.Parse("-123456789012345.6789");
             
             // Test null (last parameter)
             sqlParams["@param7"] = null;
@@ -142,37 +142,36 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     }
 
     /// <summary>
-    /// Test executor for decimal OUTPUT parameters with maximum precision (29 digits).
-    /// Tests the FromDecimal() conversion for values at the edge of C# decimal's capability.
+    /// Test executor for SqlDecimal OUTPUT parameters with maximum precision (38 digits).
+    /// Tests the FromSqlDecimal() conversion for values at the edge of SQL Server DECIMAL's capability.
     /// 
-    /// Note: C# decimal normalizes values - the scale is determined by the value's actual
-    /// precision requirements, not by a declared scale. This tests high-precision conversions.
+    /// Note: SqlDecimal supports up to 38 digits of precision, matching SQL Server's DECIMAL/NUMERIC.
     /// </summary>
     public class CSharpTestExecutorDecimalHighScaleParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
         {
-            // Set high-precision decimal values (29 significant digits total)
-            // These exercise the FromDecimal() conversion for C# decimal's maximum capability
-            // C# decimal can represent values with up to 29 significant digits
+            // Set high-precision SqlDecimal values (38 significant digits total)
+            // These exercise the FromSqlDecimal() conversion for SQL Server's maximum capability
+            // SqlDecimal can represent values with up to 38 significant digits
             
-            // param0: Maximum precision with integer and fractional parts
-            sqlParams["@param0"] = 12345678901234567.890123456789m; // 29 total digits
+            // param0: Maximum precision with integer and fractional parts (DECIMAL(38, 10))
+            sqlParams["@param0"] = SqlDecimal.Parse("1234567890123456789012345678.9012345678");
             
-            // param1: Large fractional precision
-            sqlParams["@param1"] = 1.2345678901234567890123456789m; // 29 total digits
+            // param1: Large fractional precision (DECIMAL(38, 28))
+            sqlParams["@param1"] = SqlDecimal.Parse("1234567890.1234567890123456789012345678");
             
-            // param2: Different high-precision pattern
-            sqlParams["@param2"] = 123.45678901234567890123456789m; // 29 total digits
+            // param2: Different high-precision pattern (DECIMAL(38, 20))
+            sqlParams["@param2"] = SqlDecimal.Parse("123456789012345678.12345678901234567890");
             
-            // param3: Maximum fractional precision
-            sqlParams["@param3"] = 0.12345678901234567890123456789m; // 29 total digits
+            // param3: Maximum fractional precision (DECIMAL(38, 38))
+            sqlParams["@param3"] = SqlDecimal.Parse("0.12345678901234567890123456789012345678");
             
-            // param4: Negative high-precision value
-            sqlParams["@param4"] = -987.65432109876543210987654321m; // 29 total digits
+            // param4: Negative high-precision value (DECIMAL(38, 18))
+            sqlParams["@param4"] = SqlDecimal.Parse("-12345678901234567890.123456789012345678");
             
             // param5: Zero value for validation
-            sqlParams["@param5"] = 0.0m;
+            sqlParams["@param5"] = new SqlDecimal(0);
             
             return null;
         }
