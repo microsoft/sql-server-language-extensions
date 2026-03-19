@@ -11,6 +11,7 @@
 //*********************************************************************
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -79,7 +80,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             {typeof(double), SqlDataType.DotNetDouble},
             {typeof(bool), SqlDataType.DotNetBit},
             {typeof(string), SqlDataType.DotNetChar},
-            {typeof(decimal), SqlDataType.DotNetNumeric}
+            {typeof(SqlDecimal), SqlDataType.DotNetNumeric}
         };
 
         /// <summary>

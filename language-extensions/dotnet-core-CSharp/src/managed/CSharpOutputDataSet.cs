@@ -9,6 +9,7 @@
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
@@ -218,11 +219,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method extracts NUMERIC/DECIMAL column data by converting C# decimal values
+        /// This method extracts NUMERIC/DECIMAL column data by converting SqlDecimal values
         /// to SQL_NUMERIC_STRUCT array, pinning it, and storing the pointer.
         /// </summary>
         /// <param name="columnNumber">The column index.</param>
-        /// <param name="column">The DataFrameColumn containing decimal values.</param>
+        /// <param name="column">The DataFrameColumn containing SqlDecimal values.</param>
         private void ExtractNumericColumn(
             ushort          columnNumber,
             DataFrameColumn column)
@@ -234,62 +235,29 @@ namespace Microsoft.SqlServer.CSharpExtension
             else
             {
 
-            // For NUMERIC/DECIMAL, we need to determine appropriate precision and scale from the data.
-            // SQL Server supports precision 1-38 and scale 0-precision.
-            // We'll calculate both precision and scale by examining the actual decimal values.
-            //
-            // WHY calculate from data instead of hardcoding?
-            // - The extension doesn't have access to the input column's original precision
-            // - SQL Server validates returned precision against WITH RESULT SETS declaration
-            // - Using precision=38 for all values causes "Invalid data for type numeric" errors
-            // - We must calculate the minimum precision needed to represent the data
+            // Extract precision and scale from SqlDecimal values.
+            // SqlDecimal from Microsoft.Data.SqlClient preserves precision/scale metadata,
+            // so we find the maximum precision and scale across all non-null values.
             //
             byte precision = 0;
             byte scale = (byte)_columns[columnNumber].DecimalDigits;
             
-            // Calculate precision and scale by examining all non-null values
-            // We need to find the maximum precision and scale to ensure no data loss
-            //
-            // WHY examine ALL rows instead of just sampling?
-            // - A previous implementation only checked first 10 rows (optimization attempt)
-            // - This caused data loss when higher-precision values appeared later in the dataset
-            // - Example: rows 1-10 need precision 6, but row 100 needs precision 14
-            // - If we use precision=6 for the entire column, row 100 gets truncated (data loss!)
-            // - Must examine ALL rows to find maximum precision and scale
+            // Examine all rows to find maximum precision and scale
+            // This ensures we preserve the highest precision/scale present in the data
             //
             for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
                 if (column[rowNumber] != null)
                 {
-                    decimal value = (decimal)column[rowNumber];
+                    SqlDecimal value = (SqlDecimal)column[rowNumber];
                     
-                    // Get the scale from the decimal value itself
-                    // Scale is in bits 16-23 of flags field (bits[3])
-                    int[] bits = decimal.GetBits(value);
-                    byte valueScale = (byte)((bits[3] >> 16) & 0x7F);
-                    scale = Math.Max(scale, valueScale);
-                    
-                    // Calculate precision by counting significant digits
-                    // Remove the scale (decimal places) to get the integer part,
-                    // then count digits in both parts
-                    decimal absValue = Math.Abs(value);
-                    decimal integerPart = Math.Truncate(absValue);
-                    
-                    // Count digits in integer part (or 1 if zero)
-                    byte integerDigits;
-                    if (integerPart == 0)
+                    // SqlDecimal already carries precision/scale metadata from the input
+                    // Use it directly - no need to recalculate
+                    if (!value.IsNull)
                     {
-                        integerDigits = 1;
+                        scale = Math.Max(scale, value.Scale);
+                        precision = Math.Max(precision, value.Precision);
                     }
-                    else
-                    {
-                        // Log10 gives us the magnitude, +1 for digit count
-                        integerDigits = (byte)(Math.Floor(Math.Log10((double)integerPart)) + 1);
-                    }
-                    
-                    // Precision = digits before decimal + digits after decimal
-                    byte valuePrecision = (byte)(integerDigits + valueScale);
-                    precision = Math.Max(precision, valuePrecision);
                 }
             }
             
@@ -303,7 +271,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 precision = scale;
             }
 
-            // Update column metadata with calculated precision and scale
+            // Update column metadata with extracted precision and scale
             // Size contains the precision for DECIMAL/NUMERIC types (not bytes)
             // DecimalDigits contains the scale
             _columns[columnNumber].Size = precision;
@@ -311,14 +279,17 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             Logging.Trace($"ExtractNumericColumn: Column {columnNumber}, Precision={precision}, Scale={scale}, RowCount={column.Length}");
 
-            // Convert each decimal value to SQL_NUMERIC_STRUCT
+            // Convert each SqlDecimal value to SQL_NUMERIC_STRUCT
             SqlNumericStruct[] numericArray = new SqlNumericStruct[column.Length];
             for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
                 if (column[rowNumber] != null)
                 {
-                    decimal value = (decimal)column[rowNumber];
-                    numericArray[rowNumber] = FromDecimal(value, precision, scale);
+                    SqlDecimal value = (SqlDecimal)column[rowNumber];
+                    
+                    // Convert SqlDecimal directly to SQL_NUMERIC_STRUCT with full precision support
+                    // FromSqlDecimal handles scale adjustment if needed to match target precision/scale
+                    numericArray[rowNumber] = FromSqlDecimal(value, precision, scale);
                     Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value} converted to SqlNumericStruct");
                 }
                 else

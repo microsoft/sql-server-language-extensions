@@ -6,68 +6,25 @@
 //
 // Purpose:
 //  SQL NUMERIC/DECIMAL type support: ODBC-compatible struct definition
-//  and bidirectional conversion between SQL_NUMERIC_STRUCT and C# decimal.
+//  and bidirectional conversion between SQL_NUMERIC_STRUCT and SqlDecimal.
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
     /// <summary>
-    /// Helper class for converting between SQL Server NUMERIC/DECIMAL types and C# decimal.
+    /// Helper class for converting between SQL Server NUMERIC/DECIMAL types and SqlDecimal.
     /// Provides ODBC-compatible SQL_NUMERIC_STRUCT definition and conversion methods.
+    ///
+    /// IMPORTANT: This implementation uses SqlDecimal from Microsoft.Data.SqlClient which supports
+    /// full SQL Server precision (38 digits). C# decimal is NOT used to avoid 28-digit limitations.
     /// </summary>
     public static class SqlNumericHelper
     {
-        /// <summary>
-        /// Maximum number of powers of 10 in the "PowersOf10" lookup table.
-        /// C# decimal supports up to 28-29 significant digits, so we store 10^0 through 10^28 (29 entries).
-        /// This covers all possible scale values (0-38) within C# decimal's precision range.
-        /// Array index corresponds to the exponent: PowersOf10[n] = 10^n.
-        /// </summary>
-        private const int MaxPowersOf10Count = 29;
-
-        // Powers of 10 lookup table for efficient decimal scaling (up to 10^28)
-        // 
-        // Use a lookup table instead of Math.Pow because:
-        // - Math.Pow returns double, requiring conversion to decimal with potential precision loss.
-        // - Repeated Math.Pow calls in tight loops have measurable performance impact.
-        // - Pre-computed decimal constants give exact values with zero runtime overhead.
-        // - C# decimal supports up to 28-29 significant digits, so 10^0 through 10^28 covers all cases.
-        private static readonly decimal[] PowersOf10 = new decimal[MaxPowersOf10Count]
-        {
-            1m,                                  // 10^0
-            10m,                                 // 10^1
-            100m,                                // 10^2
-            1000m,                               // 10^3
-            10000m,                              // 10^4
-            100000m,                             // 10^5
-            1000000m,                            // 10^6
-            10000000m,                           // 10^7
-            100000000m,                          // 10^8
-            1000000000m,                         // 10^9
-            10000000000m,                        // 10^10
-            100000000000m,                       // 10^11
-            1000000000000m,                      // 10^12
-            10000000000000m,                     // 10^13
-            100000000000000m,                    // 10^14
-            1000000000000000m,                   // 10^15
-            10000000000000000m,                  // 10^16
-            100000000000000000m,                 // 10^17
-            1000000000000000000m,                // 10^18
-            10000000000000000000m,               // 10^19
-            100000000000000000000m,              // 10^20
-            1000000000000000000000m,             // 10^21
-            10000000000000000000000m,            // 10^22
-            100000000000000000000000m,           // 10^23
-            1000000000000000000000000m,          // 10^24
-            10000000000000000000000000m,         // 10^25
-            100000000000000000000000000m,        // 10^26
-            1000000000000000000000000000m,       // 10^27
-            10000000000000000000000000000m       // 10^28
-        };
 
         /// <summary>
         /// SQL_NUMERIC_STRUCT structure matching ODBC's SQL_NUMERIC_STRUCT.
@@ -194,190 +151,120 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// Converts SQL_NUMERIC_STRUCT to C# decimal.
+        /// Converts SQL_NUMERIC_STRUCT to SqlDecimal with full 38-digit precision support.
+        /// This method supports the complete SQL Server DECIMAL/NUMERIC range without data loss.
         /// </summary>
         /// <param name="numeric">The SQL numeric structure from ODBC.</param>
-        /// <returns>The equivalent C# decimal value.</returns>
-        /// <exception cref="OverflowException">Thrown when the value exceeds C# decimal range.</exception>
-        public static decimal ToDecimal(SqlNumericStruct numeric)
+        /// <returns>The equivalent SqlDecimal value.</returns>
+        /// <remarks>
+        /// SqlDecimal provides full SQL Server precision (38 digits) compared to C# decimal (28-29 digits).
+        /// Use this method when working with high-precision values to avoid data loss.
+        /// </remarks>
+        public static SqlDecimal ToSqlDecimal(SqlNumericStruct numeric)
         {
-            decimal result;
-            
-            try
+            // Validate precision and scale before creating SqlDecimal
+            if (numeric.precision < 1 || numeric.precision > 38)
             {
-                // Convert little-endian byte array (16 bytes) to a scaled integer value.
-                // The val array contains the absolute value scaled by 10^scale.
-                // For example, for numeric(10,2) value 123.45:
-                //   scale = 2, val represents 12345 (123.45 * 10^2)
-                //
-                // Little-endian storage layout:
-                // - val[0] = least significant byte (LSB)
-                // - val[15] = most significant byte (MSB)
-                // - Each byte represents one "digit" in base-256 representation
-                // - Example: bytes [0x39, 0x30, 0x00, ...] = 0x39 + (0x30 * 256) = 57 + 12288 = 12345
-                //
-                decimal scaledValue = 0m;
-                
-                // Find the most significant non-zero byte (highest index) to optimize the conversion.
-                // This avoids processing unnecessary high-order zero bytes and prevents potential
-                // overflow when building large values. Most practical values use only 12-13 bytes.
-                int lastNonZeroByte = -1;
-                for (int i = 15; i >= 0; i--)
-                {
-                    if (numeric.GetVal(i) != 0)
-                    {
-                        lastNonZeroByte = i;
-                        break;
-                    }
-                }
-                
-                // If all bytes are zero, result is 0
-                if (lastNonZeroByte == -1)
-                {
-                    result = 0m;
-                }
-                else
-                {
-                    // Build the integer value by processing from MSB (highest index) to LSB (index 0).
-                    // Algorithm: Start with MSB, then for each subsequent byte toward LSB,
-                    // multiply current value by 256 and add the next byte.
-                    // This approach avoids large intermediate multipliers that could overflow decimal.
-                    for (int i = lastNonZeroByte; i >= 0; i--)
-                    {
-                        scaledValue = scaledValue * 256m + numeric.GetVal(i);
-                    }
-
-                    // Scale down by dividing by 10^scale to get the actual decimal value.
-                    // The scaledValue contains the integer representation; we need to divide by 10^scale.
-                    // For example, if scaledValue=12345 and scale=2, result = 12345 / 100 = 123.45
-                    if (numeric.scale >= 0 && numeric.scale < PowersOf10.Length)
-                    {
-                        // Use pre-computed lookup table for scales 0-28 (fast path)
-                        result = scaledValue / PowersOf10[numeric.scale];
-                    }
-                    else if (numeric.scale == 0)
-                    {
-                        // No scaling needed - value is already an integer
-                        result = scaledValue;
-                    }
-                    else
-                    {
-                        // For scales beyond our lookup table (29-38), use repeated division by 10.
-                        // We cannot use Math.Pow(10, scale) because:
-                        // - Math.Pow returns double, and values > 10^28 overflow when converting double→decimal
-                        // - Repeated division maintains decimal precision without overflow
-                        result = scaledValue;
-                        for (int i = 0; i < numeric.scale; i++)
-                        {
-                            result /= 10m;
-                        }
-                    }
-
-                    // Apply sign: 1 = positive, 0 = negative
-                    if (numeric.sign == 0)
-                    {
-                        result = -result;
-                    }
-                }
+                throw new ArgumentException($"Precision must be between 1 and 38, got {numeric.precision}");
             }
-            catch (OverflowException)
+            if (numeric.scale < 0 || numeric.scale > numeric.precision)
             {
-                // SQL Server DECIMAL(38,scale) can represent values much larger than C# decimal's range.
-                // C# decimal maximum: ±79,228,162,514,264,337,593,543,950,335 (approx ±7.9 × 10^28)
-                // SQL DECIMAL(38,0) maximum: ±10^38 - 1
-                //
-                // This overflow typically occurs with DECIMAL(30+, scale) parameters containing values
-                // that exceed 29 significant digits total.
-                string valHex = string.Join("", Enumerable.Range(0, 16).Select(i => numeric.GetVal(i).ToString("X2")));
-                throw new OverflowException(
-                    $"SQL DECIMAL/NUMERIC value exceeds C# decimal range. " +
-                    $"Precision={numeric.precision}, Scale={numeric.scale}, Sign={numeric.sign}, " +
-                    $"Val={valHex}. " +
-                    $"C# decimal supports up to 29 significant digits (±7.9×10^28). " +
-                    $"Consider using lower precision parameters or handle large numerics differently.");
+                throw new ArgumentException($"Scale ({numeric.scale}) must be between 0 and precision ({numeric.precision})");
             }
             
-            return result;
+            // SqlDecimal constructor requires int[] array (not byte[])
+            // The val array in SqlNumericStruct is 16 bytes = 128 bits
+            // We need to convert to 4 int32s (4 x 32 bits = 128 bits)
+            
+            int[] data = new int[4];
+            for (int i = 0; i < 4; i++)
+            {
+                // Convert each group of 4 bytes to an int32 (little-endian)
+                int offset = i * 4;
+                data[i] = numeric.GetVal(offset) |
+                         (numeric.GetVal(offset + 1) << 8) |
+                         (numeric.GetVal(offset + 2) << 16) |
+                         (numeric.GetVal(offset + 3) << 24);
+            }
+            
+            // SqlDecimal constructor: SqlDecimal(byte precision, byte scale, bool positive, int[] data)
+            bool isPositive = numeric.sign == 1;
+            
+            // Note: SqlDecimal scale parameter is byte (unsigned), but SqlNumericStruct.scale is sbyte (signed)
+            // SQL Server scale is always non-negative (0-38), so this cast is safe
+            byte scale = (byte)Math.Max((sbyte)0, numeric.scale);
+            
+            return new SqlDecimal(numeric.precision, scale, isPositive, data);
         }
 
         /// <summary>
-        /// Converts C# decimal to SQL_NUMERIC_STRUCT.
-        /// Follows the same conversion logic as Java extension's BigDecimalToNumericStruct.
+        /// Converts SqlDecimal to SQL_NUMERIC_STRUCT for transfer to SQL Server.
+        /// This method handles the full 38-digit precision range without data loss.
         /// </summary>
-        /// <param name="value">The C# decimal value to convert.</param>
-        /// <param name="precision">Total number of digits (1-38).</param>
-        /// <param name="scale">Number of digits after decimal point (0-precision).</param>
+        /// <param name="value">The SqlDecimal value to convert.</param>
+        /// <param name="precision">Total number of digits (1-38). If null, uses SqlDecimal's precision.</param>
+        /// <param name="scale">Number of digits after decimal point (0-precision). If null, uses SqlDecimal's scale.</param>
         /// <returns>The equivalent SQL numeric structure for ODBC.</returns>
         /// <exception cref="ArgumentException">Thrown when precision or scale are out of valid range.</exception>
-        public static SqlNumericStruct FromDecimal(decimal value, byte precision, byte scale)
+        public static SqlNumericStruct FromSqlDecimal(SqlDecimal value, byte? precision = null, byte? scale = null)
         {
-            if (precision < 1 || precision > 38)
+            // Handle SqlDecimal.Null
+            if (value.IsNull)
             {
-                throw new ArgumentException($"Precision must be between 1 and 38, got {precision}");
+                // Return a zero-initialized struct - caller should set null indicator separately
+                return new SqlNumericStruct
+                {
+                    precision = precision ?? 1,
+                    scale = (sbyte)(scale ?? 0),
+                    sign = 1
+                };
             }
-            if (scale > precision)
+            
+            // Use SqlDecimal's own precision/scale if not specified
+            byte targetPrecision = precision ?? value.Precision;
+            byte targetScale = scale ?? value.Scale;
+            
+            if (targetPrecision < 1 || targetPrecision > 38)
             {
-                throw new ArgumentException($"Scale ({scale}) cannot exceed precision ({precision})");
+                throw new ArgumentException($"Precision must be between 1 and 38, got {targetPrecision}");
             }
-
+            if (targetScale > targetPrecision)
+            {
+                throw new ArgumentException($"Scale ({targetScale}) cannot exceed precision ({targetPrecision})");
+            }
+            
+            // Adjust scale if needed (SqlDecimal has AdjustScale method)
+            SqlDecimal adjustedValue = value;
+            if (targetScale != value.Scale)
+            {
+                // AdjustScale returns a new SqlDecimal with the specified scale
+                // positive scaleShift adds decimal places, negative removes them
+                int scaleShift = targetScale - value.Scale;
+                adjustedValue = SqlDecimal.AdjustScale(value, scaleShift, false);
+            }
+            
             SqlNumericStruct result = new SqlNumericStruct
             {
-                precision = precision,
-                scale = (sbyte)scale, // Safe cast: scale validated and the max is 38 < 127.
-                sign = (byte)(value >= 0 ? 1 : 0)
+                precision = targetPrecision,
+                scale = (sbyte)targetScale,
+                sign = (byte)(adjustedValue.IsPositive ? 1 : 0)
             };
-
-            // Work with absolute value
-            decimal absValue = Math.Abs(value);
-
-            // Scale up by multiplying by 10^scale to get an integer representation
-            // For example, 123.45 with scale=2 becomes 12345
-            decimal scaledValue;
-            if (scale >= 0 && scale < PowersOf10.Length)
+            
+            // SqlDecimal stores data as int[4] array (128 bits total)
+            // We need to convert to byte[16] for SqlNumericStruct
+            int[] data = adjustedValue.Data;
+            
+            for (int i = 0; i < 4 && i < data.Length; i++)
             {
-                scaledValue = absValue * PowersOf10[scale];
+                // Convert each int32 to 4 bytes (little-endian)
+                int offset = i * 4;
+                int value32 = data[i];
+                result.SetVal(offset, (byte)(value32 & 0xFF));
+                result.SetVal(offset + 1, (byte)((value32 >> 8) & 0xFF));
+                result.SetVal(offset + 2, (byte)((value32 >> 16) & 0xFF));
+                result.SetVal(offset + 3, (byte)((value32 >> 24) & 0xFF));
             }
-            else if (scale == 0)
-            {
-                scaledValue = absValue;
-            }
-            else
-            {
-                // For scales beyond our lookup table, use repeated multiplication by 10
-                // Cannot use Math.Pow(10, scale) because values > 10^28 overflow when converting double→decimal
-                scaledValue = absValue;
-                for (int i = 0; i < scale; i++)
-                {
-                    scaledValue *= 10m;
-                }
-            }
-
-            // Round to nearest integer (handles any remaining fractional part due to precision limits)
-            scaledValue = Math.Round(scaledValue, 0, MidpointRounding.AwayFromZero);
-
-            // Convert the scaled integer to little-endian byte array (16 bytes)
-            // Each byte represents one position in base-256 representation
-            for (int i = 0; i < 16; i++)
-            {
-                if (scaledValue > 0)
-                {
-                    decimal byteValue = scaledValue % 256m;
-                    result.SetVal(i, (byte)byteValue);
-                    scaledValue = Math.Floor(scaledValue / 256m);
-                }
-                else
-                {
-                    result.SetVal(i, 0);
-                }
-            }
-
-            // If there's still value left after filling 16 bytes, we have overflow
-            if (scaledValue > 0)
-            {
-                throw new OverflowException(
-                    $"Value {value} with precision {precision} and scale {scale} exceeds SQL_NUMERIC_STRUCT capacity");
-            }
-
+            
             return result;
         }
     }
