@@ -256,11 +256,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                         // - Example: DECIMAL(3,3) parameter MUST have precision=3 in the struct, not precision=38
                         byte precision = (byte)param.Size;
                         byte scale = (byte)param.DecimalDigits;
-                        // WHY set strLenOrNullMap to 19?
-                        // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
-                        // - SQL_NUMERIC_STRUCT is exactly 19 bytes: precision(1) + scale(1) + sign(1) + val(16)
-                        // - This tells ODBC how many bytes to read from the paramValue pointer
-                        *strLenOrNullMap = 19; // sizeof(SqlNumericStruct)
+                        // For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size.
+                        // This tells ODBC how many bytes to read from the paramValue pointer.
+                        *strLenOrNullMap = SqlNumericStructSize;
                         ReplaceNumericStructParam(sqlDecimalValue, precision, scale, paramValue);
                     }
                     else

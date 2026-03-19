@@ -231,9 +231,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             if (column == null)
             {
                 SetDataPtrs<SqlNumericStruct>(columnNumber, Array.Empty<SqlNumericStruct>());
+                return;
             }
-            else
-            {
 
             // Extract precision and scale from SqlDecimal values.
             // SqlDecimal from Microsoft.Data.SqlClient preserves precision/scale metadata,
@@ -297,11 +296,6 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // For null values, create a zero-initialized struct
                     // The null indicator in strLenOrNullMap will mark this as SQL_NULL_DATA
                     //
-                    // WHY create a struct for NULL values instead of leaving uninitialized?
-                    // - ODBC requires a valid struct pointer even for NULL values
-                    // - The strLenOrNullMap array separately tracks which values are NULL
-                    // - Native code reads from the struct pointer, so it must be valid memory
-                    // - We use sign=1 (positive) by convention for NULL placeholders
                     numericArray[rowNumber] = new SqlNumericStruct
                     {
                         precision = precision,
@@ -312,9 +306,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
             }
 
-                // Pin the SqlNumericStruct array and store pointer
-                SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
-            }
+            // Pin the SqlNumericStruct array and store pointer
+            SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
         }
 
         /// <summary>

@@ -11,7 +11,6 @@
 //*********************************************************************
 using System;
 using System.Data.SqlTypes;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -25,7 +24,6 @@ namespace Microsoft.SqlServer.CSharpExtension
     /// </summary>
     public static class SqlNumericHelper
     {
-
         /// <summary>
         /// SQL_NUMERIC_STRUCT structure matching ODBC's SQL_NUMERIC_STRUCT.
         /// Used for transferring NUMERIC/DECIMAL data between SQL Server and C#.
