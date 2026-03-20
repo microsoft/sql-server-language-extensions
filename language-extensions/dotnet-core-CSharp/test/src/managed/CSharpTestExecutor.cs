@@ -177,6 +177,32 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    /// <summary>
+    /// Test executor for DECIMAL precision overflow validation.
+    /// This executor deliberately sets values that exceed the target precision after scale adjustment.
+    /// This tests that FromSqlDecimal properly validates precision overflow.
+    /// 
+    /// Bug scenario: Value 12345678.99 (10 digits) converted to DECIMAL(10,4) becomes 12345678.9900
+    /// which requires 12 significant digits, exceeding the declared precision of 10.
+    /// </summary>
+    public class CSharpTestExecutorDecimalPrecisionOverflow: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // param0: Value 12345678.99 → scale adjusted to 4 → 12345678.9900 (requires 12 digits, target precision=10)
+            // SQL Server DECIMAL(10,4) max is 999999.9999 (6 before decimal, 4 after)
+            sqlParams["@param0"] = new SqlDecimal(12345678.99m);
+            
+            // param1: Value 9999999.999 → scale adjusted to 4 → 9999999.9990 (requires 11 digits, target precision=10)
+            sqlParams["@param1"] = new SqlDecimal(9999999.999m);
+            
+            // param2: Value 1000.0 → scale adjusted from 1 to 3 → 1000.000 (OK, requires 7 digits, target precision=8)
+            sqlParams["@param2"] = new SqlDecimal(1000.0m);
+            
+            return null;
+        }
+    }
+
     public class CSharpTestExecutorStringParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){

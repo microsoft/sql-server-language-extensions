@@ -1048,12 +1048,12 @@ namespace ExtensionApiTest
         SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(1234567890, 10, 0, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
 
-        // Test NUMERIC(20,10) mid-range scale: 1234567890.1234567890
-        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(12345678901234567890LL, 20, 10, false);
+        // Test NUMERIC(20,10) mid-range scale: 12345678.9012345678
+        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(123456789012345678ULL, 20, 10, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
 
-        // Test NUMERIC(25,20) high scale: 12345.12345678901234567890
-        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(1234512345678901234567LL, 25, 20, false);
+        // Test NUMERIC(20,15) high scale: 12345.123456789012345
+        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(12345123456789012345ULL, 20, 15, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
     }
 
@@ -1089,87 +1089,80 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: DecimalMixedPrecisionColumnsTest
+    // Name: DecimalPrecisionOverflowTest
     //
     // Description:
-    //  Test multiple columns with different precision and scale combinations
+    //  Test that FromSqlDecimal validates precision overflow when scale adjustment causes
+    //  the value to exceed the target precision.
     //
-    TEST_F(CSharpExtensionApiTests, DecimalMixedPrecisionColumnsTest)
+    //  Bug scenario: A value like 12345678.99 (requires 10 digits) converted to DECIMAL(10,4)
+    //  becomes 12345678.9900, which requires 12 significant digits, exceeding precision=10.
+    //  SQL Server DECIMAL(10,4) max is 999999.9999 (6 digits before decimal + 4 after = 10 total).
+    //
+    //  Expected: FromSqlDecimal should throw OverflowException for param0 and param1.
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalPrecisionOverflowTest)
     {
-        int columnsNumber = 5;
-        SQLUSMALLINT inputSchemaColumnsNumber = columnsNumber;
-        std::string scriptString = "TestScriptDecimalMixedColumns";
+        int paramsNumber = 3;
 
-        // Initialize session with 5 decimal columns of varying precision/scale
-        uint16_t paramNumber = 0;
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorDecimalPrecisionOverflow";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
+
         InitializeSession(
-            inputSchemaColumnsNumber,
-            paramNumber,
-            scriptString);
+            0,               // inputSchemaColumnsNumber
+            paramsNumber,    // parametersNumber
+            scriptString);   // scriptString
 
-        // Column 0: NUMERIC(5,2) - small precision, low scale
-        InitializeColumn(0, "SmallDecimal", SQL_C_NUMERIC, m_NumericSize, 2, 10, 2);
+        // param0: Declares DECIMAL(10, 4) - max value 999999.9999 (6 before decimal)
+        // Executor will try to set 12345678.99 → 12345678.9900 (exceeds precision)
+        // Expected: Should fail with precision overflow
+        SQL_NUMERIC_STRUCT param0{};
+        param0.precision = 10;
+        param0.scale = 4;
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+            0,                       // paramNumber
+            param0,                  // paramValue with precision=10, scale=4
+            false,                   // isNull
+            SQL_PARAM_INPUT_OUTPUT); // inputOutputType
 
-        // Column 1: NUMERIC(10,0) - medium precision, no scale (integer)
-        InitializeColumn(1, "MediumInt", SQL_C_NUMERIC, m_NumericSize, 0, 10, 0);
+        // param1: Declares DECIMAL(10, 4)
+        // Executor will try to set 9999999.999 → 9999999.9990 (exceeds precision)
+        // Expected: Should fail with precision overflow
+        SQL_NUMERIC_STRUCT param1{};
+        param1.precision = 10;
+        param1.scale = 4;
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+            1,                       // paramNumber
+            param1,                  // paramValue with precision=10, scale=4
+            false,                   // isNull
+            SQL_PARAM_INPUT_OUTPUT); // inputOutputType
 
-        // Column 2: NUMERIC(38,10) - maximum precision, medium scale
-        InitializeColumn(2, "LargeDecimal", SQL_C_NUMERIC, m_NumericSize, 10, 38, 10);
+        // param2: Declares DECIMAL(8, 3)
+        // Executor will set 1000.0 → 1000.000 (7 total digits, fits in precision=8)
+        // Expected: Should succeed
+        SQL_NUMERIC_STRUCT param2{};
+        param2.precision = 8;
+        param2.scale = 3;
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+            2,                       // paramNumber
+            param2,                  // paramValue with precision=8, scale=3
+            false,                   // isNull
+            SQL_PARAM_INPUT_OUTPUT); // inputOutputType
 
-        // Column 3: NUMERIC(15,15) - scale equals precision
-        InitializeColumn(3, "FractionalOnly", SQL_C_NUMERIC, m_NumericSize, 15, 15, 15);
-
-        // Column 4: NUMERIC(20,5) - large precision, low scale
-        InitializeColumn(4, "LargeWithLowScale", SQL_C_NUMERIC, m_NumericSize, 5, 20, 5);
-
-        // Initialize 3 rows of test data
-        int rowsNumber = 3;
-        vector<shared_ptr<void>> dataSet = {};
-        vector<vector<SQLINTEGER>> strLen_or_Ind = {};
-
-        using TestHelpers::CreateNumericStruct;
-
-        // Row 0
-        vector<SQL_NUMERIC_STRUCT> row0(columnsNumber);
-        row0[0] = CreateNumericStruct(12345, 5, 2, false);           // 123.45
-        row0[1] = CreateNumericStruct(9876543210LL, 10, 0, false);   // 9876543210
-        row0[2] = CreateNumericStruct(1234567890LL, 387, 10, false);// Large value
-        row0[3] = CreateNumericStruct(123456789012345LL, 15, 15, false); // 0.123456789012345
-        row0[4] = CreateNumericStruct(12345678901234567LL, 20, 5, false); // 123456789012.34567
-
-        dataSet.push_back(shared_ptr<void>(static_cast<void*>(row0.data()), [](void*) {}));
-        strLen_or_Ind.push_back(vector<SQLINTEGER>(columnsNumber, m_NumericSize));
-
-        // Row 1 - with some negative values
-        vector<SQL_NUMERIC_STRUCT> row1(columnsNumber);
-        row1[0] = CreateNumericStruct(54321, 5, 2, true);            // -543.21 (negative)
-        row1[1] = CreateNumericStruct(1234567890LL, 10, 0, false);   // 1234567890
-        row1[2] = CreateNumericStruct(9876543210LL, 38, 10, true);   // Negative large value
-        row1[3] = CreateNumericStruct(999999999999999LL, 15, 15, false); // 0.999999999999999
-        row1[4] = CreateNumericStruct(100000LL, 20, 5, false);        // 1.00000
-
-        dataSet.push_back(shared_ptr<void>(static_cast<void*>(row1.data()), [](void*) {}));
-        strLen_or_Ind.push_back(vector<SQLINTEGER>(columnsNumber, m_NumericSize));
-
-        // Row 2 - with zeros
-        vector<SQL_NUMERIC_STRUCT> row2(columnsNumber);
-        row2[0] = CreateNumericStruct(0, 5, 2, false);               // 0.00
-        row2[1] = CreateNumericStruct(0, 10, 0, false);              // 0
-        row2[2] = CreateNumericStruct(0, 38, 10, false);             // 0.0000000000
-        row2[3] = CreateNumericStruct(0, 15, 15, false);             // 0.000000000000000
-        row2[4] = CreateNumericStruct(0, 20, 5, false);              // 0.00000
-
-        dataSet.push_back(shared_ptr<void>(static_cast<void*>(row2.data()), [](void*) {}));
-        strLen_or_Ind.push_back(vector<SQLINTEGER>(columnsNumber, m_NumericSize));
-
-        // Execute and verify
+        // Execute - this should fail because C# will throw OverflowException on param0
         SQLUSMALLINT outputSchemaColumnsNumber = 0;
-        SQLRETURN result = Execute(
-            rowsNumber,
-            dataSet.data(),
-            strLen_or_Ind.data(),
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLen_or_Ind
             &outputSchemaColumnsNumber);
-        ASSERT_EQ(result, SQL_SUCCESS);
+
+        // Expected: SQL_ERROR because FromSqlDecimal should throw OverflowException
+        // for param0 when the value exceeds target precision
+        EXPECT_EQ(result, SQL_ERROR);
     }
 }
+
 

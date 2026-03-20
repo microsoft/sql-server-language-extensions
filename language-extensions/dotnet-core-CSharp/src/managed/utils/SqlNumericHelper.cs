@@ -21,28 +21,36 @@ namespace Microsoft.SqlServer.CSharpExtension
     /// Provides ODBC-compatible SQL_NUMERIC_STRUCT definition and conversion methods.
     ///
     /// IMPORTANT: This implementation uses SqlDecimal from Microsoft.Data.SqlClient which supports
-    /// full SQL Server precision (38 digits). C# decimal is NOT used to avoid 28-digit limitations.
+    /// full SQL Server precision (38 digits). 
+    /// C# native decimal is NOT used as it has 28-digit limitations.
     /// </summary>
     public static class SqlNumericHelper
     {
+        // Precision and scale constraints from SqlDecimal (Microsoft.Data.SqlClient)
+        // These are the canonical SQL Server DECIMAL/NUMERIC limits
+        
         /// <summary>
         /// SQL Server maximum precision for DECIMAL/NUMERIC types (digits).
+        /// Retrieved from SqlDecimal.MaxPrecision in Microsoft.Data.SqlClient.
         /// </summary>
-        public const byte SQL_MAX_PRECISION = 38;
+        public static readonly byte SQL_MAX_PRECISION = SqlDecimal.MaxPrecision;
 
         /// <summary>
         /// Minimum precision for DECIMAL/NUMERIC types (digits).
+        /// SQL Server requires at least 1 digit of precision.
         /// </summary>
         public const byte SQL_MIN_PRECISION = 1;
 
         /// <summary>
         /// Maximum scale for DECIMAL/NUMERIC types (digits after decimal point).
+        /// Retrieved from SqlDecimal.MaxScale in Microsoft.Data.SqlClient.
         /// Scale cannot exceed precision.
         /// </summary>
-        public const byte SQL_MAX_SCALE = 38;
+        public static readonly byte SQL_MAX_SCALE = SqlDecimal.MaxScale;
 
         /// <summary>
         /// Minimum scale for DECIMAL/NUMERIC types (digits after decimal point).
+        /// SQL Server allows scale of 0 (integers).
         /// </summary>
         public const byte SQL_MIN_SCALE = 0;
 
@@ -53,9 +61,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         public const int SQL_NUMERIC_VALUE_SIZE = 16;
 
         /// <summary>
-        /// Total size of SQL_NUMERIC_STRUCT in bytes: precision(1) + scale(1) + sign(1) + val(16) = 19.
+        /// Number of Int32 values needed to represent the SQL_NUMERIC_STRUCT value array.
+        /// Calculated as: 16 bytes / 4 bytes per Int32 = 4 Int32s.
         /// </summary>
-        public const int SQL_NUMERIC_STRUCT_SIZE = 19;
+        private const int INT32_ARRAY_SIZE = 4;
 
         /// <summary>
         /// SQL_NUMERIC_STRUCT structure matching ODBC's SQL_NUMERIC_STRUCT.
@@ -69,7 +78,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// 
         /// References:
         /// - ODBC Programmer's Reference: https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/c-data-types
-        /// - SQL_NUMERIC_STRUCT definition: https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/sql-numeric-structure
+        /// - SQL_NUMERIC_STRUCT definition: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/retrieve-numeric-data-sql-numeric-struct-kb222831
         /// - sqltypes.h header: SQL_MAX_NUMERIC_LEN = 16
         /// 
         /// CRITICAL: This struct must be binary-compatible with ODBC's SQL_NUMERIC_STRUCT.
@@ -91,7 +100,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             /// In T-SQL terms: DECIMAL(precision, scale) - this is the 'scale' part.
             /// Example: DECIMAL(10,2) has scale=2 (2 digits after decimal point).
             /// 
-            /// CRITICAL: Maps to SQLSCHAR (signed char) in ODBC specification.
+            /// Maps to SQLSCHAR (signed char) in ODBC specification.
             /// We must use sbyte (not byte) for exact binary layout compatibility.
             /// Although scale is always non-negative in T-SQL, ODBC defines it as signed.
             /// </summary>
@@ -107,8 +116,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             /// Little-endian 128-bit integer representing the scaled value.
             /// The actual numeric value = (val as 128-bit integer) * 10^(-scale) * sign.
             /// 
-            /// Fixed buffer provides direct memory access without helper methods.
-            /// Maps to SQLCHAR val[SQL_MAX_NUMERIC_LEN] where SQL_MAX_NUMERIC_LEN=16.
+            /// Fixed buffer provides direct memory access.
             /// 
             /// Note: Requires unsafe context to access fixed buffer.
             /// Use: fixed (byte* ptr = numericStruct.val) { ... }
@@ -149,19 +157,17 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// Converts SQL_NUMERIC_STRUCT to SqlDecimal with full 38-digit precision support.
-        /// This method supports the complete SQL Server DECIMAL/NUMERIC range without data loss.
+        /// Converts SQL_NUMERIC_STRUCT to SqlDecimal.
         /// </summary>
         /// <param name="numeric">The SQL numeric structure from ODBC.</param>
         /// <returns>The equivalent SqlDecimal value.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when precision or scale are out of valid T-SQL range:
         /// - Precision must be 1-38
-        /// - Scale must be 0 to precision
+        /// - Scale must be between 0 and precision
         /// </exception>
         /// <remarks>
-        /// SqlDecimal provides full SQL Server precision (38 digits) compared to C# decimal (28-29 digits).
-        /// Use this method when working with high-precision values to avoid data loss.
+        /// SqlDecimal provides full SQL Server precision (38 digits) compared to the native C# decimal (28-29 digits).
         /// </remarks>
         public static unsafe SqlDecimal ToSqlDecimal(SqlNumericStruct numeric)
         {
@@ -171,11 +177,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             // SqlDecimal constructor requires int[] array (not byte[])
             // The val array in SqlNumericStruct is 16 bytes = 128 bits
             // We need to convert to 4 int32s (4 x 32 bits = 128 bits)
-            
-            int[] data = new int[4];
+            //
+            int[] data = new int[INT32_ARRAY_SIZE];
+
             // Fixed buffers are already fixed - access directly via pointer
             byte* valPtr = numeric.val;
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < INT32_ARRAY_SIZE; i++)
             {
                 // Convert each group of 4 bytes to an int32 (little-endian)
                 int offset = i * 4;
@@ -185,7 +192,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                          (valPtr[offset + 3] << 24);
             }
             
-            // SqlDecimal constructor: SqlDecimal(byte precision, byte scale, bool positive, int[] data)
+            // SqlDecimal constructor: 
+            // SqlDecimal(byte precision, byte scale, bool positive, int[] data)
             bool isPositive = numeric.sign == 1;
             
             // Note: SqlDecimal scale parameter is byte (unsigned), but SqlNumericStruct.scale is sbyte (signed)
@@ -197,7 +205,6 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// Converts SqlDecimal to SQL_NUMERIC_STRUCT for transfer to SQL Server.
-        /// This method handles the full 38-digit precision range without data loss.
         /// </summary>
         /// <param name="value">The SqlDecimal value to convert.</param>
         /// <param name="precision">
@@ -212,10 +219,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <exception cref="ArgumentException">
         /// Thrown when precision or scale are out of valid T-SQL range:
         /// - Precision must be 1-38
-        /// - Scale must be 0 to precision
+        /// - Scale must be between 0 and precision
         /// </exception>
         /// <exception cref="OverflowException">
-        /// Thrown when scale adjustment causes data loss (e.g., reducing scale removes non-zero decimal places).
+        /// Thrown when:
+        /// - Scale adjustment causes data loss (e.g., reducing scale removes non-zero decimal places).
+        /// - Value requires more precision than target after scale adjustment (e.g., 12345678.99 → DECIMAL(10,4) requires 12 digits).
         /// </exception>
         /// <remarks>
         /// When converting SqlDecimal.Null, returns a zero-initialized struct.
@@ -225,6 +234,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// - If targetScale > value.Scale: Adds trailing decimal zeros (no data loss).
         /// - If targetScale &lt; value.Scale: Truncates decimal places (may lose data, throws OverflowException).
         /// - Use AdjustScale(value, scaleShift, round=false) for exact truncation behavior.
+        /// 
+        /// Precision Validation:
+        /// - After scale adjustment, validates that the value fits within target precision.
+        /// - Example: Value 12345678.99 adjusted to scale=4 becomes 12345678.9900 (requires 12 digits),  
+        ///   which exceeds DECIMAL(10,4) precision limit (max 999999.9999).
         /// </remarks>
         public static unsafe SqlNumericStruct FromSqlDecimal(SqlDecimal value, byte? precision = null, byte? scale = null)
         {
@@ -239,21 +253,13 @@ namespace Microsoft.SqlServer.CSharpExtension
             if (value.IsNull)
             {
                 // Return a zero-initialized struct - caller should set null indicator separately
-                SqlNumericStruct nullStruct = new SqlNumericStruct
+                // C# structs are zero-initialized by default (val array is already zeroed)
+                return new SqlNumericStruct
                 {
                     precision = targetPrecision,
                     scale = (sbyte)targetScale,
                     sign = 1  // Positive sign convention for NULL placeholders
                 };
-                
-                // Zero out the val array (fixed buffer is already fixed - access directly)
-                byte* nullValPtr = nullStruct.val;
-                for (int i = 0; i < SQL_NUMERIC_VALUE_SIZE; i++)
-                {
-                    nullValPtr[i] = 0;
-                }
-                
-                return nullStruct;
             }
             
             // Adjust scale if needed (SqlDecimal has AdjustScale method)
@@ -276,6 +282,18 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
             }
             
+            // CRITICAL: Validate that adjusted value fits within target precision
+            // SQL Server DECIMAL(p,s): p=total digits, s=fractional digits
+            // After scale adjustment, value may require more precision than declared
+            // Example: 12345678.99 (10 digits) → DECIMAL(10,4) → 12345678.9900 (12 digits) = OVERFLOW
+            if (adjustedValue.Precision > targetPrecision)
+            {
+                throw new OverflowException(
+                    $"Value {adjustedValue} requires precision {adjustedValue.Precision} " +
+                    $"but target DECIMAL({targetPrecision},{targetScale}) allows only {targetPrecision} digits. " +
+                    $"Original value: {value}");
+            }
+            
             SqlNumericStruct result = new SqlNumericStruct
             {
                 precision = targetPrecision,
@@ -289,7 +307,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             
             // Fixed buffer is already fixed - access directly via pointer
             byte* valPtr = result.val;
-            for (int i = 0; i < 4 && i < data.Length; i++)
+            // SqlDecimal.Data always returns exactly 4 int32s, so data.Length check is redundant
+            for (int i = 0; i < INT32_ARRAY_SIZE; i++)
             {
                 // Convert each int32 to 4 bytes (little-endian)
                 int offset = i * 4;
