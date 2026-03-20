@@ -10,7 +10,6 @@
 //*********************************************************************
 #include <string>
 #include <iostream>
-#include <stdio.h>
 
 using namespace std;
 #define LOG(msg) Logger::Log(msg)
