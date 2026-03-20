@@ -395,7 +395,7 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Template specialization for SQL_NUMERIC_STRUCT to extract precision from the struct
-    //  instead of using sizeof() which gives the struct size (19 bytes).
+    //  instead of using sizeof() which gives the struct size.
     //
     template<>
     void CSharpExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
@@ -406,12 +406,14 @@ namespace ExtensionApiTest
         {
             // For NUMERIC columns, extract precision from the first non-NULL value in the column
             // columnSize for NUMERIC represents precision (1-38), not bytes
-            SQLULEN precision = 38; // default
+            //
+            SQLULEN precision = SqlDecimalMaxPrecision; // default to SQL Server max precision
             const SQL_NUMERIC_STRUCT* columnData = 
                 static_cast<const SQL_NUMERIC_STRUCT*>(columnInfo->m_dataSet[columnNumber]);
             SQLINTEGER* strLenOrInd = columnInfo->m_strLen_or_Ind[columnNumber];
             
             // Find first non-NULL value to get precision
+            //
             for (SQLULEN row = 0; row < ColumnInfo<SQL_NUMERIC_STRUCT>::sm_rowsNumber; ++row)
             {
                 if (strLenOrInd[row] != SQL_NULL_DATA)

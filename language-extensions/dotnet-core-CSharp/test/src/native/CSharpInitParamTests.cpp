@@ -776,8 +776,9 @@ namespace ExtensionApiTest
     // Name: InitParam (Template Specialization for SQL_NUMERIC_STRUCT)
     //
     // Description:
-    // Specialized template for SQL_NUMERIC_STRUCT that correctly passes precision and scale
-    // from the struct to InitParam. The generic template passes decimalDigits=0, which
+    // Specialized template for SQL_NUMERIC_STRUCT that passes precision and scale
+    // from the struct to InitParam. 
+    // The generic template passes decimalDigits=0, which
     // causes InitParam to reject NUMERIC parameters with non-zero scale.
     //
     // Note: For output parameters with uninitialized structs (precision=0), uses defaults:
@@ -807,8 +808,9 @@ namespace ExtensionApiTest
 
         // For uninitialized structs (precision=0), use defaults for output parameters
         // The C# executor will set the actual values during execution.
-        // NOTE: In production T-SQL, SQL Server always provides proper precision/scale metadata.
-        // This handles test scenarios where OUTPUT parameters are initialized with default structs.
+        // NOTE: T-SQL, SQL Server always provides proper precision/scale metadata.
+        // This handles unit test scenarios where OUTPUT parameters are initialized with default structs.
+        //
         SQLULEN precision = (isNull || paramValue.precision == 0) ? 38 : paramValue.precision;
         SQLSMALLINT scale = (isNull || paramValue.precision == 0) ? 0 : paramValue.scale;
 
@@ -833,7 +835,7 @@ namespace ExtensionApiTest
     template void CSharpExtensionApiTests::InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
         int paramNumber,
         SQL_NUMERIC_STRUCT paramValue,
-        bool isNull,
-        SQLSMALLINT inputOutputType,
-        SQLRETURN SQLResult);
+        bool isNull = false,
+        SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
+        SQLRETURN SQLResult = SQL_SUCCESS);
 }

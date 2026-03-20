@@ -396,6 +396,10 @@ namespace ExtensionApiTest
         const SQLDOUBLE m_MaxDouble = 1.79e308;
         const SQLDOUBLE m_MinDouble = -1.79e308;
 
+        // Maximum precision for SQL DECIMAL/NUMERIC types (1-38 per SQL Server specification)
+        //
+        static constexpr SQLULEN SqlDecimalMaxPrecision = 38;
+
         // Path of .NET Core CSharp Extension
         //
         static std::string sm_extensionPath;
@@ -495,7 +499,13 @@ namespace ExtensionApiTest
         //  Creates a properly initialized ODBC numeric structure with little-endian mantissa encoding.
         //
         // Arguments:
-        //  mantissa - The unscaled integer value (e.g., 123456789 for 12345.6789 with scale=4)
+        //  mantissa - The unscaled integer representation of the decimal value.
+        //             The actual decimal value is calculated as: mantissa ÷ 10^scale
+        //             This allows exact decimal arithmetic without floating-point precision loss.
+        //             Examples:
+        //               • 12345.6789 → mantissa=123456789, scale=4 (123456789 ÷ 10^4 = 12345.6789)
+        //               • 555.5000  → mantissa=5555000, scale=4 (5555000 ÷ 10^4 = 555.5000)
+        //               • 0.00001   → mantissa=1, scale=5 (1 ÷ 10^5 = 0.00001)
         //  precision - Total number of digits (1-38, as per SQL NUMERIC/DECIMAL spec)
         //  scale - Number of digits after decimal point (0-precision)
         //  isNegative - true for negative values, false for positive/zero

@@ -529,7 +529,13 @@ namespace ExtensionApiTest
         }
     }
 
-    // Explicit template instantiations
+    //----------------------------------------------------------------------------------------------
+    // Name: Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC> (Explicit Template Instantiation)
+    //
+    // Description:
+    //  Explicit template instantiation for Execute function with SQL_NUMERIC_STRUCT type.
+    //  Required for linking decimal/numeric column tests that use SQL_C_NUMERIC data type.
+    //
     template void CSharpExtensionApiTests::Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
         SQLULEN        rowsNumber,
         void           **dataSet,
