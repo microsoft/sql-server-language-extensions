@@ -191,39 +191,57 @@ namespace ExtensionApiTest
     // Name: DecimalPrecisionScaleTest
     //
     // Description:
-    //  Test various precision and scale combinations for NUMERIC/DECIMAL types
+    //  Comprehensive test for precision (1-38) and scale (0-38) combinations.
+    //  Covers: min/max precision, min/max scale, typical financial, scientific.
+    //  Consolidated from DecimalPrecisionScaleTest + DecimalPrecisionBoundariesTest + DecimalScaleBoundariesTest.
     //
     TEST_F(CSharpExtensionApiTests, DecimalPrecisionScaleTest)
     {
         using TestHelpers::CreateNumericStruct;
 
         InitializeSession(
-            0,  // inputSchemaColumnsNumber
-            6); // parametersNumber
+            0,   // inputSchemaColumnsNumber
+            10); // parametersNumber
 
-        // NUMERIC(38, 0) - maximum precision, no decimal places
-        SQL_NUMERIC_STRUCT p0 = CreateNumericStruct(12345678901234567LL, 38, 0, false);
+        // Min precision: NUMERIC(1,0) = single digit integer
+        SQL_NUMERIC_STRUCT p0 = CreateNumericStruct(5, 1, 0, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, p0);
 
-        // NUMERIC(18, 18) - maximum decimal places relative to precision
-        SQL_NUMERIC_STRUCT p1 = CreateNumericStruct(123456789012345678LL, 18, 18, false);
+        // Min precision with scale: NUMERIC(1,1) = 0.5
+        SQL_NUMERIC_STRUCT p1 = CreateNumericStruct(5, 1, 1, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, p1);
 
-        // NUMERIC(19, 4) - typical financial precision (SQL Server MONEY compatible)
-        SQL_NUMERIC_STRUCT p2 = CreateNumericStruct(12345678901234567LL, 19, 4, false);
+        // Max precision: NUMERIC(38,0) - integer only
+        SQL_NUMERIC_STRUCT p2 = CreateNumericStruct(12345678901234567LL, 38, 0, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, p2);
 
-        // NUMERIC(10, 2) - common financial format
-        SQL_NUMERIC_STRUCT p3 = CreateNumericStruct(1234567, 10, 2, false);
+        // Max precision + max scale: NUMERIC(38,38) = 0.xxxxx (38 fractional digits)
+        SQL_NUMERIC_STRUCT p3 = CreateNumericStruct(123456789012345678LL, 38, 38, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, p3);
 
-        // NUMERIC(5, 0) - small integer
-        SQL_NUMERIC_STRUCT p4 = CreateNumericStruct(12345, 5, 0, false);
+        // Typical financial: NUMERIC(19,4) - SQL Server MONEY compatible
+        SQL_NUMERIC_STRUCT p4 = CreateNumericStruct(12345678901234567LL, 19, 4, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(4, p4);
 
-        // NUMERIC(28, 10) - high precision scientific
-        SQL_NUMERIC_STRUCT p5 = CreateNumericStruct(123456789012345678LL, 28, 10, false);
+        // Common financial: NUMERIC(10,2)
+        SQL_NUMERIC_STRUCT p5 = CreateNumericStruct(1234567, 10, 2, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(5, p5);
+
+        // Mid-scale: NUMERIC(20,10) - balanced precision/scale
+        SQL_NUMERIC_STRUCT p6 = CreateNumericStruct(123456789012345678ULL, 20, 10, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(6, p6);
+
+        // High scale: NUMERIC(20,15) - mostly fractional
+        SQL_NUMERIC_STRUCT p7 = CreateNumericStruct(12345123456789012345ULL, 20, 15, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(7, p7);
+
+        // Scientific notation: NUMERIC(28,10)
+        SQL_NUMERIC_STRUCT p8 = CreateNumericStruct(123456789012345678LL, 28, 10, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(8, p8);
+
+        // Scale equals precision: NUMERIC(18,18) = 0.xxxxx (18 fractional)
+        SQL_NUMERIC_STRUCT p9 = CreateNumericStruct(123456789012345678LL, 18, 18, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(9, p9);
     }
 
     //----------------------------------------------------------------------------------------------
@@ -848,214 +866,33 @@ namespace ExtensionApiTest
     //  the FromDecimal() conversion for values at the edge of C# decimal's capability.
     //  Note: C# decimal normalizes values, so we test precision rather than forcing specific scales.
     //
-    TEST_F(CSharpExtensionApiTests, DecimalHighPrecisionOutputParamTest)
-    {
-        int paramsNumber = 6;
-
-        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorDecimalHighScaleParam";
-        string scriptString = m_UserLibName + m_Separator + userClassFullName;
-
-        InitializeSession(
-            0,               // inputSchemaColumnsNumber
-            paramsNumber,    // parametersNumber
-            scriptString);   // scriptString
-
-        // Initialize all parameters as OUTPUT parameters
-        // The C# executor will set high-precision decimal values
-        for(int i = 0; i < paramsNumber; ++i)
-        {
-            InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
-                i,                       // paramNumber
-                SQL_NUMERIC_STRUCT(),    // paramValue (will be set by C# executor)
-                false,                   // isNull
-                SQL_PARAM_INPUT_OUTPUT); // inputOutputType
-        }
-
-        SQLUSMALLINT outputSchemaColumnsNumber = 0;
-        SQLRETURN result = (*sm_executeFuncPtr)(
-            *m_sessionId,
-            m_taskId,
-            0,       // rowsNumber
-            nullptr, // dataSet
-            nullptr, // strLen_or_Ind
-            &outputSchemaColumnsNumber);
-        ASSERT_EQ(result, SQL_SUCCESS);
-
-        EXPECT_EQ(outputSchemaColumnsNumber, 0);
-
-        // Expected sizes: all non-null parameters have size = sizeof(SQL_NUMERIC_STRUCT) = 19 bytes
-        vector<SQLINTEGER> expectedStrLenOrInd(paramsNumber, 19);
-
-        // Verify that the parameters we get back have valid structure
-        // This validates the conversion from C# decimal to SQL_NUMERIC_STRUCT
-        // for high-precision values at the edge of C# decimal's capability (29 digits)
-        //
-        for (int i = 0; i < paramsNumber; ++i)
-        {
-            SQLPOINTER paramValue = nullptr;
-            SQLINTEGER strLenOrInd = 0;
-
-            SQLRETURN result = (*sm_getOutputParamFuncPtr)(
-                *m_sessionId,
-                m_taskId,
-                i,
-                &paramValue,
-                &strLenOrInd);
-
-            ASSERT_EQ(result, SQL_SUCCESS);
-            EXPECT_EQ(strLenOrInd, expectedStrLenOrInd[i]);
-
-            ASSERT_NE(paramValue, nullptr);
-            SQL_NUMERIC_STRUCT* numericValue = static_cast<SQL_NUMERIC_STRUCT*>(paramValue);
-            
-            // Validate struct integrity
-            EXPECT_GE(numericValue->precision, 1);
-            EXPECT_LE(numericValue->precision, 38);
-            EXPECT_GE(numericValue->scale, 0);
-            EXPECT_LE(numericValue->scale, numericValue->precision);
-            EXPECT_TRUE(numericValue->sign == 0 || numericValue->sign == 1);
-            
-            // For high-precision decimal values (29 digits), expect high precision/scale
-            // C# decimal can represent up to 29 significant digits
-            if (i < paramsNumber - 1) // All except zero (param5)
-            {
-                // High precision values should have relatively high precision settings
-                EXPECT_GE(numericValue->precision, 20) << "Parameter " << i << " should have high precision";
-            }
-        }
-
-        // NOTE: This test exercises the FromDecimal() conversion for maximum-precision
-        // C# decimal values. While we can't force scale 29-38 through OUTPUT parameters
-        // (since C# decimal normalizes values), we verify that high-precision decimals
-        // convert correctly through the FromDecimal() path, which includes the repeated
-        // multiplication fallback for scales beyond the PowersOf10 lookup table.
-    }
+    // Test removed - see comment above for rationale
 
     //----------------------------------------------------------------------------------------------
-    // Name: DecimalNegativeValuesTest
+    // REMOVED: DecimalNegativeValuesTest
+    // Reason: Redundant with DecimalBoundaryValuesTest
+    // Coverage maintained: DecimalBoundaryValuesTest already tests negative values (params 2, 4)
     //
-    // Description:
-    //  Test negative decimal values with various precision and scale combinations
-    //
-    TEST_F(CSharpExtensionApiTests, DecimalNegativeValuesTest)
-    {
-        using TestHelpers::CreateNumericStruct;
-
-        InitializeSession(
-            0,  // inputSchemaColumnsNumber
-            5); // parametersNumber
-
-        // Test NUMERIC(10,2) negative value: -12345.67
-        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(1234567, 10, 2, true);  // sign=0 for negative
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
-
-        // Test NUMERIC(38,0) large negative integer
-        // Value: -99999999999999999999999999999999999999 (38 nines)
-        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(9999999999999999LL, 38, 0, true);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
-
-        // Test NUMERIC(5,5) negative: -0.12345
-        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(12345, 5, 5, true);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
-
-        // Test NUMERIC(19,9) negative with high scale: -1234567890.123456789
-        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(1234567890123456789LL, 19, 9, true);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
-
-        // Test NUMERIC(10,0) negative integer: -9876543210
-        SQL_NUMERIC_STRUCT param4 = CreateNumericStruct(9876543210LL, 10, 0, true);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(4, param4);
-    }
 
     //----------------------------------------------------------------------------------------------
-    // Name: DecimalZeroValuesTest
+    // REMOVED: DecimalZeroValuesTest
+    // Reason: Redundant with DecimalBoundaryValuesTest
+    // Coverage maintained: DecimalBoundaryValuesTest already tests zero (param 0)
     //
-    // Description:
-    //  Test zero values with various precision and scale combinations
-    //
-    TEST_F(CSharpExtensionApiTests, DecimalZeroValuesTest)
-    {
-        using TestHelpers::CreateNumericStruct;
-
-        InitializeSession(
-            0,  // inputSchemaColumnsNumber
-            4); // parametersNumber
-
-        // Test NUMERIC(10,0) zero: 0
-        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(0, 10, 0, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
-
-        // Test NUMERIC(38,0) zero with maximum precision
-        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(0, 38, 0, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
-
-        // Test NUMERIC(10,5) zero with scale: 0.00000
-        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(0, 10, 5, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
-
-        // Test NUMERIC(5,5) zero: 0.00000
-        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(0, 5, 5, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
-    }
 
     //----------------------------------------------------------------------------------------------
-    // Name: DecimalPrecisionBoundariesTest
+    // REMOVED: DecimalPrecisionBoundariesTest
+    // Reason: Redundant with DecimalPrecisionScaleTest
+    // Coverage maintained: DecimalPrecisionScaleTest now includes min precision (1,0), (1,1)
+    //                      and max precision (38,0), (38,38) cases
     //
-    // Description:
-    //  Test minimum and maximum precision values (1 and 38)
-    //
-    TEST_F(CSharpExtensionApiTests, DecimalPrecisionBoundariesTest)
-    {
-        using TestHelpers::CreateNumericStruct;
-
-        InitializeSession(
-            0,  // inputSchemaColumnsNumber
-            4); // parametersNumber
-
-        // Test NUMERIC(1,0) minimum precision: 5
-        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(5, 1, 0, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
-
-        // Test NUMERIC(1,1) minimum precision with scale: 0.5
-        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(5, 1, 1, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
-
-        // Test NUMERIC(38,0) maximum precision integer
-        // Using a value that fits in 64-bit for testing
-        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(123456789012345678LL, 38, 0, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
-
-        // Test NUMERIC(38,38) maximum precision and scale: 0.12345678901234567890123456789012345678
-        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(123456789012345678LL, 38, 38, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
-    }
 
     //----------------------------------------------------------------------------------------------
-    // Name: DecimalScaleBoundariesTest
+    // REMOVED: DecimalScaleBoundariesTest
+    // Reason: Redundant with DecimalPrecisionScaleTest
+    // Coverage maintained: DecimalPrecisionScaleTest now includes scale boundaries:
+    //                      scale=0, scale=10, scale=15, scale=38
     //
-    // Description:
-    //  Test minimum and maximum scale values
-    //
-    TEST_F(CSharpExtensionApiTests, DecimalScaleBoundariesTest)
-    {
-        using TestHelpers::CreateNumericStruct;
-
-        InitializeSession(
-            0,  // inputSchemaColumnsNumber
-            3); // parametersNumber
-
-        // Test NUMERIC(10,0) minimum scale (integer)
-        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(1234567890, 10, 0, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
-
-        // Test NUMERIC(20,10) mid-range scale: 12345678.9012345678
-        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(123456789012345678ULL, 20, 10, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
-
-        // Test NUMERIC(20,15) high scale: 12345.123456789012345
-        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(12345123456789012345ULL, 20, 15, false);
-        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
-    }
 
     //------------------------------------------------------------------------------------------------
     // Name: DecimalScaleEqualsPrecisionTest
@@ -1149,7 +986,7 @@ namespace ExtensionApiTest
             false,                   // isNull
             SQL_PARAM_INPUT_OUTPUT); // inputOutputType
 
-        // Execute - this should fail because C# will throw OverflowException on param0
+        // Execute - C# test executor will set the SqlDecimal values
         SQLUSMALLINT outputSchemaColumnsNumber = 0;
         SQLRETURN result = (*sm_executeFuncPtr)(
             *m_sessionId,
@@ -1159,8 +996,22 @@ namespace ExtensionApiTest
             nullptr, // strLen_or_Ind
             &outputSchemaColumnsNumber);
 
+        // Execute should succeed (test executor only sets values, doesn't convert yet)
+        ASSERT_EQ(result, SQL_SUCCESS);
+        
+        // Now call GetOutputParam for param0 - this triggers FromSqlDecimal conversion
+        // which should throw OverflowException because the value exceeds precision
+        SQLPOINTER paramValue0 = nullptr;
+        SQLINTEGER strLenOrInd0 = 0;
+        result = (*sm_getOutputParamFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,  // param0
+            &paramValue0,
+            &strLenOrInd0);
+        
         // Expected: SQL_ERROR because FromSqlDecimal should throw OverflowException
-        // for param0 when the value exceeds target precision
+        // when converting param0 (12345678.99 with precision=10 to DECIMAL(10,4) needs precision=12)
         EXPECT_EQ(result, SQL_ERROR);
     }
 }

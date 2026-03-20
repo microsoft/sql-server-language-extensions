@@ -5,6 +5,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
   <PropertyGroup>
+    <BinRoot Condition=" '$(BinRoot)' == '' ">$(MSBuildThisFileDirectory)..\..\..\..\build-output\dotnet-core-CSharp-extension\windows</BinRoot>
     <OutputPath>$(BinRoot)/$(Configuration)/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RollForward>LatestMajor</RollForward>

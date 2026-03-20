@@ -264,6 +264,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             
             // Adjust scale if needed (SqlDecimal has AdjustScale method)
             SqlDecimal adjustedValue = value;
+            int actualPrecisionNeeded = value.Precision;
+            
             if (targetScale != value.Scale)
             {
                 // AdjustScale returns a new SqlDecimal with the specified scale
@@ -280,18 +282,25 @@ namespace Microsoft.SqlServer.CSharpExtension
                         $"Cannot adjust SqlDecimal scale from {value.Scale} to {targetScale} without data loss. " +
                         $"Original value: {value}", ex);
                 }
+                
+                // CRITICAL: SqlDecimal.AdjustScale() does NOT update the Precision property
+                // We must calculate the actual precision needed after scale adjustment
+                // When increasing scale, we add trailing zeros which increases precision requirement
+                // Example: value=12345678.99 (precision=10, scale=2)
+                //   → AdjustScale(+2) → 12345678.9900 (needs precision=12, but Precision property still=10)
+                // Formula: actualPrecisionNeeded = originalPrecision + scaleShift
+                actualPrecisionNeeded = value.Precision + scaleShift;
             }
             
             // CRITICAL: Validate that adjusted value fits within target precision
             // SQL Server DECIMAL(p,s): p=total digits, s=fractional digits
             // After scale adjustment, value may require more precision than declared
             // Example: 12345678.99 (10 digits) → DECIMAL(10,4) → 12345678.9900 (12 digits) = OVERFLOW
-            if (adjustedValue.Precision > targetPrecision)
+            if (actualPrecisionNeeded > targetPrecision)
             {
                 throw new OverflowException(
-                    $"Value {adjustedValue} requires precision {adjustedValue.Precision} " +
-                    $"but target DECIMAL({targetPrecision},{targetScale}) allows only {targetPrecision} digits. " +
-                    $"Original value: {value}");
+                    $"Value {value} requires precision {actualPrecisionNeeded} after adjusting scale from {value.Scale} to {targetScale}, " +
+                    $"but target DECIMAL({targetPrecision},{targetScale}) allows only {targetPrecision} digits.");
             }
             
             SqlNumericStruct result = new SqlNumericStruct
