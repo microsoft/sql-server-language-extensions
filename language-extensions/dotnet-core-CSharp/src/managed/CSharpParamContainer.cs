@@ -136,12 +136,34 @@ namespace Microsoft.SqlServer.CSharpExtension
                     break;
                 case SqlDataType.DotNetNumeric:
                     // Convert SQL_NUMERIC_STRUCT to SqlDecimal
-                    // Special handling for OUTPUT parameters: if precision=0, treat as uninitialized
+                    //
+                    // OUTPUT Parameter Convention (precision=0 sentinel):
+                    // =====================================================
+                    // For OUTPUT parameters, SQL Server passes uninitialized SQL_NUMERIC_STRUCT with precision=0.
+                    // This is a sentinel value indicating "output only, no input value".
+                    // We must treat this as SqlDecimal.Null to avoid validation errors.
+                    //
+                    // Rationale:
+                    // - ODBC specification requires precision 1-38 for SQL_NUMERIC_STRUCT
+                    // - precision=0 violates the spec, so it's safe to use as a sentinel
+                    // - ToSqlDecimal() would throw ArgumentException for precision=0
+                    // - C# executor will assign the actual output value before returning
+                    //
+                    // Reference: ODBC Programmer's Reference, SQL_C_NUMERIC data type
+                    // https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/c-data-types
+                    //
+                    // CRITICAL: Validate pointer before dereferencing to prevent access violations
+                    if (paramValue == null)
+                    {
+                        throw new ArgumentNullException(nameof(paramValue), 
+                            "paramValue pointer is null for NUMERIC parameter");
+                    }
+                    
                     SqlNumericStruct* numericPtr = (SqlNumericStruct*)paramValue;
                     if (numericPtr->precision == 0)
                     {
-                        // OUTPUT parameter with uninitialized struct - use SqlDecimal.Null
-                        // The C# executor will set the actual value
+                        // OUTPUT parameter with uninitialized struct (precision=0 sentinel)
+                        // Use SqlDecimal.Null - C# executor will set the actual value
                         _params[paramNumber].Value = SqlDecimal.Null;
                     }
                     else
@@ -248,19 +270,25 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // Note: param.Value could be SqlDecimal or potentially null (handled above)
                     if (param.Value is SqlDecimal sqlDecimalValue)
                     {
-                        // WHY use param.Size for precision?
-                        // - For DECIMAL/NUMERIC parameters, param.Size contains the declared precision (not bytes)
-                        // - This follows standard ODBC behavior where ColumnSize = precision for SQL_NUMERIC/SQL_DECIMAL
-                        // - CRITICAL: The SqlNumericStruct precision MUST match the declared parameter precision
+                        // WHY use param.Size for precision instead of SqlDecimal.Precision?
+                        // ================================================================
+                        // - For DECIMAL/NUMERIC parameters, param.Size contains the DECLARED precision from T-SQL (not bytes)
+                        // - This follows standard ODBC behavior where ColumnSize = precision for SQL_NUMERIC/SQL_DECIMAL types
+                        // - CRITICAL: The SqlNumericStruct precision MUST match the declared parameter precision,
                         //   or SQL Server rejects it with "Invalid data for type decimal" (Msg 9803)
                         // - Example: DECIMAL(3,3) parameter MUST have precision=3 in the struct, not precision=38
+                        //   even if SqlDecimal.Precision is higher
+                        // - In T-SQL terms: DECLARE @p DECIMAL(10,2) - param.Size=10, param.DecimalDigits=2
                         byte precision = (byte)param.Size;
                         byte scale = (byte)param.DecimalDigits;
-                        // WHY set strLenOrNullMap to 19?
+                        
+                        // WHY set strLenOrNullMap to SQL_NUMERIC_STRUCT_SIZE (19 bytes)?
+                        // ================================================================
                         // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
                         // - SQL_NUMERIC_STRUCT is exactly 19 bytes: precision(1) + scale(1) + sign(1) + val(16)
                         // - This tells ODBC how many bytes to read from the paramValue pointer
-                        *strLenOrNullMap = 19; // sizeof(SqlNumericStruct)
+                        // - Using named constant improves readability and maintainability
+                        *strLenOrNullMap = SqlNumericHelper.SQL_NUMERIC_STRUCT_SIZE;
                         ReplaceNumericStructParam(sqlDecimalValue, precision, scale, paramValue);
                     }
                     else
