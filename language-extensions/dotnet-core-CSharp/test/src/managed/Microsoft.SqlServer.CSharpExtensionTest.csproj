@@ -4,6 +4,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
+    <BinRoot Condition=" '$(BinRoot)' == '' ">$(MSBuildThisFileDirectory)..\..\..\..\..\build-output\dotnet-core-CSharp-extension-test\windows</BinRoot>
     <OutputPath>$(BinRoot)/$(Configuration)/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <!-- Set default configuration if not specified -->
