@@ -930,4 +930,246 @@ namespace ExtensionApiTest
         // convert correctly through the FromDecimal() path, which includes the repeated
         // multiplication fallback for scales beyond the PowersOf10 lookup table.
     }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DecimalNegativeValuesTest
+    //
+    // Description:
+    //  Test negative decimal values with various precision and scale combinations
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalNegativeValuesTest)
+    {
+        using TestHelpers::CreateNumericStruct;
+
+        InitializeSession(
+            0,  // inputSchemaColumnsNumber
+            5); // parametersNumber
+
+        // Test NUMERIC(10,2) negative value: -12345.67
+        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(1234567, 10, 2, true);  // sign=0 for negative
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
+
+        // Test NUMERIC(38,0) large negative integer
+        // Value: -99999999999999999999999999999999999999 (38 nines)
+        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(9999999999999999LL, 38, 0, true);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
+
+        // Test NUMERIC(5,5) negative: -0.12345
+        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(12345, 5, 5, true);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
+
+        // Test NUMERIC(19,9) negative with high scale: -1234567890.123456789
+        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(1234567890123456789LL, 19, 9, true);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
+
+        // Test NUMERIC(10,0) negative integer: -9876543210
+        SQL_NUMERIC_STRUCT param4 = CreateNumericStruct(9876543210LL, 10, 0, true);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(4, param4);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DecimalZeroValuesTest
+    //
+    // Description:
+    //  Test zero values with various precision and scale combinations
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalZeroValuesTest)
+    {
+        using TestHelpers::CreateNumericStruct;
+
+        InitializeSession(
+            0,  // inputSchemaColumnsNumber
+            4); // parametersNumber
+
+        // Test NUMERIC(10,0) zero: 0
+        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(0, 10, 0, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
+
+        // Test NUMERIC(38,0) zero with maximum precision
+        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(0, 38, 0, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
+
+        // Test NUMERIC(10,5) zero with scale: 0.00000
+        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(0, 10, 5, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
+
+        // Test NUMERIC(5,5) zero: 0.00000
+        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(0, 5, 5, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DecimalPrecisionBoundariesTest
+    //
+    // Description:
+    //  Test minimum and maximum precision values (1 and 38)
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalPrecisionBoundariesTest)
+    {
+        using TestHelpers::CreateNumericStruct;
+
+        InitializeSession(
+            0,  // inputSchemaColumnsNumber
+            4); // parametersNumber
+
+        // Test NUMERIC(1,0) minimum precision: 5
+        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(5, 1, 0, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
+
+        // Test NUMERIC(1,1) minimum precision with scale: 0.5
+        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(5, 1, 1, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
+
+        // Test NUMERIC(38,0) maximum precision integer
+        // Using a value that fits in 64-bit for testing
+        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(123456789012345678LL, 38, 0, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
+
+        // Test NUMERIC(38,38) maximum precision and scale: 0.12345678901234567890123456789012345678
+        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(123456789012345678LL, 38, 38, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DecimalScaleBoundariesTest
+    //
+    // Description:
+    //  Test minimum and maximum scale values
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalScaleBoundariesTest)
+    {
+        using TestHelpers::CreateNumericStruct;
+
+        InitializeSession(
+            0,  // inputSchemaColumnsNumber
+            3); // parametersNumber
+
+        // Test NUMERIC(10,0) minimum scale (integer)
+        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(1234567890, 10, 0, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
+
+        // Test NUMERIC(20,10) mid-range scale: 1234567890.1234567890
+        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(12345678901234567890LL, 20, 10, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
+
+        // Test NUMERIC(25,20) high scale: 12345.12345678901234567890
+        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(1234512345678901234567LL, 25, 20, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Name: DecimalScaleEqualsPrecisionTest
+    //
+    // Description:
+    //  Test cases where scale equals precision (all decimal places, no integer part except 0)
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalScaleEqualsPrecisionTest)
+    {
+        using TestHelpers::CreateNumericStruct;
+
+        InitializeSession(
+            0,  // inputSchemaColumnsNumber
+            4); // parametersNumber
+
+        // Test NUMERIC(1,1): 0.5
+        SQL_NUMERIC_STRUCT param0 = CreateNumericStruct(5, 1, 1, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, param0);
+
+        // Test NUMERIC(5,5): 0.12345
+        SQL_NUMERIC_STRUCT param1 = CreateNumericStruct(12345, 5, 5, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, param1);
+
+        // Test NUMERIC(10,10): 0.1234567890
+        SQL_NUMERIC_STRUCT param2 = CreateNumericStruct(1234567890, 10, 10, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, param2);
+
+        // Test NUMERIC(15,15): 0.123456789012345
+        SQL_NUMERIC_STRUCT param3 = CreateNumericStruct(123456789012345LL, 15, 15, false);
+        InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, param3);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DecimalMixedPrecisionColumnsTest
+    //
+    // Description:
+    //  Test multiple columns with different precision and scale combinations
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalMixedPrecisionColumnsTest)
+    {
+        int columnsNumber = 5;
+        SQLUSMALLINT inputSchemaColumnsNumber = columnsNumber;
+        std::string scriptString = "TestScriptDecimalMixedColumns";
+
+        // Initialize session with 5 decimal columns of varying precision/scale
+        uint16_t paramNumber = 0;
+        InitializeSession(
+            inputSchemaColumnsNumber,
+            paramNumber,
+            scriptString);
+
+        // Column 0: NUMERIC(5,2) - small precision, low scale
+        InitializeColumn(0, "SmallDecimal", SQL_C_NUMERIC, m_NumericSize, 2, 10, 2);
+
+        // Column 1: NUMERIC(10,0) - medium precision, no scale (integer)
+        InitializeColumn(1, "MediumInt", SQL_C_NUMERIC, m_NumericSize, 0, 10, 0);
+
+        // Column 2: NUMERIC(38,10) - maximum precision, medium scale
+        InitializeColumn(2, "LargeDecimal", SQL_C_NUMERIC, m_NumericSize, 10, 38, 10);
+
+        // Column 3: NUMERIC(15,15) - scale equals precision
+        InitializeColumn(3, "FractionalOnly", SQL_C_NUMERIC, m_NumericSize, 15, 15, 15);
+
+        // Column 4: NUMERIC(20,5) - large precision, low scale
+        InitializeColumn(4, "LargeWithLowScale", SQL_C_NUMERIC, m_NumericSize, 5, 20, 5);
+
+        // Initialize 3 rows of test data
+        int rowsNumber = 3;
+        vector<shared_ptr<void>> dataSet = {};
+        vector<vector<SQLINTEGER>> strLen_or_Ind = {};
+
+        using TestHelpers::CreateNumericStruct;
+
+        // Row 0
+        vector<SQL_NUMERIC_STRUCT> row0(columnsNumber);
+        row0[0] = CreateNumericStruct(12345, 5, 2, false);           // 123.45
+        row0[1] = CreateNumericStruct(9876543210LL, 10, 0, false);   // 9876543210
+        row0[2] = CreateNumericStruct(1234567890LL, 387, 10, false);// Large value
+        row0[3] = CreateNumericStruct(123456789012345LL, 15, 15, false); // 0.123456789012345
+        row0[4] = CreateNumericStruct(12345678901234567LL, 20, 5, false); // 123456789012.34567
+
+        dataSet.push_back(shared_ptr<void>(static_cast<void*>(row0.data()), [](void*) {}));
+        strLen_or_Ind.push_back(vector<SQLINTEGER>(columnsNumber, m_NumericSize));
+
+        // Row 1 - with some negative values
+        vector<SQL_NUMERIC_STRUCT> row1(columnsNumber);
+        row1[0] = CreateNumericStruct(54321, 5, 2, true);            // -543.21 (negative)
+        row1[1] = CreateNumericStruct(1234567890LL, 10, 0, false);   // 1234567890
+        row1[2] = CreateNumericStruct(9876543210LL, 38, 10, true);   // Negative large value
+        row1[3] = CreateNumericStruct(999999999999999LL, 15, 15, false); // 0.999999999999999
+        row1[4] = CreateNumericStruct(100000LL, 20, 5, false);        // 1.00000
+
+        dataSet.push_back(shared_ptr<void>(static_cast<void*>(row1.data()), [](void*) {}));
+        strLen_or_Ind.push_back(vector<SQLINTEGER>(columnsNumber, m_NumericSize));
+
+        // Row 2 - with zeros
+        vector<SQL_NUMERIC_STRUCT> row2(columnsNumber);
+        row2[0] = CreateNumericStruct(0, 5, 2, false);               // 0.00
+        row2[1] = CreateNumericStruct(0, 10, 0, false);              // 0
+        row2[2] = CreateNumericStruct(0, 38, 10, false);             // 0.0000000000
+        row2[3] = CreateNumericStruct(0, 15, 15, false);             // 0.000000000000000
+        row2[4] = CreateNumericStruct(0, 20, 5, false);              // 0.00000
+
+        dataSet.push_back(shared_ptr<void>(static_cast<void*>(row2.data()), [](void*) {}));
+        strLen_or_Ind.push_back(vector<SQLINTEGER>(columnsNumber, m_NumericSize));
+
+        // Execute and verify
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = Execute(
+            rowsNumber,
+            dataSet.data(),
+            strLen_or_Ind.data(),
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+    }
 }
+
