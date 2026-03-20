@@ -32,8 +32,8 @@ namespace Microsoft.SqlServer.CSharpExtension
         
         /// <summary>
         /// Size of SQL_NUMERIC_STRUCT in bytes (ODBC specification).
-        /// Calculated from SqlNumericHelper.SqlNumericStruct layout:
-        /// precision(1) + scale(1) + sign(1) + val0-val15(16) = 19 bytes.
+        /// Dynamically calculated from SqlNumericHelper.SqlNumericStruct layout:
+        /// precision(1) + scale(1) + sign(1) + val[16] = 19 bytes.
         /// Must match the exact size of ODBC's SQL_NUMERIC_STRUCT for binary compatibility.
         /// </summary>
         public static readonly short SqlNumericStructSize = (short)Marshal.SizeOf<SqlNumericHelper.SqlNumericStruct>();

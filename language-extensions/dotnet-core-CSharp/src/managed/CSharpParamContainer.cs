@@ -282,13 +282,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                         byte precision = (byte)param.Size;
                         byte scale = (byte)param.DecimalDigits;
                         
-                        // WHY set strLenOrNullMap to SQL_NUMERIC_STRUCT_SIZE (19 bytes)?
+                        // WHY set strLenOrNullMap to SqlNumericStructSize?
                         // ================================================================
                         // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
-                        // - SQL_NUMERIC_STRUCT is exactly 19 bytes: precision(1) + scale(1) + sign(1) + val(16)
+                        // - SQL_NUMERIC_STRUCT size is computed via Marshal.SizeOf (19 bytes on this platform)
                         // - This tells ODBC how many bytes to read from the paramValue pointer
-                        // - Using named constant improves readability and maintainability
-                        *strLenOrNullMap = SqlNumericHelper.SQL_NUMERIC_STRUCT_SIZE;
+                        // - Using Sql.SqlNumericStructSize ensures consistency with other size calculations
+                        *strLenOrNullMap = Sql.SqlNumericStructSize;
                         ReplaceNumericStructParam(sqlDecimalValue, precision, scale, paramValue);
                     }
                     else
