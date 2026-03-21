@@ -686,6 +686,17 @@ namespace Microsoft.SqlServer.CSharpExtension
                 string installDir = Interop.UTF8PtrToStr(libraryInstallDirectory, (ulong)libraryInstallDirectoryLength);
                 string libName = Interop.UTF8PtrToStr(libraryName, (ulong)libraryNameLength);
 
+                // If a manifest from a previous install of this same library
+                // exists (e.g. ALTER EXTERNAL LIBRARY), clean up the old files
+                // before installing the new content. This prevents orphaned
+                // files and avoids false conflict errors when the new ZIP
+                // contains some of the same filenames as the old one.
+                string existingManifest = Path.Combine(installDir, libName + ".manifest");
+                if (File.Exists(existingManifest))
+                {
+                    CleanupManifest(existingManifest, installDir);
+                }
+
                 // Check if the file is actually a ZIP by reading magic bytes (PK prefix).
                 // All ZIP format variants start with 0x50 0x4B ('PK').
                 // If not a ZIP (e.g. a raw DLL), there is nothing to extract — the file
@@ -735,21 +746,62 @@ namespace Microsoft.SqlServer.CSharpExtension
                         Directory.CreateDirectory(installDir);
                     }
 
+                    // Check for file-level conflicts before extracting.
+                    // Directory (folder) overlaps are allowed — multiple libraries
+                    // may extract into the same parent folders.
+                    var extractedFiles = new List<string>();
+
                     if (innerZipPath != null)
                     {
-                        // Extract the inner zip to the install directory
-                        ZipFile.ExtractToDirectory(innerZipPath, installDir, true);
+                        using (var innerArchive = ZipFile.OpenRead(innerZipPath))
+                        {
+                            foreach (var entry in innerArchive.Entries)
+                            {
+                                if (string.IsNullOrEmpty(entry.Name))
+                                    continue;
+
+                                string relPath = entry.FullName.Replace('/', Path.DirectorySeparatorChar);
+                                string destFile = Path.Combine(installDir, relPath);
+
+                                if (File.Exists(destFile))
+                                {
+                                    throw new InvalidOperationException(
+                                        $"Cannot install library '{libName}': file '{relPath}' already exists. " +
+                                        "Another library has already installed a file with this name.");
+                                }
+
+                                extractedFiles.Add(relPath);
+                            }
+                        }
+
+                        // All conflict checks passed — extract
+                        ZipFile.ExtractToDirectory(innerZipPath, installDir, false);
                     }
                     else
                     {
-                        // Copy all extracted files directly to the install directory
+                        // Collect files from the extracted temp directory
+                        CollectRelativeFiles(tempFolder, "", extractedFiles);
+
+                        // Check for file conflicts before copying
+                        foreach (string relPath in extractedFiles)
+                        {
+                            string destFile = Path.Combine(installDir, relPath);
+                            if (File.Exists(destFile))
+                            {
+                                throw new InvalidOperationException(
+                                    $"Cannot install library '{libName}': file '{relPath}' already exists. " +
+                                    "Another library has already installed a file with this name.");
+                            }
+                        }
+
+                        // All conflict checks passed — copy files
                         foreach (string file in Directory.GetFiles(tempFolder))
                         {
                             string destFile = Path.Combine(installDir, Path.GetFileName(file));
-                            File.Copy(file, destFile, true);
+                            File.Copy(file, destFile, false);
                         }
 
-                        // Copy subdirectories
+                        // Copy subdirectories (merge into existing dirs)
                         foreach (string dir in Directory.GetDirectories(tempFolder))
                         {
                             string destDir = Path.Combine(installDir, Path.GetFileName(dir));
@@ -761,14 +813,24 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // DllUtils.CreateDllList (which searches for "{libName}.*") can find it.
                     // When the ZIP contains files with different names (e.g. "RegexSample.dll"
                     // for a library named "regex"), copy the first DLL as "{libName}.dll".
-                    if (Directory.GetFiles(installDir, libName + ".*").Length == 0)
+                    if (Directory.GetFiles(installDir, libName + ".*").Length == 0 &&
+                        !File.Exists(Path.Combine(installDir, libName)))
                     {
                         string[] dlls = Directory.GetFiles(installDir, "*.dll");
                         if (dlls.Length > 0)
                         {
-                            string destFile = Path.Combine(installDir, libName + ".dll");
+                            string destFile = Path.Combine(installDir, libName);
                             File.Copy(dlls[0], destFile, true);
+                            extractedFiles.Add(libName);
                         }
+                    }
+
+                    // Write a manifest listing all extracted file paths so that
+                    // UninstallExternalLibrary can remove exactly these files.
+                    if (extractedFiles.Count > 0)
+                    {
+                        string manifestPath = Path.Combine(installDir, libName + ".manifest");
+                        File.WriteAllLines(manifestPath, extractedFiles);
                     }
                 }
                 else
@@ -780,7 +842,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                         Directory.CreateDirectory(installDir);
                     }
 
-                    string destFile = Path.Combine(installDir, libName + ".dll");
+                    string destFile = Path.Combine(installDir, libName);
                     File.Copy(libFilePath, destFile, true);
                 }
             }
@@ -839,18 +901,24 @@ namespace Microsoft.SqlServer.CSharpExtension
             try
             {
                 string installDir = Interop.UTF8PtrToStr(libraryInstallDirectory, (ulong)libraryInstallDirectoryLength);
+                string libName = Interop.UTF8PtrToStr(libraryName, (ulong)libraryNameLength);
 
                 if (Directory.Exists(installDir))
                 {
-                    // Delete all contents within the install directory
-                    foreach (string file in Directory.GetFiles(installDir))
+                    // Check for a manifest written during install that lists
+                    // all files extracted from the library's ZIP content.
+                    string manifestPath = Path.Combine(installDir, libName + ".manifest");
+                    if (File.Exists(manifestPath))
                     {
-                        File.Delete(file);
+                        CleanupManifest(manifestPath, installDir);
                     }
 
-                    foreach (string dir in Directory.GetDirectories(installDir))
+                    // Delete the library file itself (for non-ZIP libraries
+                    // that were copied directly during install)
+                    string libraryFile = Path.Combine(installDir, libName);
+                    if (File.Exists(libraryFile))
                     {
-                        Directory.Delete(dir, true);
+                        File.Delete(libraryFile);
                     }
                 }
             }
@@ -899,6 +967,78 @@ namespace Microsoft.SqlServer.CSharpExtension
                 string destSubDir = Path.Combine(destDir, Path.GetFileName(dir));
                 CopyDirectory(dir, destSubDir);
             }
+        }
+
+        /// <summary>
+        /// Recursively collects all file paths relative to the root directory.
+        /// </summary>
+        private static void CollectRelativeFiles(string directory, string prefix, List<string> results)
+        {
+            foreach (string file in Directory.GetFiles(directory))
+            {
+                string relPath = string.IsNullOrEmpty(prefix)
+                    ? Path.GetFileName(file)
+                    : Path.Combine(prefix, Path.GetFileName(file));
+                results.Add(relPath);
+            }
+
+            foreach (string dir in Directory.GetDirectories(directory))
+            {
+                string dirName = Path.GetFileName(dir);
+                string newPrefix = string.IsNullOrEmpty(prefix)
+                    ? dirName
+                    : Path.Combine(prefix, dirName);
+                CollectRelativeFiles(dir, newPrefix, results);
+            }
+        }
+
+        /// <summary>
+        /// Reads a manifest file, deletes all listed files, removes any
+        /// directories that become empty (bottom-up), then deletes the
+        /// manifest itself. Used by both UninstallExternalLibrary and
+        /// InstallExternalLibrary (to clean up a previous version during
+        /// ALTER EXTERNAL LIBRARY).
+        /// </summary>
+        private static void CleanupManifest(string manifestPath, string installDir)
+        {
+            string[] extractedFiles = File.ReadAllLines(manifestPath);
+            var parentDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string relPath in extractedFiles)
+            {
+                if (string.IsNullOrWhiteSpace(relPath))
+                    continue;
+
+                string fullPath = Path.Combine(installDir, relPath);
+                if (File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                }
+
+                // Track parent directories for empty-dir cleanup
+                string dir = Path.GetDirectoryName(fullPath);
+                while (!string.IsNullOrEmpty(dir) &&
+                       !dir.Equals(installDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    parentDirs.Add(dir);
+                    dir = Path.GetDirectoryName(dir);
+                }
+            }
+
+            // Remove empty directories bottom-up (deepest first)
+            var sortedDirs = new List<string>(parentDirs);
+            sortedDirs.Sort((a, b) => b.Length.CompareTo(a.Length));
+            foreach (string dir in sortedDirs)
+            {
+                if (Directory.Exists(dir) &&
+                    Directory.GetFiles(dir).Length == 0 &&
+                    Directory.GetDirectories(dir).Length == 0)
+                {
+                    Directory.Delete(dir, false);
+                }
+            }
+
+            File.Delete(manifestPath);
         }
     }
 }
