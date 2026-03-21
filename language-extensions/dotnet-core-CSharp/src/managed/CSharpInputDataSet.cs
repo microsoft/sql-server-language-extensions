@@ -195,9 +195,6 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method adds NUMERIC/DECIMAL column data by converting from SQL_NUMERIC_STRUCT
         /// to SqlDecimal values (full 38-digit precision), creating a PrimitiveDataFrameColumn<SqlDecimal>,
         /// and adding it to the DataFrame.
-        /// 
-        /// IMPORTANT: We use SqlDecimal throughout to support SQL Server's full 38-digit precision.
-        /// C# decimal is NOT used to avoid 28-digit precision limitations and potential data loss.
         /// </summary>
         /// <param name="columnNumber">The column index.</param>
         /// <param name="rowsNumber">Number of rows in this column.</param>
@@ -210,14 +207,17 @@ namespace Microsoft.SqlServer.CSharpExtension
             int    *colMap)
         {
             // Cast the raw pointer to SQL_NUMERIC_STRUCT array
+            //
             SqlNumericStruct* numericArray = (SqlNumericStruct*)colData;
             
             // Create a DataFrame column for SqlDecimal values
             // Using SqlDecimal instead of decimal provides full SQL Server precision (38 digits)
+            //
             PrimitiveDataFrameColumn<SqlDecimal> colDataFrame = 
                 new PrimitiveDataFrameColumn<SqlDecimal>(_columns[columnNumber].Name, (int)rowsNumber);
             
             // Convert each SQL_NUMERIC_STRUCT to SqlDecimal, handling nulls
+            //
             Span<int> nullSpan = new Span<int>(colMap, (int)rowsNumber);
             for (int i = 0; i < (int)rowsNumber; ++i)
             {
@@ -231,6 +231,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 if (_columns[columnNumber].Nullable == 0 || nullSpan[i] != SQL_NULL_DATA)
                 {
                     // Convert SQL_NUMERIC_STRUCT to SqlDecimal with full precision support
+                    //
                     colDataFrame[i] = ToSqlDecimal(numericArray[i]);
                 }
                 // else: leave as null (default for nullable primitive column)
