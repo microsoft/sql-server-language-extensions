@@ -296,5 +296,34 @@ namespace Microsoft.SqlServer.CSharpExtension
             
             return result;
         }
+
+        /// <summary>
+        /// Converts SQL_NUMERIC_STRUCT pointer to SqlDecimal, handling OUTPUT parameter convention.
+        /// </summary>
+        /// <param name="numericPtr">Pointer to SQL_NUMERIC_STRUCT from ODBC.</param>
+        /// <returns>SqlDecimal value, or SqlDecimal.Null for OUTPUT parameters (precision=0 sentinel).</returns>
+        /// <exception cref="ArgumentNullException">Thrown when pointer is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when precision or scale violate constraints.</exception>
+        /// <remarks>
+        /// OUTPUT Parameter Convention: SQL Server passes uninitialized structs with precision=0 as a sentinel
+        /// indicating "output only, no input value". This violates ODBC spec (requires precision 1-38) but is
+        /// safe to detect. Returns SqlDecimal.Null in this case; caller will assign the actual output value.
+        /// </remarks>
+        public static unsafe SqlDecimal ToSqlDecimalFromPointer(SqlNumericStruct* numericPtr)
+        {
+            if (numericPtr == null)
+            {
+                throw new ArgumentNullException(nameof(numericPtr));
+            }
+
+            // precision=0 is the OUTPUT parameter sentinel (uninitialized struct)
+            //
+            if (numericPtr->precision == 0)
+            {
+                return SqlDecimal.Null;
+            }
+
+            return ToSqlDecimal(*numericPtr);
+        }
     }
 }
