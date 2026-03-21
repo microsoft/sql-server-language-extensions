@@ -48,7 +48,7 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 SET BUILD_OUTPUT=%DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
@@ -60,8 +60,7 @@ ECHO "[INFO] Generating dotnet-core-CSharp-extension test project build files us
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "NMake Makefiles" ^
-	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^
+	-G "Visual Studio 16 2019" ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\\%CMAKE_CONFIGURATION%" ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
@@ -70,11 +69,6 @@ CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to generate make files for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 ECHO "[INFO] Building dotnet-core-CSharp-extension test project using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
-
-REM Build with nmake
-REM
-CALL nmake install
-CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build native tests for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Call dotnet build
 REM
