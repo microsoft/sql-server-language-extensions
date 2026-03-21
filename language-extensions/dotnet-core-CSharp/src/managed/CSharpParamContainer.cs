@@ -249,7 +249,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                     }
                     break;
                 case SqlDataType.DotNetChar:
-                    // strLenOrNullMap = byte length (ANSI: 1 byte per character)
+                    // For CHAR/VARCHAR, strLenOrNullMap is in bytes (1 byte per character for ANSI).
+                    // param.Size is the declared parameter size in characters (from SQL Server's CHAR(n)/VARCHAR(n)).
+                    // For ANSI strings, character count equals byte count.
                     //
                     int charByteLen = param.Value.Length;
                     int charMaxByteLen = (int)param.Size;
@@ -257,9 +259,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                     ReplaceStringParam((string)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetWChar:
-                    // strLenOrNullMap = byte length (UTF-16: 2 bytes per character)
-                    //
-                    // so we multiply by sizeof(char) to convert to bytes.
+                    // For NCHAR/NVARCHAR, strLenOrNullMap must be in bytes (UTF-16: 2 bytes per character).
+                    // In C#, sizeof(char) is always 2 bytes (UTF-16), regardless of platform.
+                    // Note: C++ wchar_t is 2 bytes on Windows but 4 bytes on Linux - this extension only supports Windows.
+                    // param.Size is the declared parameter size in characters (from SQL Server's NCHAR(n)/NVARCHAR(n)),
                     //
                     int wcharByteLen = param.Value.Length * sizeof(char);
                     int wcharMaxByteLen = (int)param.Size * sizeof(char);
