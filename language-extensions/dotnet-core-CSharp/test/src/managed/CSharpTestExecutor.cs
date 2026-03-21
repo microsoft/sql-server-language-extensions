@@ -9,6 +9,7 @@
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
@@ -104,6 +105,76 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param2"] = 123;
             sqlParams["@param3"] = -1;
             sqlParams["@param4"] = null;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Comprehensive test executor for DECIMAL/NUMERIC OUTPUT parameters.
+    /// Covers: max/min values, high precision/scale, financial values, zero, nulls.
+    /// Consolidated from CSharpTestExecutorDecimalParam + CSharpTestExecutorDecimalHighScaleParam.
+    /// </summary>
+    public class CSharpTestExecutorDecimalParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // Maximum value: DECIMAL(38,0) max = 10^38 - 1
+            sqlParams["@param0"] = SqlDecimal.Parse("99999999999999999999999999999999999999");
+            
+            // Minimum value (negative max)
+            sqlParams["@param1"] = SqlDecimal.Parse("-99999999999999999999999999999999999999");
+            
+            // High scale: DECIMAL(38,10) - 38 digits with 10 fractional
+            sqlParams["@param2"] = SqlDecimal.Parse("1234567890123456789012345678.1234567890");
+            
+            // Zero
+            sqlParams["@param3"] = new SqlDecimal(0);
+            
+            // High fractional precision: DECIMAL(38,28) - 10 integer + 28 fractional
+            sqlParams["@param4"] = SqlDecimal.Parse("1234567890.1234567890123456789012345678");
+            
+            // Typical financial: DECIMAL(19,4)
+            sqlParams["@param5"] = SqlDecimal.Parse("123456789012345.6789");
+            
+            // Negative financial
+            sqlParams["@param6"] = SqlDecimal.Parse("-123456789012345.6789");
+            
+            // Null
+            sqlParams["@param7"] = null;
+            
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor for DECIMAL precision overflow validation.
+    /// This executor deliberately sets values that exceed the target precision after scale adjustment.
+    /// This tests that FromSqlDecimal properly validates precision overflow.
+    /// 
+    /// Bug scenario: Value 12345678.99 (10 digits) converted to DECIMAL(10,4) becomes 12345678.9900
+    /// which requires 12 significant digits, exceeding the declared precision of 10.
+    /// </summary>
+    public class CSharpTestExecutorDecimalPrecisionOverflow: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // param0: DECIMAL(10,4) max is 999999.9999 (6 before + 4 after = 10 total digits)
+            // Using value 12345678.99 has 10 significant digits (precision=10), scale=2
+            // When adjusted to scale=4, would need precision=12 (12345678.9900), exceeding DECIMAL(10,4)
+            decimal dec0 = 12345678.99m;
+            sqlParams["@param0"] = new SqlDecimal(dec0);
+            
+            // param1: Using 999999999.999 has 12 significant digits (precision=12), scale=3
+            // When adjusted to scale=4, would need precision=13 (999999999.9990), exceeding DECIMAL(10,4)
+            decimal dec1 = 999999999.999m;
+            sqlParams["@param1"] = new SqlDecimal(dec1);
+            
+            // param2: Value that fits in DECIMAL(8,3)
+            // Using 12345.67 has 7 significant digits (precision=7), scale=2
+            // When adjusted to scale=3, would need precision=8 (12345.670), fits in DECIMAL(8,3)
+            decimal dec2 = 12345.67m;
+            sqlParams["@param2"] = new SqlDecimal(dec2);
+            
             return null;
         }
     }

@@ -4,15 +4,19 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
+    <BinRoot Condition=" '$(BinRoot)' == '' ">$(MSBuildThisFileDirectory)..\..\..\..\..\build-output\dotnet-core-CSharp-extension-test\windows</BinRoot>
     <OutputPath>$(BinRoot)/$(Configuration)/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Set default configuration if not specified -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Analysis" Version="0.23.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SqlServer.CSharpExtension.SDK">
-      <HintPath>..\..\..\..\..\build-output\dotnet-core-CSharp-extension\windows\release\Microsoft.SqlServer.CSharpExtension.dll</HintPath>
+      <HintPath>..\..\..\..\..\build-output\dotnet-core-CSharp-extension\windows\$(Configuration)\Microsoft.SqlServer.CSharpExtension.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

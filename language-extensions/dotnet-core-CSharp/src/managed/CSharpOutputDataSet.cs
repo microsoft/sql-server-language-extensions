@@ -9,12 +9,14 @@
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -174,6 +176,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetDouble:
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
+                case SqlDataType.DotNetNumeric:
+                    ExtractNumericColumn(columnNumber, column);
+                    break;
                 case SqlDataType.DotNetChar:
                     // Calculate column size from actual data.
                     // columnSize = max UTF-8 byte length across all rows.
@@ -203,7 +208,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method sets data pointer for the column and append the array to the handle list.
         /// </summary>
-        private unsafe void SetDataPtrs<T>(
+        private void SetDataPtrs<T>(
             ushort  columnNumber,
             T[]     array
         ) where T : unmanaged
@@ -211,6 +216,68 @@ namespace Microsoft.SqlServer.CSharpExtension
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             _dataPtrs[columnNumber] = handle.AddrOfPinnedObject();
             _handleList.Add(handle);
+        }
+
+        /// <summary>
+        /// Extracts NUMERIC/DECIMAL column data by converting SqlDecimal values to ODBC-compatible SQL_NUMERIC_STRUCT array.
+        /// </summary>
+        /// <param name="columnNumber">The column index.</param>
+        /// <param name="column">The DataFrameColumn containing SqlDecimal values.</param>
+        private unsafe void ExtractNumericColumn(
+            ushort          columnNumber,
+            DataFrameColumn column)
+        {
+            if (column == null)
+            {
+                SetDataPtrs<SqlNumericStruct>(columnNumber, Array.Empty<SqlNumericStruct>());
+                return;
+            }
+
+            // Determine target precision/scale from max values across all rows
+            //
+            byte precision = SqlNumericHelper.SQL_MIN_PRECISION;
+            byte scale = (byte)_columns[columnNumber].DecimalDigits;
+            
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if (column[rowNumber] != null)
+                {
+                    SqlDecimal value = (SqlDecimal)column[rowNumber];
+                    if (!value.IsNull)
+                    {
+                        scale = Math.Max(scale, value.Scale);
+                        precision = Math.Max(precision, value.Precision);
+                    }
+                }
+            }
+            
+            // Enforce T-SQL DECIMAL(p,s) constraints: 1 <= p <= 38, 0 <= s <= p
+            //
+            precision = Math.Max(precision, SqlNumericHelper.SQL_MIN_PRECISION);
+            precision = Math.Min(precision, SqlNumericHelper.SQL_MAX_PRECISION);
+            if (scale > precision)
+            {
+                precision = scale;
+            }
+
+            // Update metadata: Size = precision (total digits), DecimalDigits = scale (fractional digits)
+            //
+            _columns[columnNumber].Size = precision;
+            _columns[columnNumber].DecimalDigits = scale;
+
+            Logging.Trace($"ExtractNumericColumn: Column {columnNumber}, T-SQL type=DECIMAL({precision},{scale}), RowCount={column.Length}");
+
+            // Convert all values (including NULLs) to SQL_NUMERIC_STRUCT using FromSqlDecimal
+            //
+            SqlNumericStruct[] numericArray = new SqlNumericStruct[column.Length];
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                SqlDecimal value = (column[rowNumber] != null) ? (SqlDecimal)column[rowNumber] : SqlDecimal.Null;
+                numericArray[rowNumber] = FromSqlDecimal(value, precision, scale);
+                Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value}");
+            }
+
+            SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
         }
 
         /// <summary>
