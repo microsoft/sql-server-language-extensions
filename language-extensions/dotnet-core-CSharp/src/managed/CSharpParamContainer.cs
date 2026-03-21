@@ -178,6 +178,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             
             // Use null-coalescing pattern for safer null checking with value types
             // SqlDecimal is a struct, so we need to check both object null and SqlDecimal.IsNull
+            //
             if(ReferenceEquals(param.Value, null))
             {
                 *strLenOrNullMap = SQL_NULL_DATA;
@@ -185,6 +186,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             
             // Special handling for SqlDecimal.Null (SqlDecimal is a struct, not a class)
+            //
             if(param.DataType == SqlDataType.DotNetNumeric && param.Value is SqlDecimal sqlDecVal && sqlDecVal.IsNull)
             {
                 *strLenOrNullMap = SQL_NULL_DATA;
