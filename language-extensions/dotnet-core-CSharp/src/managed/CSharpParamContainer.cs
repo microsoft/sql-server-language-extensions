@@ -9,11 +9,13 @@
 //
 //*************************************************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Runtime;
 using System.Text;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -132,6 +134,44 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetBit:
                     _params[paramNumber].Value = *(bool*)paramValue;
                     break;
+                case SqlDataType.DotNetNumeric:
+                    // Convert SQL_NUMERIC_STRUCT to SqlDecimal
+                    //
+                    // OUTPUT Parameter Convention (precision=0 sentinel):
+                    // =====================================================
+                    // For OUTPUT parameters, SQL Server passes uninitialized SQL_NUMERIC_STRUCT with precision=0.
+                    // This is a sentinel value indicating "output only, no input value".
+                    // We must treat this as SqlDecimal.Null to avoid validation errors.
+                    //
+                    // Rationale:
+                    // - ODBC specification requires precision 1-38 for SQL_NUMERIC_STRUCT
+                    // - precision=0 violates the spec, so it's safe to use as a sentinel
+                    // - ToSqlDecimal() would throw ArgumentException for precision=0
+                    // - C# executor will assign the actual output value before returning
+                    //
+                    // Reference: ODBC Programmer's Reference, SQL_C_NUMERIC data type
+                    // https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/c-data-types
+                    //
+                    // CRITICAL: Validate pointer before dereferencing to prevent access violations
+                    if (paramValue == null)
+                    {
+                        throw new ArgumentNullException(nameof(paramValue), 
+                            "paramValue pointer is null for NUMERIC parameter");
+                    }
+                    
+                    SqlNumericStruct* numericPtr = (SqlNumericStruct*)paramValue;
+                    if (numericPtr->precision == 0)
+                    {
+                        // OUTPUT parameter with uninitialized struct (precision=0 sentinel)
+                        // Use SqlDecimal.Null - C# executor will set the actual value
+                        _params[paramNumber].Value = SqlDecimal.Null;
+                    }
+                    else
+                    {
+                        // INPUT or INPUT_OUTPUT parameter with valid value
+                        _params[paramNumber].Value = ToSqlDecimal(*numericPtr);
+                    }
+                    break;
                 case SqlDataType.DotNetChar:
                     _params[paramNumber].Value = Interop.UTF8PtrToStr((char*)paramValue, (ulong)strLenOrNullMap);
                     break;
@@ -168,7 +208,17 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             _params[paramNumber].Value = paramValue_;
             CSharpParam param = _params[paramNumber];
-            if(param.Value == null)
+            
+            // Use null-coalescing pattern for safer null checking with value types
+            // SqlDecimal is a struct, so we need to check both object null and SqlDecimal.IsNull
+            if(ReferenceEquals(param.Value, null))
+            {
+                *strLenOrNullMap = SQL_NULL_DATA;
+                return;
+            }
+            
+            // Special handling for SqlDecimal.Null (SqlDecimal is a struct, not a class)
+            if(param.DataType == SqlDataType.DotNetNumeric && param.Value is SqlDecimal sqlDecVal && sqlDecVal.IsNull)
             {
                 *strLenOrNullMap = SQL_NULL_DATA;
                 return;
@@ -213,6 +263,38 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetBit:
                     bool boolValue = Convert.ToBoolean(param.Value);
                     ReplaceNumericParam<bool>(boolValue, paramValue);
+                    break;
+                case SqlDataType.DotNetNumeric:
+                    // Convert SqlDecimal to SQL_NUMERIC_STRUCT
+                    // Use the precision and scale from the parameter metadata
+                    // Note: param.Value could be SqlDecimal or potentially null (handled above)
+                    if (param.Value is SqlDecimal sqlDecimalValue)
+                    {
+                        // WHY use param.Size for precision instead of SqlDecimal.Precision?
+                        // ================================================================
+                        // - For DECIMAL/NUMERIC parameters, param.Size contains the DECLARED precision from T-SQL (not bytes)
+                        // - This follows standard ODBC behavior where ColumnSize = precision for SQL_NUMERIC/SQL_DECIMAL types
+                        // - CRITICAL: The SqlNumericStruct precision MUST match the declared parameter precision,
+                        //   or SQL Server rejects it with "Invalid data for type decimal" (Msg 9803)
+                        // - Example: DECIMAL(3,3) parameter MUST have precision=3 in the struct, not precision=38
+                        //   even if SqlDecimal.Precision is higher
+                        // - In T-SQL terms: DECLARE @p DECIMAL(10,2) - param.Size=10, param.DecimalDigits=2
+                        byte precision = (byte)param.Size;
+                        byte scale = (byte)param.DecimalDigits;
+                        
+                        // WHY set strLenOrNullMap to SqlNumericStructSize?
+                        // ================================================================
+                        // - For fixed-size types like SQL_NUMERIC_STRUCT, strLenOrNullMap contains the byte size
+                        // - SQL_NUMERIC_STRUCT size is computed via Marshal.SizeOf (19 bytes on this platform)
+                        // - This tells ODBC how many bytes to read from the paramValue pointer
+                        // - Using Sql.SqlNumericStructSize ensures consistency with other size calculations
+                        *strLenOrNullMap = Sql.SqlNumericStructSize;
+                        ReplaceNumericStructParam(sqlDecimalValue, precision, scale, paramValue);
+                    }
+                    else
+                    {
+                        throw new InvalidCastException($"Expected SqlDecimal for NUMERIC parameter, got {param.Value?.GetType().Name ?? "null"}");
+                    }
                     break;
                 case SqlDataType.DotNetChar:
                     // For CHAR/VARCHAR, strLenOrNullMap is in bytes (1 byte per character for ANSI).
@@ -273,6 +355,50 @@ namespace Microsoft.SqlServer.CSharpExtension
             GCHandle handle = GCHandle.Alloc(valueArray, GCHandleType.Pinned);
             _handleList.Add(handle);
             *paramValue = (void*)handle.AddrOfPinnedObject();
+        }
+
+        /// <summary>
+        /// This method replaces parameter value for NUMERIC/DECIMAL data types.
+        /// Converts SqlDecimal to SQL_NUMERIC_STRUCT and uses proper memory pinning.
+        /// Follows the same pattern as Java extension's numeric parameter handling.
+        /// </summary>
+        /// <param name="value">The SqlDecimal value to convert.</param>
+        /// <param name="precision">Total number of digits (1-38).</param>
+        /// <param name="scale">Number of digits after decimal point (0-precision).</param>
+        /// <param name="paramValue">Output pointer to receive the pinned SqlNumericStruct.</param>
+        private unsafe void ReplaceNumericStructParam(
+            SqlDecimal value,
+            byte    precision,
+            byte    scale,
+            void    **paramValue)
+        {
+            // Convert SqlDecimal to SQL_NUMERIC_STRUCT
+            SqlNumericStruct numericStruct = FromSqlDecimal(value, precision, scale);
+            
+            // Box the struct into a single-element array to create a heap-allocated copy, then pin it.
+            // 
+            // WHY box into an array before pinning?
+            // - Local struct 'numericStruct' is stack-allocated and will be destroyed when method returns
+            // - We need a heap-allocated copy that survives after this method returns
+            // - GCHandle.Alloc requires a heap object; structs must be boxed first
+            // - Single-element array is the simplest way to create a heap-allocated struct
+            //
+            // WHY pin with GCHandle?
+            // - Native code will dereference the paramValue pointer during execution
+            // - Without pinning, garbage collector could move the object, invalidating the pointer
+            // - GCHandleType.Pinned prevents GC from moving the object until we free the handle
+            //
+            // WHY add handle to _handleList?
+            // - If we don't keep a reference, GC could free the handle immediately
+            // - _handleList keeps handles alive until container is disposed/reset
+            // - Handles are freed in ResetParams or class disposal, ensuring proper cleanup
+            //
+            SqlNumericStruct[] valueArray = new SqlNumericStruct[1] { numericStruct };
+            GCHandle handle = GCHandle.Alloc(valueArray, GCHandleType.Pinned);
+            _handleList.Add(handle);
+            *paramValue = (void*)handle.AddrOfPinnedObject();
+            
+            Logging.Trace($"ReplaceNumericStructParam: Converted SqlDecimal {value} to SqlNumericStruct (precision={precision}, scale={scale})");
         }
 
         /// <summary>

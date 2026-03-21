@@ -396,6 +396,10 @@ namespace ExtensionApiTest
         const SQLDOUBLE m_MaxDouble = 1.79e308;
         const SQLDOUBLE m_MinDouble = -1.79e308;
 
+        // Maximum precision for SQL DECIMAL/NUMERIC types (1-38 per SQL Server specification)
+        //
+        static constexpr SQLULEN SqlDecimalMaxPrecision = 38;
+
         // Path of .NET Core CSharp Extension
         //
         static std::string sm_extensionPath;
@@ -481,4 +485,64 @@ namespace ExtensionApiTest
         std::vector<SQLSMALLINT> m_nullable;
         std::vector<SQLSMALLINT> m_partitionByIndexes;
     };
+
+    //----------------------------------------------------------------------------------------------
+    // TestHelpers namespace - Utility functions for test data generation
+    //
+    namespace TestHelpers
+    {
+        //----------------------------------------------------------------------------------------------
+        // Name: CreateNumericStruct
+        //
+        // Description:
+        //  Helper function to create SQL_NUMERIC_STRUCT from decimal value components.
+        //  Creates a properly initialized ODBC numeric structure with little-endian mantissa encoding.
+        //
+        // Arguments:
+        //  mantissa - The unscaled integer representation of the decimal value.
+        //             The actual decimal value is calculated as: mantissa ÷ 10^scale
+        //             This allows exact decimal arithmetic without floating-point precision loss.
+        //             Examples:
+        //               • 12345.6789 → mantissa=123456789, scale=4 (123456789 ÷ 10^4 = 12345.6789)
+        //               • 555.5000  → mantissa=5555000, scale=4 (5555000 ÷ 10^4 = 555.5000)
+        //               • 0.00001   → mantissa=1, scale=5 (1 ÷ 10^5 = 0.00001)
+        //  precision - Total number of digits (1-38, as per SQL NUMERIC/DECIMAL spec)
+        //  scale - Number of digits after decimal point (0-precision)
+        //  isNegative - true for negative values, false for positive/zero
+        //
+        // Returns:
+        //  SQL_NUMERIC_STRUCT - Fully initialized 19-byte ODBC numeric structure
+        //
+        // Example:
+        //  CreateNumericStruct(1234567, 10, 2, false) → represents 12345.67
+        //  CreateNumericStruct(5555000, 19, 4, true)  → represents -555.5000
+        //
+        inline SQL_NUMERIC_STRUCT CreateNumericStruct(
+            long long mantissa,
+            SQLCHAR precision,
+            SQLSCHAR scale,
+            bool isNegative)
+        {
+            // Zero-initialize all fields for safety
+            SQL_NUMERIC_STRUCT result{};
+            
+            result.precision = precision;
+            result.scale = scale;
+            result.sign = isNegative ? 0 : 1;  // 0 = negative, 1 = positive (ODBC convention)
+            
+            // Convert mantissa to little-endian byte array in val[0..15]
+            // Use std::abs for long long (not plain abs which is for int)
+            unsigned long long absMantissa = static_cast<unsigned long long>(std::abs(mantissa));
+            
+            // Extract bytes in little-endian order
+            // Use sizeof for self-documenting code instead of magic number 16
+            for (size_t i = 0; i < sizeof(result.val); i++)
+            {
+                result.val[i] = static_cast<SQLCHAR>(absMantissa & 0xFF);
+                absMantissa >>= 8;
+            }
+            
+            return result;
+        }
+    }
 }
