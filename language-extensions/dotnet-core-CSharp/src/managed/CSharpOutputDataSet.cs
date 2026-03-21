@@ -219,13 +219,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// This method extracts NUMERIC/DECIMAL column data by converting SqlDecimal values
-        /// to SQL_NUMERIC_STRUCT array, pinning it, and storing the pointer.
-        /// 
-        /// Precision and Scale Terminology (T-SQL DECIMAL(precision, scale)):
-        /// - Precision: Total number of decimal digits (1-38), both left and right of decimal point
-        /// - Scale: Number of digits to the right of the decimal point (0-precision)
-        /// - Example: DECIMAL(10,2) can store values like 12345678.90 (10 total digits, 2 after decimal)
+        /// Extracts NUMERIC/DECIMAL column data by converting SqlDecimal values to ODBC-compatible SQL_NUMERIC_STRUCT array.
         /// </summary>
         /// <param name="columnNumber">The column index.</param>
         /// <param name="column">The DataFrameColumn containing SqlDecimal values.</param>
@@ -239,27 +233,16 @@ namespace Microsoft.SqlServer.CSharpExtension
                 return;
             }
 
-            // Extract precision and scale from SqlDecimal values.
-            // SqlDecimal from Microsoft.Data.SqlClient preserves precision/scale metadata,
-            // so we find the maximum precision and scale across all non-null values.
+            // Determine target precision/scale from max values across all rows
             //
-            // In T-SQL terms: We're determining the target DECIMAL(precision, scale)
-            // that can accommodate all values in this column.
-            //
-            byte precision = SqlNumericHelper.SQL_MIN_PRECISION;  // Start with minimum (1)
+            byte precision = SqlNumericHelper.SQL_MIN_PRECISION;
             byte scale = (byte)_columns[columnNumber].DecimalDigits;
             
-            // Examine all rows to find maximum precision and scale
-            // This ensures we preserve the highest precision/scale present in the data
-            //
             for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
                 if (column[rowNumber] != null)
                 {
                     SqlDecimal value = (SqlDecimal)column[rowNumber];
-                    
-                    // SqlDecimal already carries precision/scale metadata from the input
-                    // Use it directly - no need to recalculate
                     if (!value.IsNull)
                     {
                         scale = Math.Max(scale, value.Scale);
@@ -268,72 +251,32 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
             }
             
-            // Ensure precision is within T-SQL DECIMAL valid range (1-38)
+            // Enforce T-SQL DECIMAL(p,s) constraints: 1 <= p <= 38, 0 <= s <= p
+            //
             precision = Math.Max(precision, SqlNumericHelper.SQL_MIN_PRECISION);
             precision = Math.Min(precision, SqlNumericHelper.SQL_MAX_PRECISION);
-            
-            // Ensure scale doesn't exceed precision (T-SQL DECIMAL(p,s) constraint: s <= p)
             if (scale > precision)
             {
                 precision = scale;
             }
 
-            // Update column metadata with determined precision and scale
-            // IMPORTANT: For DECIMAL/NUMERIC types, Size represents precision (total digits),
-            // NOT byte size. This follows ODBC ColumnSize convention for SQL_NUMERIC/SQL_DECIMAL.
-            // DecimalDigits represents scale (digits after decimal point).
+            // Update metadata: Size = precision (total digits), DecimalDigits = scale (fractional digits)
+            //
             _columns[columnNumber].Size = precision;
             _columns[columnNumber].DecimalDigits = scale;
 
             Logging.Trace($"ExtractNumericColumn: Column {columnNumber}, T-SQL type=DECIMAL({precision},{scale}), RowCount={column.Length}");
 
-            // Convert each SqlDecimal value to SQL_NUMERIC_STRUCT
+            // Convert all values (including NULLs) to SQL_NUMERIC_STRUCT using FromSqlDecimal
+            //
             SqlNumericStruct[] numericArray = new SqlNumericStruct[column.Length];
             for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
             {
-                if (column[rowNumber] != null)
-                {
-                    SqlDecimal value = (SqlDecimal)column[rowNumber];
-                    
-                    // Convert SqlDecimal to SQL_NUMERIC_STRUCT with target precision/scale
-                    // FromSqlDecimal handles scale adjustment if needed to match column metadata
-                    numericArray[rowNumber] = FromSqlDecimal(value, precision, scale);
-                    Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value} converted to SqlNumericStruct");
-                }
-                else
-                {
-                    // For null values, create a zero-initialized struct with target precision/scale
-                    // The null indicator in strLenOrNullMap will mark this as SQL_NULL_DATA
-                    //
-                    // WHY create a struct for NULL values instead of leaving uninitialized?
-                    // - ODBC requires a valid struct pointer even for NULL values
-                    // - The strLenOrNullMap array separately tracks which values are NULL
-                    // - Native code may read from the struct pointer, so it must be valid memory
-                    // - We use sign=1 (positive) by convention for NULL placeholders
-                    SqlNumericStruct nullStruct = new SqlNumericStruct
-                    {
-                        precision = precision,
-                        scale = (sbyte)scale,
-                        sign = 1  // Positive sign convention for NULL placeholders
-                    };
-                    
-                    // Zero out the value array for NULL placeholders
-                    // Fixed buffer is already fixed - access directly via pointer
-                    unsafe
-                    {
-                        byte* valPtr = nullStruct.val;
-                        for (int i = 0; i < SqlNumericHelper.SQL_NUMERIC_VALUE_SIZE; i++)
-                        {
-                            valPtr[i] = 0;
-                        }
-                    }
-                    
-                    numericArray[rowNumber] = nullStruct;
-                    Logging.Trace($"ExtractNumericColumn: Row {rowNumber} is NULL");
-                }
+                SqlDecimal value = (column[rowNumber] != null) ? (SqlDecimal)column[rowNumber] : SqlDecimal.Null;
+                numericArray[rowNumber] = FromSqlDecimal(value, precision, scale);
+                Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value}");
             }
 
-            // Pin the SqlNumericStruct array and store pointer
             SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
         }
 
