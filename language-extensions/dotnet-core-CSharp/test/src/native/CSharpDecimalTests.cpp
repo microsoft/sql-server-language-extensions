@@ -18,6 +18,10 @@ namespace ExtensionApiTest
     //
     const SQLINTEGER SQL_NUMERIC_STRUCT_SIZE = 19;
 
+    // SQL Server maximum NUMERIC/DECIMAL precision
+    //
+    const SQLINTEGER SQL_NUMERIC_MAX_PRECISION = 38;
+
     //----------------------------------------------------------------------------------------------
     // Name: InitNumericParamTest
     //
@@ -165,7 +169,7 @@ namespace ExtensionApiTest
                 // Validate precision/scale/sign integrity
                 //
                 EXPECT_GE(numericValue->precision, 1);
-                EXPECT_LE(numericValue->precision, 38);
+                EXPECT_LE(numericValue->precision, SQL_NUMERIC_MAX_PRECISION);
                 EXPECT_GE(numericValue->scale, 0);
                 EXPECT_LE(numericValue->scale, numericValue->precision);
                 EXPECT_TRUE(numericValue->sign == 0 || numericValue->sign == 1);
@@ -199,12 +203,12 @@ namespace ExtensionApiTest
 
         // NUMERIC(38,0): 12345678901234567 (max precision, no scale)
         //
-        SQL_NUMERIC_STRUCT p2 = CreateNumericStruct(12345678901234567LL, 38, 0, false);
+        SQL_NUMERIC_STRUCT p2 = CreateNumericStruct(12345678901234567LL, SQL_NUMERIC_MAX_PRECISION, 0, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, p2);
 
         // NUMERIC(38,38): 0.xxx (max precision, max scale)
         //
-        SQL_NUMERIC_STRUCT p3 = CreateNumericStruct(123456789012345678LL, 38, 38, false);
+        SQL_NUMERIC_STRUCT p3 = CreateNumericStruct(123456789012345678LL, SQL_NUMERIC_MAX_PRECISION, SQL_NUMERIC_MAX_PRECISION, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, p3);
 
         // NUMERIC(19,4): SQL Server MONEY compatible
@@ -269,12 +273,12 @@ namespace ExtensionApiTest
 
         // Large positive: 999999999999999999 (near NUMERIC(38) max)
         //
-        SQL_NUMERIC_STRUCT largePos = CreateNumericStruct(999999999999999999LL, 38, 0, false);
+        SQL_NUMERIC_STRUCT largePos = CreateNumericStruct(999999999999999999LL, SQL_NUMERIC_MAX_PRECISION, 0, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, largePos);
 
         // Large negative: -999999999999999999
         //
-        SQL_NUMERIC_STRUCT largeNeg = CreateNumericStruct(999999999999999999LL, 38, 0, true);
+        SQL_NUMERIC_STRUCT largeNeg = CreateNumericStruct(999999999999999999LL, SQL_NUMERIC_MAX_PRECISION, 0, true);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(4, largeNeg);
 
         // Maximum scale: 0.000000000000000001 (10^-18)
@@ -602,32 +606,32 @@ namespace ExtensionApiTest
 
         // NUMERIC(38,29): Boundary at scale = 29
         //
-        SQL_NUMERIC_STRUCT p0 = CreateNumericStruct(1, 38, 29, false);
+        SQL_NUMERIC_STRUCT p0 = CreateNumericStruct(1, SQL_NUMERIC_MAX_PRECISION, 29, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(0, p0);
 
         // NUMERIC(38,30): 123 at scale 30
         //
-        SQL_NUMERIC_STRUCT p1 = CreateNumericStruct(123, 38, 30, false);
+        SQL_NUMERIC_STRUCT p1 = CreateNumericStruct(123, SQL_NUMERIC_MAX_PRECISION, 30, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(1, p1);
 
         // NUMERIC(38,35): Very high scale (3 significant digits)
         //
-        SQL_NUMERIC_STRUCT p2 = CreateNumericStruct(123, 38, 35, false);
+        SQL_NUMERIC_STRUCT p2 = CreateNumericStruct(123, SQL_NUMERIC_MAX_PRECISION, 35, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(2, p2);
 
         // NUMERIC(38,38): Maximum scale (smallest non-zero value)
         //
-        SQL_NUMERIC_STRUCT p3 = CreateNumericStruct(1, 38, 38, false);
+        SQL_NUMERIC_STRUCT p3 = CreateNumericStruct(1, SQL_NUMERIC_MAX_PRECISION, SQL_NUMERIC_MAX_PRECISION, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(3, p3);
 
         // NUMERIC(38,31): Negative with high scale
         //
-        SQL_NUMERIC_STRUCT p4 = CreateNumericStruct(1, 38, 31, true);
+        SQL_NUMERIC_STRUCT p4 = CreateNumericStruct(1, SQL_NUMERIC_MAX_PRECISION, 31, true);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(4, p4);
 
         // NUMERIC(38,32): Zero with high scale (remains zero)
         //
-        SQL_NUMERIC_STRUCT p5 = CreateNumericStruct(0, 38, 32, false);
+        SQL_NUMERIC_STRUCT p5 = CreateNumericStruct(0, SQL_NUMERIC_MAX_PRECISION, 32, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(5, p5);
     }
 }
