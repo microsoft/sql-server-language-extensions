@@ -415,10 +415,15 @@ extends:
               Contents: 'data-sql-language-extensions-linux.nuspec'
               TargetFolder: '$(Pipeline.Workspace)'
 
-          - task: CmdLine@2
+          - task: PowerShell@2
             displayName: 'NuGet Pack'
             inputs:
-              script: nuget pack "$(Pipeline.Workspace)\data-sql-language-extensions-linux.nuspec" -OutputDirectory "$(Build.SourcesDirectory)\out" -Version $(Build.BuildNumber) -NoDefaultExcludes
+              targetType: 'inline'
+              script: |
+                $date = Get-Date -Format 'yyyyMMdd'
+                $version = "1.0.0-CI-$(Build.SourceBranchName)-${date}.$(CDP_DEFINITION_BUILD_COUNT_DAY)"
+                Write-Host "Packing with version $version"
+                & nuget pack "$(Pipeline.Workspace)\data-sql-language-extensions-linux.nuspec" -OutputDirectory "$(Build.SourcesDirectory)\out" -Version $version -NoDefaultExcludes
               workingDirectory: '$(Pipeline.Workspace)'
 
           - task: NuGetAuthenticate@1
