@@ -220,6 +220,7 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     params.dotnet_root = nullptr;
 
     // Get the required size for the environment variable
+#if defined(_WIN32) || defined(WINDOWS)
     DWORD requiredSize = GetEnvironmentVariableW(L"DOTNET_ROOT", nullptr, 0);
     std::vector<wchar_t> dotnet_root_buffer;
     if (requiredSize > 0)
@@ -230,6 +231,9 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
             params.dotnet_root = dotnet_root_buffer.data();
         }
     }
+#else
+    params.dotnet_root = getenv("DOTNET_ROOT");
+#endif
 
     int rc = m_init_fptr(config_path, &params, &cxt);
     if (rc != 0 || cxt == nullptr)
