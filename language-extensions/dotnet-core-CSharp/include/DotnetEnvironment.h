@@ -12,24 +12,20 @@
 
 #if defined(_WIN32) || defined(WINDOWS)
 #include "Windows.h"
+#define STR(s) L ## s
+#define CH(c) L ## c
+#define PATH_SEPARATOR CH('\\')
 #else
 #define E_FAIL -1
 #define S_OK 0
+#define STR(s) s
+#define CH(c) c
+#define PATH_SEPARATOR CH('/')
 #endif
 
 #include <string>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
-
-#if defined(_WIN32) || defined(WINDOWS)
-#define STR(s) L ## s
-#define CH(c) L ## c
-#define PATH_SEPARATOR CH('\\')
-#else
-#define STR(s) s
-#define CH(c) c
-#define PATH_SEPARATOR CH('/')
-#endif
 
 using namespace std;
 using string_t = std::basic_string<char_t>;
