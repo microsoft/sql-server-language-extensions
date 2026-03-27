@@ -33,13 +33,13 @@ To use this `dotnet-core-CSharp-lang-extension.zip` (Windows) or `dotnet-core-CS
 
 ### Linux
 
-1. Run [build-dotnet-core-CSharp-extension.ps1](./build/windows/build-dotnet-core-CSharp-extension.cmd) which will generate: \
+1. Run [build-dotnet-core-CSharp-extension.ps1](./build/linux/build-dotnet-core-CSharp-extension.ps1) which will generate: \
         - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/libnativecsharpextension.so \
         - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.dll \
         - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.runtimeconfig.json \
         - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.deps.json
 
-2. Run [create-dotnet-core-CSharp-extension-zip.ps1](./build/windows/create-dotnet-core-CSharp-extension-zip.cmd) which will generate: \
+2. Run [create-dotnet-core-CSharp-extension-zip.ps1](./build/linux/create-dotnet-core-CSharp-extension-zip.ps1) which will generate: \
         - PATH/TO/ENLISTMENT/build-output/dotnet-core-CSharp-extension/linux/release/packages/dotnet-core-CSharp-lang-extension.tar.gz
         This tarball can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
