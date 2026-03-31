@@ -48,7 +48,15 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	SET VSINSTALLPATH=
+	FOR /F "usebackq tokens=*" %%i IN (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) DO SET VSINSTALLPATH=%%i
+)
+IF NOT DEFINED DevEnvDir (
+	IF NOT DEFINED VSINSTALLPATH (
+		ECHO Error: Could not find a Visual Studio installation with C++ tools.
+		EXIT /b 1
+	)
+	CALL "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 SET BUILD_OUTPUT=%DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\%CMAKE_CONFIGURATION%

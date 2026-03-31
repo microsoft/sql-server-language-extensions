@@ -11,24 +11,28 @@
 #include "DotnetEnvironment.h"
 #include "Logger.h"
 
-#if defined(_WIN32) || defined(WINDOWS)
+#ifdef _WIN32
 #include "Windows.h"
 #else
 #include <dlfcn.h>
+#include <nethost.h>
 #endif
 
 #include <iostream>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <assert.h>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
-#include <nethost.h>
 
 using namespace std;
 using string_t = std::basic_string<char_t>;
+
+// Named constant for hostfxr path buffer size on Linux
+#ifndef _WIN32
+constexpr size_t HOSTFXR_PATH_BUFFER_SIZE = 4096;
+#endif
 
 //--------------------------------------------------------------------------------------------------
 // Name: DotnetEnvironment::DotnetEnvironment
@@ -40,12 +44,7 @@ DotnetEnvironment::DotnetEnvironment(
     std::string language_params,
     std::string language_path,
     std::string public_library_path,
-    std::string private_library_path) :
-#if defined(_WIN32) || defined(WINDOWS)
-    m_root_path(to_utf16_str(language_path))
-#else
-    m_root_path(language_path)
-#endif
+    std::string private_library_path) : m_root_path(convert_string(language_path))
 {
 }
 
@@ -84,7 +83,23 @@ short DotnetEnvironment::Init()
     return S_OK;
 }
 
-#if defined(_WIN32) || defined(WINDOWS)
+//--------------------------------------------------------------------------------------------------
+// Name: DotnetEnvironment::convert_string
+//
+// Description:
+// Convert a std::string to the platform string_t type.
+// On Windows this performs UTF-8 to UTF-16 conversion; on Linux it is a no-op.
+//
+string_t DotnetEnvironment::convert_string(const std::string& str)
+{
+#ifdef _WIN32
+    return to_utf16_str(str);
+#else
+    return str;
+#endif
+}
+
+#ifdef _WIN32
 //--------------------------------------------------------------------------------------------------
 // Name: DotnetEnvironment::to_utf16_str
 //
@@ -124,7 +139,7 @@ string DotnetEnvironment::to_hex_string(int value)
 void* DotnetEnvironment::load_library(const char_t *path)
 {
     LOG("DotnetEnvironment::load_library");
-#if defined(_WIN32) || defined(WINDOWS)
+#ifdef _WIN32
     HMODULE h = ::LoadLibraryW(path);
 #else
     void *h = dlopen(path, RTLD_LAZY);
@@ -142,7 +157,7 @@ void* DotnetEnvironment::load_library(const char_t *path)
 void* DotnetEnvironment::get_export(void *h, const char *name)
 {
     LOG("DotnetEnvironment::get_export");
-#if defined(_WIN32) || defined(WINDOWS)
+#ifdef _WIN32
     void *f = ::GetProcAddress((HMODULE)h, name);
 #else
     void *f = dlsym(h, name);
@@ -160,12 +175,17 @@ void* DotnetEnvironment::get_export(void *h, const char *name)
 bool DotnetEnvironment::load_hostfxr()
 {
     LOG("DotnetEnvironment::load_hostfxr");
-#if defined(_WIN32) || defined(WINDOWS)
+#ifdef _WIN32
     string_t hostfxr_location = m_root_path + STR("\\hostfxr.dll");
 #else
-    char buffer[4096];
+    // On Linux, use nethost to dynamically locate hostfxr.
+    // This honors DOTNET_ROOT and install_location files, which is more
+    // portable across distributions (e.g. RHEL vs Debian).
+    char buffer[HOSTFXR_PATH_BUFFER_SIZE];
     size_t buffer_size = sizeof(buffer);
-    if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0) {
+    if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0)
+    {
+        LOG_ERROR("Failed to locate hostfxr via nethost");
         return false;
     }
     string_t hostfxr_location(buffer);
@@ -219,8 +239,8 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     params.host_path = nullptr;
     params.dotnet_root = nullptr;
 
+#ifdef _WIN32
     // Get the required size for the environment variable
-#if defined(_WIN32) || defined(WINDOWS)
     DWORD requiredSize = GetEnvironmentVariableW(L"DOTNET_ROOT", nullptr, 0);
     std::vector<wchar_t> dotnet_root_buffer;
     if (requiredSize > 0)
@@ -232,7 +252,12 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
         }
     }
 #else
-    params.dotnet_root = getenv("DOTNET_ROOT");
+    // On Linux, read DOTNET_ROOT from the environment (char-based)
+    const char *dotnet_root_env = getenv("DOTNET_ROOT");
+    if (dotnet_root_env != nullptr)
+    {
+        params.dotnet_root = dotnet_root_env;
+    }
 #endif
 
     int rc = m_init_fptr(config_path, &params, &cxt);
