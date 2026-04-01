@@ -208,7 +208,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method sets data pointer for the column and append the array to the handle list.
         /// </summary>
-        private void SetDataPtrs<T>(
+        private unsafe void SetDataPtrs<T>(
             ushort  columnNumber,
             T[]     array
         ) where T : unmanaged
@@ -233,9 +233,12 @@ namespace Microsoft.SqlServer.CSharpExtension
                 return;
             }
 
-            // Determine target precision/scale from max values across all rows
+            // Determine target precision/scale from max values across all rows.
+            // Track integer digits and scale independently so that after scale normalization,
+            // precision = maxIntDigits + 'target scale' covers all values without overflow.
+            // (e.g., 123 (p=3,s=0) and 0.99 (p=2,s=2) → intDigits=3, scale=2 → precision=5)
             //
-            byte precision = SqlNumericHelper.SQL_MIN_PRECISION;
+            byte maxIntDigits = 0;
             byte scale = (byte)_columns[columnNumber].DecimalDigits;
             
             for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
@@ -245,20 +248,18 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SqlDecimal value = (SqlDecimal)column[rowNumber];
                     if (!value.IsNull)
                     {
+                        byte intDigits = (byte)(value.Precision - value.Scale);
+                        maxIntDigits = Math.Max(maxIntDigits, intDigits);
                         scale = Math.Max(scale, value.Scale);
-                        precision = Math.Max(precision, value.Precision);
                     }
                 }
             }
             
-            // Enforce T-SQL DECIMAL(p,s) constraints: 1 <= p <= 38, 0 <= s <= p
+            // Derive precision from max integer digits + target scale.
             //
+            byte precision = (byte)(maxIntDigits + scale);
             precision = Math.Max(precision, SqlNumericHelper.SQL_MIN_PRECISION);
             precision = Math.Min(precision, SqlNumericHelper.SQL_MAX_PRECISION);
-            if (scale > precision)
-            {
-                precision = scale;
-            }
 
             // Update metadata: Size = precision (total digits), DecimalDigits = scale (fractional digits)
             //

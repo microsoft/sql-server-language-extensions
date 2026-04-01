@@ -176,8 +176,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             _params[paramNumber].Value = paramValue_;
             CSharpParam param = _params[paramNumber];
             
-            // Use null-coalescing pattern for safer null checking with value types
-            // SqlDecimal is a struct, so we need to check both object null and SqlDecimal.IsNull
+            // SqlDecimal is a value type: when boxed, SqlDecimal.Null is a non-null object
+            // reference, so we check ReferenceEquals first for true null, then
+            // SqlDecimal.IsNull for the struct-level null sentinel.
             //
             if(ReferenceEquals(param.Value, null))
             {
@@ -263,6 +264,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // In C#, sizeof(char) is always 2 bytes (UTF-16), regardless of platform.
                     // Note: C++ wchar_t is 2 bytes on Windows but 4 bytes on Linux - this extension only supports Windows.
                     // param.Size is the declared parameter size in characters (from SQL Server's NCHAR(n)/NVARCHAR(n)),
+                    // so we multiply by sizeof(char) to convert to bytes.
                     //
                     int wcharByteLen = param.Value.Length * sizeof(char);
                     int wcharMaxByteLen = (int)param.Size * sizeof(char);

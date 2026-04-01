@@ -416,6 +416,107 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: DecimalMixedPrecisionScaleInputTest
+    //
+    // Description:
+    //  Tests that ExtractNumericColumn correctly merges precision/scale when rows in a single
+    //  column have DIFFERENT precision/scale values. The output precision must be computed as
+    //  maxIntDigits + maxScale so that all values fit without overflow.
+    //  (e.g., 123 (p=3,s=0) and 0.99 (p=2,s=2) → intDigits=3, scale=2 → precision=5)
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalMixedPrecisionScaleInputTest)
+    {
+        using TestHelpers::CreateNumericStruct;
+
+        // Column 1: Non-nullable, each row has different precision/scale
+        //   Row 0: 123       (p=3, s=0) → intDigits=3, scale=0
+        //   Row 1: 0.99      (p=2, s=2) → intDigits=0, scale=2
+        //   Row 2: 12345.678 (p=8, s=3) → intDigits=5, scale=3
+        //   Row 3: -1.5      (p=2, s=1) → intDigits=1, scale=1
+        //   Row 4: 99.9      (p=3, s=1) → intDigits=2, scale=1
+        // Expected: maxIntDigits=5, maxScale=3, precision=8, scale=3
+        //
+        vector<SQL_NUMERIC_STRUCT> column1Data = {
+            CreateNumericStruct(123, 3, 0, false),          // 123
+            CreateNumericStruct(99, 2, 2, false),           // 0.99
+            CreateNumericStruct(12345678, 8, 3, false),     // 12345.678
+            CreateNumericStruct(15, 2, 1, true),            // -1.5
+            CreateNumericStruct(999, 3, 1, false)           // 99.9
+        };
+
+        // Column 2: Nullable with NULLs, mixed precision/scale
+        //   Row 0: 7         (p=1, s=0) → intDigits=1, scale=0
+        //   Row 1: NULL
+        //   Row 2: 0.12345   (p=5, s=5) → intDigits=0, scale=5
+        //   Row 3: NULL
+        //   Row 4: 42.1      (p=3, s=1) → intDigits=2, scale=1
+        // Expected: maxIntDigits=2, maxScale=5, precision=7, scale=5
+        //
+        vector<SQL_NUMERIC_STRUCT> column2Data = {
+            CreateNumericStruct(7, 1, 0, false),            // 7
+            SQL_NUMERIC_STRUCT(),                            // NULL
+            CreateNumericStruct(12345, 5, 5, false),        // 0.12345
+            SQL_NUMERIC_STRUCT(),                            // NULL
+            CreateNumericStruct(421, 3, 1, false)           // 42.1
+        };
+
+        // Column 1: All non-null
+        //
+        vector<SQLINTEGER> col1StrLenOrInd(5, SQL_NUMERIC_STRUCT_SIZE);
+
+        // Column 2: Rows 1 and 3 are NULL
+        //
+        vector<SQLINTEGER> col2StrLenOrInd = {
+            SQL_NUMERIC_STRUCT_SIZE,  // Row 0: valid
+            SQL_NULL_DATA,            // Row 1: NULL
+            SQL_NUMERIC_STRUCT_SIZE,  // Row 2: valid
+            SQL_NULL_DATA,            // Row 3: NULL
+            SQL_NUMERIC_STRUCT_SIZE   // Row 4: valid
+        };
+
+        ColumnInfo<SQL_NUMERIC_STRUCT> mixedInfo(
+            "MixedPrecScaleCol1",
+            column1Data,
+            col1StrLenOrInd,
+            "MixedPrecScaleCol2",
+            column2Data,
+            col2StrLenOrInd,
+            vector<SQLSMALLINT>{ SQL_NO_NULLS, SQL_NULLABLE });
+
+        InitializeSession(
+            mixedInfo.GetColumnsNumber(),
+            0,
+            m_scriptString);
+
+        InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(&mixedInfo);
+
+        Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+            ColumnInfo<SQL_NUMERIC_STRUCT>::sm_rowsNumber,
+            mixedInfo.m_dataSet.data(),
+            mixedInfo.m_strLen_or_Ind.data(),
+            mixedInfo.m_columnNames);
+
+        // Verify merged precision/scale from ExtractNumericColumn:
+        // Column 1: maxIntDigits=5 + maxScale=3 → precision=8, scale=3
+        //
+        GetResultColumn(
+            0,                  // columnNumber
+            SQL_C_NUMERIC,      // dataType
+            8,                  // columnSize (merged: maxIntDigits=5 + maxScale=3)
+            3,                  // decimalDigits (max scale across all rows)
+            SQL_NO_NULLS);      // nullable
+
+        // Column 2: maxIntDigits=2 + maxScale=5 → precision=7, scale=5
+        //
+        GetResultColumn(
+            1,                  // columnNumber
+            SQL_C_NUMERIC,      // dataType
+            7,                  // columnSize (merged: maxIntDigits=2 + maxScale=5)
+            5,                  // decimalDigits (max scale across all rows)
+            SQL_NULLABLE);      // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: GetDecimalResultColumnsTest
     //
     // Description:

@@ -499,13 +499,13 @@ namespace ExtensionApiTest
         //  Creates a properly initialized ODBC numeric structure with little-endian mantissa encoding.
         //
         // Arguments:
-        //  mantissa - The unscaled integer representation of the decimal value.
-        //             The actual decimal value is calculated as: mantissa ÷ 10^scale
-        //             This allows exact decimal arithmetic without floating-point precision loss.
+        //  mantissa - The unsigned unscaled integer representation of the decimal value.
+        //             Sign is conveyed separately via isNegative.
+        //             The actual decimal value is calculated as: mantissa / 10^scale
         //             Examples:
-        //               • 12345.6789 → mantissa=123456789, scale=4 (123456789 ÷ 10^4 = 12345.6789)
-        //               • 555.5000  → mantissa=5555000, scale=4 (5555000 ÷ 10^4 = 555.5000)
-        //               • 0.00001   → mantissa=1, scale=5 (1 ÷ 10^5 = 0.00001)
+        //               * 12345.6789 -> mantissa=123456789, scale=4
+        //               * 555.5000   -> mantissa=5555000, scale=4
+        //               * 0.00001    -> mantissa=1, scale=5
         //  precision - Total number of digits (1-38, as per SQL NUMERIC/DECIMAL spec)
         //  scale - Number of digits after decimal point (0-precision)
         //  isNegative - true for negative values, false for positive/zero
@@ -513,17 +513,12 @@ namespace ExtensionApiTest
         // Returns:
         //  SQL_NUMERIC_STRUCT - Fully initialized 19-byte ODBC numeric structure
         //
-        // Example:
-        //  CreateNumericStruct(1234567, 10, 2, false) → represents 12345.67
-        //  CreateNumericStruct(5555000, 19, 4, true)  → represents -555.5000
-        //
         inline SQL_NUMERIC_STRUCT CreateNumericStruct(
-            long long mantissa,
+            unsigned long long mantissa,
             SQLCHAR precision,
             SQLSCHAR scale,
             bool isNegative)
         {
-            // Zero-initialize all fields for safety
             SQL_NUMERIC_STRUCT result{};
             
             result.precision = precision;
@@ -531,16 +526,36 @@ namespace ExtensionApiTest
             result.sign = isNegative ? 0 : 1;  // 0 = negative, 1 = positive (ODBC convention)
             
             // Convert mantissa to little-endian byte array in val[0..15]
-            // Use std::abs for long long (not plain abs which is for int)
-            unsigned long long absMantissa = static_cast<unsigned long long>(std::abs(mantissa));
-            
-            // Extract bytes in little-endian order
-            // Use sizeof for self-documenting code instead of magic number 16
+            unsigned long long value = mantissa;
             for (size_t i = 0; i < sizeof(result.val); i++)
             {
-                result.val[i] = static_cast<SQLCHAR>(absMantissa & 0xFF);
-                absMantissa >>= 8;
+                result.val[i] = static_cast<SQLCHAR>(value & 0xFF);
+                value >>= 8;
             }
+            
+            return result;
+        }
+
+        //----------------------------------------------------------------------------------------------
+        // Name: CreateNumericStructFromBytes
+        //
+        // Description:
+        //  Helper for mantissa values that exceed unsigned long long range (>ULLONG_MAX).
+        //  Accepts a pre-built 16-byte little-endian val array directly.
+        //  Use for full 38-digit DECIMAL values that need >64-bit mantissa.
+        //
+        inline SQL_NUMERIC_STRUCT CreateNumericStructFromBytes(
+            const SQLCHAR val[SQL_MAX_NUMERIC_LEN],
+            SQLCHAR precision,
+            SQLSCHAR scale,
+            bool isNegative)
+        {
+            SQL_NUMERIC_STRUCT result{};
+            
+            result.precision = precision;
+            result.scale = scale;
+            result.sign = isNegative ? 0 : 1;
+            memcpy(result.val, val, SQL_MAX_NUMERIC_LEN);
             
             return result;
         }

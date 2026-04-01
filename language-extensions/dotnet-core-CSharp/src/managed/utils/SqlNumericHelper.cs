@@ -11,7 +11,6 @@
 //*********************************************************************
 using System;
 using System.Data.SqlTypes;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -31,7 +30,6 @@ namespace Microsoft.SqlServer.CSharpExtension
         
         /// <summary>
         /// SQL Server maximum precision for DECIMAL/NUMERIC types (digits).
-        /// Retrieved from SqlDecimal.MaxPrecision in Microsoft.Data.SqlClient.
         /// </summary>
         public static readonly byte SQL_MAX_PRECISION = SqlDecimal.MaxPrecision;
 
@@ -43,7 +41,6 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// Maximum scale for DECIMAL/NUMERIC types (digits after decimal point).
-        /// Retrieved from SqlDecimal.MaxScale in Microsoft.Data.SqlClient.
         /// Scale cannot exceed precision.
         /// </summary>
         public static readonly byte SQL_MAX_SCALE = SqlDecimal.MaxScale;
