@@ -259,6 +259,13 @@ extends:
               # Contents: 'python-lang-extension.zip'
               TargetFolder: '$(Build.SourcesDirectory)\out\package\out\pythonextension\packages\release'
 
+          - task: CopyFiles@2
+            displayName: 'Copy nuspec'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)'
+              Contents: 'data-sql-language-extensions-windows.nuspec'
+              TargetFolder: '$(Build.SourcesDirectory)\out'
+
           - task: CmdLine@2 
             displayName: 'Generate file list'
             inputs:
@@ -492,7 +499,7 @@ extends:
 
         variables:
           ob_outputDirectory: '$(Build.SourcesDirectory)\out'
-          ob_artifactBaseName: 'drop_Build_OnnxRuntime_Extension'
+          ob_artifactBaseName: 'drop_Build_ONNXRuntime_Extension'
           WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest'
           CDP_USER_SOURCE_FOLDER_CONTAINER_PATH: '$(Build.SourcesDirectory)'
 
@@ -551,11 +558,67 @@ extends:
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows\debug\packages'
               Contents: 'onnxruntime-extension.zip'
-              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxextension\packages\debug'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxruntime-extension\packages\debug'
           
           - task: CopyFiles@2
             displayName: 'Copy ONNXRuntime extension zip(release)'
             inputs:
               SourceFolder: '$(Build.SourcesDirectory)\onnxruntime-extension\build\build-output\onnxextension\windows\release\packages'
               Contents: 'onnxruntime-extension.zip'
-              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxextension\packages\release'
+              TargetFolder: '$(Build.SourcesDirectory)\out\package\out\onnxruntime-extension\packages\release'
+
+    - stage: NuGet_Pack_Push_Windows
+      displayName: 'NuGet Pack and Push (Windows)'
+      dependsOn:
+      - Phase_1
+      - Build_DotNetCore_CSharp_Extension
+      - Build_OnnxRuntime_Extension
+      jobs:
+      - job: NuGet_Windows
+        displayName: 'NuGet Pack and Push (Windows)'
+        pool:
+          type: windows
+        variables:
+          ob_outputDirectory: '$(Build.SourcesDirectory)\out'
+          ob_artifactBaseName: 'drop_NuGet_Windows'
+        steps:
+          - download: current
+            artifact: drop_Phase_1
+
+          - download: current
+            artifact: drop_Build_DotNetCore_CSharp_Extension
+
+          - download: current
+            artifact: drop_Build_ONNXRuntime_Extension
+
+          - task: NuGetToolInstaller@1
+            displayName: 'Install NuGet'
+
+          - task: CopyFiles@2
+            displayName: 'Copy nuspec to workspace root'
+            inputs:
+              SourceFolder: '$(Pipeline.Workspace)\drop_Phase_1'
+              Contents: 'data-sql-language-extensions-windows.nuspec'
+              TargetFolder: '$(Pipeline.Workspace)'
+
+          - task: PowerShell@2
+            displayName: 'NuGet Pack'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $date = Get-Date -Format 'yyyyMMdd'
+                $version = "1.0.0-PR-$(Build.SourceBranchName)-${date}.$(CDP_DEFINITION_BUILD_COUNT_DAY)"
+                Write-Host "Packing with version $version"
+                & nuget pack "$(Pipeline.Workspace)\data-sql-language-extensions-windows.nuspec" -OutputDirectory "$(Build.SourcesDirectory)\out" -Version $version -NoDefaultExcludes
+              workingDirectory: '$(Pipeline.Workspace)'
+
+          - task: NuGetAuthenticate@1
+            displayName: 'NuGet Authenticate'
+
+          - task: NuGetCommand@2
+            displayName: 'NuGet Push'
+            inputs:
+              command: 'push'
+              packagesToPush: '$(Build.SourcesDirectory)\out\*.nupkg'
+              nuGetFeedType: 'internal'
+              publishVstsFeed: 'Data-SQL-Language-Extensions'
