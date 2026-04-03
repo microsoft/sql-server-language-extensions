@@ -691,6 +691,80 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: DecimalAllNullColumnsTest
+    //
+    // Description:
+    //  Tests decimal columns where ALL rows are NULL.
+    //  With no non-NULL values, ExtractNumericColumn computes maxIntDigits=0 and scale=0,
+    //  producing precision=max(0,1)=1 → DECIMAL(1,0).
+    //  Verifies the extension handles this gracefully without crash.
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalAllNullColumnsTest)
+    {
+        // Column 1: All NULL — zero-initialized structs, all marked NULL via strLenOrInd
+        //
+        vector<SQL_NUMERIC_STRUCT> col1Data = {
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT()
+        };
+
+        // Column 2: All NULL
+        //
+        vector<SQL_NUMERIC_STRUCT> col2Data = {
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT(),
+            SQL_NUMERIC_STRUCT()
+        };
+
+        vector<SQLINTEGER> col1StrLenOrInd(5, SQL_NULL_DATA);
+        vector<SQLINTEGER> col2StrLenOrInd(5, SQL_NULL_DATA);
+
+        ColumnInfo<SQL_NUMERIC_STRUCT> allNullInfo(
+            "AllNullCol1",
+            col1Data,
+            col1StrLenOrInd,
+            "AllNullCol2",
+            col2Data,
+            col2StrLenOrInd,
+            vector<SQLSMALLINT>{ SQL_NULLABLE, SQL_NULLABLE });
+
+        InitializeSession(
+            allNullInfo.GetColumnsNumber(),
+            0,
+            m_scriptString);
+
+        InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(&allNullInfo);
+
+        Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+            ColumnInfo<SQL_NUMERIC_STRUCT>::sm_rowsNumber,
+            allNullInfo.m_dataSet.data(),
+            allNullInfo.m_strLen_or_Ind.data(),
+            allNullInfo.m_columnNames);
+
+        // With all NULLs, maxIntDigits=0 and scale=0 → precision=max(0,1)=1
+        // Output type becomes DECIMAL(1,0) regardless of input declared type
+        //
+        GetResultColumn(
+            0,                  // columnNumber
+            SQL_C_NUMERIC,      // dataType
+            1,                  // columnSize (clamped from 0 to min precision 1)
+            0,                  // decimalDigits (no non-NULL values to compute scale from)
+            SQL_NULLABLE);      // nullable
+
+        GetResultColumn(
+            1,                  // columnNumber
+            SQL_C_NUMERIC,      // dataType
+            1,                  // columnSize
+            0,                  // decimalDigits
+            SQL_NULLABLE);      // nullable
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: DecimalHighScaleTest
     //
     // Description:
@@ -734,5 +808,54 @@ namespace ExtensionApiTest
         //
         SQL_NUMERIC_STRUCT p5 = CreateNumericStruct(0, SQL_NUMERIC_MAX_PRECISION, 32, false);
         InitParam<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(5, p5);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DecimalMixedScaleOutputClampingTest
+    //
+    // Description:
+    //  Tests the precision clamping in ExtractNumericColumn: when a C# executor returns
+    //  SqlDecimal values with widely different scales in the same output column
+    //  (e.g., 18-digit integer + value with scale=30), the computed precision (48) exceeds 38.
+    //  We reduce scale to preserve integer digits, matching SQL Server's behavior for
+    //  DECIMAL arithmetic overflow.
+    //
+    //  Uses CSharpTestExecutorMixedScaleDecimalOutput which returns a DataFrame with:
+    //    Row 0: 999999999999999999 (18 int digits, scale=0)
+    //    Row 1: 0.000000000000000000000000000001 (0 int digits, scale=30)
+    //    Row 2: 42 (2 int digits, scale=0)
+    //  Expected: maxIntDigits=18, maxScale=30, sum=48 > 38 → precision=38, scale=20
+    //
+    TEST_F(CSharpExtensionApiTests, DecimalMixedScaleOutputClampingTest)
+    {
+        string userClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorMixedScaleDecimalOutput";
+        string scriptString = m_UserLibName + m_Separator + userClassFullName;
+
+        InitializeSession(
+            0,              // inputSchemaColumnsNumber (no input — executor creates output DataFrame)
+            0,              // parametersNumber
+            scriptString);  // scriptString
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLen_or_Ind
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(outputSchemaColumnsNumber, 1);
+
+        // Verify clamped precision/scale: maxIntDigits=18 + maxScale=30 = 48 > 38
+        // The precision=38, scale reduced to (38-18)=20 → DECIMAL(38,20)
+        //
+        GetResultColumn(
+            0,                  // columnNumber
+            SQL_C_NUMERIC,      // dataType
+            38,                 // columnSize (clamped to SQL_MAX_PRECISION)
+            20,                 // decimalDigits (reduced from 30 to preserve 18 integer digits)
+            SQL_NO_NULLS);      // nullable (no NULL values in output)
     }
 }

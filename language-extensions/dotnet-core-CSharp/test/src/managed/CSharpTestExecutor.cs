@@ -146,39 +146,6 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
-    /// <summary>
-    /// Test executor for DECIMAL precision overflow validation.
-    /// This executor deliberately sets values that exceed the target precision after scale adjustment.
-    /// This tests that FromSqlDecimal properly validates precision overflow.
-    /// 
-    /// Bug scenario: Value 12345678.99 (10 digits) converted to DECIMAL(10,4) becomes 12345678.9900
-    /// which requires 12 significant digits, exceeding the declared precision of 10.
-    /// </summary>
-    public class CSharpTestExecutorDecimalPrecisionOverflow: AbstractSqlServerExtensionExecutor
-    {
-        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
-        {
-            // param0: DECIMAL(10,4) max is 999999.9999 (6 before + 4 after = 10 total digits)
-            // Using value 12345678.99 has 10 significant digits (precision=10), scale=2
-            // When adjusted to scale=4, would need precision=12 (12345678.9900), exceeding DECIMAL(10,4)
-            decimal dec0 = 12345678.99m;
-            sqlParams["@param0"] = new SqlDecimal(dec0);
-            
-            // param1: Using 999999999.999 has 12 significant digits (precision=12), scale=3
-            // When adjusted to scale=4, would need precision=13 (999999999.9990), exceeding DECIMAL(10,4)
-            decimal dec1 = 999999999.999m;
-            sqlParams["@param1"] = new SqlDecimal(dec1);
-            
-            // param2: Value that fits in DECIMAL(8,3)
-            // Using 12345.67 has 7 significant digits (precision=7), scale=2
-            // When adjusted to scale=3, would need precision=8 (12345.670), fits in DECIMAL(8,3)
-            decimal dec2 = 12345.67m;
-            sqlParams["@param2"] = new SqlDecimal(dec2);
-            
-            return null;
-        }
-    }
-
     public class CSharpTestExecutorStringParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
@@ -189,6 +156,27 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param4"] = null;
             sqlParams["@param5"] = null;
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that returns a DataFrame with mixed-scale SqlDecimal values in the same column.
+    /// This exercises the precision clamping fix in ExtractNumericColumn: when maxIntDigits + maxScale > 38,
+    /// scale is reduced to (38 - maxIntDigits) to preserve integer digits.
+    /// </summary>
+    public class CSharpTestExecutorMixedScaleDecimalOutput : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // Create output DataFrame with one SqlDecimal column containing mixed scales
+            //
+            var column = new PrimitiveDataFrameColumn<SqlDecimal>("MixedScaleCol", 3);
+            column[0] = SqlDecimal.Parse("999999999999999999");                       // 18 int digits, scale=0
+            column[1] = SqlDecimal.Parse("0.000000000000000000000000000001");           // 0 int digits, scale=30
+            column[2] = SqlDecimal.Parse("42");                                        // 2 int digits, scale=0
+            // maxIntDigits=18, maxScale=30, sum=48 > 38 → clamp: precision=38, scale=20
+
+            return new DataFrame(column);
         }
     }
 

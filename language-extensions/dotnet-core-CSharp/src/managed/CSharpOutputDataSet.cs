@@ -256,10 +256,24 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             
             // Derive precision from max integer digits + target scale.
+            // When the sum exceeds SQL_MAX_PRECISION (38), we must reduce scale to preserve
+            // integer digits. This matches SQL Server's own behavior for DECIMAL arithmetic:
+            // when computed precision exceeds 38, SQL Server clamps to 38 and reduces scale
+            // to preserve integer digits, since losing integer digits would corrupt the value.
+            // See: https://learn.microsoft.com/en-us/sql/t-sql/data-types/precision-scale-and-length-transact-sql
+            //
+            // This scenario occurs when a user's C# executor returns SqlDecimal values with
+            // widely different scales in the same column (e.g., an 18-digit integer alongside
+            // a value with scale=30). The computed precision (18+30=48) exceeds 38, so we
+            // clamp precision to 38 and reduce scale to (38-18=20) to fit all integer digits.
             //
             byte precision = (byte)(maxIntDigits + scale);
             precision = Math.Max(precision, SqlNumericHelper.SQL_MIN_PRECISION);
-            precision = Math.Min(precision, SqlNumericHelper.SQL_MAX_PRECISION);
+            if (precision > SqlNumericHelper.SQL_MAX_PRECISION)
+            {
+                precision = SqlNumericHelper.SQL_MAX_PRECISION;
+                scale = (byte)(SqlNumericHelper.SQL_MAX_PRECISION - maxIntDigits);
+            }
 
             // Update metadata: Size = precision (total digits), DecimalDigits = scale (fractional digits)
             //

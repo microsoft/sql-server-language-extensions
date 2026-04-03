@@ -220,6 +220,20 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </remarks>
         public static unsafe SqlNumericStruct FromSqlDecimal(SqlDecimal value, byte? precision = null, byte? scale = null)
         {
+            // NULL values return zero-initialized struct; caller sets null indicator separately.
+            //
+            if (value.IsNull)
+            {
+                byte nullPrecision = precision ?? SQL_MAX_PRECISION;
+                byte nullScale = scale.HasValue ? (byte)scale.Value : (byte)0;
+                return new SqlNumericStruct
+                {
+                    precision = nullPrecision,
+                    scale = (sbyte)nullScale,
+                    sign = 1
+                };
+            }
+
             // Use SqlDecimal's intrinsic precision/scale if not specified
             //
             byte targetPrecision = precision ?? value.Precision;
@@ -228,18 +242,6 @@ namespace Microsoft.SqlServer.CSharpExtension
             // Validate target precision and scale constraints
             //
             ValidatePrecisionAndScale(targetPrecision, (sbyte)targetScale, nameof(value));
-            
-            // NULL values return zero-initialized struct; caller sets null indicator separately
-            //
-            if (value.IsNull)
-            {
-                return new SqlNumericStruct
-                {
-                    precision = targetPrecision,
-                    scale = (sbyte)targetScale,
-                    sign = 1
-                };
-            }
             
             // Adjust scale if needed to match target
             //

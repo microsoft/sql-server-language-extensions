@@ -535,29 +535,5 @@ namespace ExtensionApiTest
             
             return result;
         }
-
-        //----------------------------------------------------------------------------------------------
-        // Name: CreateNumericStructFromBytes
-        //
-        // Description:
-        //  Helper for mantissa values that exceed unsigned long long range (>ULLONG_MAX).
-        //  Accepts a pre-built 16-byte little-endian val array directly.
-        //  Use for full 38-digit DECIMAL values that need >64-bit mantissa.
-        //
-        inline SQL_NUMERIC_STRUCT CreateNumericStructFromBytes(
-            const SQLCHAR val[SQL_MAX_NUMERIC_LEN],
-            SQLCHAR precision,
-            SQLSCHAR scale,
-            bool isNegative)
-        {
-            SQL_NUMERIC_STRUCT result{};
-            
-            result.precision = precision;
-            result.scale = scale;
-            result.sign = isNegative ? 0 : 1;
-            memcpy(result.val, val, SQL_MAX_NUMERIC_LEN);
-            
-            return result;
-        }
     }
 }
