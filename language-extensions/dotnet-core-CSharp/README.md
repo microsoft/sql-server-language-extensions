@@ -50,3 +50,59 @@ Not Supported.
 After downloading or building the dotnet-core-CSharp-lang-extension.zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to register the language with SQL Server 2019 CU3+.
 
 This [tutorial](./sample/regex/README.md) will walk you through an end to end sample using the .NET Core C# language extension.
+
+## Output Schema Support
+
+By default, output column types are inferred from the .NET DataFrame column types. For string columns, you can explicitly specify the SQL data type using the `OutputColumnDataTypes` property.
+
+### Specifying Output Column Types
+
+Use `OutputColumnDataTypes` to specify the SQL data type for output columns by name:
+
+```csharp
+using Microsoft.SqlServer.CSharpExtension.SDK;
+using Microsoft.Data.Analysis;
+using static Microsoft.SqlServer.CSharpExtension.Sql;
+
+public class MyExecutor : AbstractSqlServerExtensionExecutor
+{
+    public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+    {
+        // Specify NVARCHAR (UTF-16) output for a string column
+        OutputColumnDataTypes["unicode_column"] = SqlDataType.DotNetWChar;
+        
+        // Process and return data
+        return resultDataFrame;
+    }
+}
+```
+
+### Supported String Types
+
+| SqlDataType | SQL Type | Encoding | Description |
+|-------------|----------|----------|-------------|
+| `SqlDataType.DotNetChar` | VARCHAR | UTF-8 | Default for string columns |
+| `SqlDataType.DotNetWChar` | NVARCHAR | UTF-16 | Use for Unicode data |
+
+### Example: Mixed VARCHAR and NVARCHAR Output
+
+```csharp
+public class MixedOutputExecutor : AbstractSqlServerExtensionExecutor
+{
+    public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+    {
+        // "ascii_col" will default to VARCHAR (no configuration needed)
+        
+        // "unicode_col" should be NVARCHAR
+        OutputColumnDataTypes["unicode_col"] = SqlDataType.DotNetWChar;
+        
+        return input;
+    }
+}
+```
+
+### Default Behavior
+
+If no explicit type is specified for a string column:
+- String columns default to `DotNetChar` (VARCHAR/UTF-8)
+- Numeric and other types are automatically mapped from their .NET types
