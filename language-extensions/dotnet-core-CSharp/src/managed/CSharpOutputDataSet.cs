@@ -9,12 +9,14 @@
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
+using static Microsoft.SqlServer.CSharpExtension.SqlNumericHelper;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -174,6 +176,9 @@ namespace Microsoft.SqlServer.CSharpExtension
                 case SqlDataType.DotNetDouble:
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
+                case SqlDataType.DotNetNumeric:
+                    ExtractNumericColumn(columnNumber, column);
+                    break;
                 case SqlDataType.DotNetChar:
                     // Calculate column size from actual data.
                     // columnSize = max UTF-8 byte length across all rows.
@@ -211,6 +216,83 @@ namespace Microsoft.SqlServer.CSharpExtension
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             _dataPtrs[columnNumber] = handle.AddrOfPinnedObject();
             _handleList.Add(handle);
+        }
+
+        /// <summary>
+        /// Extracts NUMERIC/DECIMAL column data by converting SqlDecimal values to ODBC-compatible SQL_NUMERIC_STRUCT array.
+        /// </summary>
+        /// <param name="columnNumber">The column index.</param>
+        /// <param name="column">The DataFrameColumn containing SqlDecimal values.</param>
+        private unsafe void ExtractNumericColumn(
+            ushort          columnNumber,
+            DataFrameColumn column)
+        {
+            if (column == null)
+            {
+                SetDataPtrs<SqlNumericStruct>(columnNumber, Array.Empty<SqlNumericStruct>());
+                return;
+            }
+
+            // Determine target precision/scale from max values across all rows.
+            // Track integer digits and scale independently so that after scale normalization,
+            // precision = maxIntDigits + 'target scale' covers all values without overflow.
+            // (e.g., 123 (p=3,s=0) and 0.99 (p=2,s=2) → intDigits=3, scale=2 → precision=5)
+            //
+            byte maxIntDigits = 0;
+            byte scale = (byte)_columns[columnNumber].DecimalDigits;
+            
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                if (column[rowNumber] != null)
+                {
+                    SqlDecimal value = (SqlDecimal)column[rowNumber];
+                    if (!value.IsNull)
+                    {
+                        byte intDigits = (byte)(value.Precision - value.Scale);
+                        maxIntDigits = Math.Max(maxIntDigits, intDigits);
+                        scale = Math.Max(scale, value.Scale);
+                    }
+                }
+            }
+            
+            // Derive precision from max integer digits + target scale.
+            // When the sum exceeds SQL_MAX_PRECISION (38), we must reduce scale to preserve
+            // integer digits. This matches SQL Server's own behavior for DECIMAL arithmetic:
+            // when computed precision exceeds 38, SQL Server clamps to 38 and reduces scale
+            // to preserve integer digits, since losing integer digits would corrupt the value.
+            // See: https://learn.microsoft.com/en-us/sql/t-sql/data-types/precision-scale-and-length-transact-sql
+            //
+            // This scenario occurs when a user's C# executor returns SqlDecimal values with
+            // widely different scales in the same column (e.g., an 18-digit integer alongside
+            // a value with scale=30). The computed precision (18+30=48) exceeds 38, so we
+            // clamp precision to 38 and reduce scale to (38-18=20) to fit all integer digits.
+            //
+            byte precision = (byte)(maxIntDigits + scale);
+            precision = Math.Max(precision, SqlNumericHelper.SQL_MIN_PRECISION);
+            if (precision > SqlNumericHelper.SQL_MAX_PRECISION)
+            {
+                precision = SqlNumericHelper.SQL_MAX_PRECISION;
+                scale = (byte)(SqlNumericHelper.SQL_MAX_PRECISION - maxIntDigits);
+            }
+
+            // Update metadata: Size = precision (total digits), DecimalDigits = scale (fractional digits)
+            //
+            _columns[columnNumber].Size = precision;
+            _columns[columnNumber].DecimalDigits = scale;
+
+            Logging.Trace($"ExtractNumericColumn: Column {columnNumber}, T-SQL type=DECIMAL({precision},{scale}), RowCount={column.Length}");
+
+            // Convert all values (including NULLs) to SQL_NUMERIC_STRUCT using FromSqlDecimal
+            //
+            SqlNumericStruct[] numericArray = new SqlNumericStruct[column.Length];
+            for (int rowNumber = 0; rowNumber < column.Length; ++rowNumber)
+            {
+                SqlDecimal value = (column[rowNumber] != null) ? (SqlDecimal)column[rowNumber] : SqlDecimal.Null;
+                numericArray[rowNumber] = FromSqlDecimal(value, precision, scale);
+                Logging.Trace($"ExtractNumericColumn: Row {rowNumber}, Value={value}");
+            }
+
+            SetDataPtrs<SqlNumericStruct>(columnNumber, numericArray);
         }
 
         /// <summary>

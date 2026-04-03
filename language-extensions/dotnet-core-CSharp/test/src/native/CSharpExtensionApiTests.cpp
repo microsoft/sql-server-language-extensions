@@ -391,6 +391,65 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>
+    //
+    // Description:
+    //  Template specialization for SQL_NUMERIC_STRUCT to extract precision from the struct
+    //  instead of using sizeof() which gives the struct size.
+    //
+    template<>
+    void CSharpExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        ColumnInfo<SQL_NUMERIC_STRUCT> *columnInfo)
+    {
+        SQLUSMALLINT inputSchemaColumnsNumber = columnInfo->GetColumnsNumber();
+        for (SQLUSMALLINT columnNumber = 0; columnNumber < inputSchemaColumnsNumber; ++columnNumber)
+        {
+            // For NUMERIC columns, extract precision and scale from the first non-NULL value.
+            // columnSize for NUMERIC represents precision (1-38), not bytes.
+            //
+            SQLULEN precision = SqlDecimalMaxPrecision;
+            SQLSMALLINT scale = 0;
+            const SQL_NUMERIC_STRUCT* columnData = 
+                static_cast<const SQL_NUMERIC_STRUCT*>(columnInfo->m_dataSet[columnNumber]);
+            SQLINTEGER* strLenOrInd = columnInfo->m_strLen_or_Ind[columnNumber];
+            
+            // Find first non-NULL value to get precision and scale
+            //
+            for (SQLULEN row = 0; row < ColumnInfo<SQL_NUMERIC_STRUCT>::sm_rowsNumber; ++row)
+            {
+                if (strLenOrInd[row] != SQL_NULL_DATA)
+                {
+                    precision = columnData[row].precision;
+                    scale = columnData[row].scale;
+                    break;
+                }
+            }
+            
+            // Call sm_initColumnFuncPtr directly to pass the correct scale (decimalDigits).
+            // InitializeColumn hardcodes decimalDigits=0 which loses scale metadata.
+            //
+            string columnNameString = columnInfo->m_columnNames[columnNumber];
+            SQLCHAR *columnName = static_cast<SQLCHAR *>(
+                static_cast<void *>(const_cast<char *>(columnNameString.c_str()))
+            );
+
+            SQLRETURN result = (*sm_initColumnFuncPtr)(
+                *m_sessionId,
+                m_taskId,
+                columnNumber,
+                columnName,
+                columnNameString.length(),
+                SQL_C_NUMERIC,
+                precision,
+                scale,
+                columnInfo->m_nullable[columnNumber],
+                columnInfo->m_partitionByIndexes[columnNumber],
+                -1);
+            EXPECT_EQ(result, SQL_SUCCESS);
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: ColumnInfo::ColumnInfo
     //
     // Description:
@@ -485,6 +544,8 @@ namespace ExtensionApiTest
         ColumnInfo<SQLSMALLINT> *ColumnInfo);
     template void CSharpExtensionApiTests::InitializeColumns<SQLCHAR, SQL_C_UTINYINT>(
         ColumnInfo<SQLCHAR> *ColumnInfo);
+    template void CSharpExtensionApiTests::InitializeColumns<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        ColumnInfo<SQL_NUMERIC_STRUCT> *ColumnInfo);
 
     template vector<char> CSharpExtensionApiTests::GenerateContiguousData(
         vector<const char*> columnVector,
