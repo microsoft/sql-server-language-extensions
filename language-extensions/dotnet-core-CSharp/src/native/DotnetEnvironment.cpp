@@ -187,7 +187,28 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
 
     hostfxr_initialize_parameters params = { 0 };
     params.size = sizeof(hostfxr_initialize_parameters);
-    params.host_path = nullptr;
+
+    // Set host_path to the current process executable to prevent hostfxr
+    // from probing up the directory tree. Without this, hostfxr calls
+    // GetModuleFileNameW(nullptr) internally and walks parent directories
+    // looking for the dotnet host. In AppContainer (satellite processes),
+    // this probing hits the drive root (e.g., D:\) which fails with
+    // ACCESS DENIED because AppContainer ACLs only grant access to
+    // specific subdirectories.
+    //
+    wchar_t host_path_buf[MAX_PATH];
+    DWORD host_path_len = GetModuleFileNameW(nullptr, host_path_buf, MAX_PATH);
+    if (host_path_len > 0 && host_path_len < MAX_PATH)
+    {
+        params.host_path = host_path_buf;
+        LOG("DotnetEnvironment::get_dotnet - host_path set to process path");
+    }
+    else
+    {
+        params.host_path = nullptr;
+        LOG("DotnetEnvironment::get_dotnet - host_path fallback to nullptr (GetModuleFileName failed)");
+    }
+
     params.dotnet_root = nullptr;
 
     // Get the required size for the environment variable
@@ -199,7 +220,17 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
         if (GetEnvironmentVariableW(L"DOTNET_ROOT", dotnet_root_buffer.data(), requiredSize) > 0)
         {
             params.dotnet_root = dotnet_root_buffer.data();
+            LOG("DotnetEnvironment::get_dotnet - DOTNET_ROOT set from environment");
         }
+    }
+
+    // If DOTNET_ROOT is not set, use the language path (m_root_path) as
+    // the dotnet root so hostfxr can find the runtime without probing.
+    //
+    if (params.dotnet_root == nullptr && !m_root_path.empty())
+    {
+        params.dotnet_root = m_root_path.c_str();
+        LOG("DotnetEnvironment::get_dotnet - DOTNET_ROOT fallback to language path");
     }
 
     int rc = m_init_fptr(config_path, &params, &cxt);
