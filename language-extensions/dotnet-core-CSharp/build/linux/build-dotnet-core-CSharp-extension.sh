@@ -77,16 +77,18 @@ for BUILD_CONFIGURATION in "$@"; do
 
     popd > /dev/null
 
-    # Build managed code
-    echo "[Info] Building Microsoft.SqlServer.CSharpExtension dll..."
+    # Publish managed code as self-contained for linux-x64.
+    # This bundles the entire .NET runtime (hostfxr, coreclr, framework DLLs)
+    # into the output so the extension works without a system .NET installation.
+    echo "[Info] Publishing Microsoft.SqlServer.CSharpExtension (self-contained, linux-x64)..."
     DOTNET_MANAGED_SRC="$DOTNET_EXTENSION_HOME/src/managed"
-    dotnet build \
+    dotnet publish \
         "$DOTNET_MANAGED_SRC/Microsoft.SqlServer.CSharpExtension.csproj" \
-        -m \
         -c "$BUILD_CONFIGURATION" \
+        -r linux-x64 \
+        --self-contained \
         -o "$BUILD_OUTPUT" \
-        --no-restore \
-        --no-dependencies
+        --no-restore
 
     echo "Success: Built dotnet-core-CSharp-extension for $BUILD_CONFIGURATION configuration."
 done

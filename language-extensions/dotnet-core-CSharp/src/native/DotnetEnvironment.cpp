@@ -179,14 +179,30 @@ bool DotnetEnvironment::load_hostfxr()
     string_t hostfxr_location = m_root_path + STR("\\hostfxr.dll");
 #else
     // On Linux, use nethost to dynamically locate hostfxr.
-    // This honors DOTNET_ROOT and install_location files, which is more
-    // portable across distributions (e.g. RHEL vs Debian).
+    // First try self-contained discovery (assembly_path hint tells nethost
+    // to look for libhostfxr.so next to the managed assembly), then fall
+    // back to system-wide search via DOTNET_ROOT / install_location files.
     char buffer[HOSTFXR_PATH_BUFFER_SIZE];
     size_t buffer_size = sizeof(buffer);
-    if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0)
+
+    string_t assembly_path = m_root_path + STR("/Microsoft.SqlServer.CSharpExtension.dll");
+
+    get_hostfxr_parameters params;
+    params.size = sizeof(params);
+    params.assembly_path = assembly_path.c_str();
+    params.dotnet_root = nullptr;
+
+    int rc = get_hostfxr_path(buffer, &buffer_size, &params);
+    if (rc != 0)
     {
-        LOG_ERROR("Failed to locate hostfxr via nethost");
-        return false;
+        // Fall back to system-wide search (no assembly_path hint)
+        buffer_size = sizeof(buffer);
+        rc = get_hostfxr_path(buffer, &buffer_size, nullptr);
+        if (rc != 0)
+        {
+            LOG_ERROR("Failed to locate hostfxr via nethost");
+            return false;
+        }
     }
     string_t hostfxr_location(buffer);
 #endif
@@ -252,11 +268,16 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
         }
     }
 #else
-    // On Linux, read DOTNET_ROOT from the environment (char-based)
+    // On Linux, use DOTNET_ROOT if set; otherwise default to the extension
+    // root path so hostfxr can find the self-contained shared framework.
     const char *dotnet_root_env = getenv("DOTNET_ROOT");
     if (dotnet_root_env != nullptr)
     {
         params.dotnet_root = dotnet_root_env;
+    }
+    else
+    {
+        params.dotnet_root = m_root_path.c_str();
     }
 #endif
 

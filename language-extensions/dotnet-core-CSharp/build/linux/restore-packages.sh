@@ -59,10 +59,10 @@ MANAGED_PROJ="${DOTNET_EXTENSION_HOME}/src/managed/Microsoft.SqlServer.CSharpExt
 MANAGED_TEST_PROJ="${DOTNET_EXTENSION_HOME}/test/src/managed/Microsoft.SqlServer.CSharpExtensionTest.csproj"
 PARENT_NUGET_CONFIG="${ENL_ROOT}/../NuGet.Config"
 
-echo "Info: Restoring NuGet packages for Microsoft.SqlServer.CSharpExtension..."
+echo "Info: Restoring NuGet packages for Microsoft.SqlServer.CSharpExtension (linux-x64 self-contained)..."
 if [ -f "$PARENT_NUGET_CONFIG" ]; then
     echo "Info: Using NuGet.Config from parent repo: $PARENT_NUGET_CONFIG"
-    dotnet restore "$MANAGED_PROJ" --configfile "$PARENT_NUGET_CONFIG"
+    dotnet restore "$MANAGED_PROJ" --configfile "$PARENT_NUGET_CONFIG" -r linux-x64
     check_exit_code "Success: NuGet packages restored (extension)" "Error: Failed to restore NuGet packages (extension)"
 
     echo "Info: Restoring NuGet packages for Microsoft.SqlServer.CSharpExtensionTest..."
@@ -70,7 +70,7 @@ if [ -f "$PARENT_NUGET_CONFIG" ]; then
     check_exit_code "Success: NuGet packages restored (test)" "Error: Failed to restore NuGet packages (test)"
 else
     echo "Info: Parent NuGet.Config not found, using default"
-    dotnet restore "$MANAGED_PROJ"
+    dotnet restore "$MANAGED_PROJ" -r linux-x64
     check_exit_code "Success: NuGet packages restored (extension)" "Error: Failed to restore NuGet packages (extension)"
 
     dotnet restore "$MANAGED_TEST_PROJ"
