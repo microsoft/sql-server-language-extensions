@@ -45,7 +45,13 @@ DotnetEnvironment::DotnetEnvironment(
     std::string language_params,
     std::string language_path,
     std::string public_library_path,
-    std::string private_library_path) : m_root_path(convert_string(language_path))
+    std::string private_library_path) : m_root_path(convert_string(language_path)),
+    m_init_fptr(nullptr),
+    m_init_cmdline_fptr(nullptr),
+    m_get_delegate_fptr(nullptr),
+    m_close_fptr(nullptr),
+    m_load_assembly_and_get_function_pointer(nullptr),
+    m_is_self_contained(false)
 {
 }
 
@@ -192,6 +198,7 @@ bool DotnetEnvironment::load_hostfxr()
     if (access(hostfxr_location.c_str(), F_OK) != 0)
     {
         cout << "[DIAG] Bundled libhostfxr.so NOT found (access() failed), falling back to nethost" << endl;
+        m_is_self_contained = false;
         char buffer[HOSTFXR_PATH_BUFFER_SIZE];
         size_t buffer_size = sizeof(buffer);
         if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0)
@@ -204,7 +211,8 @@ bool DotnetEnvironment::load_hostfxr()
     }
     else
     {
-        cout << "[DIAG] Bundled libhostfxr.so FOUND, using it directly" << endl;
+        cout << "[DIAG] Bundled libhostfxr.so FOUND, using self-contained mode" << endl;
+        m_is_self_contained = true;
     }
 #endif
     cout << "[DIAG] Loading hostfxr from: " << hostfxr_location << endl;
@@ -212,6 +220,19 @@ bool DotnetEnvironment::load_hostfxr()
     m_init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
     m_get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
     m_close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
+
+#ifndef _WIN32
+    // For self-contained deployments, hostfxr_initialize_for_runtime_config
+    // rejects runtimeconfig.json files with "includedFrameworks" (error 0x80008093).
+    // Instead, use hostfxr_initialize_for_dotnet_command_line which supports
+    // both framework-dependent and self-contained applications (.NET 5+).
+    if (m_is_self_contained)
+    {
+        m_init_cmdline_fptr = (hostfxr_initialize_for_dotnet_command_line_fn)get_export(lib, "hostfxr_initialize_for_dotnet_command_line");
+        cout << "[DIAG] Loaded hostfxr_initialize_for_dotnet_command_line: " << (m_init_cmdline_fptr ? "OK" : "FAIL") << endl;
+        return (m_init_cmdline_fptr && m_get_delegate_fptr && m_close_fptr);
+    }
+#endif
 
     return (m_init_fptr && m_get_delegate_fptr && m_close_fptr);
 }
@@ -285,9 +306,31 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     cout << "[DIAG] dotnet_root = " << (params.dotnet_root ? params.dotnet_root : "(null)") << endl;
 #endif
 
-    cout << "[DIAG] Calling hostfxr_initialize_for_runtime_config..." << endl;
-    int rc = m_init_fptr(config_path, &params, &cxt);
-    cout << "[DIAG] hostfxr_initialize_for_runtime_config returned: " << to_hex_string(rc) << endl;
+    int rc = 0;
+
+#ifndef _WIN32
+    if (m_is_self_contained && m_init_cmdline_fptr)
+    {
+        // For self-contained deployment, use hostfxr_initialize_for_dotnet_command_line.
+        // hostfxr_initialize_for_runtime_config rejects self-contained runtimeconfig.json
+        // files that contain "includedFrameworks" with error 0x80008093.
+        // hostfxr_initialize_for_dotnet_command_line supports both framework-dependent
+        // and self-contained applications (.NET 5+).
+        const string_t app_path = m_root_path + STR("/Microsoft.SqlServer.CSharpExtension.dll");
+        const char_t *argv[] = { app_path.c_str() };
+        cout << "[DIAG] Using hostfxr_initialize_for_dotnet_command_line (self-contained mode)" << endl;
+        cout << "[DIAG] argv[0] = " << argv[0] << endl;
+        rc = m_init_cmdline_fptr(1, argv, &params, &cxt);
+        cout << "[DIAG] hostfxr_initialize_for_dotnet_command_line returned: " << to_hex_string(rc) << endl;
+    }
+    else
+#endif
+    {
+        cout << "[DIAG] Using hostfxr_initialize_for_runtime_config (framework-dependent mode)" << endl;
+        rc = m_init_fptr(config_path, &params, &cxt);
+        cout << "[DIAG] hostfxr_initialize_for_runtime_config returned: " << to_hex_string(rc) << endl;
+    }
+
     if (rc != 0 || cxt == nullptr)
     {
         LOG_ERROR("Init failed: " + to_hex_string(rc));

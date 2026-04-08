@@ -80,10 +80,12 @@ public:
 
 private:
     hostfxr_initialize_for_runtime_config_fn m_init_fptr;
+    hostfxr_initialize_for_dotnet_command_line_fn m_init_cmdline_fptr;
     hostfxr_get_runtime_delegate_fn m_get_delegate_fptr;
     hostfxr_close_fn m_close_fptr;
     load_assembly_and_get_function_pointer_fn m_load_assembly_and_get_function_pointer;
     string_t m_root_path;
+    bool m_is_self_contained;
 
     // Convert a std::string to the platform string_t type.
     // On Windows this is UTF-8 -> UTF-16; on Linux it is a no-op.
