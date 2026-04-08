@@ -201,12 +201,15 @@ bool DotnetEnvironment::load_hostfxr()
     // from the extension directory. This is analogous to what Windows does
     // with hostfxr.dll and avoids picking up an incompatible older hostfxr
     // (e.g. .NET Core 3.x shipped with SQL Server).
+    cout << "[DIAG] m_root_path = " << m_root_path << endl;
     string_t hostfxr_location = m_root_path + STR("/libhostfxr.so");
+    cout << "[DIAG] Checking bundled hostfxr at: " << hostfxr_location << endl;
 
     // If the bundled hostfxr doesn't exist (framework-dependent deployment),
     // fall back to nethost discovery.
     if (access(hostfxr_location.c_str(), F_OK) != 0)
     {
+        cout << "[DIAG] Bundled libhostfxr.so NOT found (access() failed), falling back to nethost" << endl;
         char buffer[HOSTFXR_PATH_BUFFER_SIZE];
         size_t buffer_size = sizeof(buffer);
         if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0)
@@ -215,8 +218,14 @@ bool DotnetEnvironment::load_hostfxr()
             return false;
         }
         hostfxr_location = string_t(buffer);
+        cout << "[DIAG] nethost resolved hostfxr to: " << hostfxr_location << endl;
+    }
+    else
+    {
+        cout << "[DIAG] Bundled libhostfxr.so FOUND, using it directly" << endl;
     }
 #endif
+    cout << "[DIAG] Loading hostfxr from: " << hostfxr_location << endl;
     void *lib = load_library(hostfxr_location.c_str());
     if (lib == nullptr)
     {
@@ -264,6 +273,7 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
 //
 hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     LOG("DotnetEnvironment::get_dotnet");
+    cout << "[DIAG] config_path = " << config_path << endl;
     hostfxr_handle cxt = nullptr;
 
     hostfxr_initialize_parameters params = { 0 };
@@ -295,9 +305,12 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     {
         params.dotnet_root = m_root_path.c_str();
     }
+    cout << "[DIAG] dotnet_root = " << (params.dotnet_root ? params.dotnet_root : "(null)") << endl;
 #endif
 
+    cout << "[DIAG] Calling hostfxr_initialize_for_runtime_config..." << endl;
     int rc = m_init_fptr(config_path, &params, &cxt);
+    cout << "[DIAG] hostfxr_initialize_for_runtime_config returned: " << to_hex_string(rc) << endl;
     if (rc != 0 || cxt == nullptr)
     {
         LOG_ERROR("Init failed: " + to_hex_string(rc));
