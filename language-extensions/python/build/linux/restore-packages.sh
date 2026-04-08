@@ -62,6 +62,27 @@ sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-c
 
 cp -rf boost /usr/local/include/
 
+# Remove unused Boost library sources to avoid false Component Governance alerts.
+# Only boost_python and boost_numpy are compiled (b2 --with-python).
+# Headers under boost/ at the root are kept since they are needed at compile time.
+# This runs after the build so that Jamfiles are available for b2's dependency resolution.
+#
+BOOST_LIBS_DIR=/usr/local/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}/libs
+if [ -d "${BOOST_LIBS_DIR}" ]; then
+	echo "-- Removing unused Boost library sources --"
+	pushd "${BOOST_LIBS_DIR}"
+	for dir in */; do
+		case "${dir%/}" in
+			python|numpy|headers) ;;
+			*) rm -rf "$dir" ;;
+		esac
+	done
+	popd
+	echo "-- Finished removing unused Boost library sources --"
+else
+	echo "WARNING: Boost libs directory not found at ${BOOST_LIBS_DIR}, skipping cleanup."
+fi
+
 popd
 
 exit $?
