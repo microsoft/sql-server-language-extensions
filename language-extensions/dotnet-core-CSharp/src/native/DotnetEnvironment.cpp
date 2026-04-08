@@ -15,6 +15,7 @@
 #include "Windows.h"
 #else
 #include <dlfcn.h>
+#include <unistd.h>
 #include <nethost.h>
 #endif
 
@@ -178,33 +179,25 @@ bool DotnetEnvironment::load_hostfxr()
 #ifdef _WIN32
     string_t hostfxr_location = m_root_path + STR("\\hostfxr.dll");
 #else
-    // On Linux, use nethost to dynamically locate hostfxr.
-    // First try self-contained discovery (assembly_path hint tells nethost
-    // to look for libhostfxr.so next to the managed assembly), then fall
-    // back to system-wide search via DOTNET_ROOT / install_location files.
-    char buffer[HOSTFXR_PATH_BUFFER_SIZE];
-    size_t buffer_size = sizeof(buffer);
+    // For self-contained deployment, load the bundled libhostfxr.so directly
+    // from the extension directory. This is analogous to what Windows does
+    // with hostfxr.dll and avoids picking up an incompatible older hostfxr
+    // (e.g. .NET Core 3.x shipped with SQL Server).
+    string_t hostfxr_location = m_root_path + STR("/libhostfxr.so");
 
-    string_t assembly_path = m_root_path + STR("/Microsoft.SqlServer.CSharpExtension.dll");
-
-    get_hostfxr_parameters params;
-    params.size = sizeof(params);
-    params.assembly_path = assembly_path.c_str();
-    params.dotnet_root = nullptr;
-
-    int rc = get_hostfxr_path(buffer, &buffer_size, &params);
-    if (rc != 0)
+    // If the bundled hostfxr doesn't exist (framework-dependent deployment),
+    // fall back to nethost discovery.
+    if (access(hostfxr_location.c_str(), F_OK) != 0)
     {
-        // Fall back to system-wide search (no assembly_path hint)
-        buffer_size = sizeof(buffer);
-        rc = get_hostfxr_path(buffer, &buffer_size, nullptr);
-        if (rc != 0)
+        char buffer[HOSTFXR_PATH_BUFFER_SIZE];
+        size_t buffer_size = sizeof(buffer);
+        if (get_hostfxr_path(buffer, &buffer_size, nullptr) != 0)
         {
             LOG_ERROR("Failed to locate hostfxr via nethost");
             return false;
         }
+        hostfxr_location = string_t(buffer);
     }
-    string_t hostfxr_location(buffer);
 #endif
     void *lib = load_library(hostfxr_location.c_str());
     m_init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
