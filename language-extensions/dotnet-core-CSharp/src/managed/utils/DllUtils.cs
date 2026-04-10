@@ -36,6 +36,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             // AppDomain.CurrentDomain.AssemblyResolve occurs when the resolution of an assembly fails.
             //
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
+
             foreach(string dllPath in dllList)
             {
                 // Catch unexpected exception while loading other dlls
@@ -43,6 +44,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 try
                 {
                     Assembly userDll = Assembly.LoadFrom(dllPath);
+
                     Type userExecutorClass = userDll.GetType(userClassName);
                     if (userExecutorClass != null)
                     {
