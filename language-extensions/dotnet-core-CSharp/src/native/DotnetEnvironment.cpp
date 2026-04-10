@@ -51,6 +51,7 @@ DotnetEnvironment::DotnetEnvironment(
     m_get_delegate_fptr(nullptr),
     m_close_fptr(nullptr),
     m_load_assembly_and_get_function_pointer(nullptr),
+    m_get_function_pointer(nullptr),
     m_is_self_contained(false)
 {
 }
@@ -80,9 +81,13 @@ short DotnetEnvironment::Init()
         return E_FAIL;
     }
 
-    m_load_assembly_and_get_function_pointer = get_dotnet_load_assembly(cxt);
+    // get_dotnet_load_assembly tries hdt_get_function_pointer first (Default ALC),
+    // falls back to hdt_load_assembly_and_get_function_pointer (IsolatedComponentLoadContext).
+    // On success with hdt_get_function_pointer, it returns the fn ptr and m_load_assembly_and_get_function_pointer stays null.
+    // On fallback, it returns nullptr and sets m_load_assembly_and_get_function_pointer.
+    m_get_function_pointer = get_dotnet_load_assembly(cxt);
 
-    if (m_load_assembly_and_get_function_pointer == nullptr)
+    if (m_get_function_pointer == nullptr && m_load_assembly_and_get_function_pointer == nullptr)
     {
         return E_FAIL;
     }
@@ -189,15 +194,12 @@ bool DotnetEnvironment::load_hostfxr()
     // from the extension directory. This is analogous to what Windows does
     // with hostfxr.dll and avoids picking up an incompatible older hostfxr
     // (e.g. .NET Core 3.x shipped with SQL Server).
-    cout << "[DIAG] m_root_path = " << m_root_path << endl;
     string_t hostfxr_location = m_root_path + STR("/libhostfxr.so");
-    cout << "[DIAG] Checking bundled hostfxr at: " << hostfxr_location << endl;
 
     // If the bundled hostfxr doesn't exist (framework-dependent deployment),
     // fall back to nethost discovery.
     if (access(hostfxr_location.c_str(), F_OK) != 0)
     {
-        cout << "[DIAG] Bundled libhostfxr.so NOT found (access() failed), falling back to nethost" << endl;
         m_is_self_contained = false;
         char buffer[HOSTFXR_PATH_BUFFER_SIZE];
         size_t buffer_size = sizeof(buffer);
@@ -207,15 +209,12 @@ bool DotnetEnvironment::load_hostfxr()
             return false;
         }
         hostfxr_location = string_t(buffer);
-        cout << "[DIAG] nethost resolved hostfxr to: " << hostfxr_location << endl;
     }
     else
     {
-        cout << "[DIAG] Bundled libhostfxr.so FOUND, using self-contained mode" << endl;
         m_is_self_contained = true;
     }
 #endif
-    cout << "[DIAG] Loading hostfxr from: " << hostfxr_location << endl;
     void *lib = load_library(hostfxr_location.c_str());
     m_init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
     m_get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
@@ -229,7 +228,6 @@ bool DotnetEnvironment::load_hostfxr()
     if (m_is_self_contained)
     {
         m_init_cmdline_fptr = (hostfxr_initialize_for_dotnet_command_line_fn)get_export(lib, "hostfxr_initialize_for_dotnet_command_line");
-        cout << "[DIAG] Loaded hostfxr_initialize_for_dotnet_command_line: " << (m_init_cmdline_fptr ? "OK" : "FAIL") << endl;
         return (m_init_cmdline_fptr && m_get_delegate_fptr && m_close_fptr);
     }
 #endif
@@ -241,16 +239,33 @@ bool DotnetEnvironment::load_hostfxr()
 // Name: DotnetEnvironment::get_dotnet_load_assembly
 //
 // Description:
-// load assembly function pointer from the path.
+// Get the function pointer delegate for the loaded .NET Core.
+// Uses hdt_get_function_pointer to load into Default ALC, ensuring type identity
+// compatibility with user DLLs loaded via Assembly.LoadFrom.
+// Falls back to hdt_load_assembly_and_get_function_pointer for Windows/non-self-contained.
 //
-load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_assembly(hostfxr_handle cxt)
+get_function_pointer_fn DotnetEnvironment::get_dotnet_load_assembly(hostfxr_handle cxt)
 {
     LOG("DotnetEnvironment::get_dotnet_load_assembly");
-    // Load .NET Core
-    void *load_assembly_and_get_function_pointer = nullptr;
 
-    // Get the load assembly function pointer
+    // Try hdt_get_function_pointer first (loads into Default ALC).
+    // This is required for self-contained Linux deployments to ensure
+    // the managed extension and user DLLs share the same assembly context.
+    void *get_fn_ptr = nullptr;
     int rc = m_get_delegate_fptr(
+        cxt,
+        hdt_get_function_pointer,
+        &get_fn_ptr);
+    if (rc == 0 && get_fn_ptr != nullptr)
+    {
+        m_close_fptr(cxt);
+        return (get_function_pointer_fn)get_fn_ptr;
+    }
+
+    // Fallback to hdt_load_assembly_and_get_function_pointer (IsolatedComponentLoadContext).
+    // This path is used on Windows and non-self-contained deployments.
+    void *load_assembly_and_get_function_pointer = nullptr;
+    rc = m_get_delegate_fptr(
         cxt,
         hdt_load_assembly_and_get_function_pointer,
         &load_assembly_and_get_function_pointer);
@@ -259,8 +274,12 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
         LOG_ERROR("Get delegate failed: " + to_hex_string(rc));
     }
 
+    // Store the load_assembly_and_get_function_pointer for the fallback path
+    m_load_assembly_and_get_function_pointer = (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
+
     m_close_fptr(cxt);
-    return (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
+    // Return nullptr to signal that the caller should use m_load_assembly_and_get_function_pointer
+    return nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -271,7 +290,6 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
 //
 hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     LOG("DotnetEnvironment::get_dotnet");
-    cout << "[DIAG] config_path = " << config_path << endl;
     hostfxr_handle cxt = nullptr;
 
     hostfxr_initialize_parameters params = { 0 };
@@ -303,7 +321,6 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     {
         params.dotnet_root = m_root_path.c_str();
     }
-    cout << "[DIAG] dotnet_root = " << (params.dotnet_root ? params.dotnet_root : "(null)") << endl;
 #endif
 
     int rc = 0;
@@ -318,17 +335,12 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
         // and self-contained applications (.NET 5+).
         const string_t app_path = m_root_path + STR("/Microsoft.SqlServer.CSharpExtension.dll");
         const char_t *argv[] = { app_path.c_str() };
-        cout << "[DIAG] Using hostfxr_initialize_for_dotnet_command_line (self-contained mode)" << endl;
-        cout << "[DIAG] argv[0] = " << argv[0] << endl;
         rc = m_init_cmdline_fptr(1, argv, &params, &cxt);
-        cout << "[DIAG] hostfxr_initialize_for_dotnet_command_line returned: " << to_hex_string(rc) << endl;
     }
     else
 #endif
     {
-        cout << "[DIAG] Using hostfxr_initialize_for_runtime_config (framework-dependent mode)" << endl;
         rc = m_init_fptr(config_path, &params, &cxt);
-        cout << "[DIAG] hostfxr_initialize_for_runtime_config returned: " << to_hex_string(rc) << endl;
     }
 
     if (rc != 0 || cxt == nullptr)

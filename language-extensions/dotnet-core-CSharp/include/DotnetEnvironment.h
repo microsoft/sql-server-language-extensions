@@ -63,13 +63,36 @@ public:
         const string_t ManagedExtensionType = ManagedExtensionName + STR(".CSharpExtension, ") + ManagedExtensionName;
         const string_t ManagedExtensionMethod = convert_string(method_name);
         const string_t DelegateTypeName = ManagedExtensionName + STR(".CSharpExtension+") + ManagedExtensionMethod + STR("Delegate, ") + ManagedExtensionName;
-        int rc = m_load_assembly_and_get_function_pointer(
-            ManagedExtensionPath.c_str(),
-            ManagedExtensionType.c_str(),
-            ManagedExtensionMethod.c_str(),
-            DelegateTypeName.c_str(),
-            nullptr,
-            (void**)&managed_func);
+
+        int rc = -1;
+        if (m_get_function_pointer != nullptr)
+        {
+            // Preferred path: hdt_get_function_pointer loads into Default ALC.
+            // This ensures the managed extension and user DLLs loaded via Assembly.LoadFrom
+            // share the same assembly identity, allowing type casts to succeed.
+            rc = m_get_function_pointer(
+                ManagedExtensionType.c_str(),
+                ManagedExtensionMethod.c_str(),
+                DelegateTypeName.c_str(),
+                nullptr, /* load_context: nullptr = Default ALC */
+                nullptr, /* reserved */
+                (void**)&managed_func);
+        }
+
+        if ((rc != 0 || managed_func == nullptr) && m_load_assembly_and_get_function_pointer != nullptr)
+        {
+            // Fallback: hdt_load_assembly_and_get_function_pointer (IsolatedComponentLoadContext).
+            // Used on Windows and non-self-contained deployments.
+            managed_func = nullptr;
+            rc = m_load_assembly_and_get_function_pointer(
+                ManagedExtensionPath.c_str(),
+                ManagedExtensionType.c_str(),
+                ManagedExtensionMethod.c_str(),
+                DelegateTypeName.c_str(),
+                nullptr,
+                (void**)&managed_func);
+        }
+
         if (rc != 0 || managed_func == nullptr)
         {
             return E_FAIL;
@@ -84,6 +107,7 @@ private:
     hostfxr_get_runtime_delegate_fn m_get_delegate_fptr;
     hostfxr_close_fn m_close_fptr;
     load_assembly_and_get_function_pointer_fn m_load_assembly_and_get_function_pointer;
+    get_function_pointer_fn m_get_function_pointer;
     string_t m_root_path;
     bool m_is_self_contained;
 
@@ -114,9 +138,10 @@ private:
     //
     bool load_hostfxr();
 
-    // Get desired function pointer for scenario for the loaded .NET Core
+    // Get the function pointer delegate for the loaded .NET Core.
+    // Uses hdt_get_function_pointer to load into Default ALC.
     //
-    load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(hostfxr_handle cxt);
+    get_function_pointer_fn get_dotnet_load_assembly(hostfxr_handle cxt);
 
     // Load and initialize .NET Core
     //
