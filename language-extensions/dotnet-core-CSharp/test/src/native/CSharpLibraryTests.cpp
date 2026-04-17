@@ -12,6 +12,8 @@
 //
 //*********************************************************************
 #include "CSharpExtensionApiTests.h"
+#include <fstream>
+#include <vector>
 
 using namespace std;
 namespace fs = experimental::filesystem;
@@ -211,8 +213,8 @@ namespace ExtensionApiTest
             "bad-package", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "bad-package.dll"))
-            << "Raw file not found in install directory as bad-package.dll";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "bad-package"))
+            << "Raw file not found in install directory as bad-package";
 
         CleanupInstallDir(installDir);
     }
@@ -384,9 +386,9 @@ namespace ExtensionApiTest
             "rawdllpackage", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        // The raw DLL should be copied using the library name with .dll extension
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "rawdllpackage.dll"))
-            << "Raw DLL not found in install directory as rawdllpackage.dll";
+        // The raw DLL should be copied using the library name (no extension)
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "rawdllpackage"))
+            << "Raw DLL not found in install directory as rawdllpackage";
 
         CleanupInstallDir(installDir);
     }
@@ -446,10 +448,10 @@ namespace ExtensionApiTest
                 dllCount++;
             }
         }
-        EXPECT_EQ(dllCount, 51) << "Expected 50 extracted DLL files + 1 alias for library name, found " << dllCount;
+        EXPECT_EQ(dllCount, 50) << "Expected 50 extracted DLL files, found " << dllCount;
 
-        // Verify the alias DLL exists so DllUtils can discover the library by name
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "manyfilespackage.dll"));
+        // Verify the extensionless alias exists so DllUtils can discover the library by name
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "manyfilespackage"));
 
         CleanupInstallDir(installDir);
     }
@@ -528,6 +530,353 @@ namespace ExtensionApiTest
         SQLRETURN result = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
             "neverinstalled", installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Helper: read manifest file into a vector of relative paths
+    //
+    static vector<string> ReadManifest(const string &manifestPath)
+    {
+        vector<string> lines;
+        ifstream f(manifestPath);
+        string line;
+        while (getline(f, line))
+        {
+            if (!line.empty() && line.back() == '\r')
+            {
+                line.pop_back();
+            }
+            if (!line.empty())
+            {
+                lines.push_back(line);
+            }
+        }
+        return lines;
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ManifestWrittenTest
+    //
+    // Description:
+    //  Verifies that after installing a ZIP package, a manifest file named
+    //  "{libName}.manifest" is written in the install directory and lists
+    //  every file extracted from the package.
+    //
+    TEST_F(CSharpExtensionApiTests, ManifestWrittenTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath));
+
+        string installDir = CreateInstallDir();
+
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "testpackageB", packagePath, installDir);
+        EXPECT_EQ(result, SQL_SUCCESS);
+
+        string manifestPath = (fs::path(installDir) / "testpackageB.manifest").string();
+        ASSERT_TRUE(fs::exists(manifestPath)) << "Manifest file not created";
+
+        vector<string> entries = ReadManifest(manifestPath);
+        EXPECT_GE(entries.size(), 2u) << "Manifest should list at least 2 extracted files";
+
+        // Manifest should contain the actual extracted file names
+        bool hasDll = false;
+        bool hasDeps = false;
+        for (const auto &e : entries)
+        {
+            if (e.find("testpackageB.dll") != string::npos) hasDll = true;
+            if (e.find("testpackageB.deps.json") != string::npos) hasDeps = true;
+        }
+        EXPECT_TRUE(hasDll) << "Manifest missing testpackageB.dll";
+        EXPECT_TRUE(hasDeps) << "Manifest missing testpackageB.deps.json";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ManifestListsNestedFilesTest
+    //
+    // Description:
+    //  Verifies that the manifest records nested file paths using the
+    //  relative path form so that uninstall can locate the files.
+    //
+    TEST_F(CSharpExtensionApiTests, ManifestListsNestedFilesTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageD-NESTED.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath));
+
+        string installDir = CreateInstallDir();
+
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "nestedlib", packagePath, installDir);
+        EXPECT_EQ(result, SQL_SUCCESS);
+
+        string manifestPath = (fs::path(installDir) / "nestedlib.manifest").string();
+        ASSERT_TRUE(fs::exists(manifestPath));
+
+        vector<string> entries = ReadManifest(manifestPath);
+
+        bool hasNestedDll = false;
+        bool hasRuntimeDll = false;
+        for (const auto &e : entries)
+        {
+            // Accept either separator for cross-platform resilience
+            if (e.find("MyLib.dll") != string::npos &&
+                (e.find("net8.0") != string::npos))
+            {
+                hasNestedDll = true;
+            }
+            if (e.find("native.dll") != string::npos &&
+                e.find("win-x64") != string::npos)
+            {
+                hasRuntimeDll = true;
+            }
+        }
+        EXPECT_TRUE(hasNestedDll) << "Manifest missing lib/net8.0/MyLib.dll entry";
+        EXPECT_TRUE(hasRuntimeDll) << "Manifest missing runtimes/win-x64/native.dll entry";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: InstallLibNameAliasNoExtensionTest
+    //
+    // Description:
+    //  When the ZIP does not contain a file matching "{libName}.*", the
+    //  install routine creates an alias named "{libName}" (without any
+    //  extension). Verifies the alias is present and the manifest lists it.
+    //
+    TEST_F(CSharpExtensionApiTests, InstallLibNameAliasNoExtensionTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath));
+
+        string installDir = CreateInstallDir();
+
+        // Library name "myAlias" does not match the package's testpackageB.*
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "myAlias", packagePath, installDir);
+        EXPECT_EQ(result, SQL_SUCCESS);
+
+        // Alias file created as libName exactly (no ".dll" extension)
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myAlias"))
+            << "Expected alias file 'myAlias' (no extension) not found";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "myAlias.dll"))
+            << "Alias should NOT have .dll extension";
+
+        // Manifest should include the alias
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "myAlias.manifest").string());
+        bool hasAlias = false;
+        for (const auto &e : entries)
+        {
+            if (e == "myAlias") { hasAlias = true; break; }
+        }
+        EXPECT_TRUE(hasAlias) << "Manifest missing alias entry 'myAlias'";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: DirectoryOverlapAllowedTest
+    //
+    // Description:
+    //  Installing two libraries into the same install directory succeeds
+    //  as long as they do not share any filenames. Directory (folder)
+    //  overlap is explicitly permitted.
+    //
+    TEST_F(CSharpExtensionApiTests, DirectoryOverlapAllowedTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_TRUE(fs::exists(pkgA));
+        ASSERT_TRUE(fs::exists(pkgB));
+
+        string installDir = CreateInstallDir();
+
+        // Install lib1 from package A (contents: testpackageA.dll, testpackageA.txt)
+        SQLRETURN r1 = CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib1", pkgA, installDir);
+        EXPECT_EQ(r1, SQL_SUCCESS);
+
+        // Install lib2 from package B (contents: testpackageB.dll, testpackageB.deps.json)
+        // No filename conflict => succeeds
+        SQLRETURN r2 = CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib2", pkgB, installDir);
+        EXPECT_EQ(r2, SQL_SUCCESS);
+
+        // Both libraries' files coexist
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageA.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib1.manifest"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib2.manifest"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: FileConflictFailsTest
+    //
+    // Description:
+    //  Installing a second library that would overwrite a file already
+    //  installed by another library must fail with SQL_ERROR. The first
+    //  library's files must remain intact.
+    //
+    TEST_F(CSharpExtensionApiTests, FileConflictFailsTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_TRUE(fs::exists(pkgB));
+
+        string installDir = CreateInstallDir();
+
+        // Install "lib1" from package B
+        SQLRETURN r1 = CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib1", pkgB, installDir);
+        EXPECT_EQ(r1, SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+
+        // Install a DIFFERENT library "lib2" from the same package.
+        // Both would write testpackageB.dll => conflict, must fail.
+        SQLRETURN r2 = CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib2", pkgB, installDir);
+        EXPECT_EQ(r2, SQL_ERROR) << "Expected conflict error on duplicate filename";
+
+        // lib1's files must survive
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib1.manifest"));
+        // lib2 must not have written a manifest
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "lib2.manifest"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: UninstallPreservesOtherLibrariesTest
+    //
+    // Description:
+    //  Uninstalling one library must only delete that library's files
+    //  (as listed in its manifest). Other libraries' files in the same
+    //  directory must remain untouched.
+    //
+    TEST_F(CSharpExtensionApiTests, UninstallPreservesOtherLibrariesTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+
+        string installDir = CreateInstallDir();
+
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib1", pkgA, installDir), SQL_SUCCESS);
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib2", pkgB, installDir), SQL_SUCCESS);
+
+        // Uninstall lib1 only
+        SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "lib1", installDir);
+        EXPECT_EQ(r, SQL_SUCCESS);
+
+        // lib1's files + manifest gone
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.dll"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.txt"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "lib1.manifest"));
+
+        // lib2's files + manifest intact
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib2.manifest"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: UninstallRemovesEmptyNestedDirsTest
+    //
+    // Description:
+    //  After uninstalling a library whose files lived in nested
+    //  subdirectories, the now-empty nested directories are removed
+    //  bottom-up.
+    //
+    TEST_F(CSharpExtensionApiTests, UninstallRemovesEmptyNestedDirsTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgD = (fs::path(packagesPath) / "testpackageD-NESTED.zip").string();
+        ASSERT_TRUE(fs::exists(pkgD));
+
+        string installDir = CreateInstallDir();
+
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "nestedlib", pkgD, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "lib" / "net8.0"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "runtimes" / "win-x64"));
+
+        // Uninstall
+        SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "nestedlib", installDir);
+        EXPECT_EQ(r, SQL_SUCCESS);
+
+        // Nested directories should have been removed when they became empty
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "lib" / "net8.0"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "lib"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "runtimes" / "win-x64"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "runtimes"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AlterExternalLibraryTest
+    //
+    // Description:
+    //  Installing a library a second time with the same libName (simulating
+    //  ALTER EXTERNAL LIBRARY) removes the old content tracked by the
+    //  previous manifest before extracting the new package, even when the
+    //  new package would otherwise conflict with leftover files.
+    //
+    TEST_F(CSharpExtensionApiTests, AlterExternalLibraryTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+
+        string installDir = CreateInstallDir();
+
+        // v1: install as "myLib" from package A => testpackageA.dll, testpackageA.txt
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", pkgA, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "testpackageA.dll"));
+
+        // v2: install again as "myLib" from package B (ALTER)
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", pkgB, installDir);
+        EXPECT_EQ(r, SQL_SUCCESS) << "ALTER-style reinstall should succeed";
+
+        // v1's unique files gone
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.dll"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.txt"));
+
+        // v2's files present
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"));
+
+        // Manifest reflects v2 content only
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "myLib.manifest").string());
+        bool hasA = false, hasB = false;
+        for (const auto &e : entries)
+        {
+            if (e.find("testpackageA") != string::npos) hasA = true;
+            if (e.find("testpackageB") != string::npos) hasB = true;
+        }
+        EXPECT_FALSE(hasA) << "Manifest still references v1 files";
+        EXPECT_TRUE(hasB) << "Manifest missing v2 files";
 
         CleanupInstallDir(installDir);
     }
