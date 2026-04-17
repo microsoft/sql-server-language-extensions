@@ -11,5 +11,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Analysis" Version="0.23.0"/>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2"/>
   </ItemGroup>
 </Project>
