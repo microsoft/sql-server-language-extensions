@@ -864,8 +864,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                         CleanupManifest(manifestPath, installDir);
                     }
 
-                    // Raw-DLL fallback: libraries installed without a manifest
-                    // were copied directly as "{libName}.dll".
+                    // Non-ZIP installs write a single "{libName}.dll" file and
+                    // no manifest; remove that file directly.
                     string libraryFile = Path.Combine(installDir, libName + ".dll");
                     if (File.Exists(libraryFile))
                     {

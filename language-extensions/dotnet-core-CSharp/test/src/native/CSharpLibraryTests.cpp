@@ -988,7 +988,7 @@ namespace ExtensionApiTest
     //
     // Description:
     //  When a raw DLL (non-ZIP) is installed, no manifest is written. Uninstall
-    //  must still remove the library file via the libName fallback path.
+    //  must still remove the library file by its libName.dll path.
     //  Exercises the File.Delete(libraryFile) branch in UninstallExternalLibrary.
     //
     TEST_F(CSharpExtensionApiTests, UninstallNonZipLibraryTest)
@@ -1006,7 +1006,7 @@ namespace ExtensionApiTest
         ASSERT_FALSE(fs::exists(fs::path(installDir) / "rawlib.manifest"))
             << "Raw-DLL install should not write a manifest";
 
-        // Uninstall must still delete the library file via the libName fallback.
+        // Uninstall must still delete the libName.dll file.
         SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
             "rawlib", installDir);
         EXPECT_EQ(r, SQL_SUCCESS);
