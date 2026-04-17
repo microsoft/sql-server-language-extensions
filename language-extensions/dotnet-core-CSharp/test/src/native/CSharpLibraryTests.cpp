@@ -275,8 +275,8 @@ namespace ExtensionApiTest
             "bad-package", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "bad-package"))
-            << "Raw file not found in install directory as bad-package";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "bad-package.dll"))
+            << "Raw file not found in install directory as bad-package.dll";
 
         CleanupInstallDir(installDir);
     }
@@ -448,9 +448,9 @@ namespace ExtensionApiTest
             "rawdllpackage", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        // The raw DLL should be copied using the library name (no extension)
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "rawdllpackage"))
-            << "Raw DLL not found in install directory as rawdllpackage";
+        // The raw DLL should be copied using the library name with .dll extension.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "rawdllpackage.dll"))
+            << "Raw DLL not found in install directory as rawdllpackage.dll";
 
         CleanupInstallDir(installDir);
     }
@@ -512,8 +512,8 @@ namespace ExtensionApiTest
         }
         EXPECT_EQ(dllCount, 50) << "Expected 50 extracted DLL files, found " << dllCount;
 
-        // Verify the extensionless alias exists so DllUtils can discover the library by name
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "manyfilespackage"));
+        // Verify the alias exists so DllUtils can discover the library by name.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "manyfilespackage.dll"));
 
         CleanupInstallDir(installDir);
     }
@@ -705,14 +705,14 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: InstallLibNameAliasNoExtensionTest
+    // Name: InstallLibNameAliasTest
     //
     // Description:
     //  When the ZIP does not contain a file matching "{libName}.*", the
-    //  install routine creates an alias named "{libName}" (without any
-    //  extension). Verifies the alias is present and the manifest lists it.
+    //  install routine creates an alias named "{libName}.dll" so that
+    //  DllUtils.CreateDllList (which searches "{libName}.*") can find it.
     //
-    TEST_F(CSharpExtensionApiTests, InstallLibNameAliasNoExtensionTest)
+    TEST_F(CSharpExtensionApiTests, InstallLibNameAliasTest)
     {
         string packagesPath = GetPackagesPath();
         string packagePath = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
@@ -725,21 +725,18 @@ namespace ExtensionApiTest
             "myAlias", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        // Alias file created as libName exactly (no ".dll" extension)
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myAlias"))
-            << "Expected alias file 'myAlias' (no extension) not found";
-        EXPECT_FALSE(fs::exists(fs::path(installDir) / "myAlias.dll"))
-            << "Alias should NOT have .dll extension";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myAlias.dll"))
+            << "Expected alias file 'myAlias.dll' not found";
 
-        // Manifest should include the alias
+        // Manifest should include the alias.
         vector<string> entries = ReadManifest(
             (fs::path(installDir) / "myAlias.manifest").string());
         bool hasAlias = false;
         for (const auto &e : entries)
         {
-            if (e == "myAlias") { hasAlias = true; break; }
+            if (e == "myAlias.dll") { hasAlias = true; break; }
         }
-        EXPECT_TRUE(hasAlias) << "Manifest missing alias entry 'myAlias'";
+        EXPECT_TRUE(hasAlias) << "Manifest missing alias entry 'myAlias.dll'";
 
         CleanupInstallDir(installDir);
     }
@@ -1002,18 +999,18 @@ namespace ExtensionApiTest
 
         string installDir = CreateInstallDir();
 
-        // Install the raw DLL as "rawlib" — no manifest should be written
+        // Install the raw DLL as "rawlib" — no manifest should be written.
         ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
             "rawlib", rawDll, installDir), SQL_SUCCESS);
-        ASSERT_TRUE(fs::exists(fs::path(installDir) / "rawlib"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "rawlib.dll"));
         ASSERT_FALSE(fs::exists(fs::path(installDir) / "rawlib.manifest"))
             << "Raw-DLL install should not write a manifest";
 
-        // Uninstall must still delete the library file via the libName fallback
+        // Uninstall must still delete the library file via the libName fallback.
         SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
             "rawlib", installDir);
         EXPECT_EQ(r, SQL_SUCCESS);
-        EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawlib"))
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawlib.dll"))
             << "Raw library file not removed by uninstall";
 
         CleanupInstallDir(installDir);
@@ -1111,19 +1108,19 @@ namespace ExtensionApiTest
 
         string installDir = CreateInstallDir();
 
-        // v1: raw DLL install (no manifest created)
+        // v1: raw DLL install (no manifest created).
         ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
             "myLib", rawDll, installDir), SQL_SUCCESS);
-        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.dll"));
         ASSERT_FALSE(fs::exists(fs::path(installDir) / "myLib.manifest"));
 
-        // v2: ZIP install of the same libName — must NOT crash on missing manifest
+        // v2: ZIP install of the same libName — must NOT crash on missing manifest.
         SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
             "myLib", pkgB, installDir);
         EXPECT_EQ(r, SQL_SUCCESS)
             << "ALTER from non-ZIP to ZIP should succeed even without prior manifest";
 
-        // v2's files must be present + v2 manifest must exist
+        // v2's files must be present + v2 manifest must exist.
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
 
@@ -1135,11 +1132,10 @@ namespace ExtensionApiTest
     //
     // Description:
     //  When a ZIP contains DLLs whose names don't match the library name,
-    //  the install code creates an alias file named exactly {libName} (no
-    //  extension) so DllUtils.CreateDllList can discover it. This alias
-    //  must be recorded in the manifest and removed on uninstall —
-    //  otherwise orphaned alias files accumulate over install/uninstall
-    //  cycles.
+    //  the install code creates an alias file named {libName}.dll so
+    //  DllUtils.CreateDllList can discover it. This alias must be recorded
+    //  in the manifest and removed on uninstall — otherwise orphaned alias
+    //  files accumulate over install/uninstall cycles.
     //
     TEST_F(CSharpExtensionApiTests, AliasFileRemovedOnUninstallTest)
     {
@@ -1150,19 +1146,19 @@ namespace ExtensionApiTest
 
         // Install package A (contains testpackageA.dll) under a different libName.
         // Since no file matches "aliaslib.*", the install code must create an
-        // "aliaslib" alias file copied from the first DLL.
+        // "aliaslib.dll" alias file copied from the first DLL.
         ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
             "aliaslib", pkgA, installDir), SQL_SUCCESS);
-        ASSERT_TRUE(fs::exists(fs::path(installDir) / "aliaslib"))
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "aliaslib.dll"))
             << "Alias file not created";
 
-        // The alias must also be listed in the manifest
+        // The alias must also be listed in the manifest.
         vector<string> entries = ReadManifest(
             (fs::path(installDir) / "aliaslib.manifest").string());
         bool hasAlias = false;
         for (const auto &e : entries)
         {
-            if (e == "aliaslib")
+            if (e == "aliaslib.dll")
             {
                 hasAlias = true;
                 break;
@@ -1170,10 +1166,10 @@ namespace ExtensionApiTest
         }
         EXPECT_TRUE(hasAlias) << "Alias file not recorded in manifest";
 
-        // Uninstall must remove both the content and the alias
+        // Uninstall must remove both the content and the alias.
         ASSERT_EQ(CallUninstall(sm_uninstallExternalLibraryFuncPtr,
             "aliaslib", installDir), SQL_SUCCESS);
-        EXPECT_FALSE(fs::exists(fs::path(installDir) / "aliaslib"))
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "aliaslib.dll"))
             << "Alias file leaked after uninstall";
         EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.dll"))
             << "Content file leaked after uninstall";
