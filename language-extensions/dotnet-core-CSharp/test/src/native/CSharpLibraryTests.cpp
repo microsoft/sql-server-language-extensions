@@ -134,6 +134,68 @@ namespace ExtensionApiTest
         return hasFiles;
     }
 
+    // Helper: call InstallExternalLibrary and capture the error message (if any).
+    // Returns SQL result; populates errorMessage with the UTF-8 error text.
+    //
+    static SQLRETURN CallInstallCaptureError(
+        FN_installExternalLibrary *installFunc,
+        const string &libName,
+        const string &libFilePath,
+        const string &installDir,
+        string &errorMessage)
+    {
+        SQLCHAR *libError = nullptr;
+        SQLINTEGER libErrorLength = 0;
+
+        SQLRETURN result = (*installFunc)(
+            SQLGUID(),
+            reinterpret_cast<SQLCHAR *>(const_cast<char *>(libName.c_str())),
+            static_cast<SQLINTEGER>(libName.length()),
+            reinterpret_cast<SQLCHAR *>(const_cast<char *>(libFilePath.c_str())),
+            static_cast<SQLINTEGER>(libFilePath.length()),
+            reinterpret_cast<SQLCHAR *>(const_cast<char *>(installDir.c_str())),
+            static_cast<SQLINTEGER>(installDir.length()),
+            &libError,
+            &libErrorLength);
+
+        errorMessage.clear();
+        if (libError != nullptr && libErrorLength > 0)
+        {
+            errorMessage.assign(reinterpret_cast<char *>(libError),
+                static_cast<size_t>(libErrorLength));
+        }
+
+        return result;
+    }
+
+    // Helper: count GUID-shaped subdirectories in a directory (temp folders
+    // created by the install code during ZIP extraction).
+    //
+    static int CountGuidTempDirs(const string &dir)
+    {
+        int count = 0;
+        if (!fs::exists(dir))
+        {
+            return 0;
+        }
+        for (const auto &entry : fs::directory_iterator(dir))
+        {
+            if (!fs::is_directory(entry.path()))
+            {
+                continue;
+            }
+            string name = entry.path().filename().string();
+            // GUID format: 8-4-4-4-12 = 36 chars with hyphens at 8,13,18,23
+            if (name.length() == 36 &&
+                name[8] == '-' && name[13] == '-' &&
+                name[18] == '-' && name[23] == '-')
+            {
+                ++count;
+            }
+        }
+        return count;
+    }
+
     //----------------------------------------------------------------------------------------------
     // Name: InstallZipContainingZipTest
     //
@@ -877,6 +939,246 @@ namespace ExtensionApiTest
         }
         EXPECT_FALSE(hasA) << "Manifest still references v1 files";
         EXPECT_TRUE(hasB) << "Manifest missing v2 files";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ErrorMessagePopulatedOnFailureTest
+    //
+    // Description:
+    //  SQL Server surfaces the libraryError string to end users. Every failure
+    //  path must populate libError with a non-empty, UTF-8-decodable message.
+    //  Validates this for three distinct failure modes: non-existent source file,
+    //  zip-slip attack, and file-level conflict.
+    //
+    TEST_F(CSharpExtensionApiTests, ErrorMessagePopulatedOnFailureTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string installDir = CreateInstallDir();
+        string msg;
+
+        // Failure mode 1: non-existent source file
+        SQLRETURN r = CallInstallCaptureError(sm_installExternalLibraryFuncPtr,
+            "missing", "C:\\does\\not\\exist.zip", installDir, msg);
+        EXPECT_EQ(r, SQL_ERROR);
+        EXPECT_FALSE(msg.empty()) << "No error message populated for missing file";
+
+        // Failure mode 2: zip-slip attack
+        string zipSlip = (fs::path(packagesPath) / "testpackageH-ZIPSLIP.zip").string();
+        r = CallInstallCaptureError(sm_installExternalLibraryFuncPtr,
+            "slip", zipSlip, installDir, msg);
+        EXPECT_EQ(r, SQL_ERROR);
+        EXPECT_FALSE(msg.empty()) << "No error message populated for zip-slip";
+
+        // Failure mode 3: file-level conflict
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "libA", pkgB, installDir), SQL_SUCCESS);
+        r = CallInstallCaptureError(sm_installExternalLibraryFuncPtr,
+            "libB", pkgB, installDir, msg);
+        EXPECT_EQ(r, SQL_ERROR);
+        EXPECT_FALSE(msg.empty()) << "No error message populated for conflict";
+        // Message should mention the conflicting library name for diagnosability
+        EXPECT_NE(msg.find("libB"), string::npos)
+            << "Conflict message should include library name. Got: " << msg;
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: UninstallNonZipLibraryTest
+    //
+    // Description:
+    //  When a raw DLL (non-ZIP) is installed, no manifest is written. Uninstall
+    //  must still remove the library file via the libName fallback path.
+    //  Exercises the File.Delete(libraryFile) branch in UninstallExternalLibrary.
+    //
+    TEST_F(CSharpExtensionApiTests, UninstallNonZipLibraryTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        ASSERT_TRUE(fs::exists(rawDll));
+
+        string installDir = CreateInstallDir();
+
+        // Install the raw DLL as "rawlib" — no manifest should be written
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "rawlib", rawDll, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "rawlib"));
+        ASSERT_FALSE(fs::exists(fs::path(installDir) / "rawlib.manifest"))
+            << "Raw-DLL install should not write a manifest";
+
+        // Uninstall must still delete the library file via the libName fallback
+        SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "rawlib", installDir);
+        EXPECT_EQ(r, SQL_SUCCESS);
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawlib"))
+            << "Raw library file not removed by uninstall";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: InnerZipFileConflictFailsTest
+    //
+    // Description:
+    //  FileConflictFailsTest exercises the direct-files code path (package B,
+    //  no inner zip). This test exercises the inner-zip code path (package A)
+    //  which has its own separate conflict-detection loop. Regressing only
+    //  one path must be caught.
+    //
+    TEST_F(CSharpExtensionApiTests, InnerZipFileConflictFailsTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+        ASSERT_TRUE(fs::exists(pkgA));
+
+        string installDir = CreateInstallDir();
+
+        // Install "lib1" from package A (inner-zip path) => testpackageA.dll + .txt
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib1", pkgA, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "testpackageA.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "lib1.manifest"));
+
+        // Install "lib2" from the same package — inner-zip conflict must fail
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib2", pkgA, installDir);
+        EXPECT_EQ(r, SQL_ERROR) << "Inner-zip path must detect filename conflict";
+
+        // lib1's state must be untouched
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageA.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib1.manifest"));
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "lib2.manifest"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: TempFolderCleanedUpAfterConflictTest
+    //
+    // Description:
+    //  After a failed install (conflict or otherwise), the GUID-named temp
+    //  folder used for outer-zip extraction must be cleaned up by the finally
+    //  block. Regression would slowly leak disk space on every failed install.
+    //
+    TEST_F(CSharpExtensionApiTests, TempFolderCleanedUpAfterConflictTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+
+        string installDir = CreateInstallDir();
+
+        // Trigger a conflict: install then reinstall same package under different names
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib1", pkgB, installDir), SQL_SUCCESS);
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib2", pkgB, installDir), SQL_ERROR);
+
+        // Also trigger inner-zip path conflict
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "libA", pkgA, installDir), SQL_SUCCESS);
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "libB", pkgA, installDir), SQL_ERROR);
+
+        // Also trigger zip-slip failure
+        string zipSlip = (fs::path(packagesPath) / "testpackageH-ZIPSLIP.zip").string();
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "slip", zipSlip, installDir), SQL_ERROR);
+
+        EXPECT_EQ(CountGuidTempDirs(installDir), 0)
+            << "GUID-named temp folder leaked after failed install(s)";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AlterFromNonZipToZipTest
+    //
+    // Description:
+    //  ALTER EXTERNAL LIBRARY scenario where v1 was a raw DLL (no manifest)
+    //  and v2 is a ZIP package. Install code must handle the missing-manifest
+    //  case gracefully and complete the new install. The old lib file remains
+    //  until explicit uninstall — that matches sicongliu's baseline semantics.
+    //
+    TEST_F(CSharpExtensionApiTests, AlterFromNonZipToZipTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+
+        string installDir = CreateInstallDir();
+
+        // v1: raw DLL install (no manifest created)
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", rawDll, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib"));
+        ASSERT_FALSE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        // v2: ZIP install of the same libName — must NOT crash on missing manifest
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", pkgB, installDir);
+        EXPECT_EQ(r, SQL_SUCCESS)
+            << "ALTER from non-ZIP to ZIP should succeed even without prior manifest";
+
+        // v2's files must be present + v2 manifest must exist
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AliasFileRemovedOnUninstallTest
+    //
+    // Description:
+    //  When a ZIP contains DLLs whose names don't match the library name,
+    //  the install code creates an alias file named exactly {libName} (no
+    //  extension) so DllUtils.CreateDllList can discover it. This alias
+    //  must be recorded in the manifest and removed on uninstall —
+    //  otherwise orphaned alias files accumulate over install/uninstall
+    //  cycles.
+    //
+    TEST_F(CSharpExtensionApiTests, AliasFileRemovedOnUninstallTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+
+        string installDir = CreateInstallDir();
+
+        // Install package A (contains testpackageA.dll) under a different libName.
+        // Since no file matches "aliaslib.*", the install code must create an
+        // "aliaslib" alias file copied from the first DLL.
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "aliaslib", pkgA, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "aliaslib"))
+            << "Alias file not created";
+
+        // The alias must also be listed in the manifest
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "aliaslib.manifest").string());
+        bool hasAlias = false;
+        for (const auto &e : entries)
+        {
+            if (e == "aliaslib")
+            {
+                hasAlias = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(hasAlias) << "Alias file not recorded in manifest";
+
+        // Uninstall must remove both the content and the alias
+        ASSERT_EQ(CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "aliaslib", installDir), SQL_SUCCESS);
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "aliaslib"))
+            << "Alias file leaked after uninstall";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.dll"))
+            << "Content file leaked after uninstall";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "aliaslib.manifest"))
+            << "Manifest file leaked after uninstall";
 
         CleanupInstallDir(installDir);
     }
