@@ -9,6 +9,7 @@
 //
 //*********************************************************************
 using System;
+using System.Data.SqlTypes;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
@@ -108,6 +109,43 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    /// <summary>
+    /// Comprehensive test executor for DECIMAL/NUMERIC OUTPUT parameters.
+    /// Covers: max/min values, high precision/scale, financial values, zero, nulls.
+    /// Consolidated from CSharpTestExecutorDecimalParam + CSharpTestExecutorDecimalHighScaleParam.
+    /// </summary>
+    public class CSharpTestExecutorDecimalParam: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // Maximum value: DECIMAL(38,0) max = 10^38 - 1
+            sqlParams["@param0"] = SqlDecimal.Parse("99999999999999999999999999999999999999");
+            
+            // Minimum value (negative max)
+            sqlParams["@param1"] = SqlDecimal.Parse("-99999999999999999999999999999999999999");
+            
+            // High scale: DECIMAL(38,10) - 38 digits with 10 fractional
+            sqlParams["@param2"] = SqlDecimal.Parse("1234567890123456789012345678.1234567890");
+            
+            // Zero
+            sqlParams["@param3"] = new SqlDecimal(0);
+            
+            // High fractional precision: DECIMAL(38,28) - 10 integer + 28 fractional
+            sqlParams["@param4"] = SqlDecimal.Parse("1234567890.1234567890123456789012345678");
+            
+            // Typical financial: DECIMAL(19,4)
+            sqlParams["@param5"] = SqlDecimal.Parse("123456789012345.6789");
+            
+            // Negative financial
+            sqlParams["@param6"] = SqlDecimal.Parse("-123456789012345.6789");
+            
+            // Null
+            sqlParams["@param7"] = null;
+            
+            return null;
+        }
+    }
+
     public class CSharpTestExecutorStringParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
@@ -118,6 +156,27 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param4"] = null;
             sqlParams["@param5"] = null;
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that returns a DataFrame with mixed-scale SqlDecimal values in the same column.
+    /// This exercises the precision clamping fix in ExtractNumericColumn: when maxIntDigits + maxScale > 38,
+    /// scale is reduced to (38 - maxIntDigits) to preserve integer digits.
+    /// </summary>
+    public class CSharpTestExecutorMixedScaleDecimalOutput : AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            // Create output DataFrame with one SqlDecimal column containing mixed scales
+            //
+            var column = new PrimitiveDataFrameColumn<SqlDecimal>("MixedScaleCol", 3);
+            column[0] = SqlDecimal.Parse("999999999999999999");                       // 18 int digits, scale=0
+            column[1] = SqlDecimal.Parse("0.000000000000000000000000000001");           // 0 int digits, scale=30
+            column[2] = SqlDecimal.Parse("42");                                        // 2 int digits, scale=0
+            // maxIntDigits=18, maxScale=30, sum=48 > 38 → clamp: precision=38, scale=20
+
+            return new DataFrame(column);
         }
     }
 
