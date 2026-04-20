@@ -17,7 +17,7 @@ PYTHON_VERSION=3.12
 NUMPY_VERSION=2.3.0
 PANDAS_VERSION=2.3.0
 
-apt-get install -y python3.12-dev python3.12 libpython3.12 libpython3.12-dev
+apt-get install -y python3.12-dev python3.12 libpython3.12 libpython3.12-dev libboost-all-dev
 curl -sS https://bootstrap.pypa.io/get-pip.py | /usr/bin/python${PYTHON_VERSION}
 
 # Find PYTHONHOME from user, or set to default for tests.
@@ -57,34 +57,10 @@ echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSIO
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
 ./b2 --clean
-# Build only boost_python and boost_numpy in both debug and release variants,
-# and both static and shared libraries. The numpy include path is required so
-# that b2 can find numpy/arrayobject.h and actually compile boost_numpy.
-NUMPY_INCLUDE=$(${PYTHONHOME}/bin/python${PYTHON_VERSION} -c "import numpy; print(numpy.get_include())")
-./b2 --with-python toolset=gcc variant=debug,release address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ include=${NUMPY_INCLUDE} link=shared,static threading=multi -j12
+# Build both debug and release variants, and both static and shared libraries
+./b2 toolset=gcc variant=debug,release address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ link=shared,static threading=multi -j12
 
 cp -rf boost /usr/local/include/
-
-# Remove unused Boost library sources to avoid false Component Governance alerts.
-# Only boost_python and boost_numpy are compiled (b2 --with-python).
-# Headers under boost/ at the root are kept since they are needed at compile time.
-# This runs after the build so that Jamfiles are available for b2's dependency resolution.
-#
-BOOST_LIBS_DIR=/usr/local/lib/boost_${BOOST_VERSION_IN_UNDERSCORE}/libs
-if [ -d "${BOOST_LIBS_DIR}" ]; then
-	echo "-- Removing unused Boost library sources --"
-	pushd "${BOOST_LIBS_DIR}"
-	for dir in */; do
-		case "${dir%/}" in
-			python|numpy|headers) ;;
-			*) rm -rf "$dir" ;;
-		esac
-	done
-	popd
-	echo "-- Finished removing unused Boost library sources --"
-else
-	echo "WARNING: Boost libs directory not found at ${BOOST_LIBS_DIR}, skipping cleanup."
-fi
 
 popd
 
