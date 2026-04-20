@@ -114,20 +114,23 @@ REM Remove unused Boost library sources to avoid false Component Governance aler
 REM Only boost_python and boost_numpy are compiled (b2 --with-python).
 REM Headers under boost/ at the root are kept since they are needed at compile time.
 REM This runs after the build so that Jamfiles are available for b2's dependency resolution.
+REM Only performed in CI pipelines to avoid affecting local/customer environments.
 REM
-SET BOOST_LIBS_DIR=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\libs
-IF EXIST "%BOOST_LIBS_DIR%" (
-	echo -- Removing unused Boost library sources -- Time: !time! --
-	pushd "%BOOST_LIBS_DIR%"
-	for /d %%D in (*) do (
-		if /I not "%%D"=="python" if /I not "%%D"=="numpy" if /I not "%%D"=="headers" (
-			RMDIR /s /q "%%D"
+if NOT "%BUILD_BUILDID%"=="" (
+	SET BOOST_LIBS_DIR=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\libs
+	IF EXIST "!BOOST_LIBS_DIR!" (
+		echo -- Removing unused Boost library sources -- Time: !time! --
+		pushd "!BOOST_LIBS_DIR!"
+		for /d %%D in (*) do (
+			if /I not "%%D"=="python" if /I not "%%D"=="numpy" if /I not "%%D"=="headers" (
+				RMDIR /s /q "%%D"
+			)
 		)
+		popd
+		echo -- Finished removing unused Boost library sources -- Time: !time! --
+	) ELSE (
+		echo WARNING: Boost libs directory not found at !BOOST_LIBS_DIR!, skipping cleanup.
 	)
-	popd
-	echo -- Finished removing unused Boost library sources -- Time: !time! --
-) ELSE (
-	echo WARNING: Boost libs directory not found at %BOOST_LIBS_DIR%, skipping cleanup.
 )
 
 REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
