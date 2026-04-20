@@ -57,9 +57,11 @@ echo "using python : ${PYTHON_VERSION} : ${PYTHONHOME}/bin/python${PYTHON_VERSIO
 sed -i 's/using gcc[^;]*;/using gcc : foo : g++ : <cxxflags>-fPIC ;/g' project-config.jam 
 
 ./b2 --clean
-# Build only boost_python (which implicitly includes boost_numpy) in both debug and release variants,
-# and both static and shared libraries.
-./b2 --with-python toolset=gcc variant=debug,release address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ link=shared,static threading=multi -j12
+# Build only boost_python and boost_numpy in both debug and release variants,
+# and both static and shared libraries. The numpy include path is required so
+# that b2 can find numpy/arrayobject.h and actually compile boost_numpy.
+NUMPY_INCLUDE=$(${PYTHONHOME}/bin/python${PYTHON_VERSION} -c "import numpy; print(numpy.get_include())")
+./b2 --with-python toolset=gcc variant=debug,release address-model=64 include=${PYTHONHOME}/include/python${PYTHON_VERSION}/ include=${NUMPY_INCLUDE} link=shared,static threading=multi -j12
 
 cp -rf boost /usr/local/include/
 
