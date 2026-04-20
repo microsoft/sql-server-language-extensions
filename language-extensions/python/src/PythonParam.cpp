@@ -345,12 +345,12 @@ void PythonStringParam<CharType>::RetrieveValueAndStrLenInd(bp::object mainNames
 					char *utf16str = PyBytes_AsString(PyUnicode_AsUTF16String(tempObj.ptr()));
 
 					// Reinterpret the bytes as wchar_t *, which we will return.
-					// The buffer contains UTF-16 code units in native byte order. The string always starts with a BOM mark.
-					// (https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF16String)
-					// We treat it as an array of 16-bit code units (CharType expected to be the size of wchar_t).
+					// The buffer contains UTF-16 code units in native byte order (https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF16String).
+					// We treat it as an array of 16-bit code units (CharType expected to be 2-bytes).
+					// Note that even for Linux, we expect 2-bytes for wchar since we compile this project with -fshort-wchar.
 					//
-					static_assert(sizeof(CharType) == sizeof(wchar_t), "CharType must match wchar_t size for UTF-16 reinterpretation.");
-					CharType *wData = reinterpret_cast<CharType *>(utf16str); // CodeQL [SM02986]: The buffer is properly aligned (divisible by 2), already contains real UTF-16 data (SQL NVARCHAR), and we know its exact length (not relying on null termination); so treating it as wchar_t* is safe.
+					static_assert(sizeof(CharType) == 2, "CharType must be 2 bytes for UTF-16 reinterpretation.");
+					CharType *wData = reinterpret_cast<CharType *>(utf16str); // CodeQL [SM02986]: The buffer contains valid UTF-16 data from PyUnicode_AsUTF16String, and the read is bounded by PyUnicode_GET_LENGTH (not null termination).
 
 					// Ignore 2 byte BOM at front of wData that was added by PyUnicode_AsUTF16String
 					//
