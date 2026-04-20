@@ -17,7 +17,7 @@ PYTHON_VERSION=3.12
 NUMPY_VERSION=2.3.0
 PANDAS_VERSION=2.3.0
 
-apt-get install -y python3.12-dev python3.12 libpython3.12 libpython3.12-dev libboost-all-dev
+apt-get install -y python3.12-dev python3.12 libpython3.12 libpython3.12-dev
 curl -sS https://bootstrap.pypa.io/get-pip.py | /usr/bin/python${PYTHON_VERSION}
 
 # Find PYTHONHOME from user, or set to default for tests.
