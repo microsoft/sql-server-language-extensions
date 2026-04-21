@@ -705,7 +705,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                         CleanupManifest(manifestPath, installDir);
                     }
 
-                    File.Copy(libFilePath, Path.Combine(installDir, libName + ".dll"), true);
+                    File.Copy(libFilePath, Path.Combine(installDir, DllFileNameFor(libName)), true);
                     return SQL_SUCCESS;
                 }
 
@@ -782,14 +782,16 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                 // If no file in installDir matches "{libName}.*", copy the first .dll
                 // found as "{libName}.dll" so DllUtils.CreateDllList can discover it.
-                if (Directory.GetFiles(installDir, libName + ".*").Length == 0)
+                string aliasFileName = DllFileNameFor(libName);
+                if (Directory.GetFiles(installDir, libName + ".*").Length == 0 &&
+                    !File.Exists(Path.Combine(installDir, aliasFileName)))
                 {
                     string[] dlls = Directory.GetFiles(installDir, "*.dll");
                     if (dlls.Length > 0)
                     {
-                        string alias = Path.Combine(installDir, libName + ".dll");
+                        string alias = Path.Combine(installDir, aliasFileName);
                         File.Copy(dlls[0], alias, false);
-                        extractedFiles.Add(libName + ".dll");
+                        extractedFiles.Add(aliasFileName);
                     }
                 }
 
@@ -866,7 +868,7 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                     // Non-ZIP installs write a single "{libName}.dll" file and
                     // no manifest; remove that file directly.
-                    string libraryFile = Path.Combine(installDir, libName + ".dll");
+                    string libraryFile = Path.Combine(installDir, DllFileNameFor(libName));
                     if (File.Exists(libraryFile))
                     {
                         File.Delete(libraryFile);
@@ -948,6 +950,21 @@ namespace Microsoft.SqlServer.CSharpExtension
             OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         private static readonly StringComparison s_pathComparison =
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        // Returns the on-disk file name for a raw-DLL install of `libName`.
+        // If the library was registered with a name that already ends in ".dll"
+        // (e.g. CREATE EXTERNAL LIBRARY [Scriptoria.dll]), we must not append
+        // a second ".dll" — that produced "Scriptoria.dll.dll" files that the
+        // CLR assembly resolver could not locate.
+        private static string DllFileNameFor(string libName)
+        {
+            if (!string.IsNullOrEmpty(libName) &&
+                libName.EndsWith(".dll", s_pathComparison))
+            {
+                return libName;
+            }
+            return libName + ".dll";
+        }
 
         // Rejects library names that could escape installDir when combined via Path.Combine.
         private static void ValidateLibraryName(string libName)
