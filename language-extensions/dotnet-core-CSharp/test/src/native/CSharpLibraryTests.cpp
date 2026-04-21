@@ -1219,4 +1219,81 @@ namespace ExtensionApiTest
 
         CleanupInstallDir(installDir);
     }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: UninstallRejectsPathTraversalLibNameTest
+    //
+    // Description:
+    //  UninstallExternalLibrary must reject libNames that contain path
+    //  separators or traversal segments before using them to build
+    //  manifestPath / libraryFile via Path.Combine. Without validation,
+    //  a malicious libName like "../foo" would resolve outside installDir
+    //  and allow unintended file reads/deletes.
+    //
+    TEST_F(CSharpExtensionApiTests, UninstallRejectsPathTraversalLibNameTest)
+    {
+        string installDir = CreateInstallDir();
+
+        // Create a sentinel file OUTSIDE installDir that uninstall must not touch.
+        fs::path sentinelDir = fs::path(installDir).parent_path();
+        fs::path sentinel = sentinelDir / "do-not-delete.manifest";
+        { std::ofstream os(sentinel.string()); os << "sentinel"; }
+        ASSERT_TRUE(fs::exists(sentinel));
+
+        // Attempt uninstall with a traversal libName.
+        SQLRETURN result = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "../do-not-delete", installDir);
+        EXPECT_EQ(result, SQL_ERROR) << "Uninstall must reject libName with traversal";
+        EXPECT_TRUE(fs::exists(sentinel)) << "Sentinel file outside installDir was deleted";
+
+        fs::remove(sentinel);
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AliasConflictDetectedBeforeExtractionTest
+    //
+    // Description:
+    //  If library A has already installed a file "shared.dll" at the root of
+    //  installDir, and library B (whose package contains DLLs but none named
+    //  "shared.*") is then installed with libName "shared", the install code
+    //  would normally create a "shared.dll" alias. That alias now collides
+    //  with A's file. Install must fail during the conflict-check phase
+    //  BEFORE any of B's content is written into installDir (no partial
+    //  state left behind).
+    //
+    TEST_F(CSharpExtensionApiTests, AliasConflictDetectedBeforeExtractionTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
+
+        string installDir = CreateInstallDir();
+
+        // Install library A normally.
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "libA", pkgA, installDir), SQL_SUCCESS);
+
+        // Plant a "shared.dll" file in installDir (simulates ownership by another library).
+        fs::path squatter = fs::path(installDir) / "shared.dll";
+        { std::ofstream os(squatter.string()); os << "squatter"; }
+        ASSERT_TRUE(fs::exists(squatter));
+
+        // Count files currently in installDir; install of B must not add any.
+        size_t fileCountBefore = 0;
+        for (auto &p : fs::recursive_directory_iterator(installDir)) if (fs::is_regular_file(p)) ++fileCountBefore;
+
+        // Install B with libName "shared" - it has no shared.* file, so install
+        // would create a "shared.dll" alias, which collides with squatter.
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "shared", pkgA, installDir);
+        EXPECT_EQ(result, SQL_ERROR) << "Alias conflict must be detected and install must fail";
+
+        // No B content should have been written.
+        size_t fileCountAfter = 0;
+        for (auto &p : fs::recursive_directory_iterator(installDir)) if (fs::is_regular_file(p)) ++fileCountAfter;
+        EXPECT_EQ(fileCountBefore, fileCountAfter)
+            << "Failed install left partial state in installDir";
+
+        CleanupInstallDir(installDir);
+    }
 }

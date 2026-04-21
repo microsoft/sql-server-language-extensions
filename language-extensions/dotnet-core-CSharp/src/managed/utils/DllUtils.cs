@@ -91,16 +91,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             else
             {
-                // Search for files matching the library name pattern (e.g. "regex.*")
-                if (!string.IsNullOrEmpty(privatePath))
-                {
-                    dllList.AddRange(Directory.GetFiles(privatePath, userLibName + ".*"));
-                }
-
-                if (!string.IsNullOrEmpty(publicPath))
-                {
-                    dllList.AddRange(Directory.GetFiles(publicPath, userLibName + ".*"));
-                }
+                // Callers may pass either a bare library name ("regex") or an explicit
+                // filename ("Foo.dll"). Try the exact name first so filenames with
+                // extensions resolve correctly; fall back to the "{name}.*" wildcard
+                // for bare names.
+                AddMatches(privatePath, userLibName, dllList);
+                AddMatches(publicPath, userLibName, dllList);
             }
 
             if (dllList.Count == 0)
@@ -109,6 +105,30 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             return dllList;
+        }
+
+        /// <summary>
+        /// Adds DLL matches for <paramref name="userLibName"/> under
+        /// <paramref name="searchPath"/>. Tries the exact name first (so callers
+        /// that pass "Foo.dll" resolve correctly) and falls back to the
+        /// "{name}.*" wildcard for bare names (so callers that pass "Foo"
+        /// still match "Foo.dll", "Foo.runtimeconfig.json", etc.).
+        /// </summary>
+        private static void AddMatches(string searchPath, string userLibName, List<string> dllList)
+        {
+            if (string.IsNullOrEmpty(searchPath) || !Directory.Exists(searchPath))
+            {
+                return;
+            }
+
+            string exactPath = Path.Combine(searchPath, userLibName);
+            if (File.Exists(exactPath))
+            {
+                dllList.Add(exactPath);
+                return;
+            }
+
+            dllList.AddRange(Directory.GetFiles(searchPath, userLibName + ".*"));
         }
 
         /// <summary>

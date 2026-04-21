@@ -755,6 +755,43 @@ namespace Microsoft.SqlServer.CSharpExtension
                     CollectRelativeFiles(tempFolder, "", extractedFiles);
                 }
 
+                // Determine whether we need a "{libName}.dll" alias so
+                // DllUtils.CreateDllList can discover the library. Examine the
+                // entire extracted tree (not just the top level) so packages
+                // laid out under e.g. lib/... do not generate a redundant alias
+                // when a DLL named "{libName}.dll" (or "{libName}.*") is already
+                // present deeper in the tree. If an alias IS needed, include it
+                // in extractedFiles now so CheckForConflicts fails BEFORE we
+                // start writing to installDir.
+                string aliasFileName = DllFileNameFor(libName);
+                string aliasSourceRelPath = null;
+                bool libNameAlreadyPresent = false;
+                foreach (string relPath in extractedFiles)
+                {
+                    string name = Path.GetFileName(relPath);
+                    if (name.StartsWith(libName + ".", s_pathComparison) ||
+                        name.Equals(aliasFileName, s_pathComparison))
+                    {
+                        libNameAlreadyPresent = true;
+                        break;
+                    }
+                }
+                if (!libNameAlreadyPresent)
+                {
+                    foreach (string relPath in extractedFiles)
+                    {
+                        if (Path.GetExtension(relPath).Equals(".dll", s_pathComparison))
+                        {
+                            aliasSourceRelPath = relPath;
+                            break;
+                        }
+                    }
+                    if (aliasSourceRelPath != null)
+                    {
+                        extractedFiles.Add(aliasFileName);
+                    }
+                }
+
                 CheckForConflicts(installDir, libName, extractedFiles, oldManifestEntries);
 
                 // All checks passed. Remove the previous version's files (if any), then
@@ -780,18 +817,15 @@ namespace Microsoft.SqlServer.CSharpExtension
                     }
                 }
 
-                // If no file in installDir matches "{libName}.*", copy the first .dll
-                // found as "{libName}.dll" so DllUtils.CreateDllList can discover it.
-                string aliasFileName = DllFileNameFor(libName);
-                if (Directory.GetFiles(installDir, libName + ".*").Length == 0 &&
-                    !File.Exists(Path.Combine(installDir, aliasFileName)))
+                // Create the alias file now that content is in place. The source
+                // was chosen and conflict-checked above.
+                if (aliasSourceRelPath != null)
                 {
-                    string[] dlls = Directory.GetFiles(installDir, "*.dll");
-                    if (dlls.Length > 0)
+                    string aliasSrc = Path.Combine(installDir, aliasSourceRelPath);
+                    string alias = Path.Combine(installDir, aliasFileName);
+                    if (File.Exists(aliasSrc))
                     {
-                        string alias = Path.Combine(installDir, aliasFileName);
-                        File.Copy(dlls[0], alias, false);
-                        extractedFiles.Add(aliasFileName);
+                        File.Copy(aliasSrc, alias, false);
                     }
                 }
 
@@ -856,6 +890,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                 string installDir = Interop.UTF8PtrToStr(libraryInstallDirectory, (ulong)libraryInstallDirectoryLength);
                 string libName = Interop.UTF8PtrToStr(libraryName, (ulong)libraryNameLength);
 
+                // Reject names containing path separators etc. before they are used
+                // to build manifestPath / libraryFile via Path.Combine. Without this,
+                // a malicious libName could resolve outside installDir.
+                ValidateLibraryName(libName);
+
                 if (Directory.Exists(installDir))
                 {
                     // Check for a manifest written during install that lists
@@ -912,7 +951,10 @@ namespace Microsoft.SqlServer.CSharpExtension
             foreach (string file in Directory.GetFiles(sourceDir))
             {
                 string destFile = Path.Combine(destDir, Path.GetFileName(file));
-                File.Copy(file, destFile, true);
+                // overwrite: false so that if filesystem state changed between the
+                // conflict check and here (TOCTOU), we fail loud rather than silently
+                // replacing a file belonging to another library.
+                File.Copy(file, destFile, false);
             }
 
             foreach (string dir in Directory.GetDirectories(sourceDir))
