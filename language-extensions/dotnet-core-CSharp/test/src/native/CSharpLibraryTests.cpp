@@ -1178,4 +1178,45 @@ namespace ExtensionApiTest
 
         CleanupInstallDir(installDir);
     }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: InstallRawDllWithDllSuffixedLibNameTest
+    //
+    // Description:
+    //  Regression test for the double-".dll" bug. When a caller invokes
+    //  CREATE EXTERNAL LIBRARY [foo.dll] (i.e. the registered library name
+    //  already ends in ".dll") with raw-DLL CONTENT, the install code must
+    //  write the file as "foo.dll" — NOT "foo.dll.dll". The CLR assembly
+    //  resolver looks up assemblies by simple name and will not find
+    //  "foo.dll.dll" when asked to load "foo".
+    //
+    //  Symmetric behavior is required on uninstall: the file removed must
+    //  be "foo.dll", not "foo.dll.dll".
+    //
+    TEST_F(CSharpExtensionApiTests, InstallRawDllWithDllSuffixedLibNameTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        ASSERT_TRUE(fs::exists(packagePath)) << "Test package not found: " << packagePath;
+
+        string installDir = CreateInstallDir();
+
+        // libName already ends in ".dll" — must NOT get a second ".dll" appended.
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "rawdllpackage.dll", packagePath, installDir), SQL_SUCCESS);
+
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "rawdllpackage.dll"))
+            << "Raw DLL not found at expected single-.dll path";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawdllpackage.dll.dll"))
+            << "Raw DLL incorrectly written with double-.dll extension; "
+               "CLR assembly resolver would fail to locate it.";
+
+        // Uninstall must also use the single-.dll path.
+        ASSERT_EQ(CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "rawdllpackage.dll", installDir), SQL_SUCCESS);
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawdllpackage.dll"))
+            << "Raw DLL not removed by uninstall";
+
+        CleanupInstallDir(installDir);
+    }
 }
