@@ -353,12 +353,30 @@ static void SetLibraryError(
     SQLCHAR    **libraryError,
     SQLINTEGER *libraryErrorLength)
 {
+    // Guard against null out-parameters. The managed SetLibraryError
+    // (CSharpExtension.cs) does the same null-check; without it, a caller
+    // passing null libraryError / libraryErrorLength would dereference null
+    // and crash the host process.
+    if (libraryError == nullptr || libraryErrorLength == nullptr)
+    {
+        return;
+    }
+
     if (!errorString.empty())
     {
+        // Length excludes null terminator -- ExtHost adds +1 when copying
+        // (see Utf8ToNullTerminatedUtf16Le / strcpy_s in the host).
         *libraryErrorLength = static_cast<SQLINTEGER>(errorString.length());
         std::string *pError = new std::string(errorString);
         *libraryError = const_cast<SQLCHAR*>(
             reinterpret_cast<const SQLCHAR *>(pError->c_str()));
+    }
+    else
+    {
+        // Explicitly clear the out-parameters so callers that don't
+        // pre-initialize them see a well-defined "no error" state.
+        *libraryError = nullptr;
+        *libraryErrorLength = 0;
     }
 }
 

@@ -215,8 +215,14 @@ namespace ExtensionApiTest
             "testpackageA", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        EXPECT_TRUE(DirectoryHasFiles(installDir))
-            << "No files found in install directory after installation";
+        // Assert on the specific files we expect from the inner-zip
+        // contents rather than just "directory is non-empty" -- the weaker
+        // form passes even if the install extracts the wrong package or
+        // leaves stale files behind from a prior test run.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageA.dll"))
+            << "Expected testpackageA.dll not extracted from inner zip";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageA.txt"))
+            << "Expected testpackageA.txt not extracted from inner zip";
 
         CleanupInstallDir(installDir);
     }
@@ -371,6 +377,17 @@ namespace ExtensionApiTest
             }
         }
         EXPECT_TRUE(hasDll) << "DLL from second package not found after reinstall";
+
+        // Also verify the FIRST package's unique files were removed by the
+        // ALTER cleanup. Without these checks the test passes even if the
+        // manifest-based cleanup is broken (the second install just adds
+        // its own files alongside the stale ones).
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.dll"))
+            << "Stale testpackageA.dll left behind after reinstall";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.txt"))
+            << "Stale testpackageA.txt left behind after reinstall";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"))
+            << "Expected testpackageB.dll not present after reinstall";
 
         CleanupInstallDir(installDir);
     }
@@ -987,9 +1004,9 @@ namespace ExtensionApiTest
     // Name: UninstallNonZipLibraryTest
     //
     // Description:
-    //  When a raw DLL (non-ZIP) is installed, no manifest is written. Uninstall
-    //  must still remove the library file by its libName.dll path.
-    //  Exercises the File.Delete(libraryFile) branch in UninstallExternalLibrary.
+    //  Raw-DLL (non-ZIP) installs write a single-entry manifest tracking
+    //  "{libName}.dll" so that ALTER from raw->ZIP can clean up the prior
+    //  install. Uninstall must remove both the file and its manifest.
     //
     TEST_F(CSharpExtensionApiTests, UninstallNonZipLibraryTest)
     {
@@ -999,19 +1016,22 @@ namespace ExtensionApiTest
 
         string installDir = CreateInstallDir();
 
-        // Install the raw DLL as "rawlib" — no manifest should be written.
+        // Install the raw DLL as "rawlib" — manifest must be written so that
+        // ALTER scenarios can track ownership of the {libName}.dll file.
         ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
             "rawlib", rawDll, installDir), SQL_SUCCESS);
         ASSERT_TRUE(fs::exists(fs::path(installDir) / "rawlib.dll"));
-        ASSERT_FALSE(fs::exists(fs::path(installDir) / "rawlib.manifest"))
-            << "Raw-DLL install should not write a manifest";
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "rawlib.manifest"))
+            << "Raw-DLL install should write a single-entry manifest";
 
-        // Uninstall must still delete the libName.dll file.
+        // Uninstall must delete both the file and the manifest.
         SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
             "rawlib", installDir);
         EXPECT_EQ(r, SQL_SUCCESS);
         EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawlib.dll"))
             << "Raw library file not removed by uninstall";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "rawlib.manifest"))
+            << "Raw-DLL manifest file not removed by uninstall";
 
         CleanupInstallDir(installDir);
     }
@@ -1095,10 +1115,12 @@ namespace ExtensionApiTest
     // Name: AlterFromNonZipToZipTest
     //
     // Description:
-    //  ALTER EXTERNAL LIBRARY scenario where v1 was a raw DLL (no manifest)
-    //  and v2 is a ZIP package. Install code must handle the missing-manifest
-    //  case gracefully and complete the new install. The old lib file remains
-    //  until explicit uninstall — that matches sicongliu's baseline semantics.
+    //  ALTER EXTERNAL LIBRARY scenario where v1 was a raw DLL and v2 is a
+    //  ZIP package. Raw-DLL installs now write a manifest with one entry
+    //  ("{libName}.dll"), so the v2 ZIP install can detect and clean up the
+    //  v1 file before extracting. Without that manifest tracking, the ZIP
+    //  install would either silently overwrite v1's DLL or trip the alias
+    //  conflict check on the pre-existing "{libName}.dll".
     //
     TEST_F(CSharpExtensionApiTests, AlterFromNonZipToZipTest)
     {
@@ -1108,21 +1130,76 @@ namespace ExtensionApiTest
 
         string installDir = CreateInstallDir();
 
-        // v1: raw DLL install (no manifest created).
+        // v1: raw DLL install. The new behavior writes a manifest tracking
+        // the single "{libName}.dll" entry, so ALTER can clean it up below.
         ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
             "myLib", rawDll, installDir), SQL_SUCCESS);
         ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.dll"));
-        ASSERT_FALSE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"))
+            << "Raw-DLL install should write a manifest so ALTER can track it";
 
-        // v2: ZIP install of the same libName — must NOT crash on missing manifest.
+        // v2: ZIP install of the same libName. The pre-existing myLib.dll
+        // must NOT trip the alias conflict check -- it is tracked in v1's
+        // manifest as owned-by-previous and gets cleaned up first.
         SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
             "myLib", pkgB, installDir);
         EXPECT_EQ(r, SQL_SUCCESS)
-            << "ALTER from non-ZIP to ZIP should succeed even without prior manifest";
+            << "ALTER from non-ZIP to ZIP should succeed";
 
-        // v2's files must be present + v2 manifest must exist.
+        // v1's raw DLL should be gone (the alias for v2 may or may not be
+        // named myLib.dll depending on whether v2 contains testpackageB.dll
+        // and needs an alias). v2's content must be present.
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AlterFromZipToNonZipTest
+    //
+    // Description:
+    //  ALTER EXTERNAL LIBRARY scenario where v1 was a ZIP package and v2 is
+    //  a raw DLL with the same libName. The v1 manifest must be cleaned up
+    //  before v2 writes "{libName}.dll", and v2 must end up with its own
+    //  one-entry manifest. This is the inverse of AlterFromNonZipToZipTest.
+    //
+    TEST_F(CSharpExtensionApiTests, AlterFromZipToNonZipTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+
+        string installDir = CreateInstallDir();
+
+        // v1: install ZIP package B as "myLib". This drops testpackageB.dll,
+        // testpackageB.deps.json, an alias myLib.dll, and a myLib.manifest.
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", pkgB, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        // v2: raw-DLL install of the same libName.
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", rawDll, installDir);
+        EXPECT_EQ(r, SQL_SUCCESS)
+            << "ALTER from ZIP to non-ZIP should succeed";
+
+        // v1's ZIP-only files must be gone (cleaned up via v1's manifest
+        // before v2 was written).
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"))
+            << "Stale v1 deps.json left behind after ALTER zip->raw";
+
+        // v2's file must be present and its manifest must list exactly that file.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "myLib.manifest").string());
+        EXPECT_EQ(entries.size(), 1u) << "Raw-DLL manifest should list exactly one entry";
+        if (!entries.empty())
+        {
+            EXPECT_EQ(entries[0], "myLib.dll");
+        }
 
         CleanupInstallDir(installDir);
     }
@@ -1293,6 +1370,53 @@ namespace ExtensionApiTest
         for (auto &p : fs::recursive_directory_iterator(installDir)) if (fs::is_regular_file(p)) ++fileCountAfter;
         EXPECT_EQ(fileCountBefore, fileCountAfter)
             << "Failed install left partial state in installDir";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: RawDllInstallFailsIfForeignFileExistsTest
+    //
+    // Description:
+    //  Restores the pre-PR ExtHost CopyFileW(..., bFailIfExists=TRUE)
+    //  contract for raw-DLL installs. If "{libName}.dll" already exists in
+    //  installDir AND we cannot prove ownership via this library's manifest
+    //  (e.g. another library or an external process planted the file),
+    //  install must FAIL rather than silently overwrite. This prevents one
+    //  library from clobbering another's content in a shared install dir.
+    //
+    TEST_F(CSharpExtensionApiTests, RawDllInstallFailsIfForeignFileExistsTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        ASSERT_TRUE(fs::exists(rawDll));
+
+        string installDir = CreateInstallDir();
+
+        // Plant a foreign file at the target path with no matching manifest
+        // -- simulates ownership by another library or external tooling.
+        fs::path foreign = fs::path(installDir) / "owned.dll";
+        { std::ofstream os(foreign.string()); os << "FOREIGN-CONTENT"; }
+        ASSERT_TRUE(fs::exists(foreign));
+
+        // Install must FAIL rather than overwrite the foreign file.
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "owned", rawDll, installDir);
+        EXPECT_EQ(r, SQL_ERROR)
+            << "Raw-DLL install must fail when {libName}.dll already exists "
+               "and is not owned by this library";
+
+        // Foreign file content must be byte-for-byte unchanged.
+        ASSERT_TRUE(fs::exists(foreign));
+        std::ifstream ifs(foreign.string());
+        std::string contents((std::istreambuf_iterator<char>(ifs)),
+                             std::istreambuf_iterator<char>());
+        EXPECT_EQ(contents, "FOREIGN-CONTENT")
+            << "Foreign file was overwritten by failed raw-DLL install";
+
+        // No manifest should have been written for the failed install.
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "owned.manifest"))
+            << "Manifest leaked from a failed raw-DLL install";
 
         CleanupInstallDir(installDir);
     }

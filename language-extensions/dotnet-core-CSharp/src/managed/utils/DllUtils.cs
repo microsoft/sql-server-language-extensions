@@ -128,7 +128,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                 return;
             }
 
-            dllList.AddRange(Directory.GetFiles(searchPath, userLibName + ".*"));
+            // The "{name}.*" wildcard matches non-DLL siblings too
+            // ("{name}.runtimeconfig.json", "{name}.deps.json", etc.). Only
+            // .dll files are valid Assembly.LoadFrom targets, so filter the
+            // wildcard match to avoid spamming the error log when the loader
+            // tries to load a JSON file as an assembly.
+            dllList.AddRange(Directory.GetFiles(searchPath, userLibName + ".*")
+                .Where(f => f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)));
         }
 
         /// <summary>
