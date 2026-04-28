@@ -12,11 +12,12 @@
 //
 //*********************************************************************
 #include "CSharpExtensionApiTests.h"
+#include <filesystem>
 #include <fstream>
 #include <vector>
 
 using namespace std;
-namespace fs = experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace ExtensionApiTest
 {
@@ -121,7 +122,7 @@ namespace ExtensionApiTest
 
     // Helper: check if directory has any files or subdirectories
     //
-    static bool DirectoryHasFiles(const string &dir)
+    static bool DoesDirectoryHaveFiles(const string &dir)
     {
         bool hasFiles = false;
 
@@ -232,7 +233,8 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Tests installing an outer zip that contains DLLs directly (no inner zip).
-    //  Verifies that DLLs are copied to the install directory.
+    //  Verifies that the specific expected DLLs are extracted to the install
+    //  directory.
     //
     TEST_F(CSharpExtensionApiTests, InstallZipContainingDllsTest)
     {
@@ -246,30 +248,34 @@ namespace ExtensionApiTest
             "testpackageB", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        // Verify that DLL files were copied to the install directory
-        bool hasDll = false;
-        for (const auto &entry : fs::directory_iterator(installDir))
-        {
-            if (entry.path().extension() == ".dll")
-            {
-                hasDll = true;
-                break;
-            }
-        }
-        EXPECT_TRUE(hasDll) << "No DLL files found in install directory after installation";
+        // Assert on the specific files we expect from package B's contents.
+        // "any DLL exists" is too weak: it would pass even if the install
+        // extracted the wrong package or a stale file from a prior test
+        // survived.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"))
+            << "Expected testpackageB.dll not extracted";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"))
+            << "Expected testpackageB.deps.json not extracted";
 
         CleanupInstallDir(installDir);
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: InstallInvalidZipTest
+    // Name: InstallNonZipFileAsRawDllTest
     //
     // Description:
-    //  Tests that installing a file with .zip extension that is not actually
-    //  a valid ZIP (magic bytes are not PK) copies it to the install directory
-    //  as a raw file named after the library and returns SQL_SUCCESS.
+    //  Tests that installing a file with .zip extension that is NOT actually
+    //  a valid ZIP (magic bytes are not 'PK') falls through to the raw-DLL
+    //  install path: the file is copied to the install directory as
+    //  "{libName}.dll" and SQL_SUCCESS is returned. This pins the contract
+    //  that IsZipFile detects content (not file extension).
     //
-    TEST_F(CSharpExtensionApiTests, InstallInvalidZipTest)
+    //  NOTE: this does NOT exercise corrupt-ZIP handling. A genuinely
+    //  invalid ZIP would start with 'PK' but be malformed inside, causing
+    //  ZipFile.ExtractToDirectory to throw on the ZIP path. We have no
+    //  fixture for that case today.
+    //
+    TEST_F(CSharpExtensionApiTests, InstallNonZipFileAsRawDllTest)
     {
         string packagesPath = GetPackagesPath();
         string packagePath = (fs::path(packagesPath) / "bad-package-ZIP.zip").string();
@@ -326,7 +332,7 @@ namespace ExtensionApiTest
         SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
             "testpackageB", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
-        EXPECT_TRUE(DirectoryHasFiles(installDir)) << "No files found after installation";
+        EXPECT_TRUE(DoesDirectoryHaveFiles(installDir)) << "No files found after installation";
 
         // Uninstall
         result = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
@@ -334,7 +340,7 @@ namespace ExtensionApiTest
         EXPECT_EQ(result, SQL_SUCCESS);
 
         // Verify directory is empty
-        EXPECT_FALSE(DirectoryHasFiles(installDir)) << "Files still present after uninstall";
+        EXPECT_FALSE(DoesDirectoryHaveFiles(installDir)) << "Files still present after uninstall";
 
         CleanupInstallDir(installDir);
     }
@@ -366,22 +372,9 @@ namespace ExtensionApiTest
             "testpackage", packagePathB, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        // Verify the install directory has files from the second package
-        bool hasDll = false;
-        for (const auto &entry : fs::directory_iterator(installDir))
-        {
-            if (entry.path().extension() == ".dll")
-            {
-                hasDll = true;
-                break;
-            }
-        }
-        EXPECT_TRUE(hasDll) << "DLL from second package not found after reinstall";
-
-        // Also verify the FIRST package's unique files were removed by the
-        // ALTER cleanup. Without these checks the test passes even if the
-        // manifest-based cleanup is broken (the second install just adds
-        // its own files alongside the stale ones).
+        // Verify v1's unique files were removed by the manifest cleanup,
+        // and v2's expected file is present. The earlier "any .dll exists"
+        // loop is redundant given these explicit checks.
         EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.dll"))
             << "Stale testpackageA.dll left behind after reinstall";
         EXPECT_FALSE(fs::exists(fs::path(installDir) / "testpackageA.txt"))
@@ -412,6 +405,57 @@ namespace ExtensionApiTest
         SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
             "emptypackage", packagePath, installDir);
         EXPECT_EQ(result, SQL_ERROR);
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AlterToEmptyDirsZipPreservesV1Test
+    //
+    // Description:
+    //  Regression test for the silent-data-loss scenario on ALTER. A ZIP
+    //  containing only directory entries (no file entries) used to slip
+    //  past the empty-archive guard because Directory.GetDirectories on
+    //  the extracted tempFolder is non-empty. CollectRelativeFiles then
+    //  returns 0 entries; CleanupManifest deletes the previous version's
+    //  content; nothing is copied; and the manifest write is skipped
+    //  because it is gated on extractedFiles.Count > 0. The library would
+    //  end up GONE with no replacement and no manifest.
+    //
+    //  After the fix, install fails with SQL_ERROR before any cleanup
+    //  runs, so v1 must remain byte-for-byte intact.
+    //
+    TEST_F(CSharpExtensionApiTests, AlterToEmptyDirsZipPreservesV1Test)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        string emptyDirsZip = (fs::path(packagesPath) / "testpackageI-EMPTYDIRS.zip").string();
+        ASSERT_TRUE(fs::exists(pkgB));
+        ASSERT_TRUE(fs::exists(emptyDirsZip));
+
+        string installDir = CreateInstallDir();
+
+        // v1: install a real ZIP package as "myLib".
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", pkgB, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        // v2: attempt ALTER with a ZIP whose only entries are empty
+        // directories. Must FAIL -- and v1 must survive intact.
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", emptyDirsZip, installDir);
+        EXPECT_EQ(r, SQL_ERROR)
+            << "ALTER to empty-dirs ZIP must fail rather than silently delete v1";
+
+        // v1's content must be untouched.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"))
+            << "v1's testpackageB.dll was deleted by failed ALTER";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"))
+            << "v1's testpackageB.deps.json was deleted by failed ALTER";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"))
+            << "v1's manifest was deleted by failed ALTER";
 
         CleanupInstallDir(installDir);
     }
@@ -503,8 +547,14 @@ namespace ExtensionApiTest
     // Name: InstallZipWithManyFilesTest
     //
     // Description:
-    //  Tests that installing a zip containing many files (50 DLLs) extracts
-    //  all of them correctly.
+    //  Tests that installing a ZIP containing many files extracts all of
+    //  them correctly AND that the alias is created on top.
+    //
+    //  Package contents: testpackageG-MANYFILES.zip contains exactly 50
+    //  DLLs (Module1.dll .. Module50.dll) and no other files. None of
+    //  them matches "manyfilespackage.*", so install must clone the first
+    //  DLL as an alias named "manyfilespackage.dll". The DLL count in
+    //  installDir is therefore 50 (extracted) + 1 (alias) = 51.
     //
     TEST_F(CSharpExtensionApiTests, InstallZipWithManyFilesTest)
     {
@@ -518,16 +568,17 @@ namespace ExtensionApiTest
             "manyfilespackage", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        // Count extracted DLL files
+        // Count DLL files in installDir. 50 from the package + 1 alias = 51.
         int dllCount = 0;
-        for (const auto &entry : fs::directory_iterator(installDir))
+        for (const fs::directory_entry &entry : fs::directory_iterator(installDir))
         {
             if (entry.path().extension() == ".dll")
             {
                 dllCount++;
             }
         }
-        EXPECT_EQ(dllCount, 50) << "Expected 50 extracted DLL files, found " << dllCount;
+        EXPECT_EQ(dllCount, 51)
+            << "Expected 51 DLL files (50 extracted + 1 alias), found " << dllCount;
 
         // Verify the alias exists so DllUtils can discover the library by name.
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "manyfilespackage.dll"));
@@ -661,16 +712,18 @@ namespace ExtensionApiTest
         vector<string> entries = ReadManifest(manifestPath);
         EXPECT_GE(entries.size(), 2u) << "Manifest should list at least 2 extracted files";
 
-        // Manifest should contain the actual extracted file names
+        // Manifest entries are EXACT relative paths -- assert equality, not
+        // substring containment. Substring match would accept "x.dll",
+        // "testpackageB.dll.bak", etc. and miss real bugs.
         bool hasDll = false;
         bool hasDeps = false;
-        for (const auto &e : entries)
+        for (const string &e : entries)
         {
-            if (e.find("testpackageB.dll") != string::npos) hasDll = true;
-            if (e.find("testpackageB.deps.json") != string::npos) hasDeps = true;
+            if (e == "testpackageB.dll")       { hasDll  = true; }
+            if (e == "testpackageB.deps.json") { hasDeps = true; }
         }
-        EXPECT_TRUE(hasDll) << "Manifest missing testpackageB.dll";
-        EXPECT_TRUE(hasDeps) << "Manifest missing testpackageB.deps.json";
+        EXPECT_TRUE(hasDll)  << "Manifest missing exact entry 'testpackageB.dll'";
+        EXPECT_TRUE(hasDeps) << "Manifest missing exact entry 'testpackageB.deps.json'";
 
         CleanupInstallDir(installDir);
     }
@@ -742,16 +795,42 @@ namespace ExtensionApiTest
             "myAlias", packagePath, installDir);
         EXPECT_EQ(result, SQL_SUCCESS);
 
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myAlias.dll"))
+        fs::path aliasFile = fs::path(installDir) / "myAlias.dll";
+        fs::path sourceDll = fs::path(installDir) / "testpackageB.dll";
+        ASSERT_TRUE(fs::exists(aliasFile))
             << "Expected alias file 'myAlias.dll' not found";
+        ASSERT_TRUE(fs::exists(sourceDll))
+            << "Expected source file 'testpackageB.dll' not extracted";
+
+        // Alias must be a byte-for-byte copy of the source DLL (the first
+        // .dll discovered in the package). A zero-length alias, a copy of
+        // the wrong file, or a partial write would all silently pass the
+        // "file exists" check above without this content check.
+        EXPECT_EQ(fs::file_size(aliasFile), fs::file_size(sourceDll))
+            << "Alias file size differs from source DLL";
+
+        std::ifstream aliasStream(aliasFile.string(), std::ios::binary);
+        std::ifstream sourceStream(sourceDll.string(), std::ios::binary);
+        std::string aliasContents(
+            (std::istreambuf_iterator<char>(aliasStream)),
+             std::istreambuf_iterator<char>());
+        std::string sourceContents(
+            (std::istreambuf_iterator<char>(sourceStream)),
+             std::istreambuf_iterator<char>());
+        EXPECT_EQ(aliasContents, sourceContents)
+            << "Alias file contents differ from source DLL";
 
         // Manifest should include the alias.
         vector<string> entries = ReadManifest(
             (fs::path(installDir) / "myAlias.manifest").string());
         bool hasAlias = false;
-        for (const auto &e : entries)
+        for (const string &e : entries)
         {
-            if (e == "myAlias.dll") { hasAlias = true; break; }
+            if (e == "myAlias.dll")
+            {
+                hasAlias = true;
+                break;
+            }
         }
         EXPECT_TRUE(hasAlias) << "Manifest missing alias entry 'myAlias.dll'";
 
@@ -946,10 +1025,16 @@ namespace ExtensionApiTest
         vector<string> entries = ReadManifest(
             (fs::path(installDir) / "myLib.manifest").string());
         bool hasA = false, hasB = false;
-        for (const auto &e : entries)
+        for (const string &e : entries)
         {
-            if (e.find("testpackageA") != string::npos) hasA = true;
-            if (e.find("testpackageB") != string::npos) hasB = true;
+            if (e.find("testpackageA") != string::npos)
+            {
+                hasA = true;
+            }
+            if (e.find("testpackageB") != string::npos)
+            {
+                hasB = true;
+            }
         }
         EXPECT_FALSE(hasA) << "Manifest still references v1 files";
         EXPECT_TRUE(hasB) << "Manifest missing v2 files";
@@ -973,10 +1058,15 @@ namespace ExtensionApiTest
         string msg;
 
         // Failure mode 1: non-existent source file
+        string missingPath = "C:\\does\\not\\exist.zip";
         SQLRETURN r = CallInstallCaptureError(sm_installExternalLibraryFuncPtr,
-            "missing", "C:\\does\\not\\exist.zip", installDir, msg);
+            "missing", missingPath, installDir, msg);
         EXPECT_EQ(r, SQL_ERROR);
         EXPECT_FALSE(msg.empty()) << "No error message populated for missing file";
+        // Message should mention the path that was not found, so the user
+        // can fix the input rather than guess.
+        EXPECT_NE(msg.find("exist.zip"), string::npos)
+            << "Missing-file message should reference the path. Got: " << msg;
 
         // Failure mode 2: zip-slip attack
         string zipSlip = (fs::path(packagesPath) / "testpackageH-ZIPSLIP.zip").string();
@@ -984,6 +1074,11 @@ namespace ExtensionApiTest
             "slip", zipSlip, installDir, msg);
         EXPECT_EQ(r, SQL_ERROR);
         EXPECT_FALSE(msg.empty()) << "No error message populated for zip-slip";
+        // Message should describe the attack class so the user (or a security
+        // log scanner) can identify it. ValidateRelativePath throws with
+        // "contains entry with invalid path" -- match a stable substring.
+        EXPECT_NE(msg.find("invalid path"), string::npos)
+            << "Zip-slip message should describe the rejection. Got: " << msg;
 
         // Failure mode 3: file-level conflict
         string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
@@ -1146,11 +1241,33 @@ namespace ExtensionApiTest
         EXPECT_EQ(r, SQL_SUCCESS)
             << "ALTER from non-ZIP to ZIP should succeed";
 
-        // v1's raw DLL should be gone (the alias for v2 may or may not be
-        // named myLib.dll depending on whether v2 contains testpackageB.dll
-        // and needs an alias). v2's content must be present.
+        // v2's content must be present + manifest exists.
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.dll"));
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "testpackageB.deps.json"));
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        // v1's raw DLL bytes must be GONE. Both the file and the alias for
+        // v2 are named myLib.dll, so a broken cleanup (overwrite-instead-of-
+        // clean-then-install) would be masked by mere existence of the file.
+        // Compare bytes against testpackageB.dll: if the alias was created
+        // correctly from v2's content, it must equal the source DLL.
+        fs::path myLibDll = fs::path(installDir) / "myLib.dll";
+        fs::path sourceDll = fs::path(installDir) / "testpackageB.dll";
+        ASSERT_TRUE(fs::exists(myLibDll))
+            << "v2's alias myLib.dll missing";
+        EXPECT_EQ(fs::file_size(myLibDll), fs::file_size(sourceDll))
+            << "myLib.dll size differs from v2's source -- likely still v1's bytes";
+
+        std::ifstream myLibStream(myLibDll.string(), std::ios::binary);
+        std::ifstream sourceStream(sourceDll.string(), std::ios::binary);
+        std::string myLibBytes(
+            (std::istreambuf_iterator<char>(myLibStream)),
+             std::istreambuf_iterator<char>());
+        std::string sourceBytes(
+            (std::istreambuf_iterator<char>(sourceStream)),
+             std::istreambuf_iterator<char>());
+        EXPECT_EQ(myLibBytes, sourceBytes)
+            << "myLib.dll content differs from v2's source -- v1's raw DLL was not cleaned up";
 
         CleanupInstallDir(installDir);
     }
@@ -1314,7 +1431,9 @@ namespace ExtensionApiTest
         // Create a sentinel file OUTSIDE installDir that uninstall must not touch.
         fs::path sentinelDir = fs::path(installDir).parent_path();
         fs::path sentinel = sentinelDir / "do-not-delete.manifest";
-        { std::ofstream os(sentinel.string()); os << "sentinel"; }
+        std::ofstream sentinelStream(sentinel.string());
+        sentinelStream << "sentinel";
+        sentinelStream.close();
         ASSERT_TRUE(fs::exists(sentinel));
 
         // Attempt uninstall with a traversal libName.
@@ -1324,6 +1443,39 @@ namespace ExtensionApiTest
         EXPECT_TRUE(fs::exists(sentinel)) << "Sentinel file outside installDir was deleted";
 
         fs::remove(sentinel);
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: InstallRejectsExtensionOnlyLibNameTest
+    //
+    // Description:
+    //  ValidateLibraryName must reject libNames that are only an extension
+    //  (e.g. ".dll"). Without this check, DllFileNameFor(".dll") returns
+    //  ".dll", producing hidden dotfiles like "{installDir}/.dll" and
+    //  "{installDir}/.dll.manifest" that are opaque on Windows and hidden
+    //  on Linux.
+    //
+    TEST_F(CSharpExtensionApiTests, InstallRejectsExtensionOnlyLibNameTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        ASSERT_TRUE(fs::exists(rawDll));
+
+        string installDir = CreateInstallDir();
+
+        // libName is just an extension -- no stem. Must be rejected before
+        // any filesystem operation.
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            ".dll", rawDll, installDir);
+        EXPECT_EQ(result, SQL_ERROR) << "Install must reject extension-only libName";
+
+        // No file should have been created at "installDir/.dll" or its manifest.
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / ".dll"))
+            << "Hidden dotfile created from extension-only libName";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / ".dll.manifest"))
+            << "Hidden dotfile manifest created from extension-only libName";
+
         CleanupInstallDir(installDir);
     }
 
@@ -1352,12 +1504,20 @@ namespace ExtensionApiTest
 
         // Plant a "shared.dll" file in installDir (simulates ownership by another library).
         fs::path squatter = fs::path(installDir) / "shared.dll";
-        { std::ofstream os(squatter.string()); os << "squatter"; }
+        std::ofstream squatterStream(squatter.string());
+        squatterStream << "squatter";
+        squatterStream.close();
         ASSERT_TRUE(fs::exists(squatter));
 
         // Count files currently in installDir; install of B must not add any.
         size_t fileCountBefore = 0;
-        for (auto &p : fs::recursive_directory_iterator(installDir)) if (fs::is_regular_file(p)) ++fileCountBefore;
+        for (const fs::directory_entry &p : fs::recursive_directory_iterator(installDir))
+        {
+            if (fs::is_regular_file(p))
+            {
+                ++fileCountBefore;
+            }
+        }
 
         // Install B with libName "shared" - it has no shared.* file, so install
         // would create a "shared.dll" alias, which collides with squatter.
@@ -1367,7 +1527,13 @@ namespace ExtensionApiTest
 
         // No B content should have been written.
         size_t fileCountAfter = 0;
-        for (auto &p : fs::recursive_directory_iterator(installDir)) if (fs::is_regular_file(p)) ++fileCountAfter;
+        for (const fs::directory_entry &p : fs::recursive_directory_iterator(installDir))
+        {
+            if (fs::is_regular_file(p))
+            {
+                ++fileCountAfter;
+            }
+        }
         EXPECT_EQ(fileCountBefore, fileCountAfter)
             << "Failed install left partial state in installDir";
 
@@ -1396,7 +1562,9 @@ namespace ExtensionApiTest
         // Plant a foreign file at the target path with no matching manifest
         // -- simulates ownership by another library or external tooling.
         fs::path foreign = fs::path(installDir) / "owned.dll";
-        { std::ofstream os(foreign.string()); os << "FOREIGN-CONTENT"; }
+        std::ofstream foreignStream(foreign.string());
+        foreignStream << "FOREIGN-CONTENT";
+        foreignStream.close();
         ASSERT_TRUE(fs::exists(foreign));
 
         // Install must FAIL rather than overwrite the foreign file.
@@ -1417,6 +1585,256 @@ namespace ExtensionApiTest
         // No manifest should have been written for the failed install.
         EXPECT_FALSE(fs::exists(fs::path(installDir) / "owned.manifest"))
             << "Manifest leaked from a failed raw-DLL install";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AlterFromNonZipToNonZipTest
+    //
+    // Description:
+    //  ALTER EXTERNAL LIBRARY scenario where both v1 and v2 are raw DLLs
+    //  with the same libName. v1 writes a single-entry manifest; v2 must
+    //  see that manifest, treat the existing "{libName}.dll" as
+    //  owned-by-previous, clean it up, then copy v2's bytes into place.
+    //  Completes the ALTER coverage matrix (ZIP->ZIP, raw->ZIP, ZIP->raw,
+    //  and now raw->raw).
+    //
+    TEST_F(CSharpExtensionApiTests, AlterFromNonZipToNonZipTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        ASSERT_TRUE(fs::exists(rawDll));
+
+        string installDir = CreateInstallDir();
+
+        // v1: raw DLL install. Writes myLib.dll plus myLib.manifest.
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", rawDll, installDir), SQL_SUCCESS);
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+
+        // v2: raw DLL install of the same libName (same source bytes is fine
+        // -- the test exercises the manifest cleanup + re-install path).
+        SQLRETURN r = CallInstall(sm_installExternalLibraryFuncPtr,
+            "myLib", rawDll, installDir);
+        EXPECT_EQ(r, SQL_SUCCESS) << "ALTER raw->raw should succeed";
+
+        // The file and manifest must still be present, and the manifest
+        // should still contain exactly one entry (no duplication from a
+        // missed cleanup of the previous manifest).
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "myLib.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "myLib.manifest"));
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "myLib.manifest").string());
+        EXPECT_EQ(entries.size(), 1u)
+            << "Raw->raw ALTER must not duplicate manifest entries";
+        if (!entries.empty())
+        {
+            EXPECT_EQ(entries[0], "myLib.dll");
+        }
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: InstallRejectsInvalidLibNameTest
+    //
+    // Description:
+    //  ValidateLibraryName must reject all of the following on the install
+    //  side (uninstall is covered separately by
+    //  UninstallRejectsPathTraversalLibNameTest):
+    //   - empty string
+    //   - path-traversal segment (".." resolved against installDir)
+    //   - embedded null character
+    //   - absolute path
+    //   - extension-only (covered also by InstallRejectsExtensionOnlyLibNameTest)
+    //  A regression in ValidateLibraryName must trip at least one of these
+    //  cases.
+    //
+    TEST_F(CSharpExtensionApiTests, InstallRejectsInvalidLibNameTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string rawDll = (fs::path(packagesPath) / "testpackageE-RAWDLL.dll").string();
+        ASSERT_TRUE(fs::exists(rawDll));
+
+        struct Case
+        {
+            string libName;
+            const char *label;
+        };
+        // Note: "foo\0bar" must be constructed via the (data, length) ctor
+        // so the embedded NUL survives. CallInstall forwards libName.length().
+        Case cases[] = {
+            { string(""),                                 "empty" },
+            { string("../escape"),                        "path-traversal" },
+            { string("foo\0bar", 7),                      "null-character" },
+#ifdef _WIN32
+            { string("C:\\Windows\\foo"),                 "absolute-path-windows" },
+#else
+            { string("/etc/foo"),                         "absolute-path-posix" },
+#endif
+            { string(".dll"),                             "extension-only" },
+        };
+
+        for (const Case &c : cases)
+        {
+            string installDir = CreateInstallDir();
+
+            SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+                c.libName, rawDll, installDir);
+            EXPECT_EQ(result, SQL_ERROR)
+                << "ValidateLibraryName should reject case: " << c.label;
+
+            CleanupInstallDir(installDir);
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: InstallZipWithDllSuffixedLibNameTest
+    //
+    // Description:
+    //  Symmetric coverage with InstallRawDllWithDllSuffixedLibNameTest. When
+    //  CREATE EXTERNAL LIBRARY [foo.dll] is paired with a ZIP package whose
+    //  contents do NOT include a "foo.dll" file at the root, install must
+    //  create a single "foo.dll" alias (NOT "foo.dll.dll") and the alias
+    //  must be tracked in the manifest as "foo.dll".
+    //
+    TEST_F(CSharpExtensionApiTests, InstallZipWithDllSuffixedLibNameTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgB = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_TRUE(fs::exists(pkgB));
+
+        string installDir = CreateInstallDir();
+
+        // libName ends in .dll. The package contains testpackageB.dll +
+        // testpackageB.deps.json -- nothing matching "foo.*" -- so the
+        // install code must create an alias.
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "foo.dll", pkgB, installDir), SQL_SUCCESS);
+
+        // Single .dll suffix -- not "foo.dll.dll".
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "foo.dll"))
+            << "Alias not created at expected single-.dll path";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "foo.dll.dll"))
+            << "Alias incorrectly written with double-.dll extension";
+
+        // Manifest tracks the alias under its single-.dll name.
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "foo.dll.manifest"));
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "foo.dll.manifest").string());
+        bool aliasInManifest = false;
+        for (const string &e : entries)
+        {
+            if (e == "foo.dll")
+            {
+                aliasInManifest = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(aliasInManifest)
+            << "Manifest must list the alias under its single-.dll name";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: UninstallWithMissingInstallDirTest
+    //
+    // Description:
+    //  Uninstall must succeed (no-op) when installDir does not exist on
+    //  disk at all. The Directory.Exists guard in UninstallExternalLibrary
+    //  short-circuits manifest cleanup; this test pins that contract so a
+    //  future change can't accidentally throw on a missing directory.
+    //  Distinct from UninstallNonExistentLibraryTest which creates the
+    //  installDir first.
+    //
+    TEST_F(CSharpExtensionApiTests, UninstallWithMissingInstallDirTest)
+    {
+        // Construct a path that does NOT exist. Use a sibling of the
+        // standard testInstallLibs path so we know the parent directory
+        // is writable but the target itself is absent.
+        char path[MAX_PATH + 1] = { 0 };
+        GetModuleFileName(NULL, path, MAX_PATH);
+        fs::path missing = fs::path(path).parent_path() / "testInstallLibs-missing";
+        if (fs::exists(missing))
+        {
+            fs::remove_all(missing);
+        }
+        ASSERT_FALSE(fs::exists(missing))
+            << "Test setup error: chosen installDir must not exist";
+
+        SQLRETURN r = CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "anything", missing.string());
+        EXPECT_EQ(r, SQL_SUCCESS)
+            << "Uninstall against a missing installDir must succeed (no-op)";
+
+        // Should NOT have created the directory as a side effect.
+        EXPECT_FALSE(fs::exists(missing))
+            << "Uninstall must not create installDir";
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: UninstallPreservesSharedNestedDirsTest
+    //
+    // Description:
+    //  Two libraries can share a nested parent directory (e.g. both contribute
+    //  files under "lib/net8.0/"). Uninstalling one must leave the other's
+    //  files AND the shared parent directory itself intact.
+    //
+    //  Library 1 = testpackageD-NESTED.zip  -> lib/net8.0/MyLib.dll, runtimes/win-x64/native.dll, MyLib.deps.json
+    //  Library 2 = testpackageJ-NESTED2.zip -> lib/net8.0/Other.dll, Other.deps.json
+    //
+    //  After installing both: lib/net8.0/ contains MyLib.dll AND Other.dll.
+    //  After uninstalling library 1: lib/net8.0/Other.dll AND lib/net8.0/
+    //  AND lib/ must all still exist.
+    //
+    TEST_F(CSharpExtensionApiTests, UninstallPreservesSharedNestedDirsTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string pkgD = (fs::path(packagesPath) / "testpackageD-NESTED.zip").string();
+        string pkgJ = (fs::path(packagesPath) / "testpackageJ-NESTED2.zip").string();
+        ASSERT_TRUE(fs::exists(pkgD));
+        ASSERT_TRUE(fs::exists(pkgJ));
+
+        string installDir = CreateInstallDir();
+
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib1", pkgD, installDir), SQL_SUCCESS);
+        ASSERT_EQ(CallInstall(sm_installExternalLibraryFuncPtr,
+            "lib2", pkgJ, installDir), SQL_SUCCESS);
+
+        // Pre-uninstall sanity: both libraries' files coexist in lib/net8.0/.
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "lib" / "net8.0" / "MyLib.dll"));
+        ASSERT_TRUE(fs::exists(fs::path(installDir) / "lib" / "net8.0" / "Other.dll"));
+
+        // Uninstall library 1.
+        ASSERT_EQ(CallUninstall(sm_uninstallExternalLibraryFuncPtr,
+            "lib1", installDir), SQL_SUCCESS);
+
+        // Library 1's unique files must be gone.
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "lib" / "net8.0" / "MyLib.dll"))
+            << "lib1's MyLib.dll leaked after uninstall";
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "MyLib.deps.json"))
+            << "lib1's MyLib.deps.json leaked after uninstall";
+
+        // Library 2's files must be untouched.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib" / "net8.0" / "Other.dll"))
+            << "lib2's Other.dll was wrongly removed by lib1's uninstall";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "Other.deps.json"))
+            << "lib2's Other.deps.json was wrongly removed by lib1's uninstall";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib2.manifest"))
+            << "lib2's manifest was wrongly removed by lib1's uninstall";
+
+        // The shared parent directory MUST still exist (lib2 still has
+        // content there). Empty-dir cleanup must only fire on dirs that
+        // become empty, not on dirs that still have content from another
+        // library.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib" / "net8.0"))
+            << "Shared parent directory lib/net8.0/ wrongly removed by lib1's uninstall";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "lib"))
+            << "Shared parent directory lib/ wrongly removed by lib1's uninstall";
 
         CleanupInstallDir(installDir);
     }

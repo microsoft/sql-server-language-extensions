@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -48,6 +49,28 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// PARAMETERS value provided during CREATE EXTERNAL LANGUAGE or ALTER EXTERNAL LANGUAGE.
         /// </summary>
         private static string _languageParams;
+
+        /// <summary>
+        /// Case-sensitivity comparer matching the host OS's filesystem
+        /// semantics. Used for set keys that contain on-disk file paths.
+        /// </summary>
+        private static readonly StringComparer s_pathComparer =
+            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+        /// <summary>
+        /// Case-sensitivity rule matching the host OS's filesystem semantics.
+        /// Used for string-comparison APIs (StartsWith / EndsWith / Equals)
+        /// that operate on on-disk file paths.
+        /// </summary>
+        private static readonly StringComparison s_pathComparison =
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        /// <summary>
+        /// Sleep interval (in milliseconds) between attempts to acquire the
+        /// per-installDir install lock when another process holds it. See
+        /// <see cref="AcquireInstallLock"/>.
+        /// </summary>
+        private const int s_lockRetryDelayMs = 100;
 
         /// <summary>
         /// This delegate declares the delegate type of Init.
@@ -657,9 +680,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// This method implements InstallExternalLibrary API.
         /// Installs an external library to the specified directory.
-        /// The library file is expected to be a zip. If it contains an inner zip,
-        /// that zip is extracted to the install directory. Otherwise, all files
-        /// are copied directly.
+        /// The library file MAY be a ZIP archive (with optional inner ZIP and
+        /// arbitrary nested file tree) OR a raw DLL. Raw-DLL support matches
+        /// the pre-PR ExtHost behavior: the file is copied as "{libName}.dll".
+        /// ZIP support is the new capability added by this PR; it allows
+        /// libraries to ship multiple DLLs, runtime config, or supporting
+        /// files in a single archive.
         /// </summary>
         /// <remarks>
         /// NOTE: Unlike most other extension APIs, Install/Uninstall report
@@ -669,6 +695,43 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// libraryError / libraryErrorLength so it can surface it as part of
         /// CREATE/ALTER/DROP EXTERNAL LIBRARY diagnostics.
         /// </remarks>
+        /// <param name="setupSessionId">
+        /// Session GUID supplied by ExtHost. Currently unused by the CSharp
+        /// extension; logged downstream for trace correlation only.
+        /// </param>
+        /// <param name="libraryName">
+        /// UTF-8 buffer holding the library name from CREATE EXTERNAL LIBRARY.
+        /// NOT null-terminated -- read exactly libraryNameLength bytes.
+        /// </param>
+        /// <param name="libraryNameLength">
+        /// Byte length of <paramref name="libraryName"/>.
+        /// </param>
+        /// <param name="libraryFile">
+        /// UTF-8 buffer holding the absolute path to the library content file
+        /// (a raw DLL or a ZIP archive). NOT null-terminated -- read exactly
+        /// libraryFileLength bytes.
+        /// </param>
+        /// <param name="libraryFileLength">
+        /// Byte length of <paramref name="libraryFile"/>.
+        /// </param>
+        /// <param name="libraryInstallDirectory">
+        /// UTF-8 buffer holding the absolute path to the install directory.
+        /// May be the public or private external library path. Created if
+        /// it doesn't exist. NOT null-terminated.
+        /// </param>
+        /// <param name="libraryInstallDirectoryLength">
+        /// Byte length of <paramref name="libraryInstallDirectory"/>.
+        /// </param>
+        /// <param name="libraryError">
+        /// On failure, set to a freshly-allocated UTF-8 error string for
+        /// ExtHost to surface to the user. ExtHost takes ownership of the
+        /// allocation. On success, set to nullptr.
+        /// </param>
+        /// <param name="libraryErrorLength">
+        /// On failure, set to the byte length of <paramref name="libraryError"/>
+        /// (excluding the null terminator -- ExtHost adds +1 when copying).
+        /// On success, set to 0.
+        /// </param>
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)
         /// </returns>
@@ -696,196 +759,32 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                 ValidateLibraryName(libName);
 
-                if (!Directory.Exists(installDir))
+                // Serialize against any other concurrent Install/Uninstall on
+                // the same installDir. See AcquireInstallLock remarks for why:
+                // without serialization, two installs can both pass
+                // CheckForConflicts against pre-cleanup state, then one's
+                // CleanupManifest destroys its previous version while the
+                // other's File.Copy collides on overwrite:false -- silent
+                // data loss for one of them.
+                using (FileStream installLock = AcquireInstallLock(installDir))
                 {
-                    Directory.CreateDirectory(installDir);
-                }
-
-                string manifestPath = Path.Combine(installDir, libName + ".manifest");
-                HashSet<string> oldManifestEntries = ReadManifestEntries(manifestPath);
-
-                if (!IsZipFile(libFilePath))
-                {
-                    // Raw DLL. Clean up any previous manifest-based install of the same
-                    // library, then copy the file as "{libName}.dll" so DllUtils can find it.
-                    // Match the pre-PR ExtHost CopyFileW(..., bFailIfExists=TRUE) contract:
-                    // if "{libName}.dll" already exists at the target path AND it is NOT
-                    // owned by this library (i.e. not listed in our manifest), fail rather
-                    // than silently overwrite a file that may belong to another library.
-                    string dllFileName = DllFileNameFor(libName);
-                    string installedDllPath = Path.Combine(installDir, dllFileName);
-
-                    if (File.Exists(manifestPath))
+                    if (!Directory.Exists(installDir))
                     {
-                        // Prior manifest-based install of the SAME library: clean it up
-                        // first so the upcoming copy has a free slot.
-                        CleanupManifest(manifestPath, installDir);
-                    }
-                    else if (File.Exists(installedDllPath))
-                    {
-                        // No manifest: we don't own this file. Fail rather than overwrite.
-                        throw new IOException(
-                            $"Cannot install library '{libName}': file '{dllFileName}' " +
-                            "already exists in the install directory and is not owned by this library.");
+                        Directory.CreateDirectory(installDir);
                     }
 
-                    File.Copy(libFilePath, installedDllPath, false);
+                    string manifestPath = Path.Combine(installDir, libName + ".manifest");
+                    HashSet<string> oldManifestEntries = ReadManifestEntries(manifestPath);
 
-                    // Track the raw-DLL install in a manifest too. This is what makes
-                    // ALTER from raw-DLL to ZIP work: the ZIP path's CheckForConflicts
-                    // sees "{libName}.dll" in oldManifestEntries and treats it as
-                    // owned-by-previous, allowing the upgrade to proceed cleanly.
-                    File.WriteAllLines(manifestPath, new[] { dllFileName });
-
-                    return SQL_SUCCESS;
-                }
-
-                // ZIP path. Stage the new content to a temp folder, validate it, then
-                // clean up the old version and move the new files into place. A corrupt
-                // ZIP leaves the existing install intact (validation runs against the
-                // staged copy in tempFolder, before we touch installDir).
-                //
-                // NOTE: On-disk replacement is NOT atomic at the per-file level. A
-                // crash between CleanupManifest and the CopyDirectory loop can leave
-                // the install directory inconsistent. We rely on SQL Server's catalog-
-                // based recovery: the next session re-installs from the catalog.
-                tempFolder = Path.Combine(installDir, Guid.NewGuid().ToString());
-                ZipFile.ExtractToDirectory(libFilePath, tempFolder);
-
-                if (Directory.GetFiles(tempFolder).Length == 0 &&
-                    Directory.GetDirectories(tempFolder).Length == 0)
-                {
-                    throw new InvalidOperationException(
-                        "The library archive contains no entries.");
-                }
-
-                // If the outer ZIP contains exactly one inner .zip at its top level,
-                // treat it as the real package and extract that instead. This matches
-                // the way the SQL Server engine wraps user-supplied archives. We pick
-                // the FIRST .zip found; multiple inner zips are unsupported and the
-                // remainder are extracted as opaque files. (Callers that need to ship
-                // multiple zips should pack them inside subdirectories.)
-                string innerZipPath = null;
-                foreach (string file in Directory.GetFiles(tempFolder))
-                {
-                    if (Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                    if (IsZipFile(libFilePath))
                     {
-                        innerZipPath = file;
-                        break;
+                        tempFolder = InstallZipPackage(libFilePath, installDir, libName,
+                            manifestPath, oldManifestEntries);
                     }
-                }
-
-                // Collect relative paths we're about to install, validating each path
-                // stays under installDir (defense-in-depth zip-slip check on top of
-                // ZipFile.ExtractToDirectory's own validation).
-                var extractedFiles = new List<string>();
-                if (innerZipPath != null)
-                {
-                    using (var innerArchive = ZipFile.OpenRead(innerZipPath))
+                    else
                     {
-                        foreach (var entry in innerArchive.Entries)
-                        {
-                            if (string.IsNullOrEmpty(entry.Name))
-                                continue;
-
-                            extractedFiles.Add(ValidateRelativePath(installDir, entry.FullName));
-                        }
+                        InstallRawDll(libFilePath, installDir, libName, manifestPath);
                     }
-                }
-                else
-                {
-                    CollectRelativeFiles(tempFolder, "", extractedFiles);
-                }
-
-                // Determine whether we need a "{libName}.dll" alias so
-                // DllUtils.CreateDllList can discover the library.
-                //
-                // DllUtils.CreateDllList searches only the TOP LEVEL of the
-                // library path (non-recursive). So a deeply-nested DLL like
-                // "lib/net8.0/{libName}.dll" does NOT make the library
-                // discoverable, and we still need to create a root-level alias.
-                // Only a root-level "{libName}.*" suppresses alias creation.
-                //
-                // If an alias IS needed, append it to extractedFiles BEFORE
-                // CheckForConflicts runs so any "{libName}.dll" collision with
-                // another library fails fast with no content written to
-                // installDir.
-                string aliasFileName = DllFileNameFor(libName);
-                string aliasSourceRelPath = null;
-                bool libNameAlreadyPresentAtRoot = false;
-                foreach (string relPath in extractedFiles)
-                {
-                    bool isRootLevel =
-                        relPath.IndexOf('/') < 0 &&
-                        relPath.IndexOf('\\') < 0;
-                    if (!isRootLevel)
-                    {
-                        continue;
-                    }
-                    string name = Path.GetFileName(relPath);
-                    if (name.StartsWith(libName + ".", s_pathComparison) ||
-                        name.Equals(aliasFileName, s_pathComparison))
-                    {
-                        libNameAlreadyPresentAtRoot = true;
-                        break;
-                    }
-                }
-                if (!libNameAlreadyPresentAtRoot)
-                {
-                    foreach (string relPath in extractedFiles)
-                    {
-                        if (Path.GetExtension(relPath).Equals(".dll", s_pathComparison))
-                        {
-                            aliasSourceRelPath = relPath;
-                            break;
-                        }
-                    }
-                    if (aliasSourceRelPath != null)
-                    {
-                        extractedFiles.Add(aliasFileName);
-                    }
-                }
-
-                CheckForConflicts(installDir, libName, extractedFiles, oldManifestEntries);
-
-                // All checks passed. Remove the previous version's files (if any), then
-                // extract/copy the new content into installDir.
-                if (File.Exists(manifestPath))
-                {
-                    CleanupManifest(manifestPath, installDir);
-                }
-
-                if (innerZipPath != null)
-                {
-                    ZipFile.ExtractToDirectory(innerZipPath, installDir, false);
-                }
-                else
-                {
-                    foreach (string file in Directory.GetFiles(tempFolder))
-                    {
-                        File.Copy(file, Path.Combine(installDir, Path.GetFileName(file)), false);
-                    }
-                    foreach (string dir in Directory.GetDirectories(tempFolder))
-                    {
-                        CopyDirectory(dir, Path.Combine(installDir, Path.GetFileName(dir)));
-                    }
-                }
-
-                // Create the alias file now that content is in place. The source
-                // was chosen and conflict-checked above.
-                if (aliasSourceRelPath != null)
-                {
-                    string aliasSrc = Path.Combine(installDir, aliasSourceRelPath);
-                    string alias = Path.Combine(installDir, aliasFileName);
-                    if (File.Exists(aliasSrc))
-                    {
-                        File.Copy(aliasSrc, alias, false);
-                    }
-                }
-
-                if (extractedFiles.Count > 0)
-                {
-                    File.WriteAllLines(manifestPath, extractedFiles);
                 }
             }
             catch (Exception e)
@@ -908,6 +807,315 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// Installs a raw DLL (non-ZIP) library file. Copies the file as
+        /// "{libName}.dll" into <paramref name="installDir"/> and writes a
+        /// single-entry manifest so future ALTER calls can clean it up.
+        /// </summary>
+        /// <remarks>
+        /// Matches the pre-PR ExtHost <c>CopyFileW(..., bFailIfExists=TRUE)</c>
+        /// contract: if "{libName}.dll" already exists at the target path AND
+        /// it is NOT owned by this library (i.e. not listed in our manifest),
+        /// throws rather than silently overwriting a file that may belong to
+        /// another library.
+        /// </remarks>
+        private static void InstallRawDll(
+            string libFilePath,
+            string installDir,
+            string libName,
+            string manifestPath)
+        {
+            string dllFileName = DllFileNameFor(libName);
+            string installedDllPath = Path.Combine(installDir, dllFileName);
+
+            if (File.Exists(manifestPath))
+            {
+                // Prior manifest-based install of the SAME library: clean it up
+                // first so the upcoming copy has a free slot.
+                CleanupManifest(manifestPath, installDir);
+            }
+            else if (File.Exists(installedDllPath))
+            {
+                // No manifest: we don't own this file. Fail rather than overwrite.
+                throw new IOException(
+                    $"Cannot install library '{libName}': file '{dllFileName}' " +
+                    "already exists in the install directory and is not owned by this library.");
+            }
+
+            File.Copy(libFilePath, installedDllPath, false);
+
+            // Track the raw-DLL install in a manifest too. This is what makes
+            // ALTER from raw-DLL to ZIP work: the ZIP path's CheckForConflicts
+            // sees "{libName}.dll" in oldManifestEntries and treats it as
+            // owned-by-previous, allowing the upgrade to proceed cleanly.
+            File.WriteAllLines(manifestPath, new[] { dllFileName });
+            Logging.Trace(
+                $"Wrote manifest: {manifestPath} with 1 entry (raw-DLL install)");
+        }
+
+        /// <summary>
+        /// Installs a ZIP-archive library. Stages the new content to a temp
+        /// folder, validates it (zip-slip, empty-archive, conflict checks),
+        /// then cleans up the previous version and copies the new content
+        /// into <paramref name="installDir"/>.
+        /// </summary>
+        /// <returns>
+        /// The path of the temp folder used for staging, so the caller can
+        /// clean it up in its outer <c>finally</c> regardless of whether the
+        /// install succeeded or threw.
+        /// </returns>
+        /// <remarks>
+        /// A corrupt ZIP leaves the existing install intact (validation runs
+        /// against the staged copy in tempFolder, before we touch installDir).
+        /// On-disk replacement is NOT atomic at the per-file level. A crash
+        /// between CleanupManifest and the copy phase can leave the install
+        /// directory inconsistent; SQL Server's catalog-based recovery
+        /// re-installs from the catalog on the next session.
+        /// </remarks>
+        private static string InstallZipPackage(
+            string libFilePath,
+            string installDir,
+            string libName,
+            string manifestPath,
+            HashSet<string> oldManifestEntries)
+        {
+            string tempFolder = Path.Combine(installDir, Guid.NewGuid().ToString());
+            ZipFile.ExtractToDirectory(libFilePath, tempFolder);
+
+            if (Directory.GetFiles(tempFolder).Length == 0 &&
+                Directory.GetDirectories(tempFolder).Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "The library archive contains no entries.");
+            }
+
+            string innerZipPath = FindInnerZip(tempFolder);
+            List<string> extractedFiles = CollectStagedFiles(installDir, tempFolder, innerZipPath);
+
+            // Reject archives that contain only empty directories (no files).
+            // The earlier "no entries" guard checks for an entirely-empty
+            // tempFolder, but a ZIP whose entries are all directory markers
+            // (e.g. "lib/", "lib/net8.0/") passes that check while leaving
+            // CollectStagedFiles with zero file entries. Without this guard,
+            // ALTER would silently destroy the previous version: CleanupManifest
+            // deletes its content, nothing is copied (extractedFiles is empty),
+            // and the manifest write is skipped. The library would end up GONE
+            // with no replacement and no manifest tracking what was lost.
+            if (extractedFiles.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "The library archive contains no files.");
+            }
+
+            string aliasFileName = DllFileNameFor(libName);
+            string aliasSourceRelPath = DetermineAliasSource(libName, aliasFileName, extractedFiles);
+            if (aliasSourceRelPath != null)
+            {
+                // Append the alias to extractedFiles BEFORE CheckForConflicts
+                // so any "{libName}.dll" collision with another library fails
+                // fast with no content written to installDir.
+                extractedFiles.Add(aliasFileName);
+            }
+
+            CheckForConflicts(installDir, libName, extractedFiles, oldManifestEntries);
+
+            // All checks passed. Remove the previous version's files (if any),
+            // then extract / copy the new content into installDir.
+            if (File.Exists(manifestPath))
+            {
+                CleanupManifest(manifestPath, installDir);
+            }
+
+            ExtractContentToInstallDir(installDir, tempFolder, innerZipPath);
+
+            if (aliasSourceRelPath != null)
+            {
+                CreateAlias(installDir, aliasSourceRelPath, aliasFileName);
+            }
+
+            File.WriteAllLines(manifestPath, extractedFiles);
+            Logging.Trace(
+                $"Wrote manifest: {manifestPath} with {extractedFiles.Count} entries");
+
+            return tempFolder;
+        }
+
+        /// <summary>
+        /// Finds the FIRST top-level ".zip" entry inside the staged
+        /// <paramref name="tempFolder"/>, or null if none is present.
+        /// </summary>
+        /// <remarks>
+        /// If the outer ZIP contains exactly one inner .zip at its top level,
+        /// it is treated as the real package and extracted in place of the
+        /// outer. This matches the way the SQL Server engine wraps
+        /// user-supplied archives. Multiple inner zips are unsupported; any
+        /// after the first are extracted as opaque files (callers that need
+        /// to ship multiple zips should pack them inside subdirectories).
+        /// </remarks>
+        private static string FindInnerZip(string tempFolder)
+        {
+            foreach (string file in Directory.GetFiles(tempFolder))
+            {
+                if (Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    return file;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Builds the list of relative paths that will be installed into
+        /// <paramref name="installDir"/>, validating each path stays under
+        /// installDir (defense-in-depth zip-slip check on top of
+        /// ZipFile.ExtractToDirectory's own validation).
+        /// </summary>
+        private static List<string> CollectStagedFiles(
+            string installDir,
+            string tempFolder,
+            string innerZipPath)
+        {
+            List<string> extractedFiles = new List<string>();
+            if (innerZipPath != null)
+            {
+                using (ZipArchive innerArchive = ZipFile.OpenRead(innerZipPath))
+                {
+                    foreach (ZipArchiveEntry entry in innerArchive.Entries)
+                    {
+                        if (string.IsNullOrEmpty(entry.Name))
+                        {
+                            // Directory entry (no filename portion). Skip.
+                            continue;
+                        }
+                        extractedFiles.Add(ValidateRelativePath(installDir, entry.FullName));
+                    }
+                }
+            }
+            else
+            {
+                CollectRelativeFiles(tempFolder, "", extractedFiles);
+            }
+            return extractedFiles;
+        }
+
+        /// <summary>
+        /// Decides which extracted file (if any) should be cloned as the
+        /// "{libName}.dll" alias so DllUtils.CreateDllList can discover the
+        /// library. Returns the relative path of the source DLL to clone, or
+        /// null if no alias is needed (a root-level "{libName}.*" is already
+        /// present, or no DLL exists to clone from).
+        /// </summary>
+        /// <remarks>
+        /// DllUtils.CreateDllList searches only the TOP LEVEL of the library
+        /// path (non-recursive). So a deeply-nested DLL like
+        /// "lib/net8.0/{libName}.dll" does NOT make the library discoverable,
+        /// and we still need to create a root-level alias. Only a root-level
+        /// "{libName}.*" suppresses alias creation.
+        /// </remarks>
+        private static string DetermineAliasSource(
+            string libName,
+            string aliasFileName,
+            List<string> extractedFiles)
+        {
+            foreach (string relPath in extractedFiles)
+            {
+                bool isRootLevel =
+                    relPath.IndexOf('/') < 0 &&
+                    relPath.IndexOf('\\') < 0;
+                if (!isRootLevel)
+                {
+                    continue;
+                }
+                string name = Path.GetFileName(relPath);
+                if (name.StartsWith(libName + ".", s_pathComparison) ||
+                    name.Equals(aliasFileName, s_pathComparison))
+                {
+                    // A root-level file matches "{libName}.*" -- already discoverable.
+                    return null;
+                }
+            }
+            foreach (string relPath in extractedFiles)
+            {
+                if (Path.GetExtension(relPath).Equals(".dll", s_pathComparison))
+                {
+                    return relPath;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Extracts the staged content from <paramref name="tempFolder"/> (or
+        /// directly from the inner zip if <paramref name="innerZipPath"/> is
+        /// non-null) into the live <paramref name="installDir"/>.
+        /// </summary>
+        private static void ExtractContentToInstallDir(
+            string installDir,
+            string tempFolder,
+            string innerZipPath)
+        {
+            if (innerZipPath != null)
+            {
+                // SAFETY: Extracting directly to the live installDir is currently
+                // safe because ZipFile.ExtractToDirectory does not restore symlink
+                // entries as actual symlinks on any platform -- they are written
+                // as regular files containing the link target text. So even on
+                // Linux, an attacker-controlled inner ZIP cannot smuggle a symlink
+                // into installDir via this path today.
+                //
+                // If a future .NET version changes this (e.g. honors symlink
+                // entries on Linux), or if we switch to a different extraction
+                // library, this path MUST be re-routed through a separate temp
+                // folder followed by an IsReparsePoint-guarded copy -- mirror
+                // the non-inner-zip branch below for the pattern.
+                ZipFile.ExtractToDirectory(innerZipPath, installDir, false);
+            }
+            else
+            {
+                // Skip reparse points at the root of tempFolder for the same
+                // reason CopyDirectory does inside subdirectories: a root-level
+                // symlink could cause File.Copy to copy data from outside the
+                // staged tree, and a root-level reparse-point directory could
+                // make CopyDirectory recurse out of tempFolder. CopyDirectory
+                // only checks the entries it iterates, not its top-level
+                // sourceDir argument, so the guards live here at the call site.
+                foreach (string file in Directory.GetFiles(tempFolder))
+                {
+                    if (IsReparsePoint(file))
+                    {
+                        continue;
+                    }
+                    File.Copy(file, Path.Combine(installDir, Path.GetFileName(file)), false);
+                }
+                foreach (string dir in Directory.GetDirectories(tempFolder))
+                {
+                    if (IsReparsePoint(dir))
+                    {
+                        continue;
+                    }
+                    CopyDirectory(dir, Path.Combine(installDir, Path.GetFileName(dir)));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates the "{libName}.dll" alias by cloning the source DLL chosen
+        /// by <see cref="DetermineAliasSource"/>. Caller must have verified
+        /// the alias is needed and conflict-checked before this is invoked.
+        /// </summary>
+        private static void CreateAlias(
+            string installDir,
+            string aliasSourceRelPath,
+            string aliasFileName)
+        {
+            string aliasSrc = Path.Combine(installDir, aliasSourceRelPath);
+            string alias = Path.Combine(installDir, aliasFileName);
+            if (File.Exists(aliasSrc))
+            {
+                File.Copy(aliasSrc, alias, false);
+            }
+        }
+
+        /// <summary>
         /// This delegate declares the delegate type of UninstallExternalLibrary.
         /// </summary>
         public delegate short UninstallExternalLibraryDelegate(
@@ -921,13 +1129,45 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method implements UninstallExternalLibrary API.
-        /// Uninstalls an external library from the specified directory.
+        /// Uninstalls an external library from the specified directory by
+        /// reading "{libName}.manifest" and deleting each listed file, then
+        /// pruning newly-empty subdirectories. Files belonging to other
+        /// libraries (not listed in this manifest) are left intact.
         /// </summary>
         /// <remarks>
         /// See InstallExternalLibrary remarks: errors are reported via the
         /// libraryError out-parameter rather than ExceptionUtils.WrapError,
-        /// per the sqlexternallibrary.h contract.
+        /// per the sqlexternallibrary.h contract. A missing installDir or
+        /// missing manifest is treated as a no-op success (the library is
+        /// already in the desired state).
         /// </remarks>
+        /// <param name="setupSessionId">
+        /// Session GUID supplied by ExtHost. Currently unused.
+        /// </param>
+        /// <param name="libraryName">
+        /// UTF-8 buffer holding the library name from DROP EXTERNAL LIBRARY.
+        /// NOT null-terminated -- read exactly libraryNameLength bytes.
+        /// </param>
+        /// <param name="libraryNameLength">
+        /// Byte length of <paramref name="libraryName"/>.
+        /// </param>
+        /// <param name="libraryInstallDirectory">
+        /// UTF-8 buffer holding the absolute path to the install directory.
+        /// May be the public or private external library path. NOT
+        /// null-terminated.
+        /// </param>
+        /// <param name="libraryInstallDirectoryLength">
+        /// Byte length of <paramref name="libraryInstallDirectory"/>.
+        /// </param>
+        /// <param name="libraryError">
+        /// On failure, set to a freshly-allocated UTF-8 error string for
+        /// ExtHost to surface to the user. ExtHost takes ownership of the
+        /// allocation. On success, set to nullptr.
+        /// </param>
+        /// <param name="libraryErrorLength">
+        /// On failure, set to the byte length of <paramref name="libraryError"/>
+        /// (excluding the null terminator). On success, set to 0.
+        /// </param>
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)
         /// </returns>
@@ -956,20 +1196,30 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                 if (Directory.Exists(installDir))
                 {
-                    // Check for a manifest written during install that lists
-                    // all files extracted from the library's ZIP content.
-                    string manifestPath = Path.Combine(installDir, libName + ".manifest");
-                    if (File.Exists(manifestPath))
+                    // Serialize against any other concurrent Install/Uninstall
+                    // on the same installDir. An uninstall that races an install
+                    // of a different library can otherwise see CleanupManifest
+                    // delete its own files between the install's CheckForConflicts
+                    // and File.Copy, leaving the install with a stale view of disk
+                    // state. See AcquireInstallLock remarks for the full threat
+                    // model.
+                    using (FileStream installLock = AcquireInstallLock(installDir))
                     {
-                        CleanupManifest(manifestPath, installDir);
-                    }
+                        // Check for a manifest written during install that lists
+                        // all files extracted from the library's ZIP content.
+                        string manifestPath = Path.Combine(installDir, libName + ".manifest");
+                        if (File.Exists(manifestPath))
+                        {
+                            CleanupManifest(manifestPath, installDir);
+                        }
 
-                    // Non-ZIP installs write a single "{libName}.dll" file and
-                    // no manifest; remove that file directly.
-                    string libraryFile = Path.Combine(installDir, DllFileNameFor(libName));
-                    if (File.Exists(libraryFile))
-                    {
-                        File.Delete(libraryFile);
+                        // Non-ZIP installs write a single "{libName}.dll" file and
+                        // no manifest; remove that file directly.
+                        string libraryFile = Path.Combine(installDir, DllFileNameFor(libName));
+                        if (File.Exists(libraryFile))
+                        {
+                            File.Delete(libraryFile);
+                        }
                     }
                 }
             }
@@ -1011,14 +1261,7 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             foreach (string file in Directory.GetFiles(sourceDir))
             {
-                // Skip reparse points (symbolic links, junctions). On Linux a
-                // ZIP archive can carry symlinks that survive extraction; left
-                // unchecked, File.Copy would follow the symlink and either
-                // copy a file from outside installDir into it (information
-                // leak) or, when paired with the directory recursion below,
-                // open up out-of-tree writes.
-                FileAttributes fileAttrs = File.GetAttributes(file);
-                if ((fileAttrs & FileAttributes.ReparsePoint) != 0)
+                if (IsReparsePoint(file))
                 {
                     continue;
                 }
@@ -1031,11 +1274,7 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             foreach (string dir in Directory.GetDirectories(sourceDir))
             {
-                // Skip reparse-point directories for the same reason as above:
-                // following a junction/symlink could cause us to recurse out
-                // of the staged temp folder.
-                FileAttributes dirAttrs = File.GetAttributes(dir);
-                if ((dirAttrs & FileAttributes.ReparsePoint) != 0)
+                if (IsReparsePoint(dir))
                 {
                     continue;
                 }
@@ -1045,12 +1284,99 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// Returns true if <paramref name="path"/> is a reparse point
+        /// (symbolic link, junction, mount point).
+        /// </summary>
+        /// <remarks>
+        /// We treat all reparse points discovered in the staged tempFolder as
+        /// untrusted. On Linux a ZIP archive can carry symlink entries that
+        /// survive extraction; following them while copying into installDir
+        /// could (a) copy data from outside the staged tree (information leak)
+        /// or (b) cause the recursive copy to escape the staged area entirely
+        /// and write into arbitrary filesystem locations.
+        /// </remarks>
+        private static bool IsReparsePoint(string path)
+        {
+            return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+        }
+
+        // Block forever in AcquireInstallLock -- match the engine's
+        // "this install will eventually finish" contract. SQL Server's outer
+        // statement-level cancellation is the right place to interrupt a
+        // pathologically-stuck install, not an arbitrary timeout in here.
+        // (s_lockRetryDelayMs is declared at the top of the class with the
+        // other class members.)
+
+        /// <summary>
+        /// Acquires an exclusive cross-process lock for operations on
+        /// <paramref name="installDir"/>. Returns a disposable handle that
+        /// releases the lock when disposed.
+        /// </summary>
+        /// <remarks>
+        /// Two concurrent CSharp extension processes (e.g. two SQL sessions
+        /// each running CREATE/ALTER/DROP EXTERNAL LIBRARY against the same
+        /// install directory) must not be allowed to interleave the
+        /// CheckForConflicts / CleanupManifest / copy / WriteAllLines
+        /// sequence. Without serialization, both can pass CheckForConflicts
+        /// against pre-cleanup state, then one's CleanupManifest destroys
+        /// its previous version's content while the other's File.Copy
+        /// collides on overwrite:false -- leaving the second library GONE
+        /// with no replacement and no manifest.
+        ///
+        /// Implementation: open "{installDir}/.install.lock" with
+        /// FileShare.None. The OS releases the handle on process crash so
+        /// there is no stale-lock risk. FileOptions.DeleteOnClose removes
+        /// the lock file when the holder closes its handle, keeping the
+        /// install directory clean across runs.
+        ///
+        /// Acquisition blocks indefinitely with a 100ms retry interval.
+        /// In the uncontended common case (single session), acquisition
+        /// completes on the first attempt with no measurable overhead.
+        /// </remarks>
+        private static FileStream AcquireInstallLock(string installDir)
+        {
+            Directory.CreateDirectory(installDir);
+            string lockPath = Path.Combine(installDir, ".install.lock");
+
+            while (true)
+            {
+                try
+                {
+                    return new FileStream(
+                        lockPath,
+                        FileMode.OpenOrCreate,
+                        FileAccess.ReadWrite,
+                        FileShare.None,
+                        bufferSize: 1,
+                        FileOptions.DeleteOnClose);
+                }
+                catch (IOException)
+                {
+                    // Another process holds the lock. Wait and retry.
+                    Thread.Sleep(s_lockRetryDelayMs);
+                }
+            }
+        }
+
+        /// <summary>
         /// Recursively collects all file paths relative to the root directory.
         /// </summary>
+        /// <remarks>
+        /// Reparse points (symlinks, junctions) are skipped at both the file
+        /// and directory level. The result of this walk feeds CheckForConflicts
+        /// and the on-disk manifest, both of which assume every entry will be
+        /// physically copied by CopyDirectory. Since CopyDirectory skips
+        /// reparse points, recording them here would create phantom manifest
+        /// entries that point at nothing on disk.
+        /// </remarks>
         private static void CollectRelativeFiles(string directory, string prefix, List<string> results)
         {
             foreach (string file in Directory.GetFiles(directory))
             {
+                if (IsReparsePoint(file))
+                {
+                    continue;
+                }
                 string relPath = string.IsNullOrEmpty(prefix)
                     ? Path.GetFileName(file)
                     : Path.Combine(prefix, Path.GetFileName(file));
@@ -1059,6 +1385,10 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             foreach (string dir in Directory.GetDirectories(directory))
             {
+                if (IsReparsePoint(dir))
+                {
+                    continue;
+                }
                 string dirName = Path.GetFileName(dir);
                 string newPrefix = string.IsNullOrEmpty(prefix)
                     ? dirName
@@ -1067,34 +1397,63 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
         }
 
-        // Case-sensitivity matches the host OS's filesystem semantics.
-        private static readonly StringComparer s_pathComparer =
-            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        private static readonly StringComparison s_pathComparison =
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-
-        // Returns the on-disk file name for a raw-DLL install of `libName`.
-        // If the library was registered with a name that already ends in ".dll"
-        // (e.g. CREATE EXTERNAL LIBRARY [Scriptoria.dll]), we must not append
-        // a second ".dll" — that produced "Scriptoria.dll.dll" files that the
-        // CLR assembly resolver could not locate.
+        /// <summary>
+        /// Returns the on-disk file name for a raw-DLL install of
+        /// <paramref name="libName"/>.
+        /// </summary>
+        /// <remarks>
+        /// If the library was registered with a name that already ends in
+        /// ".dll" (e.g. CREATE EXTERNAL LIBRARY [Scriptoria.dll]), we must
+        /// not append a second ".dll" -- that produced "Scriptoria.dll.dll"
+        /// files that the CLR assembly resolver could not locate.
+        /// </remarks>
+        /// <param name="libName">
+        /// The library name as supplied via libraryName to InstallExternalLibrary.
+        /// </param>
+        /// <returns>
+        /// "{libName}.dll" if libName does not already end in ".dll",
+        /// otherwise libName unchanged.
+        /// </returns>
         private static string DllFileNameFor(string libName)
         {
+            string result;
             if (!string.IsNullOrEmpty(libName) &&
                 libName.EndsWith(".dll", s_pathComparison))
             {
-                return libName;
+                result = libName;
             }
-            return libName + ".dll";
+            else
+            {
+                result = libName + ".dll";
+            }
+
+            return result;
         }
 
-        // Rejects library names that could escape installDir when combined via Path.Combine.
+        /// <summary>
+        /// Validates that <paramref name="libName"/> is safe to use in path
+        /// composition. Throws <see cref="ArgumentException"/> on rejection.
+        /// </summary>
+        /// <remarks>
+        /// Without this check, a malicious or legacy libName like "../foo"
+        /// or "/etc/foo" could make
+        /// <c>Path.Combine(installDir, libName + ".manifest")</c> resolve
+        /// outside installDir, allowing unintended file reads / writes /
+        /// deletes. Also rejects names that are only an extension
+        /// (e.g. ".dll") because the resulting "{libName}.manifest" paths
+        /// would be hidden dotfiles on Linux and opaque on both platforms.
+        /// </remarks>
+        /// <param name="libName">
+        /// The library name as supplied via libraryName to
+        /// InstallExternalLibrary or UninstallExternalLibrary.
+        /// </param>
         private static void ValidateLibraryName(string libName)
         {
             if (string.IsNullOrEmpty(libName))
             {
                 throw new ArgumentException("Library name must not be empty.");
             }
+
             if (libName.IndexOfAny(new[] { '/', '\\', '\0' }) >= 0 ||
                 libName.Contains("..") ||
                 Path.IsPathRooted(libName))
@@ -1102,25 +1461,71 @@ namespace Microsoft.SqlServer.CSharpExtension
                 throw new ArgumentException(
                     $"Library name '{libName}' contains invalid characters.");
             }
+
+            // Reject names that are only an extension (e.g. ".dll", ".txt").
+            // Path.GetFileNameWithoutExtension returns "" for these, meaning
+            // the name has no stem -- DllFileNameFor would return the bare
+            // extension and the resulting "{libName}.manifest" / "{libName}.dll"
+            // paths would be hidden dotfiles on Linux and opaque on both
+            // platforms.
+            if (string.IsNullOrEmpty(Path.GetFileNameWithoutExtension(libName)))
+            {
+                throw new ArgumentException(
+                    $"Library name '{libName}' must not be only an extension.");
+            }
         }
 
-        // A ZIP file of any variant begins with the 'PK' magic bytes (0x50 0x4B).
+        /// <summary>
+        /// Returns true if the file at <paramref name="path"/> appears to be
+        /// a ZIP archive based on its leading two "magic bytes".
+        /// </summary>
+        /// <remarks>
+        /// All ZIP variants (.zip, .jar, .war, .docx, etc.) begin with the
+        /// two-byte signature "PK" (0x50 0x4B), inherited from PKWARE's
+        /// original 1989 PKZIP format. We sniff content rather than trust
+        /// the file extension because:
+        /// <list type="bullet">
+        ///   <item>
+        ///   Callers can register a library file as e.g. "foo.zip" without
+        ///   the bytes actually being a ZIP archive (the engine doesn't
+        ///   require the registered name to match content).
+        ///   </item>
+        ///   <item>
+        ///   Callers can register a library file with no extension or with a
+        ///   non-".zip" extension (e.g. ".dll", ".bin") whose contents ARE a
+        ///   ZIP archive.
+        ///   </item>
+        /// </list>
+        /// The two-byte sniff is intentionally minimal: a file beginning with
+        /// "PK" but corrupt internally will still reach
+        /// ZipFile.ExtractToDirectory, which throws a clear exception that
+        /// the outer catch surfaces via libraryError. The sniff's job is
+        /// only to dispatch between the raw-DLL and ZIP install paths --
+        /// not to validate ZIP integrity.
+        /// </remarks>
         private static bool IsZipFile(string path)
         {
             // FileShare.Read so we don't fight with anti-virus scanners,
             // backup agents, or another concurrent SQL session that may have
             // the source file open for read.
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 byte[] magic = new byte[2];
                 return fs.Read(magic, 0, 2) == 2 && magic[0] == 0x50 && magic[1] == 0x4B;
             }
         }
 
-        // Reads an existing manifest into a set of relative paths. Empty set if absent.
+        /// <summary>
+        /// Reads an existing manifest file into a set of relative paths.
+        /// Returns an empty set if the manifest does not exist.
+        /// </summary>
+        /// <param name="manifestPath">
+        /// Absolute path to the "{libName}.manifest" file. Safe to pass a
+        /// non-existent path.
+        /// </param>
         private static HashSet<string> ReadManifestEntries(string manifestPath)
         {
-            var set = new HashSet<string>(s_pathComparer);
+            HashSet<string> set = new HashSet<string>(s_pathComparer);
             if (File.Exists(manifestPath))
             {
                 foreach (string line in File.ReadAllLines(manifestPath))
@@ -1131,11 +1536,50 @@ namespace Microsoft.SqlServer.CSharpExtension
                     }
                 }
             }
+
             return set;
         }
 
-        // Converts a ZIP entry path to a platform-native relative path and verifies
-        // it does not escape installDir (defense-in-depth zip-slip check).
+        /// <summary>
+        /// Converts a ZIP entry path to a platform-native relative path and
+        /// verifies it does not escape <paramref name="installDir"/>
+        /// (defense-in-depth zip-slip check).
+        /// </summary>
+        /// <remarks>
+        /// Two transformations + one check:
+        /// <list type="number">
+        /// <item>
+        /// <b>Separator normalization.</b> ZIP entries always use forward
+        /// slashes per the ZIP spec (PKWARE APPNOTE 4.4.17.1). We rewrite
+        /// '/' to <see cref="Path.DirectorySeparatorChar"/> so subsequent
+        /// <see cref="Path.Combine"/> / <see cref="File.Copy"/> calls
+        /// produce native paths on Windows ('\\') and Linux ('/'). We do
+        /// NOT touch backslashes -- they are illegal in ZIP entry names per
+        /// spec, and on Linux a backslash is a legitimate filename
+        /// character that must be preserved as-is.
+        /// </item>
+        /// <item>
+        /// <b>Canonicalization via <see cref="Path.GetFullPath"/>.</b>
+        /// Resolves any "..", ".", or symlink-style segments in both
+        /// installDir and the combined path so the StartsWith check below
+        /// is performed on absolute, canonical paths.
+        /// </item>
+        /// <item>
+        /// <b>Containment check.</b> The combined path must start with
+        /// <c>{fullInstall}{DirectorySeparatorChar}</c>. Comparing with the
+        /// trailing separator is critical: without it, an installDir of
+        /// "C:\install" would falsely accept entries that resolve to
+        /// "C:\installEvil\..." (sibling directory with shared prefix).
+        /// </item>
+        /// </list>
+        /// .NET's ZipFile.ExtractToDirectory already performs its own
+        /// zip-slip check on extraction (since .NET Core 2.1). This
+        /// function is defense in depth: the manifest we write must list
+        /// only paths inside installDir, so that uninstall's
+        /// File.Delete(...) calls cannot be tricked into deleting
+        /// arbitrary files via a malicious manifest entry that survived
+        /// extraction.
+        /// </remarks>
         private static string ValidateRelativePath(string installDir, string zipEntryFullName)
         {
             string relPath = zipEntryFullName.Replace('/', Path.DirectorySeparatorChar);
@@ -1149,6 +1593,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 throw new InvalidOperationException(
                     $"Library archive contains entry with invalid path: '{zipEntryFullName}'.");
             }
+
             return relPath;
         }
 
@@ -1185,7 +1630,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             string prefix = fullInstall.EndsWith(sep) ? fullInstall : fullInstall + sep;
 
             string[] entries = File.ReadAllLines(manifestPath);
-            var parentDirs = new HashSet<string>(s_pathComparer);
+            HashSet<string> parentDirs = new HashSet<string>(s_pathComparer);
 
             foreach (string relPath in entries)
             {
@@ -1203,8 +1648,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                 {
                     // A malformed manifest entry shouldn't abort the rest of
                     // the cleanup, but it must leave a diagnostic trail so
-                    // orphaned files don't disappear silently.
-                    Logging.Trace(
+                    // orphaned files don't disappear silently. Use Error
+                    // (not Trace) -- the comment promises a trail and Trace
+                    // is typically off in production deployments.
+                    Logging.Error(
                         $"CleanupManifest: skipping manifest entry '{relPath}': {ex.Message}");
                     continue;
                 }
@@ -1230,7 +1677,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             // Remove empty directories deepest first.
-            var sortedDirs = new List<string>(parentDirs);
+            List<string> sortedDirs = new List<string>(parentDirs);
             sortedDirs.Sort((a, b) => SeparatorCount(b).CompareTo(SeparatorCount(a)));
             foreach (string dir in sortedDirs)
             {

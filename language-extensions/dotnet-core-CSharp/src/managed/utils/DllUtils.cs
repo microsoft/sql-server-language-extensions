@@ -114,6 +114,20 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// "{name}.*" wildcard for bare names (so callers that pass "Foo"
         /// still match "Foo.dll", "Foo.runtimeconfig.json", etc.).
         /// </summary>
+        /// <param name="searchPath">
+        /// Directory to search. Returns immediately if null/empty or absent;
+        /// missing public/private library paths are not an error -- the other
+        /// path may still yield matches.
+        /// </param>
+        /// <param name="userLibName">
+        /// Library name to match. May be a bare stem ("regex") or include a
+        /// .dll suffix ("Foo.dll"). Wildcards / path separators are not
+        /// expected -- the caller is responsible for validation.
+        /// </param>
+        /// <param name="dllList">
+        /// Output list to append discovered .dll paths to. Caller-owned;
+        /// AddMatches never clears or replaces.
+        /// </param>
         private static void AddMatches(string searchPath, string userLibName, List<string> dllList)
         {
             if (string.IsNullOrEmpty(searchPath) || !Directory.Exists(searchPath))
