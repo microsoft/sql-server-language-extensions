@@ -817,6 +817,8 @@ namespace ExtensionApiTest
         std::string sourceContents(
             (std::istreambuf_iterator<char>(sourceStream)),
              std::istreambuf_iterator<char>());
+        aliasStream.close();
+        sourceStream.close();
         EXPECT_EQ(aliasContents, sourceContents)
             << "Alias file contents differ from source DLL";
 
@@ -1074,10 +1076,13 @@ namespace ExtensionApiTest
             "slip", zipSlip, installDir, msg);
         EXPECT_EQ(r, SQL_ERROR);
         EXPECT_FALSE(msg.empty()) << "No error message populated for zip-slip";
-        // Message should describe the attack class so the user (or a security
-        // log scanner) can identify it. ValidateRelativePath throws with
-        // "contains entry with invalid path" -- match a stable substring.
-        EXPECT_NE(msg.find("invalid path"), string::npos)
+        // Message should describe the rejection. The exception comes from
+        // .NET's ZipFile.ExtractToDirectory built-in zip-slip guard, which
+        // throws with "outside the specified destination directory". Our
+        // own ValidateRelativePath defense-in-depth check ("invalid path")
+        // is never reached because the .NET extractor catches it first.
+        // Either substring is acceptable -- assert the .NET form.
+        EXPECT_NE(msg.find("outside"), string::npos)
             << "Zip-slip message should describe the rejection. Got: " << msg;
 
         // Failure mode 3: file-level conflict
@@ -1266,6 +1271,8 @@ namespace ExtensionApiTest
         std::string sourceBytes(
             (std::istreambuf_iterator<char>(sourceStream)),
              std::istreambuf_iterator<char>());
+        myLibStream.close();
+        sourceStream.close();
         EXPECT_EQ(myLibBytes, sourceBytes)
             << "myLib.dll content differs from v2's source -- v1's raw DLL was not cleaned up";
 
@@ -1579,6 +1586,7 @@ namespace ExtensionApiTest
         std::ifstream ifs(foreign.string());
         std::string contents((std::istreambuf_iterator<char>(ifs)),
                              std::istreambuf_iterator<char>());
+        ifs.close();
         EXPECT_EQ(contents, "FOREIGN-CONTENT")
             << "Foreign file was overwritten by failed raw-DLL install";
 

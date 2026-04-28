@@ -778,8 +778,8 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                     if (IsZipFile(libFilePath))
                     {
-                        tempFolder = InstallZipPackage(libFilePath, installDir, libName,
-                            manifestPath, oldManifestEntries);
+                        InstallZipPackage(libFilePath, installDir, libName,
+                            manifestPath, oldManifestEntries, out tempFolder);
                     }
                     else
                     {
@@ -858,11 +858,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// then cleans up the previous version and copies the new content
         /// into <paramref name="installDir"/>.
         /// </summary>
-        /// <returns>
-        /// The path of the temp folder used for staging, so the caller can
-        /// clean it up in its outer <c>finally</c> regardless of whether the
-        /// install succeeded or threw.
-        /// </returns>
+        /// <param name="tempFolder">
+        /// Out-parameter set to the staging tempFolder path AS SOON AS it is
+        /// chosen, BEFORE any extraction is attempted. This lets the caller
+        /// clean it up in its outer <c>finally</c> even if the extraction or
+        /// any subsequent step throws -- otherwise a half-extracted tempFolder
+        /// would leak inside installDir.
+        /// </param>
         /// <remarks>
         /// A corrupt ZIP leaves the existing install intact (validation runs
         /// against the staged copy in tempFolder, before we touch installDir).
@@ -871,14 +873,18 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// directory inconsistent; SQL Server's catalog-based recovery
         /// re-installs from the catalog on the next session.
         /// </remarks>
-        private static string InstallZipPackage(
+        private static void InstallZipPackage(
             string libFilePath,
             string installDir,
             string libName,
             string manifestPath,
-            HashSet<string> oldManifestEntries)
+            HashSet<string> oldManifestEntries,
+            out string tempFolder)
         {
-            string tempFolder = Path.Combine(installDir, Guid.NewGuid().ToString());
+            // Publish tempFolder to the caller BEFORE doing any work that
+            // could throw, so the caller's finally can clean it up regardless
+            // of where we fail (extract throw, conflict throw, copy throw).
+            tempFolder = Path.Combine(installDir, Guid.NewGuid().ToString());
             ZipFile.ExtractToDirectory(libFilePath, tempFolder);
 
             if (Directory.GetFiles(tempFolder).Length == 0 &&
@@ -935,8 +941,6 @@ namespace Microsoft.SqlServer.CSharpExtension
             File.WriteAllLines(manifestPath, extractedFiles);
             Logging.Trace(
                 $"Wrote manifest: {manifestPath} with {extractedFiles.Count} entries");
-
-            return tempFolder;
         }
 
         /// <summary>
@@ -1323,11 +1327,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// collides on overwrite:false -- leaving the second library GONE
         /// with no replacement and no manifest.
         ///
-        /// Implementation: open "{installDir}/.install.lock" with
-        /// FileShare.None. The OS releases the handle on process crash so
-        /// there is no stale-lock risk. FileOptions.DeleteOnClose removes
-        /// the lock file when the holder closes its handle, keeping the
-        /// install directory clean across runs.
+        /// Implementation: open a sibling file
+        /// "{installDir}.install.lock" (NOT inside installDir) with
+        /// FileShare.None. Sibling placement avoids two issues:
+        /// (a) tests / callers that enumerate installDir don't see a
+        ///     mystery dotfile;
+        /// (b) `Directory.Delete(installDir, recursive:true)` and
+        ///     fs::remove_all don't race the OS-level DeleteOnClose
+        ///     unlinking of the lock file inside installDir.
+        ///
+        /// The OS releases the handle on process crash so there is no
+        /// stale-lock risk. FileOptions.DeleteOnClose removes the lock
+        /// file when the holder closes its handle, keeping the install
+        /// area clean across runs.
         ///
         /// Acquisition blocks indefinitely with a 100ms retry interval.
         /// In the uncontended common case (single session), acquisition
@@ -1335,8 +1347,15 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </remarks>
         private static FileStream AcquireInstallLock(string installDir)
         {
+            // Ensure installDir exists so that its parent exists too (the
+            // lock lives in the parent, not in installDir).
             Directory.CreateDirectory(installDir);
-            string lockPath = Path.Combine(installDir, ".install.lock");
+
+            // Lock file lives ALONGSIDE installDir, not inside it. This keeps
+            // the lock invisible to enumerations of installDir contents and
+            // avoids racing fs::remove_all(installDir).
+            string lockPath = installDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + ".install.lock";
 
             while (true)
             {
