@@ -13,5 +13,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Analysis" Version="0.23.0"/>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2"/>
+    <PackageReference Include="System.Text.Json" Version="10.0.4"/>
   </ItemGroup>
 </Project>

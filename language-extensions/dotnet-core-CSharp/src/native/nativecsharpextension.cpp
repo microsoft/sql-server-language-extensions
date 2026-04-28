@@ -385,9 +385,9 @@ static void SetLibraryError(
 //
 // Description:
 //  Installs an external library to the specified directory.
-//  The library file is expected to be a zip containing the library files.
-//  If it contains an inner zip, that zip is extracted to the install directory.
-//  Otherwise, all files are copied directly.
+//  The library file may be a ZIP archive or a raw DLL.
+//  If a ZIP, and it contains an inner zip, that inner zip is extracted to the
+//  install directory. Otherwise, all files are copied directly.
 //
 // Returns:
 //  SQL_SUCCESS on success, else SQL_ERROR
