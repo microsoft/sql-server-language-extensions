@@ -103,7 +103,10 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, ExecuteInvalidLibraryNameScriptTest)
     {
-        // Use a library name that doesn't match any DLL file in the library path.
+        // Use a library name that cannot resolve to any DLL on the search path.
+        // The pre-PR literal "Microsoft.SqlServer.CSharpExtensionTest" is the basename of
+        // m_UserLibName ("Microsoft.SqlServer.CSharpExtensionTest.dll"), so the loader now
+        // resolves it successfully and the test would fail to observe the expected error.
         //
         string userLibName = "NonExistentLibrary";
         string scriptString = userLibName + m_Separator + m_UserClassFullName;
