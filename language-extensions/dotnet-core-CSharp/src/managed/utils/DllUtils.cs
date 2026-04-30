@@ -110,9 +110,9 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// Adds DLL matches for <paramref name="userLibName"/> under
         /// <paramref name="searchPath"/>. Tries the exact name first (so callers
-        /// that pass "Foo.dll" resolve correctly) and falls back to the
-        /// "{name}.*" wildcard for bare names (so callers that pass "Foo"
-        /// still match "Foo.dll", "Foo.runtimeconfig.json", etc.).
+        /// that pass "Foo.dll" resolve correctly) and falls back to all .dll
+        /// files whose stem equals <paramref name="userLibName"/> (so callers
+        /// that pass "Foo" still match "Foo.dll").
         /// </summary>
         /// <param name="searchPath">
         /// Directory to search. Returns immediately if null/empty or absent;
@@ -128,6 +128,18 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// Output list to append discovered .dll paths to. Caller-owned;
         /// AddMatches never clears or replaces.
         /// </param>
+        /// <remarks>
+        /// We deliberately avoid <see cref="Directory.GetFiles(string, string)"/>'s
+        /// search-pattern argument and its Win32 <c>FindFirstFile</c>
+        /// wildcard semantics, which over-match in two well-known ways on
+        /// Windows: <c>"*.dll"</c> matches files like <c>"foo.dllx"</c>
+        /// (3-char-extension prefix-match quirk inherited from FAT), and
+        /// <c>"Foo.*"</c> can spuriously match short-name (8.3) aliases of
+        /// long-named files. Enumerating all entries and filtering with
+        /// <see cref="StringComparison.OrdinalIgnoreCase"/> equality on
+        /// both the extension and the stem gives exact, predictable
+        /// matches and avoids loading anything we did not intend.
+        /// </remarks>
         private static void AddMatches(string searchPath, string userLibName, List<string> dllList)
         {
             if (string.IsNullOrEmpty(searchPath) || !Directory.Exists(searchPath))
@@ -142,13 +154,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                 return;
             }
 
-            // The "{name}.*" wildcard matches non-DLL siblings too
-            // ("{name}.runtimeconfig.json", "{name}.deps.json", etc.). Only
-            // .dll files are valid Assembly.LoadFrom targets, so filter the
-            // wildcard match to avoid spamming the error log when the loader
-            // tries to load a JSON file as an assembly.
-            dllList.AddRange(Directory.GetFiles(searchPath, userLibName + ".*")
-                .Where(f => f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)));
+            foreach (string f in Directory.EnumerateFiles(searchPath))
+            {
+                if (Path.GetExtension(f).Equals(".dll", StringComparison.OrdinalIgnoreCase) &&
+                    Path.GetFileNameWithoutExtension(f).Equals(userLibName, StringComparison.OrdinalIgnoreCase))
+                {
+                    dllList.Add(f);
+                }
+            }
         }
 
         /// <summary>

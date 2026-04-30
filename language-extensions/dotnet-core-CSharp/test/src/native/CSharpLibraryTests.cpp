@@ -229,6 +229,76 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: InnerZipFutureSymlinkRejectedTest
+    //
+    // Description:
+    //  Regression for PR #85 / option α. The inner-zip install path must
+    //  route through tempFolder + IsReparsePoint-guarded CopyDirectory --
+    //  NOT a direct ZipFile.ExtractToDirectory(innerZip, installDir) call.
+    //  testpackageK-SYMLINK.zip is an outer zip whose inner zip contains:
+    //
+    //    legitfile.dll       regular file
+    //    evil-symlink.dll    Unix mode 0o120755 (symbolic link, target
+    //                        "/etc/passwd")
+    //
+    //  Today's .NET ZipFile.ExtractToDirectory ignores Unix mode bits on
+    //  every platform: it writes evil-symlink.dll as a regular file
+    //  containing the literal text "/etc/passwd". A future .NET runtime
+    //  (or a switch to a different extraction library) might honor those
+    //  bits and create a real symlink in the staged tree -- at which point
+    //  a direct extract-to-installDir would silently land an attacker-
+    //  controlled symlink in the live library directory.
+    //
+    //  This test asserts the future-proofing invariant: regardless of how
+    //  the runtime materializes the symlink-mode entry, installDir must
+    //  contain NO reparse points after install. If the runtime starts
+    //  honoring the bits, the IsReparsePoint guard in CopyDirectory must
+    //  skip evil-symlink.dll; if the runtime keeps writing it as a regular
+    //  file, the test still passes (no reparse points exist). The test
+    //  fails only if BOTH (a) the runtime honors the bits AND (b) the
+    //  IsReparsePoint guard regresses.
+    //
+    //  Also asserts that install completes successfully and that the
+    //  legitimate file lands in installDir, so a regression that simply
+    //  fails the install on encountering a symlink-mode entry is also
+    //  caught.
+    //
+    TEST_F(CSharpExtensionApiTests, InnerZipFutureSymlinkRejectedTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageK-SYMLINK.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath))
+            << "Symlink fixture missing -- regenerate with build-symlink-fixture.ps1";
+
+        string installDir = CreateInstallDir();
+
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "symlinklib", packagePath, installDir);
+        ASSERT_EQ(result, SQL_SUCCESS)
+            << "Install must succeed -- symlink-mode entries are skipped, not fatal";
+
+        // The legitimate file must be present (proves install actually ran).
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "legitfile.dll"))
+            << "Expected legitfile.dll missing -- inner-zip path may not have run";
+
+        // The future-proofing invariant: nothing in installDir is a reparse
+        // point. If a future runtime materializes evil-symlink.dll as a
+        // real symlink in tempFolder, the IsReparsePoint guard in
+        // CopyDirectory must skip it so installDir stays clean.
+        std::error_code ec;
+        for (const auto &entry : fs::recursive_directory_iterator(installDir, ec))
+        {
+            // is_symlink follows std::filesystem semantics: returns true
+            // for both file and directory symlinks on Linux, and for
+            // SYMLINK / SYMLINKD reparse points on Windows.
+            EXPECT_FALSE(fs::is_symlink(entry.symlink_status()))
+                << "installDir contains a symlink (regression): " << entry.path();
+        }
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: InstallZipContainingDllsTest
     //
     // Description:
@@ -261,21 +331,19 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: InstallNonZipFileAsRawDllTest
+    // Name: InstallZipExtensionWithBadContentFailsLoudlyTest
     //
     // Description:
-    //  Tests that installing a file with .zip extension that is NOT actually
-    //  a valid ZIP (magic bytes are not 'PK') falls through to the raw-DLL
-    //  install path: the file is copied to the install directory as
-    //  "{libName}.dll" and SQL_SUCCESS is returned. This pins the contract
-    //  that IsZipFile detects content (not file extension).
+    //  Tests that installing a file with the .zip extension whose bytes
+    //  are NOT a valid ZIP archive returns SQL_ERROR. Dispatch is by
+    //  extension (not by content sniff), so a file the user named
+    //  "bad-package-ZIP.zip" must be treated as a ZIP -- and if its bytes
+    //  are not a real archive, ZipFile.ExtractToDirectory throws and the
+    //  install must fail loudly. We must NOT silently rewrite the user's
+    //  upload into a "{libName}.dll" raw install (which the previous
+    //  content-sniff implementation did).
     //
-    //  NOTE: this does NOT exercise corrupt-ZIP handling. A genuinely
-    //  invalid ZIP would start with 'PK' but be malformed inside, causing
-    //  ZipFile.ExtractToDirectory to throw on the ZIP path. We have no
-    //  fixture for that case today.
-    //
-    TEST_F(CSharpExtensionApiTests, InstallNonZipFileAsRawDllTest)
+    TEST_F(CSharpExtensionApiTests, InstallZipExtensionWithBadContentFailsLoudlyTest)
     {
         string packagesPath = GetPackagesPath();
         string packagePath = (fs::path(packagesPath) / "bad-package-ZIP.zip").string();
@@ -285,10 +353,13 @@ namespace ExtensionApiTest
 
         SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
             "bad-package", packagePath, installDir);
-        EXPECT_EQ(result, SQL_SUCCESS);
+        EXPECT_EQ(result, SQL_ERROR);
 
-        EXPECT_TRUE(fs::exists(fs::path(installDir) / "bad-package.dll"))
-            << "Raw file not found in install directory as bad-package.dll";
+        // The user's file must NOT have been silently installed under a
+        // ".dll" rename. Pre-fix behavior was to copy bad-package-ZIP.zip
+        // to "bad-package.dll" -- assert that did not happen.
+        EXPECT_FALSE(fs::exists(fs::path(installDir) / "bad-package.dll"))
+            << "Bad ZIP should not be silently rewritten as bad-package.dll";
 
         CleanupInstallDir(installDir);
     }
@@ -556,6 +627,19 @@ namespace ExtensionApiTest
     //  DLL as an alias named "manyfilespackage.dll". The DLL count in
     //  installDir is therefore 50 (extracted) + 1 (alias) = 51.
     //
+    //  Historical note: a pre-PR version of this test asserted
+    //  EXPECT_EQ(dllCount, 50) and EXPECT_TRUE(fs::exists(... /
+    //  "manyfilespackage")) (alias with no .dll extension). It passed
+    //  legitimately at the time because the install code created the
+    //  alias as "{libName}" with no extension -- so dllCount stayed at 50
+    //  and the no-extension EXPECT_TRUE matched. Test and code agreed,
+    //  but the alias was un-loadable as a DLL on Windows. The test
+    //  caught no regression in alias naming because its assertions were
+    //  written to match the buggy behavior. Current assertions
+    //  (51 + .dll extension + per-module name check below) pin the
+    //  correct shape so a future regression toward "alias with wrong
+    //  extension" or "extracted file silently dropped" is caught.
+    //
     TEST_F(CSharpExtensionApiTests, InstallZipWithManyFilesTest)
     {
         string packagesPath = GetPackagesPath();
@@ -580,7 +664,21 @@ namespace ExtensionApiTest
         EXPECT_EQ(dllCount, 51)
             << "Expected 51 DLL files (50 extracted + 1 alias), found " << dllCount;
 
-        // Verify the alias exists so DllUtils can discover the library by name.
+        // Per-module existence check. Catches a "silently dropped one
+        // extracted file but added another spurious .dll so the count
+        // still totals 51" regression that the bare count above would miss.
+        for (int i = 1; i <= 50; ++i)
+        {
+            string moduleName = "Module" + std::to_string(i) + ".dll";
+            EXPECT_TRUE(fs::exists(fs::path(installDir) / moduleName))
+                << "Expected extracted module missing: " << moduleName;
+        }
+
+        // Verify the alias exists with the .dll extension so DllUtils can
+        // discover the library by name. The .dll extension is critical:
+        // an alias without it would still be findable by DllUtils's
+        // "{libName}.*" wildcard but would be un-loadable as a DLL on
+        // Windows, which is exactly the bug the historical test missed.
         EXPECT_TRUE(fs::exists(fs::path(installDir) / "manyfilespackage.dll"));
 
         CleanupInstallDir(installDir);
@@ -762,6 +860,7 @@ namespace ExtensionApiTest
             {
                 hasNestedDll = true;
             }
+
             if (e.find("native.dll") != string::npos &&
                 e.find("win-x64") != string::npos)
             {
@@ -817,6 +916,12 @@ namespace ExtensionApiTest
         std::string sourceContents(
             (std::istreambuf_iterator<char>(sourceStream)),
              std::istreambuf_iterator<char>());
+        // Explicit close (rather than relying on RAII at end-of-scope) so
+        // the file handles are released before the EXPECT_EQ comparison
+        // -- gtest macros that fail can run arbitrary code in the
+        // diagnostic path, and the comparison itself is cheaper to debug
+        // when the streams are known-closed. Same pattern is used at
+        // every read/write site below.
         aliasStream.close();
         sourceStream.close();
         EXPECT_EQ(aliasContents, sourceContents)
@@ -840,14 +945,17 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
-    // Name: DirectoryOverlapAllowedTest
+    // Name: NonConflictingFlatFilesCoexistTest
     //
     // Description:
     //  Installing two libraries into the same install directory succeeds
-    //  as long as they do not share any filenames. Directory (folder)
-    //  overlap is explicitly permitted.
+    //  as long as they do not share any filenames. Both packages used here
+    //  are flat (no nested directories), so the test exercises the
+    //  flat-file coexistence case only -- nested-directory overlap is
+    //  covered separately by ManifestListsNestedFilesTest +
+    //  InnerZipFileConflictFailsTest.
     //
-    TEST_F(CSharpExtensionApiTests, DirectoryOverlapAllowedTest)
+    TEST_F(CSharpExtensionApiTests, NonConflictingFlatFilesCoexistTest)
     {
         string packagesPath = GetPackagesPath();
         string pkgA = (fs::path(packagesPath) / "testpackageA-ZIP.zip").string();
@@ -1033,6 +1141,7 @@ namespace ExtensionApiTest
             {
                 hasA = true;
             }
+
             if (e.find("testpackageB") != string::npos)
             {
                 hasB = true;
@@ -1440,6 +1549,11 @@ namespace ExtensionApiTest
         fs::path sentinel = sentinelDir / "do-not-delete.manifest";
         std::ofstream sentinelStream(sentinel.string());
         sentinelStream << "sentinel";
+        // Close before fs::exists -- the assertion only checks the dir
+        // entry, but planting the file via an unflushed stream and then
+        // exercising uninstall would race against the OS commit. Keep
+        // the explicit close-before-assert pattern at every write site
+        // for consistency with the byte-comparison sites further down.
         sentinelStream.close();
         ASSERT_TRUE(fs::exists(sentinel));
 
@@ -1653,10 +1767,12 @@ namespace ExtensionApiTest
     //  side (uninstall is covered separately by
     //  UninstallRejectsPathTraversalLibNameTest):
     //   - empty string
+    //   - whitespace-only
     //   - path-traversal segment (".." resolved against installDir)
     //   - embedded null character
     //   - absolute path
     //   - extension-only (covered also by InstallRejectsExtensionOnlyLibNameTest)
+    //   - Windows reserved DOS device names (CON, NUL, COM1, LPT1, ...)
     //  A regression in ValidateLibraryName must trip at least one of these
     //  cases.
     //
@@ -1675,6 +1791,7 @@ namespace ExtensionApiTest
         // so the embedded NUL survives. CallInstall forwards libName.length().
         Case cases[] = {
             { string(""),                                 "empty" },
+            { string("   "),                              "whitespace-only" },
             { string("../escape"),                        "path-traversal" },
             { string("foo\0bar", 7),                      "null-character" },
 #ifdef _WIN32
@@ -1683,6 +1800,19 @@ namespace ExtensionApiTest
             { string("/etc/foo"),                         "absolute-path-posix" },
 #endif
             { string(".dll"),                             "extension-only" },
+            // Reserved DOS device names. ValidateLibraryName checks the
+            // stem (Path.GetFileNameWithoutExtension), so both bare "CON"
+            // and "CON.dll" / "nul.txt" must be rejected. Mixed case must
+            // also be rejected (s_reservedDeviceNames uses
+            // OrdinalIgnoreCase).
+            { string("CON"),                              "reserved-device-CON" },
+            { string("nul"),                              "reserved-device-nul-lower" },
+            { string("Aux"),                              "reserved-device-Aux-mixed" },
+            { string("PRN"),                              "reserved-device-PRN" },
+            { string("COM1"),                             "reserved-device-COM1" },
+            { string("LPT9"),                             "reserved-device-LPT9" },
+            { string("CON.dll"),                          "reserved-device-CON-with-ext" },
+            { string("nul.manifest"),                     "reserved-device-nul-with-ext" },
         };
 
         for (const Case &c : cases)

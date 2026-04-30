@@ -367,9 +367,27 @@ static void SetLibraryError(
         // Length excludes null terminator -- ExtHost adds +1 when copying
         // (see Utf8ToNullTerminatedUtf16Le / strcpy_s in the host).
         *libraryErrorLength = static_cast<SQLINTEGER>(errorString.length());
-        std::string *pError = new std::string(errorString);
-        *libraryError = const_cast<SQLCHAR*>(
-            reinterpret_cast<const SQLCHAR *>(pError->c_str()));
+
+        // Ownership of the buffer transfers to ExtHost; it frees the pointer
+        // via the C runtime (free()) after consuming the message. Mirrors
+        // the managed SetLibraryError (CSharpExtension.cs), which uses
+        // Marshal.AllocHGlobal for the same reason. The previous
+        // implementation -- new std::string(errorString) + returning
+        // c_str() -- leaked the string AND handed back a pointer into a
+        // std::string's internal buffer, which is undefined behavior the
+        // moment ExtHost calls free() on it.
+        size_t bufLen = errorString.length() + 1;
+        char *buf = static_cast<char*>(malloc(bufLen));
+        if (buf == nullptr)
+        {
+            // Out of memory; surface a "no error" state rather than crash
+            // (the original failure will still be logged by the caller).
+            *libraryError = nullptr;
+            *libraryErrorLength = 0;
+            return;
+        }
+        memcpy(buf, errorString.c_str(), bufLen);
+        *libraryError = reinterpret_cast<SQLCHAR*>(buf);
     }
     else
     {
