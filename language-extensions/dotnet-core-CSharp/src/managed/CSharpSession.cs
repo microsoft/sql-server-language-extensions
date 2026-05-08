@@ -193,7 +193,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 _outputDataSet.ColumnsNumber = (ushort)_outputDataSet.CSharpDataFrame.Columns.Count;
 
-                _outputDataSet.ExtractColumns(_outputDataSet.CSharpDataFrame);
+                // Pass user-specified output column types
+                //
+                _outputDataSet.ExtractColumns(
+                    _outputDataSet.CSharpDataFrame,
+                    _userDll.UserExecutor.OutputColumnDataTypes);
+
                 *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
             }
             else
