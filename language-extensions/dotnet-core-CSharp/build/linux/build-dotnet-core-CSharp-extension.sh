@@ -90,6 +90,38 @@ for BUILD_CONFIGURATION in "$@"; do
         -o "$BUILD_OUTPUT" \
         --no-restore
 
+    # Post-process: transform the self-contained runtimeconfig.json for component hosting.
+    # hostfxr rejects self-contained component initialization (error 0x80008093) because
+    # runtimeconfig.json contains "includedFrameworks". We convert it to use "framework"
+    # (framework-dependent format) and create a shared/ symlink so hostfxr can resolve
+    # the bundled runtime via hostfxr_initialize_for_runtime_config.
+    RUNTIMECONFIG="$BUILD_OUTPUT/Microsoft.SqlServer.CSharpExtension.runtimeconfig.json"
+    if grep -q '"includedFrameworks"' "$RUNTIMECONFIG" 2>/dev/null; then
+        FRAMEWORK_VERSION=$(python3 -c "
+import json, sys
+with open(sys.argv[1]) as f:
+    cfg = json.load(f)
+ro = cfg.get('runtimeOptions', {})
+included = ro.get('includedFrameworks', [])
+if not included:
+    sys.exit(1)
+ro['framework'] = included[0]
+del ro['includedFrameworks']
+with open(sys.argv[1], 'w') as f:
+    json.dump(cfg, f, indent=2)
+print(included[0]['version'])
+" "$RUNTIMECONFIG")
+
+        if [ -n "$FRAMEWORK_VERSION" ]; then
+            # Create framework directory structure with symlink.
+            # hostfxr resolves frameworks at <dotnet_root>/shared/<framework>/<version>/
+            # The symlink points back to root where all self-contained files reside.
+            mkdir -p "$BUILD_OUTPUT/shared/Microsoft.NETCore.App"
+            ln -sfn "../../../" "$BUILD_OUTPUT/shared/Microsoft.NETCore.App/$FRAMEWORK_VERSION"
+            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION)"
+        fi
+    fi
+
     echo "Success: Built dotnet-core-CSharp-extension for $BUILD_CONFIGURATION configuration."
 done
 
