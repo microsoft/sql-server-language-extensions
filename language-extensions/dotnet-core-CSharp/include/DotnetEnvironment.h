@@ -103,7 +103,6 @@ public:
 
 private:
     hostfxr_initialize_for_runtime_config_fn m_init_fptr;
-    hostfxr_initialize_for_dotnet_command_line_fn m_init_cmdline_fptr;
     hostfxr_get_runtime_delegate_fn m_get_delegate_fptr;
     hostfxr_close_fn m_close_fptr;
     load_assembly_and_get_function_pointer_fn m_load_assembly_and_get_function_pointer;

@@ -51,6 +51,13 @@ for BUILD_CONFIGURATION in "$@"; do
         done
     fi
 
+    # Include the shared/ directory (framework symlink for component hosting).
+    # The build script creates shared/Microsoft.NETCore.App/<version>/ as a symlink
+    # back to root so hostfxr can resolve the bundled .NET runtime.
+    if [ -d "$BUILD_OUTPUT/shared" ]; then
+        FILES_TO_COMPRESS+=("shared")
+    fi
+
     # Package the binaries
     pushd "$BUILD_OUTPUT" > /dev/null
     tar -czvf "$BUILD_OUTPUT/packages/dotnet-core-CSharp-lang-extension.tar.gz" "${FILES_TO_COMPRESS[@]}"

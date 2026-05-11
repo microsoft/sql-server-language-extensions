@@ -47,7 +47,6 @@ DotnetEnvironment::DotnetEnvironment(
     std::string public_library_path,
     std::string private_library_path) : m_root_path(convert_string(language_path)),
     m_init_fptr(nullptr),
-    m_init_cmdline_fptr(nullptr),
     m_get_delegate_fptr(nullptr),
     m_close_fptr(nullptr),
     m_load_assembly_and_get_function_pointer(nullptr),
@@ -138,7 +137,7 @@ string DotnetEnvironment::to_hex_string(int value)
 {
     LOG("DotnetEnvironment::to_hex_string");
     std::stringstream s;
-    s << "0x" << std::hex << std::showbase << value;
+    s << "0x" << std::hex << value;
     return s.str();
 }
 
@@ -220,18 +219,6 @@ bool DotnetEnvironment::load_hostfxr()
     m_get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
     m_close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
 
-#ifndef _WIN32
-    // For self-contained deployments, hostfxr_initialize_for_runtime_config
-    // rejects runtimeconfig.json files with "includedFrameworks" (error 0x80008093).
-    // Instead, use hostfxr_initialize_for_dotnet_command_line which supports
-    // both framework-dependent and self-contained applications (.NET 5+).
-    if (m_is_self_contained)
-    {
-        m_init_cmdline_fptr = (hostfxr_initialize_for_dotnet_command_line_fn)get_export(lib, "hostfxr_initialize_for_dotnet_command_line");
-        return (m_init_cmdline_fptr && m_get_delegate_fptr && m_close_fptr);
-    }
-#endif
-
     return (m_init_fptr && m_get_delegate_fptr && m_close_fptr);
 }
 
@@ -310,38 +297,25 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
         }
     }
 #else
-    // On Linux, use DOTNET_ROOT if set; otherwise default to the extension
-    // root path so hostfxr can find the self-contained shared framework.
+    // On Linux, for self-contained (bundled) deployments, set dotnet_root to
+    // the extension directory so hostfxr finds the runtime via the shared/ symlink.
+    // The build script transforms the self-contained runtimeconfig.json to look
+    // framework-dependent ("framework" instead of "includedFrameworks") and creates
+    // a shared/Microsoft.NETCore.App/<version>/ symlink pointing back to root.
+    // For framework-dependent deployments, leave dotnet_root as nullptr
+    // so hostfxr uses its default discovery mechanism.
     const char *dotnet_root_env = getenv("DOTNET_ROOT");
     if (dotnet_root_env != nullptr)
     {
         params.dotnet_root = dotnet_root_env;
     }
-    else
+    else if (m_is_self_contained)
     {
         params.dotnet_root = m_root_path.c_str();
     }
 #endif
 
-    int rc = 0;
-
-#ifndef _WIN32
-    if (m_is_self_contained && m_init_cmdline_fptr)
-    {
-        // For self-contained deployment, use hostfxr_initialize_for_dotnet_command_line.
-        // hostfxr_initialize_for_runtime_config rejects self-contained runtimeconfig.json
-        // files that contain "includedFrameworks" with error 0x80008093.
-        // hostfxr_initialize_for_dotnet_command_line supports both framework-dependent
-        // and self-contained applications (.NET 5+).
-        const string_t app_path = m_root_path + STR("/Microsoft.SqlServer.CSharpExtension.dll");
-        const char_t *argv[] = { app_path.c_str() };
-        rc = m_init_cmdline_fptr(1, argv, &params, &cxt);
-    }
-    else
-#endif
-    {
-        rc = m_init_fptr(config_path, &params, &cxt);
-    }
+    int rc = m_init_fptr(config_path, &params, &cxt);
 
     if (rc != 0 || cxt == nullptr)
     {
