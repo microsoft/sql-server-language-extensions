@@ -51,10 +51,11 @@ for BUILD_CONFIGURATION in "$@"; do
         done
     fi
 
-    # Include the shared/ directory (framework hard links for component hosting).
-    # The build script creates shared/Microsoft.NETCore.App/<version>/ with hard links
-    # to the root DLLs/SOs so hostfxr can resolve the bundled .NET runtime.
-    # Hard links are used because SQL Server's tar extraction does not preserve symlinks.
+    # Include the shared/ directory (framework file copies for component hosting).
+    # The build script creates shared/Microsoft.NETCore.App/<version>/ with copies
+    # of the root DLLs/SOs so hostfxr can resolve the bundled .NET runtime.
+    # File copies are used because SQL Server's tar extraction does not preserve
+    # symlinks or hard links.
     if [ -d "$BUILD_OUTPUT/shared" ]; then
         FILES_TO_COMPRESS+=("shared")
     fi
