@@ -113,21 +113,20 @@ print(included[0]['version'])
 " "$RUNTIMECONFIG")
 
         if [ -n "$FRAMEWORK_VERSION" ]; then
-            # Create framework directory structure with hard links.
+            # Create framework directory structure with file copies.
             # hostfxr resolves frameworks at <dotnet_root>/shared/<framework>/<version>/
             # which must contain the runtime DLLs and native libraries.
             #
-            # We use hard links (not symlinks) because SQL Server's tar extraction
-            # does not preserve symbolic links. Hard links are stored efficiently
-            # in tar (as link entries with zero additional size) and are reliably
-            # extracted by all tar implementations -- either as hard links or as
-            # file copies.
+            # We use file copies because SQL Server's internal tar extraction
+            # (used by CREATE EXTERNAL LANGUAGE) does not preserve symbolic links
+            # or hard links -- both are silently dropped during extraction.
+            # Copying the files ensures they are always present after extraction.
             FRAMEWORK_DIR="$BUILD_OUTPUT/shared/Microsoft.NETCore.App/$FRAMEWORK_VERSION"
             mkdir -p "$FRAMEWORK_DIR"
             for f in "$BUILD_OUTPUT"/*.dll "$BUILD_OUTPUT"/*.so; do
-                [ -e "$f" ] && ln "$f" "$FRAMEWORK_DIR/$(basename "$f")"
+                [ -e "$f" ] && cp "$f" "$FRAMEWORK_DIR/$(basename "$f")"
             done
-            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION, $(ls "$FRAMEWORK_DIR" | wc -l) hard-linked files)"
+            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION, $(ls "$FRAMEWORK_DIR" | wc -l) copied files)"
         fi
     fi
 

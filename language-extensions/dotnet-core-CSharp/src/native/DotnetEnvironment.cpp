@@ -301,9 +301,10 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     // the extension directory so hostfxr finds the runtime via the shared/ directory.
     // The build script transforms the self-contained runtimeconfig.json to look
     // framework-dependent ("framework" instead of "includedFrameworks") and creates
-    // a shared/Microsoft.NETCore.App/<version>/ directory with hard links to the
-    // root DLLs/SOs. Hard links are used because SQL Server's tar extraction does
-    // not preserve symbolic links when extracting CREATE EXTERNAL LANGUAGE payloads.
+    // a shared/Microsoft.NETCore.App/<version>/ directory with copies of the
+    // root DLLs/SOs. File copies are used because SQL Server's tar extraction does
+    // not preserve symbolic links or hard links when extracting CREATE EXTERNAL
+    // LANGUAGE payloads.
     // For framework-dependent deployments, leave dotnet_root as nullptr
     // so hostfxr uses its default discovery mechanism.
     const char *dotnet_root_env = getenv("DOTNET_ROOT");
