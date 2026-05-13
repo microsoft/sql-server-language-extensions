@@ -343,7 +343,7 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
             {
                 LOG("Microsoft.NETCore.App/ exists (mode=" + std::to_string(st.st_mode) + ")");
 
-                // List version subdirectories
+                // List version subdirectories and their contents
                 DIR *d = opendir(app_dir.c_str());
                 if (d)
                 {
@@ -351,7 +351,35 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
                     while ((de = readdir(d)) != nullptr)
                     {
                         if (de->d_name[0] != '.')
+                        {
                             LOG("  framework version: " + std::string(de->d_name));
+
+                            // List files inside this version directory
+                            std::string ver_dir = app_dir + "/" + std::string(de->d_name);
+                            DIR *vd = opendir(ver_dir.c_str());
+                            if (vd)
+                            {
+                                struct dirent *ve;
+                                int fcount = 0;
+                                bool has_deps = false, has_coreclr = false, has_dotversion = false;
+                                while ((ve = readdir(vd)) != nullptr)
+                                {
+                                    if (ve->d_name[0] != '.')
+                                        fcount++;
+                                    if (std::string(ve->d_name) == "Microsoft.NETCore.App.deps.json")
+                                        has_deps = true;
+                                    if (std::string(ve->d_name) == "libcoreclr.so")
+                                        has_coreclr = true;
+                                    if (std::string(ve->d_name) == ".version")
+                                        has_dotversion = true;
+                                }
+                                closedir(vd);
+                                LOG("    file count: " + std::to_string(fcount) +
+                                    " deps.json=" + std::to_string(has_deps) +
+                                    " libcoreclr.so=" + std::to_string(has_coreclr) +
+                                    " .version=" + std::to_string(has_dotversion));
+                            }
+                        }
                     }
                     closedir(d);
                 }
@@ -420,9 +448,43 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
         const char *ml = getenv("DOTNET_MULTILEVEL_LOOKUP");
         LOG("env DOTNET_MULTILEVEL_LOOKUP=" + std::string(ml ? ml : "(null)"));
     }
+
+    // Enable COREHOST_TRACE for detailed hostfxr diagnostics
+    setenv("COREHOST_TRACE", "1", 1);
+    setenv("COREHOST_TRACEFILE", "/tmp/hostfxr_trace.log", 1);
+    setenv("COREHOST_TRACE_VERBOSITY", "4", 1);
 #endif
 
     int rc = m_init_fptr(config_path, &params, &cxt);
+
+#ifndef _WIN32
+    // Read and log the COREHOST_TRACE output
+    {
+        std::ifstream trace("/tmp/hostfxr_trace.log");
+        if (trace.is_open())
+        {
+            std::string line;
+            int linecount = 0;
+            while (std::getline(trace, line))
+            {
+                if (linecount < 200)
+                    LOG("TRACE: " + line);
+                linecount++;
+            }
+            if (linecount >= 200)
+                LOG("TRACE: ... (truncated, total " + std::to_string(linecount) + " lines)");
+            trace.close();
+        }
+        else
+        {
+            LOG_ERROR("Could not read /tmp/hostfxr_trace.log");
+        }
+        // Clean up trace env vars
+        unsetenv("COREHOST_TRACE");
+        unsetenv("COREHOST_TRACEFILE");
+        unsetenv("COREHOST_TRACE_VERBOSITY");
+    }
+#endif
 
     if (rc != 0 || cxt == nullptr)
     {
