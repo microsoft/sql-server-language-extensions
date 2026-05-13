@@ -123,17 +123,37 @@ print(included[0]['version'])
             # Copying the files ensures they are always present after extraction.
             FRAMEWORK_DIR="$BUILD_OUTPUT/shared/Microsoft.NETCore.App/$FRAMEWORK_VERSION"
             mkdir -p "$FRAMEWORK_DIR"
-            # Copy all runtime files from .NET shared framework.
-            # The source is the published output which contains the framework files.
-            # hostfxr requires Microsoft.NETCore.App.deps.json to recognize a valid framework.
-            for f in "$BUILD_OUTPUT"/*.dll "$BUILD_OUTPUT"/*.so "$BUILD_OUTPUT"/*.json; do
+            # Copy DLLs and SOs from the self-contained publish output to the framework dir.
+            for f in "$BUILD_OUTPUT"/*.dll "$BUILD_OUTPUT"/*.so; do
                 [ -e "$f" ] && cp "$f" "$FRAMEWORK_DIR/$(basename "$f")"
             done
-            # Also copy hidden files like .version that hostfxr may need
-            for f in "$BUILD_OUTPUT"/.[!.]* ; do
-                [ -e "$f" ] && cp "$f" "$FRAMEWORK_DIR/$(basename "$f")"
-            done
-            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION, $(ls -a "$FRAMEWORK_DIR" | wc -l) copied files)"
+            # hostfxr requires Microsoft.NETCore.App.deps.json to recognize a valid
+            # framework version directory. This file is NOT in the self-contained publish
+            # output -- it only exists in the .NET SDK's shared framework directory.
+            # Find and copy it from the SDK installation.
+            DOTNET_SDK_ROOT=$(dirname "$(dirname "$(command -v dotnet)")")
+            SDK_FX_DIR="$DOTNET_SDK_ROOT/shared/Microsoft.NETCore.App/$FRAMEWORK_VERSION"
+            if [ ! -d "$SDK_FX_DIR" ]; then
+                # Try the standard /usr/share/dotnet location
+                SDK_FX_DIR="/usr/share/dotnet/shared/Microsoft.NETCore.App/$FRAMEWORK_VERSION"
+            fi
+            if [ -f "$SDK_FX_DIR/Microsoft.NETCore.App.deps.json" ]; then
+                cp "$SDK_FX_DIR/Microsoft.NETCore.App.deps.json" "$FRAMEWORK_DIR/"
+                echo "  Copied Microsoft.NETCore.App.deps.json from SDK"
+            else
+                echo "WARNING: Microsoft.NETCore.App.deps.json not found in SDK at $SDK_FX_DIR"
+                # As a fallback, search for it under dotnet root
+                FOUND_DEPS=$(find /usr -name "Microsoft.NETCore.App.deps.json" -path "*/$FRAMEWORK_VERSION/*" 2>/dev/null | head -1)
+                if [ -n "$FOUND_DEPS" ]; then
+                    cp "$FOUND_DEPS" "$FRAMEWORK_DIR/"
+                    echo "  Found and copied deps.json from $FOUND_DEPS"
+                fi
+            fi
+            # Also copy .version if available
+            if [ -f "$SDK_FX_DIR/.version" ]; then
+                cp "$SDK_FX_DIR/.version" "$FRAMEWORK_DIR/"
+            fi
+            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION, $(ls -a "$FRAMEWORK_DIR" | wc -l) files)"
         fi
     fi
 
