@@ -791,7 +791,22 @@ namespace Microsoft.SqlServer.CSharpExtension
                     string manifestPath = Path.Combine(installDir, libName + ".manifest");
                     HashSet<string> oldManifestEntries = ReadManifestEntries(manifestPath);
 
-                    if (HasZipExtension(libFilePath))
+                    // Dispatch on the user-registered library name's
+                    // extension first. SQL Server hands the extension a
+                    // staged temp file with a generated name (typically no
+                    // .zip / .dll extension), so libFilePath is not a
+                    // reliable signal of user intent. The only reliable
+                    // signal is libName, which the engine forwards verbatim
+                    // from CREATE EXTERNAL LIBRARY [<name>] -- e.g. a user
+                    // who wrote CREATE EXTERNAL LIBRARY [Foo.dll] gets
+                    // libName = "Foo.dll" and expects a raw-DLL install.
+                    //
+                    // When libName carries no extension (some test fixtures
+                    // register libraries by bare name, pointing libFilePath
+                    // at "foo-DLL.zip" or "foo-RAWDLL.dll"), fall back to
+                    // libFilePath's extension so legacy callers continue to
+                    // work without modification.
+                    if (DispatchAsZip(libName, libFilePath))
                     {
                         InstallZipPackage(libFilePath, installDir, libName,
                             manifestPath, oldManifestEntries, out tempFolder);
@@ -951,7 +966,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             string aliasFileName = DllFileNameFor(libName);
-            string aliasSourceRelPath = DetermineAliasSource(libName, aliasFileName, extractedFiles);
+            string aliasSourceRelPath = DetermineAliasSource(aliasFileName, extractedFiles);
             if (aliasSourceRelPath != null)
             {
                 // Append the alias to extractedFiles BEFORE CheckForConflicts
@@ -1039,11 +1054,23 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// DllUtils.CreateDllList searches only the TOP LEVEL of the library
         /// path (non-recursive). So a deeply-nested DLL like
         /// "lib/net8.0/{libName}.dll" does NOT make the library discoverable,
-        /// and we still need to create a root-level alias. Only a root-level
-        /// "{libName}.*" suppresses alias creation.
+        /// and we still need to create a root-level alias.
+        ///
+        /// Suppression is intentionally narrow: only a root-level file whose
+        /// name EXACTLY equals <paramref name="aliasFileName"/> (i.e.
+        /// "{libName}.dll" -- the file the loader will actually try to map)
+        /// counts as "already discoverable". An earlier, looser check used
+        /// <c>name.StartsWith("{libName}.")</c>, which incorrectly treated
+        /// sidecars such as "{libName}.deps.json", "{libName}.runtimeconfig.json",
+        /// or (in the libName-with-".dll"-suffix case) "{libName}.dll.config"
+        /// as if they made the library loadable. They do not: the loader
+        /// resolves "{libName}" to a PE binary by exact filename, so a
+        /// sidecar at the root with no real DLL there would suppress alias
+        /// creation and leave the install un-loadable. The exact-match rule
+        /// keeps suppression aligned with what DllUtils can actually load.
         ///
         /// When more than one candidate DLL exists (no root-level
-        /// "{libName}.*" but, say, both "lib/net8.0/foo.dll" and
+        /// "{aliasFileName}" but, say, both "lib/net8.0/foo.dll" and
         /// "lib/net6.0/bar.dll" are present), we deterministically pick the
         /// first by ordinal sort of the relative path. Without this sort the
         /// pick depends on <c>Directory.GetFiles</c> order, which is
@@ -1053,7 +1080,6 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// behavior across platforms and across re-installs.
         /// </remarks>
         private static string DetermineAliasSource(
-            string libName,
             string aliasFileName,
             List<string> extractedFiles)
         {
@@ -1067,10 +1093,12 @@ namespace Microsoft.SqlServer.CSharpExtension
                     continue;
                 }
                 string name = Path.GetFileName(relPath);
-                if (name.StartsWith(libName + ".", s_pathComparison) ||
-                    name.Equals(aliasFileName, s_pathComparison))
+                if (name.Equals(aliasFileName, s_pathComparison))
                 {
-                    // A root-level file matches "{libName}.*" -- already discoverable.
+                    // The file the loader will actually map is already at
+                    // the root -- no alias needed. Sidecars matching
+                    // "{libName}.*" are intentionally NOT treated as
+                    // suppressing: see <remarks> above.
                     return null;
                 }
             }
@@ -1394,19 +1422,28 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// collides on overwrite:false -- leaving the second library GONE
         /// with no replacement and no manifest.
         ///
-        /// Implementation: open a sibling file
-        /// "{installDir}.install.lock" (NOT inside installDir) with
-        /// FileShare.None. Sibling placement avoids two issues:
-        /// (a) tests / callers that enumerate installDir don't see a
-        ///     mystery dotfile;
-        /// (b) `Directory.Delete(installDir, recursive:true)` and
-        ///     fs::remove_all don't race the OS-level DeleteOnClose
-        ///     unlinking of the lock file inside installDir.
+        /// Implementation: open the file "{installDir}\install.lock"
+        /// (INSIDE installDir) with FileShare.None. The lock must live
+        /// inside installDir, not as a sibling of it, because SQL Server's
+        /// per-database / per-language ExternalLibraries hierarchy ACLs the
+        /// satellite's AppContainer SID with Modify on the per-user leaf
+        /// directory only; the parent (e.g.
+        /// "ExternalLibraries\&lt;dbid&gt;\&lt;langid&gt;\") grants the
+        /// AppContainer Read access only, so a sibling placement
+        /// "ExternalLibraries\&lt;dbid&gt;\&lt;langid&gt;\1.install.lock"
+        /// fails with UnauthorizedAccessException at FileStream creation
+        /// and the install path can never start.
         ///
         /// The OS releases the handle on process crash so there is no
         /// stale-lock risk. FileOptions.DeleteOnClose removes the lock
         /// file when the holder closes its handle, keeping the install
         /// area clean across runs.
+        ///
+        /// Library names that would collide with the lock filename
+        /// ("install.lock", or "install" producing an "install.manifest")
+        /// are not reserved here -- callers should not register such a
+        /// name. The collision surfaces as a sharing violation at
+        /// install time rather than silent overwrite.
         ///
         /// Acquisition blocks indefinitely with a 100ms retry interval.
         /// In the uncontended common case (single session), acquisition
@@ -1414,15 +1451,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </remarks>
         private static FileStream AcquireInstallLock(string installDir)
         {
-            // Ensure installDir exists so that its parent exists too (the
-            // lock lives in the parent, not in installDir).
+            // Ensure installDir exists -- the lock file lives inside it.
             Directory.CreateDirectory(installDir);
 
-            // Lock file lives ALONGSIDE installDir, not inside it. This keeps
-            // the lock invisible to enumerations of installDir contents and
-            // avoids racing fs::remove_all(installDir).
-            string lockPath = installDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                + ".install.lock";
+            // Lock file lives INSIDE installDir. See remarks for the ACL
+            // rationale (the satellite's AppContainer SID has write access
+            // on installDir only, not on its parent).
+            string lockPath = Path.Combine(installDir, "install.lock");
 
             while (true)
             {
@@ -1633,6 +1668,52 @@ namespace Microsoft.SqlServer.CSharpExtension
         {
             return string.Equals(Path.GetExtension(path), ".zip",
                 StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Decides whether to dispatch <paramref name="libName"/> /
+        /// <paramref name="libFilePath"/> through the ZIP install path or
+        /// the raw-DLL install path.
+        /// </summary>
+        /// <remarks>
+        /// Precedence:
+        /// <list type="number">
+        ///   <item>If <paramref name="libName"/> ends in ".zip", dispatch as
+        ///   a ZIP archive. The user wrote
+        ///   <c>CREATE EXTERNAL LIBRARY [Foo.zip]</c>; their intent is
+        ///   unambiguous.</item>
+        ///   <item>If <paramref name="libName"/> ends in ".dll", dispatch
+        ///   as a raw DLL. The user wrote
+        ///   <c>CREATE EXTERNAL LIBRARY [Foo.dll]</c>; their intent is
+        ///   unambiguous and the staged temp file contents must be a PE
+        ///   binary (any attempt to parse it as a ZIP throws
+        ///   InvalidDataException).</item>
+        ///   <item>Otherwise, fall back to <paramref name="libFilePath"/>'s
+        ///   extension. SQL Server's ExtHost passes a generated temp file
+        ///   name with no semantic extension; some test fixtures, however,
+        ///   register libraries under a bare name (e.g.
+        ///   <c>"testpackageB"</c>) and point libFilePath at a fixture file
+        ///   that does carry a meaningful ".zip" / ".dll" suffix. The
+        ///   fallback preserves backward compatibility for those callers.
+        ///   </item>
+        /// </list>
+        /// </remarks>
+        private static bool DispatchAsZip(string libName, string libFilePath)
+        {
+            string libNameExt = Path.GetExtension(libName);
+            if (string.Equals(libNameExt, ".zip",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(libNameExt, ".dll",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return HasZipExtension(libFilePath);
         }
 
         /// <summary>

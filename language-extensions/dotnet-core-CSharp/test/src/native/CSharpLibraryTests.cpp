@@ -73,6 +73,32 @@ namespace ExtensionApiTest
         }
     }
 
+    // Helper: release an unmanaged error buffer returned from Install/
+    // Uninstall External Library. The managed implementation allocates
+    // these via Marshal.AllocHGlobal (see CSharpExtension.cs::SetLibraryError),
+    // which on Windows is backed by LocalAlloc -- the matching deallocator
+    // is LocalFree. Production ExtHost frees the buffer the same way; the
+    // tests must do so too, otherwise every SQL_ERROR path (and every
+    // success path, since a null libError is just a no-op LocalFree) leaks
+    // unmanaged memory. With 113 tests, many of which intentionally trigger
+    // SQL_ERROR, the leak accumulation was non-trivial across a single
+    // gtest run.
+    //
+    // The native pre-flight path in nativecsharpextension.cpp also allocates
+    // libError, but uses malloc() and not LocalAlloc. On Windows, LocalFree
+    // on a malloc'd pointer is undefined behavior. The tests in this file
+    // only exercise the managed entry points (Install/UninstallExternalLibrary
+    // in Microsoft.SqlServer.CSharpExtension.dll), so every libError they
+    // ever see is AllocHGlobal/LocalAlloc'd and LocalFree is correct here.
+    //
+    static void FreeLibError(SQLCHAR *libError)
+    {
+        if (libError != nullptr)
+        {
+            LocalFree(reinterpret_cast<HLOCAL>(libError));
+        }
+    }
+
     // Helper: call InstallExternalLibrary and check result
     //
     static SQLRETURN CallInstall(
@@ -95,6 +121,10 @@ namespace ExtensionApiTest
             &libError,
             &libErrorLength);
 
+        // Release the unmanaged error buffer (if any) before returning, so
+        // the SQL_ERROR-path tests don't accumulate unmanaged allocations
+        // across the run. See FreeLibError above for rationale.
+        FreeLibError(libError);
         return result;
     }
 
@@ -117,6 +147,7 @@ namespace ExtensionApiTest
             &libError,
             &libErrorLength);
 
+        FreeLibError(libError);
         return result;
     }
 
@@ -166,6 +197,10 @@ namespace ExtensionApiTest
                 static_cast<size_t>(libErrorLength));
         }
 
+        // Release the unmanaged error buffer AFTER copying its contents into
+        // the std::string. See FreeLibError above for the allocator-pairing
+        // rationale.
+        FreeLibError(libError);
         return result;
     }
 
@@ -940,6 +975,95 @@ namespace ExtensionApiTest
             }
         }
         EXPECT_TRUE(hasAlias) << "Manifest missing alias entry 'myAlias.dll'";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: AliasCreatedWhenOnlySidecarsAtRootTest
+    //
+    // Description:
+    //  Regression test for the alias-suppression tightening in
+    //  DetermineAliasSource. The fixture testpackageL-SIDECAR.zip contains
+    //  ONLY two root-level sidecars (foo.deps.json, foo.runtimeconfig.json)
+    //  and the actual DLL nested at lib/net8.0/foo.dll.
+    //
+    //  Pre-fix, DetermineAliasSource matched any root file whose name
+    //  began with "{libName}." (StartsWith). The two sidecars satisfied
+    //  that check, so alias creation was suppressed -- the install ended
+    //  up with no root-level "foo.dll" and DllUtils.CreateDllList (which
+    //  walks only the top level) could not find the library at load time.
+    //
+    //  Post-fix, suppression requires an EXACT match against the alias
+    //  filename ("foo.dll"). The sidecars no longer suppress, so the
+    //  nested DLL is cloned to the root as the alias and the library is
+    //  loadable.
+    //
+    TEST_F(CSharpExtensionApiTests, AliasCreatedWhenOnlySidecarsAtRootTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageL-SIDECAR.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath))
+            << "Test package not found: " << packagePath;
+
+        string installDir = CreateInstallDir();
+
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "foo", packagePath, installDir);
+        EXPECT_EQ(result, SQL_SUCCESS);
+
+        // Both sidecars must have been extracted to the root unchanged.
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "foo.deps.json"))
+            << "Sidecar foo.deps.json missing from installDir";
+        EXPECT_TRUE(fs::exists(fs::path(installDir) / "foo.runtimeconfig.json"))
+            << "Sidecar foo.runtimeconfig.json missing from installDir";
+
+        // The nested DLL must have been extracted intact.
+        fs::path nestedDll = fs::path(installDir) / "lib" / "net8.0" / "foo.dll";
+        ASSERT_TRUE(fs::exists(nestedDll))
+            << "Nested DLL lib/net8.0/foo.dll missing from installDir";
+
+        // Core regression assertion: the alias MUST exist at the root
+        // (post-fix). Pre-fix, this file was absent and the test would
+        // fail here, demonstrating the bug.
+        fs::path aliasFile = fs::path(installDir) / "foo.dll";
+        ASSERT_TRUE(fs::exists(aliasFile))
+            << "Expected root-level alias 'foo.dll' was not created -- "
+            << "alias suppression incorrectly fired on a sidecar match";
+
+        // Alias must be a byte-for-byte copy of the nested DLL.
+        EXPECT_EQ(fs::file_size(aliasFile), fs::file_size(nestedDll))
+            << "Alias size differs from nested DLL";
+
+        std::ifstream aliasStream(aliasFile.string(), std::ios::binary);
+        std::ifstream nestedStream(nestedDll.string(), std::ios::binary);
+        std::string aliasContents(
+            (std::istreambuf_iterator<char>(aliasStream)),
+             std::istreambuf_iterator<char>());
+        std::string nestedContents(
+            (std::istreambuf_iterator<char>(nestedStream)),
+             std::istreambuf_iterator<char>());
+        // Explicit close before EXPECT_EQ so the file handles are released
+        // before any failure-diagnostic code runs (same pattern as
+        // InstallLibNameAliasTest above).
+        aliasStream.close();
+        nestedStream.close();
+        EXPECT_EQ(aliasContents, nestedContents)
+            << "Alias contents differ from nested DLL";
+
+        // Manifest should include the alias.
+        vector<string> entries = ReadManifest(
+            (fs::path(installDir) / "foo.manifest").string());
+        bool hasAlias = false;
+        for (const string &e : entries)
+        {
+            if (e == "foo.dll")
+            {
+                hasAlias = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(hasAlias) << "Manifest missing alias entry 'foo.dll'";
 
         CleanupInstallDir(installDir);
     }

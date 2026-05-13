@@ -143,9 +143,22 @@ SQLEXTENSION_INTERFACE SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT 
 SQLEXTENSION_INTERFACE SQLRETURN Cleanup();
 
 //  Installs an external library to the specified directory.
-//  The library file is expected to be a zip. If it contains an inner zip,
-//  that zip is extracted to the install directory. Otherwise, all files
-//  are copied directly.
+//
+//  Dispatch is by the registered library name (libraryName), not the
+//  contents of libraryFile:
+//    - libraryName ending in ".zip"  -> ZIP archive install. If the archive
+//      contains a single inner zip, that inner zip is extracted to the
+//      install directory; otherwise the outer archive's files are copied
+//      directly. A "{libName}.manifest" listing every extracted file is
+//      written so UninstallExternalLibrary can clean up exactly what was
+//      installed.
+//    - libraryName ending in ".dll"  -> raw DLL install. libraryFile is
+//      copied verbatim to "{installDir}\{libraryName}" and a one-entry
+//      manifest is written.
+//    - libraryName with neither extension -> falls back to libraryFile's
+//      extension (preserves the legacy contract for callers that register
+//      libraries by bare name and point libraryFile at a "*.zip" or
+//      "*.dll" fixture).
 //
 SQLEXTENSION_INTERFACE SQLRETURN InstallExternalLibrary(
     SQLGUID    setupSessionId,

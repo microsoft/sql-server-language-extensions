@@ -25,7 +25,7 @@ add_executable(dotnet-core-CSharp-extension-test
 
 target_compile_options(dotnet-core-CSharp-extension-test PRIVATE
     "$<$<CXX_COMPILER_ID:MSVC>:/std:c++17>"
-    "$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:--std=c++17>"
+    "$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-std=c++17>"
 )
 
 # Set the DLLEXPORT variable to export symbols
