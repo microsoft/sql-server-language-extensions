@@ -341,3 +341,156 @@ SQLRETURN Cleanup()
     delete g_dotnet_runtime;
     return SQL_SUCCESS;
 }
+
+//--------------------------------------------------------------------------------------------------
+// Name: SetLibraryError
+//
+// Description:
+//  Helper to populate the library error output parameters.
+//
+static void SetLibraryError(
+    const std::string &errorString,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength)
+{
+    // Guard against null out-parameters. The managed SetLibraryError
+    // (CSharpExtension.cs) does the same null-check; without it, a caller
+    // passing null libraryError / libraryErrorLength would dereference null
+    // and crash the host process.
+    if (libraryError == nullptr || libraryErrorLength == nullptr)
+    {
+        return;
+    }
+
+    if (!errorString.empty())
+    {
+        // Length excludes null terminator -- ExtHost adds +1 when copying
+        // (see Utf8ToNullTerminatedUtf16Le / strcpy_s in the host).
+        *libraryErrorLength = static_cast<SQLINTEGER>(errorString.length());
+
+        // Ownership of the buffer transfers to ExtHost; it frees the pointer
+        // via the C runtime (free()) after consuming the message. Mirrors
+        // the managed SetLibraryError (CSharpExtension.cs), which uses
+        // Marshal.AllocHGlobal for the same reason. The previous
+        // implementation -- new std::string(errorString) + returning
+        // c_str() -- leaked the string AND handed back a pointer into a
+        // std::string's internal buffer, which is undefined behavior the
+        // moment ExtHost calls free() on it.
+        size_t bufLen = errorString.length() + 1;
+        char *buf = static_cast<char*>(malloc(bufLen));
+        if (buf == nullptr)
+        {
+            // Out of memory; surface a "no error" state rather than crash
+            // (the original failure will still be logged by the caller).
+            *libraryError = nullptr;
+            *libraryErrorLength = 0;
+            return;
+        }
+        memcpy(buf, errorString.c_str(), bufLen);
+        *libraryError = reinterpret_cast<SQLCHAR*>(buf);
+    }
+    else
+    {
+        // Explicitly clear the out-parameters so callers that don't
+        // pre-initialize them see a well-defined "no error" state.
+        *libraryError = nullptr;
+        *libraryErrorLength = 0;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: InstallExternalLibrary
+//
+// Description:
+//  Installs an external library to the specified directory.
+//  The library file may be a ZIP archive or a raw DLL.
+//  If a ZIP, and it contains an inner zip, that inner zip is extracted to the
+//  install directory. Otherwise, all files are copied directly.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN InstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryFile,
+    SQLINTEGER libraryFileLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength)
+{
+    LOG("nativecsharpextension::InstallExternalLibrary");
+
+    SQLRETURN result = SQL_ERROR;
+
+    if (g_dotnet_runtime == nullptr)
+    {
+        SetLibraryError(
+            "Extension not initialized. Call Init before InstallExternalLibrary.",
+            libraryError,
+            libraryErrorLength);
+    }
+    else
+    {
+        result = g_dotnet_runtime->call_managed_method<decltype(&InstallExternalLibrary)>(
+            nameof(InstallExternalLibrary),
+            setupSessionId,
+            libraryName,
+            libraryNameLength,
+            libraryFile,
+            libraryFileLength,
+            libraryInstallDirectory,
+            libraryInstallDirectoryLength,
+            libraryError,
+            libraryErrorLength);
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: UninstallExternalLibrary
+//
+// Description:
+//  Uninstalls an external library from the specified directory.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN UninstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength)
+{
+    LOG("nativecsharpextension::UninstallExternalLibrary");
+
+    SQLRETURN result = SQL_ERROR;
+
+    if (g_dotnet_runtime == nullptr)
+    {
+        SetLibraryError(
+            "Extension not initialized. Call Init before UninstallExternalLibrary.",
+            libraryError,
+            libraryErrorLength);
+    }
+    else
+    {
+        result = g_dotnet_runtime->call_managed_method<decltype(&UninstallExternalLibrary)>(
+            nameof(UninstallExternalLibrary),
+            setupSessionId,
+            libraryName,
+            libraryNameLength,
+            libraryInstallDirectory,
+            libraryInstallDirectoryLength,
+            libraryError,
+            libraryErrorLength);
+    }
+
+    return result;
+}

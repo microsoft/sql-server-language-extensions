@@ -99,6 +99,26 @@ typedef SQLRETURN FN_cleanupSession(
 
 typedef SQLRETURN FN_cleanup();
 
+typedef SQLRETURN FN_installExternalLibrary(
+    SQLGUID,     // setupSessionId
+    SQLCHAR *,   // libraryName
+    SQLINTEGER,  // libraryNameLength
+    SQLCHAR *,   // libraryFile
+    SQLINTEGER,  // libraryFileLength
+    SQLCHAR *,   // libraryInstallDirectory
+    SQLINTEGER,  // libraryInstallDirectoryLength
+    SQLCHAR **,  // libraryError
+    SQLINTEGER *);// libraryErrorLength
+
+typedef SQLRETURN FN_uninstallExternalLibrary(
+    SQLGUID,     // setupSessionId
+    SQLCHAR *,   // libraryName
+    SQLINTEGER,  // libraryNameLength
+    SQLCHAR *,   // libraryInstallDirectory
+    SQLINTEGER,  // libraryInstallDirectoryLength
+    SQLCHAR **,  // libraryError
+    SQLINTEGER *);// libraryErrorLength
+
 namespace ExtensionApiTest
 {
     // Forward declaration
@@ -341,7 +361,7 @@ namespace ExtensionApiTest
         // User library name and class full name
         // The name of the library is same as the dll file name.
         //
-        const std::string m_UserLibName = "Microsoft.SqlServer.CSharpExtensionTest.dll";;
+        const std::string m_UserLibName = "Microsoft.SqlServer.CSharpExtensionTest.dll";
         const std::string m_UserClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutor";
         const std::string m_Separator = ";";
 
@@ -451,6 +471,14 @@ namespace ExtensionApiTest
         // Pointer to the Cleanup function
         //
         static FN_cleanup *sm_cleanupFuncPtr;
+
+        // Pointer to the InstallExternalLibrary function
+        //
+        static FN_installExternalLibrary *sm_installExternalLibraryFuncPtr;
+
+        // Pointer to the UninstallExternalLibrary function
+        //
+        static FN_uninstallExternalLibrary *sm_uninstallExternalLibraryFuncPtr;
     };
 
     // ColumnInfo template class to store information

@@ -31,6 +31,8 @@ namespace ExtensionApiTest
     FN_getOutputParam *CSharpExtensionApiTests::sm_getOutputParamFuncPtr = nullptr;
     FN_cleanupSession *CSharpExtensionApiTests::sm_cleanupSessionFuncPtr = nullptr;
     FN_cleanup *CSharpExtensionApiTests::sm_cleanupFuncPtr = nullptr;
+    FN_installExternalLibrary *CSharpExtensionApiTests::sm_installExternalLibraryFuncPtr = nullptr;
+    FN_uninstallExternalLibrary *CSharpExtensionApiTests::sm_uninstallExternalLibraryFuncPtr = nullptr;
 
     //----------------------------------------------------------------------------------------------
     // Name: CSharpExtensionApiTest::SetUpTestCase
@@ -250,6 +252,14 @@ namespace ExtensionApiTest
 
         sm_cleanupFuncPtr = reinterpret_cast<FN_cleanup*>(GetProcAddress(sm_libHandle, "Cleanup"));
         EXPECT_TRUE(sm_cleanupFuncPtr != nullptr);
+
+        sm_installExternalLibraryFuncPtr = reinterpret_cast<FN_installExternalLibrary*>(
+            GetProcAddress(sm_libHandle, "InstallExternalLibrary"));
+        EXPECT_TRUE(sm_installExternalLibraryFuncPtr != nullptr);
+
+        sm_uninstallExternalLibraryFuncPtr = reinterpret_cast<FN_uninstallExternalLibrary*>(
+            GetProcAddress(sm_libHandle, "UninstallExternalLibrary"));
+        EXPECT_TRUE(sm_uninstallExternalLibraryFuncPtr != nullptr);
     }
 
     //----------------------------------------------------------------------------------------------
