@@ -27,6 +27,12 @@
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
+#ifndef _WIN32
+#include <sys/stat.h>
+#include <dirent.h>
+#include <fstream>
+#endif
+
 using namespace std;
 using string_t = std::basic_string<char_t>;
 
@@ -315,6 +321,104 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     else if (m_is_self_contained)
     {
         params.dotnet_root = m_root_path.c_str();
+    }
+#endif
+
+#ifndef _WIN32
+    // Diagnostic logging: verify dotnet_root and shared/ directory presence
+    // before calling hostfxr_initialize_for_runtime_config.
+    if (params.dotnet_root != nullptr)
+    {
+        LOG("dotnet_root: " + std::string(params.dotnet_root));
+
+        // Check shared/ directory
+        std::string shared_dir = std::string(params.dotnet_root) + "/shared";
+        struct stat st;
+        if (stat(shared_dir.c_str(), &st) == 0)
+        {
+            LOG("shared/ exists (mode=" + std::to_string(st.st_mode) + " uid=" + std::to_string(st.st_uid) + " gid=" + std::to_string(st.st_gid) + ")");
+
+            std::string app_dir = shared_dir + "/Microsoft.NETCore.App";
+            if (stat(app_dir.c_str(), &st) == 0)
+            {
+                LOG("Microsoft.NETCore.App/ exists (mode=" + std::to_string(st.st_mode) + ")");
+
+                // List version subdirectories
+                DIR *d = opendir(app_dir.c_str());
+                if (d)
+                {
+                    struct dirent *de;
+                    while ((de = readdir(d)) != nullptr)
+                    {
+                        if (de->d_name[0] != '.')
+                            LOG("  framework version: " + std::string(de->d_name));
+                    }
+                    closedir(d);
+                }
+            }
+            else
+            {
+                LOG_ERROR("Microsoft.NETCore.App/ NOT found (errno=" + std::to_string(errno) + ")");
+            }
+        }
+        else
+        {
+            LOG_ERROR("shared/ NOT found at " + shared_dir + " (errno=" + std::to_string(errno) + ")");
+
+            // List root directory contents for debugging
+            DIR *d = opendir(params.dotnet_root);
+            if (d)
+            {
+                struct dirent *de;
+                int count = 0;
+                while ((de = readdir(d)) != nullptr)
+                {
+                    if (de->d_name[0] != '.')
+                    {
+                        if (count < 30)
+                            LOG("  root entry: " + std::string(de->d_name) + " (type=" + std::to_string(de->d_type) + ")");
+                        count++;
+                    }
+                }
+                LOG("  total entries: " + std::to_string(count));
+                closedir(d);
+            }
+            else
+            {
+                LOG_ERROR("Cannot opendir dotnet_root (errno=" + std::to_string(errno) + ")");
+            }
+        }
+    }
+    else
+    {
+        LOG("dotnet_root is nullptr");
+    }
+
+    // Log runtimeconfig path and check it exists
+    {
+        std::string cfg(config_path);
+        LOG("config_path: " + cfg);
+        struct stat cfgst;
+        if (stat(cfg.c_str(), &cfgst) != 0)
+            LOG_ERROR("config_path NOT found (errno=" + std::to_string(errno) + ")");
+
+        // Read and log first 500 chars of runtimeconfig for verification
+        std::ifstream rcf(cfg);
+        if (rcf.is_open())
+        {
+            std::string content((std::istreambuf_iterator<char>(rcf)),
+                                 std::istreambuf_iterator<char>());
+            if (content.size() > 500) content.resize(500);
+            LOG("runtimeconfig content: " + content);
+        }
+    }
+
+    // Log DOTNET_ROOT and DOTNET_MULTILEVEL_LOOKUP env vars
+    {
+        const char *dr = getenv("DOTNET_ROOT");
+        LOG("env DOTNET_ROOT=" + std::string(dr ? dr : "(null)"));
+        const char *ml = getenv("DOTNET_MULTILEVEL_LOOKUP");
+        LOG("env DOTNET_MULTILEVEL_LOOKUP=" + std::string(ml ? ml : "(null)"));
     }
 #endif
 
