@@ -123,10 +123,17 @@ print(included[0]['version'])
             # Copying the files ensures they are always present after extraction.
             FRAMEWORK_DIR="$BUILD_OUTPUT/shared/Microsoft.NETCore.App/$FRAMEWORK_VERSION"
             mkdir -p "$FRAMEWORK_DIR"
-            for f in "$BUILD_OUTPUT"/*.dll "$BUILD_OUTPUT"/*.so; do
+            # Copy all runtime files from .NET shared framework.
+            # The source is the published output which contains the framework files.
+            # hostfxr requires Microsoft.NETCore.App.deps.json to recognize a valid framework.
+            for f in "$BUILD_OUTPUT"/*.dll "$BUILD_OUTPUT"/*.so "$BUILD_OUTPUT"/*.json; do
                 [ -e "$f" ] && cp "$f" "$FRAMEWORK_DIR/$(basename "$f")"
             done
-            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION, $(ls "$FRAMEWORK_DIR" | wc -l) copied files)"
+            # Also copy hidden files like .version that hostfxr may need
+            for f in "$BUILD_OUTPUT"/.[!.]* ; do
+                [ -e "$f" ] && cp "$f" "$FRAMEWORK_DIR/$(basename "$f")"
+            done
+            echo "Success: Configured for component hosting (framework $FRAMEWORK_VERSION, $(ls -a "$FRAMEWORK_DIR" | wc -l) copied files)"
         fi
     fi
 
