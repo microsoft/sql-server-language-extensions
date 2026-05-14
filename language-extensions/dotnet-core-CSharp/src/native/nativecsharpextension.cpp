@@ -10,6 +10,7 @@
 //*********************************************************************
 #include "nativecsharpextension.h"
 #include "Logger.h"
+#include <string>
 
 #define nameof(x) #x
 
@@ -50,6 +51,7 @@ std::string UTF8PtrToStr(SQLCHAR* str, SQLULEN len)
 //
 SQLUSMALLINT GetInterfaceVersion()
 {
+    LOG_ERROR("[entry] GetInterfaceVersion");
     return EXTERNAL_LANGUAGE_EXTENSION_API;
 }
 
@@ -73,6 +75,9 @@ SQLRETURN Init(
     SQLULEN  privateLibraryPathLen
 )
 {
+    LOG_ERROR(std::string("[entry] Init languagePath='") +
+        (languagePath ? std::string(reinterpret_cast<char*>(languagePath), languagePathLen) : std::string("<null>")) +
+        "'");
     LOG("nativecsharpextension::Init");
     g_dotnet_runtime = new DotnetEnvironment(
         UTF8PtrToStr(languageParams, languageParamsLen),
@@ -117,6 +122,7 @@ SQLRETURN InitSession(
     SQLUSMALLINT outputDataNameLength
 )
 {
+    LOG_ERROR("[entry] InitSession");
     LOG("nativecsharpextension::InitSession");
     return g_dotnet_runtime->call_managed_method<decltype(&InitSession)>(nameof(InitSession),
         sessionId,
@@ -155,6 +161,7 @@ SQLRETURN InitColumn(
     SQLSMALLINT  orderByNumber
 )
 {
+    LOG_ERROR("[entry] InitColumn");
     LOG("nativecsharpextension::InitColumn");
     return g_dotnet_runtime->call_managed_method<decltype(&InitColumn)>(nameof(InitColumn),
         sessionId,
@@ -193,6 +200,7 @@ SQLRETURN InitParam(
     SQLSMALLINT  inputOutputType
 )
 {
+    LOG_ERROR("[entry] InitParam");
     LOG("nativecsharpextension::InitParam");
     return g_dotnet_runtime->call_managed_method<decltype(&InitParam)>(nameof(InitParam),
         sessionId,
@@ -228,6 +236,7 @@ SQLRETURN Execute(
     SQLUSMALLINT *outputSchemaColumnsNumber
 )
 {
+    LOG_ERROR("[entry] Execute");
     LOG("nativecsharpextension::Execute");
     return g_dotnet_runtime->call_managed_method<decltype(&Execute)>(nameof(Execute),
         sessionId,
@@ -257,6 +266,7 @@ SQLRETURN GetResultColumn(
     SQLSMALLINT  *nullable
 )
 {
+    LOG_ERROR("[entry] GetResultColumn");
     LOG("nativecsharpextension::GetResultColumn");
     return g_dotnet_runtime->call_managed_method<decltype(&GetResultColumn)>(nameof(GetResultColumn),
         sessionId,
@@ -285,6 +295,7 @@ SQLRETURN GetResults(
     SQLINTEGER   ***strLen_or_Ind
 )
 {
+    LOG_ERROR("[entry] GetResults");
     LOG("nativecsharpextension::GetResults");
     return g_dotnet_runtime->call_managed_method<decltype(&GetResults)>(nameof(GetResults),
         sessionId,
@@ -311,6 +322,7 @@ SQLRETURN GetOutputParam(
     SQLINTEGER   *strLen_or_Ind
 )
 {
+    LOG_ERROR("[entry] GetOutputParam");
     LOG("nativecsharpextension::GetOutputParam");
     return g_dotnet_runtime->call_managed_method<decltype(&GetOutputParam)>(nameof(GetOutputParam),
         sessionId,
@@ -332,6 +344,7 @@ SQLRETURN GetOutputParam(
 //
 SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT taskId)
 {
+    LOG_ERROR("[entry] CleanupSession");
     LOG("nativecsharpextension::CleanupSession");
     return g_dotnet_runtime->call_managed_method<decltype(&CleanupSession)>(nameof(CleanupSession),
         sessionId,
@@ -349,6 +362,7 @@ SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT taskId)
 //
 SQLRETURN Cleanup()
 {
+    LOG_ERROR("[entry] Cleanup");
     LOG("nativecsharpextension::Cleanup");
 
     // Clear the managed-side callbacks delegates before tearing down the
