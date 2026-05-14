@@ -20,6 +20,7 @@
 #include <string>
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
+#include "Logger.h"
 
 #ifdef _WIN32
 #define STR(s) L ## s
