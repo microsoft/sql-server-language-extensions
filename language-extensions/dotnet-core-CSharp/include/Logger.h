@@ -8,6 +8,8 @@
 //  Wrapper class around logging to standardize logging messages and errors.
 //
 //*********************************************************************
+#pragma once
+
 #include <string>
 #include <iostream>
 
