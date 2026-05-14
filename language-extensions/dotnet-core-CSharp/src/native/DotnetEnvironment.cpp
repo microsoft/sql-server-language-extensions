@@ -30,7 +30,6 @@
 #ifndef _WIN32
 #include <sys/stat.h>
 #include <dirent.h>
-#include <fstream>
 #endif
 
 using namespace std;
@@ -86,10 +85,10 @@ short DotnetEnvironment::Init()
         return E_FAIL;
     }
 
-    // get_dotnet_load_assembly tries hdt_get_function_pointer first (Default ALC),
-    // falls back to hdt_load_assembly_and_get_function_pointer (IsolatedComponentLoadContext).
-    // On success with hdt_get_function_pointer, it returns the fn ptr and m_load_assembly_and_get_function_pointer stays null.
-    // On fallback, it returns nullptr and sets m_load_assembly_and_get_function_pointer.
+    // get_dotnet_load_assembly always obtains both delegates when available.
+    // m_get_function_pointer (Default ALC) is preferred for type identity,
+    // m_load_assembly_and_get_function_pointer (explicit path) is the fallback
+    // for when the Default ALC cannot resolve the assembly by name.
     m_get_function_pointer = get_dotnet_load_assembly(cxt);
 
     if (m_get_function_pointer == nullptr && m_load_assembly_and_get_function_pointer == nullptr)
@@ -232,45 +231,55 @@ bool DotnetEnvironment::load_hostfxr()
 // Name: DotnetEnvironment::get_dotnet_load_assembly
 //
 // Description:
-// Get the function pointer delegate for the loaded .NET Core.
-// Uses hdt_get_function_pointer to load into Default ALC, ensuring type identity
-// compatibility with user DLLs loaded via Assembly.LoadFrom.
-// Falls back to hdt_load_assembly_and_get_function_pointer for Windows/non-self-contained.
+// Get the function pointer delegates for the loaded .NET Core.
+// Always obtains BOTH hdt_get_function_pointer (Default ALC) and
+// hdt_load_assembly_and_get_function_pointer (explicit path) so call_managed_method
+// can fall back to the explicit-path delegate when name-based resolution fails.
+// This is critical for self-contained Linux deployments where the component host's
+// Default ALC may not resolve application assemblies by name.
 //
 get_function_pointer_fn DotnetEnvironment::get_dotnet_load_assembly(hostfxr_handle cxt)
 {
     LOG("DotnetEnvironment::get_dotnet_load_assembly");
 
-    // Try hdt_get_function_pointer first (loads into Default ALC).
-    // This is required for self-contained Linux deployments to ensure
+    // Always get hdt_load_assembly_and_get_function_pointer as a fallback.
+    // This loads assemblies by explicit file path into an IsolatedComponentLoadContext
+    // and works reliably in all deployment scenarios.
+    void *load_assembly_and_get_function_pointer = nullptr;
+    int rc2 = m_get_delegate_fptr(
+        cxt,
+        hdt_load_assembly_and_get_function_pointer,
+        &load_assembly_and_get_function_pointer);
+    if (rc2 == 0 && load_assembly_and_get_function_pointer != nullptr)
+    {
+        m_load_assembly_and_get_function_pointer = (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
+    }
+    else
+    {
+        LOG_ERROR("Get load_assembly_and_get_function_pointer delegate failed: " + to_hex_string(rc2));
+    }
+
+    // Try hdt_get_function_pointer (loads into Default ALC).
+    // This is preferred for self-contained Linux deployments to ensure
     // the managed extension and user DLLs share the same assembly context.
     void *get_fn_ptr = nullptr;
     int rc = m_get_delegate_fptr(
         cxt,
         hdt_get_function_pointer,
         &get_fn_ptr);
+
+    m_close_fptr(cxt);
+
     if (rc == 0 && get_fn_ptr != nullptr)
     {
-        m_close_fptr(cxt);
         return (get_function_pointer_fn)get_fn_ptr;
     }
 
-    // Fallback to hdt_load_assembly_and_get_function_pointer (IsolatedComponentLoadContext).
-    // This path is used on Windows and non-self-contained deployments.
-    void *load_assembly_and_get_function_pointer = nullptr;
-    rc = m_get_delegate_fptr(
-        cxt,
-        hdt_load_assembly_and_get_function_pointer,
-        &load_assembly_and_get_function_pointer);
-    if (rc != 0 || load_assembly_and_get_function_pointer == nullptr)
+    if (m_load_assembly_and_get_function_pointer == nullptr)
     {
-        LOG_ERROR("Get delegate failed: " + to_hex_string(rc));
+        LOG_ERROR("Both get_function_pointer and load_assembly_and_get_function_pointer delegates failed");
     }
 
-    // Store the load_assembly_and_get_function_pointer for the fallback path
-    m_load_assembly_and_get_function_pointer = (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
-
-    m_close_fptr(cxt);
     // Return nullptr to signal that the caller should use m_load_assembly_and_get_function_pointer
     return nullptr;
 }
@@ -325,25 +334,28 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
 #endif
 
 #ifndef _WIN32
-    // Diagnostic logging: verify dotnet_root and shared/ directory presence
-    // before calling hostfxr_initialize_for_runtime_config.
+    // Concise diagnostic logging for runtime initialization.
+    // Uses LOG_ERROR so it's visible in Release builds.
     if (params.dotnet_root != nullptr)
     {
-        LOG("dotnet_root: " + std::string(params.dotnet_root));
+        LOG_ERROR("CSharpExt: dotnet_root=" + std::string(params.dotnet_root) + " self_contained=" + std::to_string(m_is_self_contained));
 
-        // Check shared/ directory
+        // Verify shared/ framework directory
         std::string shared_dir = std::string(params.dotnet_root) + "/shared";
         struct stat st;
-        if (stat(shared_dir.c_str(), &st) == 0)
+        if (stat(shared_dir.c_str(), &st) != 0)
         {
-            LOG("shared/ exists (mode=" + std::to_string(st.st_mode) + " uid=" + std::to_string(st.st_uid) + " gid=" + std::to_string(st.st_gid) + ")");
-
+            LOG_ERROR("CSharpExt: shared/ NOT found at " + shared_dir + " (errno=" + std::to_string(errno) + ")");
+        }
+        else
+        {
             std::string app_dir = shared_dir + "/Microsoft.NETCore.App";
-            if (stat(app_dir.c_str(), &st) == 0)
+            if (stat(app_dir.c_str(), &st) != 0)
             {
-                LOG("Microsoft.NETCore.App/ exists (mode=" + std::to_string(st.st_mode) + ")");
-
-                // List version subdirectories and their contents
+                LOG_ERROR("CSharpExt: Microsoft.NETCore.App/ NOT found (errno=" + std::to_string(errno) + ")");
+            }
+            else
+            {
                 DIR *d = opendir(app_dir.c_str());
                 if (d)
                 {
@@ -352,146 +364,62 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
                     {
                         if (de->d_name[0] != '.')
                         {
-                            LOG("  framework version: " + std::string(de->d_name));
-
-                            // List files inside this version directory
                             std::string ver_dir = app_dir + "/" + std::string(de->d_name);
                             DIR *vd = opendir(ver_dir.c_str());
+                            int fcount = 0;
+                            bool has_deps = false;
                             if (vd)
                             {
                                 struct dirent *ve;
-                                int fcount = 0;
-                                bool has_deps = false, has_coreclr = false, has_dotversion = false;
                                 while ((ve = readdir(vd)) != nullptr)
                                 {
-                                    if (ve->d_name[0] != '.')
-                                        fcount++;
-                                    if (std::string(ve->d_name) == "Microsoft.NETCore.App.deps.json")
-                                        has_deps = true;
-                                    if (std::string(ve->d_name) == "libcoreclr.so")
-                                        has_coreclr = true;
-                                    if (std::string(ve->d_name) == ".version")
-                                        has_dotversion = true;
+                                    if (ve->d_name[0] != '.') fcount++;
+                                    if (std::string(ve->d_name) == "Microsoft.NETCore.App.deps.json") has_deps = true;
                                 }
                                 closedir(vd);
-                                LOG("    file count: " + std::to_string(fcount) +
-                                    " deps.json=" + std::to_string(has_deps) +
-                                    " libcoreclr.so=" + std::to_string(has_coreclr) +
-                                    " .version=" + std::to_string(has_dotversion));
                             }
+                            LOG_ERROR("CSharpExt: framework " + std::string(de->d_name) + " files=" + std::to_string(fcount) + " deps.json=" + std::to_string(has_deps));
                         }
                     }
                     closedir(d);
                 }
             }
-            else
-            {
-                LOG_ERROR("Microsoft.NETCore.App/ NOT found (errno=" + std::to_string(errno) + ")");
-            }
         }
-        else
-        {
-            LOG_ERROR("shared/ NOT found at " + shared_dir + " (errno=" + std::to_string(errno) + ")");
 
-            // List root directory contents for debugging
-            DIR *d = opendir(params.dotnet_root);
-            if (d)
-            {
-                struct dirent *de;
-                int count = 0;
-                while ((de = readdir(d)) != nullptr)
-                {
-                    if (de->d_name[0] != '.')
-                    {
-                        if (count < 30)
-                            LOG("  root entry: " + std::string(de->d_name) + " (type=" + std::to_string(de->d_type) + ")");
-                        count++;
-                    }
-                }
-                LOG("  total entries: " + std::to_string(count));
-                closedir(d);
-            }
-            else
-            {
-                LOG_ERROR("Cannot opendir dotnet_root (errno=" + std::to_string(errno) + ")");
-            }
-        }
+        // Verify runtimeconfig.json exists
+        std::string cfg(config_path);
+        struct stat cfgst;
+        if (stat(cfg.c_str(), &cfgst) != 0)
+            LOG_ERROR("CSharpExt: runtimeconfig NOT found: " + cfg);
+        else
+            LOG_ERROR("CSharpExt: runtimeconfig OK: " + cfg + " size=" + std::to_string(cfgst.st_size));
+
+        // Verify managed assembly exists
+        std::string managed_dll = std::string(params.dotnet_root) + "/Microsoft.SqlServer.CSharpExtension.dll";
+        if (stat(managed_dll.c_str(), &cfgst) != 0)
+            LOG_ERROR("CSharpExt: managed DLL NOT found: " + managed_dll);
+        else
+            LOG_ERROR("CSharpExt: managed DLL OK: " + managed_dll + " size=" + std::to_string(cfgst.st_size));
     }
     else
     {
-        LOG("dotnet_root is nullptr");
+        LOG_ERROR("CSharpExt: dotnet_root is nullptr");
     }
-
-    // Log runtimeconfig path and check it exists
-    {
-        std::string cfg(config_path);
-        LOG("config_path: " + cfg);
-        struct stat cfgst;
-        if (stat(cfg.c_str(), &cfgst) != 0)
-            LOG_ERROR("config_path NOT found (errno=" + std::to_string(errno) + ")");
-
-        // Read and log first 500 chars of runtimeconfig for verification
-        std::ifstream rcf(cfg);
-        if (rcf.is_open())
-        {
-            std::string content((std::istreambuf_iterator<char>(rcf)),
-                                 std::istreambuf_iterator<char>());
-            if (content.size() > 500) content.resize(500);
-            LOG("runtimeconfig content: " + content);
-        }
-    }
-
-    // Log DOTNET_ROOT and DOTNET_MULTILEVEL_LOOKUP env vars
-    {
-        const char *dr = getenv("DOTNET_ROOT");
-        LOG("env DOTNET_ROOT=" + std::string(dr ? dr : "(null)"));
-        const char *ml = getenv("DOTNET_MULTILEVEL_LOOKUP");
-        LOG("env DOTNET_MULTILEVEL_LOOKUP=" + std::string(ml ? ml : "(null)"));
-    }
-
-    // Enable COREHOST_TRACE for detailed hostfxr diagnostics
-    setenv("COREHOST_TRACE", "1", 1);
-    setenv("COREHOST_TRACEFILE", "/tmp/hostfxr_trace.log", 1);
-    setenv("COREHOST_TRACE_VERBOSITY", "4", 1);
 #endif
 
     int rc = m_init_fptr(config_path, &params, &cxt);
 
-#ifndef _WIN32
-    // Read and log the COREHOST_TRACE output
-    {
-        std::ifstream trace("/tmp/hostfxr_trace.log");
-        if (trace.is_open())
-        {
-            std::string line;
-            int linecount = 0;
-            while (std::getline(trace, line))
-            {
-                if (linecount < 200)
-                    LOG("TRACE: " + line);
-                linecount++;
-            }
-            if (linecount >= 200)
-                LOG("TRACE: ... (truncated, total " + std::to_string(linecount) + " lines)");
-            trace.close();
-        }
-        else
-        {
-            LOG_ERROR("Could not read /tmp/hostfxr_trace.log");
-        }
-        // Clean up trace env vars
-        unsetenv("COREHOST_TRACE");
-        unsetenv("COREHOST_TRACEFILE");
-        unsetenv("COREHOST_TRACE_VERBOSITY");
-    }
-#endif
-
     if (rc != 0 || cxt == nullptr)
     {
-        LOG_ERROR("Init failed: " + to_hex_string(rc));
+        LOG_ERROR("CSharpExt: hostfxr_initialize_for_runtime_config failed: " + to_hex_string(rc));
         if (cxt) m_close_fptr(cxt);
         return nullptr;
     }
+
+#ifndef _WIN32
+    LOG_ERROR("CSharpExt: hostfxr init succeeded, rc=" + to_hex_string(rc));
+#endif
+
     return cxt;
 }
 

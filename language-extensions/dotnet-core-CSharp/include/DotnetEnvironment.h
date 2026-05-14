@@ -77,12 +77,18 @@ public:
                 nullptr, /* load_context: nullptr = Default ALC */
                 nullptr, /* reserved */
                 (void**)&managed_func);
+
+            if (rc != 0 || managed_func == nullptr)
+            {
+                LOG_ERROR("get_function_pointer failed for " + method_name + ": " + to_hex_string(rc) + " (will try fallback)");
+            }
         }
 
         if ((rc != 0 || managed_func == nullptr) && m_load_assembly_and_get_function_pointer != nullptr)
         {
             // Fallback: hdt_load_assembly_and_get_function_pointer (IsolatedComponentLoadContext).
-            // Used on Windows and non-self-contained deployments.
+            // Used on Windows and non-self-contained deployments, or when Default ALC
+            // cannot resolve the assembly by name (e.g. component host scenario).
             managed_func = nullptr;
             rc = m_load_assembly_and_get_function_pointer(
                 ManagedExtensionPath.c_str(),
@@ -91,10 +97,16 @@ public:
                 DelegateTypeName.c_str(),
                 nullptr,
                 (void**)&managed_func);
+
+            if (rc != 0 || managed_func == nullptr)
+            {
+                LOG_ERROR("load_assembly_and_get_function_pointer also failed for " + method_name + ": " + to_hex_string(rc));
+            }
         }
 
         if (rc != 0 || managed_func == nullptr)
         {
+            LOG_ERROR("All managed method resolution failed for " + method_name + ", rc=" + to_hex_string(rc));
             return E_FAIL;
         }
 
