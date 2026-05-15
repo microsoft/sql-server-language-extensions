@@ -179,7 +179,9 @@ load_assembly_and_get_function_pointer_fn DotnetEnvironment::get_dotnet_load_ass
 // Name: DotnetEnvironment::get_dotnet
 //
 // Description:
-// Load the .NET runtime from the configuration path and DOTNET_ROOT environment variable, and get the hostfxr handle.
+// Load the .NET runtime from the configuration path and get the hostfxr handle.
+// Supports both framework-dependent (3P: DOTNET_ROOT points to system .NET install)
+// and self-contained (1P: all runtime DLLs in the language directory) deployments.
 //
 hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     LOG("DotnetEnvironment::get_dotnet");
@@ -187,10 +189,19 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
 
     hostfxr_initialize_parameters params = { 0 };
     params.size = sizeof(hostfxr_initialize_parameters);
-    params.host_path = nullptr;
+
+    // Set host_path to the extension DLL in the language directory. This tells hostfxr
+    // where the app lives, enabling self-contained runtimeconfig ("includedFrameworks")
+    // to resolve coreclr.dll from the same directory. For framework-dependent configs,
+    // hostfxr uses dotnet_root to find the system runtime instead.
+    //
+    string_t host_path = m_root_path + STR("\\Microsoft.SqlServer.CSharpExtension.dll");
+    params.host_path = host_path.c_str();
     params.dotnet_root = nullptr;
 
-    // Get the required size for the environment variable
+    // If DOTNET_ROOT is set (e.g., by the coordinator for 1P, or by the system for 3P),
+    // pass it to hostfxr for framework-dependent resolution.
+    //
     DWORD requiredSize = GetEnvironmentVariableW(L"DOTNET_ROOT", nullptr, 0);
     std::vector<wchar_t> dotnet_root_buffer;
     if (requiredSize > 0)
