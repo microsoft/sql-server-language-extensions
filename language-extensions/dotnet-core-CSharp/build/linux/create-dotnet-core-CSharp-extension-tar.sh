@@ -54,15 +54,32 @@ for BUILD_CONFIGURATION in "$@"; do
     # Include the shared/ directory (framework file copies for component hosting).
     # The build script creates shared/Microsoft.NETCore.App/<version>/ with copies
     # of the root DLLs/SOs so hostfxr can resolve the bundled .NET runtime.
-    # File copies are used because SQL Server's tar extraction does not preserve
+    # File copies are used because SQL Server's archive extraction does not preserve
     # symlinks or hard links.
     if [ -d "$BUILD_OUTPUT/shared" ]; then
         FILES_TO_COMPRESS+=("shared")
     fi
 
-    # Package the binaries
+    # Package the binaries.
+    #
+    # IMPORTANT: SQL Server on Linux extracts CREATE EXTERNAL LANGUAGE archives
+    # using its built-in zip code (the same path R/Python/Java use). Tar.gz is
+    # NOT supported on Linux - exthost would silently fail to find the .so and
+    # exit with status 9 immediately after launch. Use zip + .zip extension to
+    # match the format expected by the satellite/launchpad.
+    #
+    # Both .tar.gz and .zip outputs are produced for backward compatibility:
+    # - dotnet-core-CSharp-lang-extension-linux.zip   (NEW - used by Linux launchpad)
+    # - dotnet-core-CSharp-lang-extension.tar.gz      (legacy/Windows-style, kept for compat)
     pushd "$BUILD_OUTPUT" > /dev/null
-    tar -czvf "$BUILD_OUTPUT/packages/dotnet-core-CSharp-lang-extension.tar.gz" "${FILES_TO_COMPRESS[@]}"
+
+    # Primary: zip archive (Linux SQL Server expects this format)
+    rm -f "$BUILD_OUTPUT/packages/dotnet-core-CSharp-lang-extension-linux.zip"
+    zip -r "$BUILD_OUTPUT/packages/dotnet-core-CSharp-lang-extension-linux.zip" "${FILES_TO_COMPRESS[@]}" > /dev/null
+    check_error $? "Failed to create zip for dotnet-core-CSharp-extension for configuration=$BUILD_CONFIGURATION"
+
+    # Legacy: tar.gz (kept for any callers still referencing the old name)
+    tar -czf "$BUILD_OUTPUT/packages/dotnet-core-CSharp-lang-extension.tar.gz" "${FILES_TO_COMPRESS[@]}"
     check_error $? "Failed to create tarball for dotnet-core-CSharp-extension for configuration=$BUILD_CONFIGURATION"
     popd > /dev/null
 
