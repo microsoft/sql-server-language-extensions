@@ -26,10 +26,26 @@ using namespace std;
 
 namespace
 {
-    // Diagnostic log file path. /tmp is writable in the sandbox; the file
-    // gets persisted in the sandbox dir if /tmp is bind-mounted. We also
-    // write to stderr so output is captured in launchpadd-stderr.
-    constexpr const char *DIAG_LOG_PATH = "/tmp/csharpext-diag.log";
+    // Diagnostic log file paths - try multiple locations so at least one
+    // gets captured by the test infrastructure.
+    //
+    // PRIMARY: /var/opt/mssql/log/csharpext-diag.log
+    //   - The SQL Server log directory (auto-collected as
+    //     sql01_MSSQLSERVER_csharpext-diag.log in PVS test attachments)
+    //   - May NOT be writable from the extension sandbox (different uid/ns)
+    //
+    // SECONDARY: /var/opt/mssql-extensibility/log/csharpext-diag.log
+    //   - Extension-specific log dir, writable by extension sandbox uid
+    //   - Sometimes auto-collected by PVS, sometimes not
+    //
+    // TERTIARY: /tmp/csharpext-diag.log
+    //   - Always writable but may not be collected (tmpfs / cleaned up)
+    static const char* const DIAG_LOG_PATHS[] = {
+        "/var/opt/mssql/log/csharpext-diag.log",
+        "/var/opt/mssql-extensibility/log/csharpext-diag.log",
+        "/tmp/csharpext-diag.log",
+        nullptr
+    };
 
     std::mutex g_log_mutex;
 
@@ -57,7 +73,7 @@ namespace
         return oss.str();
     }
 
-    // Write the message to stderr AND to the diagnostic file.
+    // Write the message to stderr AND to the diagnostic file(s).
     // Best-effort: never throw, never block on file errors.
     void write_diag(const std::string &line)
     {
@@ -66,19 +82,22 @@ namespace
         std::cerr << line << std::endl;
         std::cerr.flush();
 #ifndef _WIN32
-        // Also append to a file under /tmp so we can find it even if
-        // stderr is consumed/redirected by the satellite host.
-        try
+        // Try writing to ALL diagnostic paths so at least one is captured by
+        // PVS test attachments. Each is best-effort - silently ignore failures.
+        for (const char* const* p = DIAG_LOG_PATHS; *p != nullptr; ++p)
         {
-            std::ofstream f(DIAG_LOG_PATH, std::ios::app);
-            if (f.is_open())
+            try
             {
-                f << line << std::endl;
+                std::ofstream f(*p, std::ios::app);
+                if (f.is_open())
+                {
+                    f << line << std::endl;
+                }
             }
-        }
-        catch (...)
-        {
-            // ignore
+            catch (...)
+            {
+                // ignore - try next path
+            }
         }
 #endif
     }
