@@ -39,8 +39,20 @@ for BUILD_CONFIGURATION in "$@"; do
     EXTENSION_HOST_INCLUDE="$ENL_ROOT/extension-host/include"
     DOTNET_NATIVE_LIB="$DOTNET_EXTENSION_HOME/lib"
 
-    # Determine C++ compiler
-    CXX="${CXX:-c++}"
+    # Determine C++ compiler.
+    # Prefer g++-11 (Ubuntu 22.04 toolchain) to match the SQL Server runtime
+    # container's glibc 2.35 / libstdc++ GLIBCXX_3.4.30 ABI. Newer compilers
+    # (Ubuntu 24.04 / gcc 13) generate references to GLIBC_2.38 symbols
+    # (e.g. __isoc23_strtoul) that don't exist in the runtime, causing
+    # dlopen() to fail silently and the extension to never load.
+    if [ -z "${CXX:-}" ]; then
+        if command -v g++-11 &>/dev/null; then
+            CXX="g++-11"
+        else
+            CXX="c++"
+        fi
+    fi
+    echo "[Info] Using C++ compiler: $CXX ($($CXX --version | head -1))"
 
     # Build compiler arguments
     CC_ARGS=(

@@ -29,6 +29,38 @@ else
     check_exit_code "Success: Installed .NET SDK 8.0" "Error: Failed to install .NET SDK 8.0"
 fi
 
+# Install gcc-11 / g++-11 if not present.
+#
+# IMPORTANT: SQL Server's mssql-server-extensibility binaries (including the
+# satellite/exthost) are built and shipped against Ubuntu 22.04 (glibc 2.35,
+# libstdc++ GLIBCXX_3.4.30). When the extension .so is built with newer
+# toolchains (Ubuntu 24.04 / gcc 13), it requires:
+#   - GLIBCXX_3.4.32 (e.g. std::ios_base_library_init - GCC 13 auto-inject)
+#   - GLIBC_2.38 (e.g. __isoc23_strtoul)
+# which don't exist on the runtime container. dlopen() then silently fails
+# with "version `GLIBC_2.38' not found" and the extension is never loaded.
+#
+# Static-linking libstdc++ + building with gcc-11 produces a binary whose
+# external symbol requirements stay within glibc 2.34, compatible with both
+# Ubuntu 22.04 and 24.04 SQL Server runtimes.
+if command -v gcc-11 &>/dev/null && command -v g++-11 &>/dev/null; then
+    echo "Info: gcc-11 already installed ($(gcc-11 --version | head -1))"
+else
+    echo "Info: Installing gcc-11/g++-11 (matches Ubuntu 22.04 toolchain - SQL runtime ABI)..."
+    # Ensure universe repo is enabled (gcc-11 lives there on Ubuntu 24.04)
+    if command -v add-apt-repository &>/dev/null; then
+        add-apt-repository -y universe 2>/dev/null || true
+    fi
+    apt-get update -qq || true
+    apt-get install -y --no-install-recommends gcc-11 g++-11 || {
+        # gcc-11 not available; fall back to default and hope GLIBC backcompat works.
+        # Caller will see GLIBC_2.38 requirement in the .so and dlopen will fail
+        # on Ubuntu 22.04-based runtimes - but we've at least tried.
+        echo "Warning: gcc-11 install failed - falling back to default toolchain"
+        echo "Warning: Built .so may require glibc > 2.35 (incompatible with SQL Server 2022 Ubuntu 22.04 SFP)"
+    }
+fi
+
 # Copy libnethost.a from the .NET SDK runtime packs into the extension's lib directory.
 # The SDK ships this as part of the AppHost pack.
 #
