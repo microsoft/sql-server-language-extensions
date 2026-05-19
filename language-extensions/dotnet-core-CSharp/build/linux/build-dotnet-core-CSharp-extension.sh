@@ -51,6 +51,16 @@ for BUILD_CONFIGURATION in "$@"; do
         -o libnativecsharpextension.so
         "-I$DOTNET_NATIVE_INCLUDE"
         "-I$EXTENSION_HOST_INCLUDE"
+        # Statically link libstdc++ and libgcc so the resulting .so does NOT
+        # depend on the build host's libstdc++.so.6 version.
+        # Required because the build hosts (Ubuntu 24.04 / GCC 13+) introduce
+        # symbols like _ZSt21ios_base_library_initv@GLIBCXX_3.4.32 that don't
+        # exist on the runtime hosts (SQL Server containers may ship older
+        # libstdc++.so.6). Without these flags, dlopen() fails with:
+        #   "version `GLIBCXX_3.4.32' not found"
+        # and the extension never loads.
+        -static-libstdc++
+        -static-libgcc
     )
 
     if [ "$BUILD_CONFIGURATION" = "debug" ]; then
