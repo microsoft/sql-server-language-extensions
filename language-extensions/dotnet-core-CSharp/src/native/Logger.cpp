@@ -31,21 +31,28 @@ namespace
     // Diagnostic log file paths - try multiple locations so at least one
     // gets captured by the test infrastructure.
     //
-    // PRIMARY: /var/opt/mssql/log/csharpext-diag.log
-    //   - The SQL Server log directory (auto-collected as
-    //     sql01_MSSQLSERVER_csharpext-diag.log in PVS test attachments)
-    //   - May NOT be writable from the extension sandbox (different uid/ns)
+    // CRITICAL: SQL Linux extension runs INSIDE a sandboxed namespace where:
+    // - /var/opt/mssql/log is NOT mounted (invisible to satellite uid)
+    // - /var/opt/mssql-extensibility/log is NOT bind-mounted (invisible)
+    // - The only writable host-visible paths are:
+    //     /tmp                                                   (tmpfs in ns)
+    //     /home/mssql_satellite/externallanguagessandboxpath     (bind-mounted, ro for libs)
+    //     /home/mssql_satellite/externallanguagessandboxtemppath (bind-mounted, may be rw)
+    //     /home/mssql_satellite                                  (the sandbox HOME)
     //
-    // SECONDARY: /var/opt/mssql-extensibility/log/csharpext-diag.log
-    //   - Extension-specific log dir, writable by extension sandbox uid
-    //   - Sometimes auto-collected by PVS, sometimes not
+    // For PVS test capture (looks at host /var/opt/mssql/log/), we use a
+    // trick: write to a directory THAT IS bind-mounted, where the host
+    // checkinstallextensibility.sh has pre-created a symlink targeting
+    // /var/opt/mssql/log/csharpext-diag.log.
     //
-    // TERTIARY: /tmp/csharpext-diag.log
-    //   - Always writable but may not be collected (tmpfs / cleaned up)
+    // The simplest reliable path is /tmp (tmpfs inside the satellite ns -
+    // doesn't survive the session but proves the .so was loaded).
+    // We also try /home/mssql_satellite which is the satellite uid's home.
     static const char* const DIAG_LOG_PATHS[] = {
+        "/tmp/csharpext-diag.log",
+        "/home/mssql_satellite/csharpext-diag.log",
         "/var/opt/mssql/log/csharpext-diag.log",
         "/var/opt/mssql-extensibility/log/csharpext-diag.log",
-        "/tmp/csharpext-diag.log",
         nullptr
     };
 
@@ -114,9 +121,10 @@ __attribute__((constructor(101)))
 static void csharp_extension_loaded_early()
 {
     const char *paths[] = {
+        "/tmp/csharpext-diag.log",
+        "/home/mssql_satellite/csharpext-diag.log",
         "/var/opt/mssql/log/csharpext-diag.log",
         "/var/opt/mssql-extensibility/log/csharpext-diag.log",
-        "/tmp/csharpext-diag.log",
         nullptr
     };
     char buf[512];
