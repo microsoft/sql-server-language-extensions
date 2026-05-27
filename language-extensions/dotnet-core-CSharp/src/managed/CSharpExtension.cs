@@ -602,6 +602,76 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// Delegate type matching the host's LogXEvent callback signature.
+        /// </summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void LogXEventCallbackDelegate(
+            Guid   sessionId,
+            ushort taskId,
+            short  traceLevel,
+            int    errorCode,
+            char   *extensionName,
+            ulong  extensionNameLength,
+            char   *message,
+            ulong  messageLength);
+
+        /// <summary>
+        /// Managed representation of the SQLEXTENSION_HOST_CALLBACKS structure.
+        /// Must match the native struct layout exactly.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SqlExtensionHostCallbacks
+        {
+            public ushort Version;
+            public IntPtr LogXEvent;
+        }
+
+        /// <summary>
+        /// This delegate declares the delegate type of SetHostCallbacks.
+        /// </summary>
+        public delegate short SetHostCallbacksDelegate(
+            SqlExtensionHostCallbacks *hostCallbacks);
+
+        /// <summary>
+        /// This method implements SetHostCallbacks API.
+        /// Receives a pointer to the host callbacks structure and stores the
+        /// callback function pointers so managed code can call back into the host.
+        /// </summary>
+        /// <param name="hostCallbacks">
+        /// Pointer to the SQLEXTENSION_HOST_CALLBACKS structure provided by the host.
+        /// The host owns this memory and keeps it alive for the extension's lifetime.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
+        public static short SetHostCallbacks(
+            SqlExtensionHostCallbacks *hostCallbacks)
+        {
+            Logging.Trace("CSharpExtension::SetHostCallbacks");
+            return ExceptionUtils.WrapError(() =>
+            {
+                if (hostCallbacks == null)
+                {
+                    throw new ArgumentNullException(nameof(hostCallbacks));
+                }
+
+                if (hostCallbacks->LogXEvent != IntPtr.Zero)
+                {
+                    var logXEvent = Marshal.GetDelegateForFunctionPointer<LogXEventCallbackDelegate>(
+                        hostCallbacks->LogXEvent);
+                    Logging.SetLogXEventCallback(logXEvent);
+
+                    Logging.LogXEvent(
+                        Guid.Empty,
+                        taskId: 0,
+                        traceLevel: 0,
+                        errorCode: 0,
+                        "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
+                }
+            });
+        }
+
+        /// <summary>
         /// This delegate declares the delegate type of CleanupSession.
         /// </summary>
         public delegate short CleanupSessionDelegate(

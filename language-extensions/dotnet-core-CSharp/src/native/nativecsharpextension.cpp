@@ -338,6 +338,37 @@ SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT taskId)
 SQLRETURN Cleanup()
 {
     LOG("nativecsharpextension::Cleanup");
+    g_hostCallbacks = nullptr;
     delete g_dotnet_runtime;
     return SQL_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: SetHostCallbacks
+//
+// Description:
+//  Receives a pointer to the host callbacks structure from ExtHost.
+//  Stores the pointer natively and forwards to managed code so the
+//  managed layer can call back into the host (e.g. for XEvent logging).
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN SetHostCallbacks(
+    SQLEXTENSION_HOST_CALLBACKS *hostCallbacks
+)
+{
+    LOG("nativecsharpextension::SetHostCallbacks");
+
+    if (hostCallbacks == nullptr)
+    {
+        LOG_ERROR("SetHostCallbacks called with null pointer");
+        return SQL_ERROR;
+    }
+
+    g_hostCallbacks = hostCallbacks;
+
+    return g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
+        nameof(SetHostCallbacks),
+        hostCallbacks);
 }

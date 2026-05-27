@@ -28,7 +28,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define EXTERNAL_LANGUAGE_EXTENSION_API 2
+#define EXTERNAL_LANGUAGE_EXTENSION_API 3
 
 SQLEXTENSION_INTERFACE
 SQLUSMALLINT GetInterfaceVersion();
@@ -136,6 +136,40 @@ SQLRETURN CleanupSession(
 
 SQLEXTENSION_INTERFACE
 SQLRETURN Cleanup();
+
+// Callback function type for logging XEvents from an extension.
+// The extension calls this function pointer (implemented by ExtHost)
+// to fire XEvents from within the extension's code.
+//
+typedef void (*PFunc_ExtensionLogXEvent)(
+	SQLGUID		SessionId,
+	SQLUSMALLINT	TaskId,
+	SQLSMALLINT	TraceLevel,
+	SQLINTEGER	ErrorCode,
+	SQLCHAR		*ExtensionName,
+	SQLULEN		ExtensionNameLength,
+	SQLCHAR		*Message,
+	SQLULEN		MessageLength
+	);
+
+// Host callbacks structure passed from ExtHost to the extension.
+// The Version field allows future expansion without a new API version.
+//
+#define SQLEXTENSION_HOST_CALLBACKS_VERSION_1 1
+
+typedef struct _SQLEXTENSION_HOST_CALLBACKS
+{
+	SQLUSMALLINT Version;
+	PFunc_ExtensionLogXEvent LogXEvent;
+} SQLEXTENSION_HOST_CALLBACKS;
+
+// Optional API (v3+)
+// Receives host callback functions from ExtHost.
+//
+SQLEXTENSION_INTERFACE
+SQLRETURN SetHostCallbacks(
+	SQLEXTENSION_HOST_CALLBACKS *Callbacks
+	);
 
 #ifdef __cplusplus
 } /* End of extern "C" { */

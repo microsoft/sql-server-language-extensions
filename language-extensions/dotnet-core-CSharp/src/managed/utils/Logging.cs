@@ -31,6 +31,11 @@ namespace Microsoft.SqlServer.CSharpExtension
         private const int StdErr = 2;
 
         /// <summary>
+        /// Host-provided LogXEvent callback, set via SetHostCallbacks.
+        /// </summary>
+        private static CSharpExtension.LogXEventCallbackDelegate _logXEventCallback;
+
+        /// <summary>
         /// Static constructor to initialize the custom text writers for stdout and stderr.
         /// This ensures that any Console.WriteLine or Console.Error.WriteLine calls
         /// are routed through our InteropTextWriter, which bypasses the .NET Console
@@ -71,6 +76,55 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 // Ignore exceptions during error logging but log to debug output
                 Debug.WriteLine($"Error logging failed: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// Stores the host-provided LogXEvent callback for later use.
+        /// Called from CSharpExtension.SetHostCallbacks.
+        /// </summary>
+        /// <param name="callback">The delegate wrapping the host's LogXEvent function pointer.</param>
+        public static void SetLogXEventCallback(CSharpExtension.LogXEventCallbackDelegate callback)
+        {
+            _logXEventCallback = callback;
+        }
+
+        /// <summary>
+        /// Returns true if the host has provided a LogXEvent callback.
+        /// </summary>
+        public static bool HasLogXEventCallback => _logXEventCallback != null;
+
+        /// <summary>
+        /// Logs a message through the host's XEvent infrastructure.
+        /// If no host callback is registered, this is a no-op.
+        /// </summary>
+        /// <param name="sessionId">Session GUID.</param>
+        /// <param name="taskId">Task identifier.</param>
+        /// <param name="traceLevel">Trace level (severity).</param>
+        /// <param name="errorCode">Error code (0 for informational).</param>
+        /// <param name="message">The message to log.</param>
+        public static unsafe void LogXEvent(
+            Guid   sessionId,
+            ushort taskId,
+            short  traceLevel,
+            int    errorCode,
+            string message)
+        {
+            if (_logXEventCallback == null)
+                return;
+
+            byte[] utf8Bytes = Encoding.UTF8.GetBytes(message ?? string.Empty);
+            fixed (byte* pBytes = utf8Bytes)
+            {
+                _logXEventCallback(
+                    sessionId,
+                    taskId,
+                    traceLevel,
+                    errorCode,
+                    null,
+                    0,
+                    (char*)pBytes,
+                    (ulong)utf8Bytes.Length);
             }
         }
 
