@@ -121,8 +121,6 @@ namespace Microsoft.SqlServer.CSharpExtension
                     taskId,
                     traceLevel,
                     errorCode,
-                    null,
-                    0,
                     (char*)pBytes,
                     (ulong)utf8Bytes.Length);
             }
