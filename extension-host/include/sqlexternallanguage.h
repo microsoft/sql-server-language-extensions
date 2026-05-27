@@ -146,6 +146,8 @@ typedef void (*PFunc_ExtensionLogXEvent)(
 	SQLUSMALLINT	TaskId,
 	SQLSMALLINT	TraceLevel,
 	SQLINTEGER	ErrorCode,
+	SQLCHAR		*ExtensionName,
+	SQLULEN		ExtensionNameLength,
 	SQLCHAR		*Message,
 	SQLULEN		MessageLength
 	);

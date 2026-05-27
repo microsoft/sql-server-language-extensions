@@ -610,6 +610,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             ushort taskId,
             short  traceLevel,
             int    errorCode,
+            char   *extensionName,
+            ulong  extensionNameLength,
             char   *message,
             ulong  messageLength);
 
