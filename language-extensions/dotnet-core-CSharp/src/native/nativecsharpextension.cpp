@@ -340,6 +340,7 @@ SQLRETURN Cleanup()
     LOG("nativecsharpextension::Cleanup");
     g_hostCallbacks = nullptr;
     delete g_dotnet_runtime;
+    g_dotnet_runtime = nullptr;
     return SQL_SUCCESS;
 }
 
@@ -363,6 +364,12 @@ SQLRETURN SetHostCallbacks(
     if (hostCallbacks == nullptr)
     {
         LOG_ERROR("SetHostCallbacks called with null pointer");
+        return SQL_ERROR;
+    }
+
+    if (g_dotnet_runtime == nullptr)
+    {
+        LOG_ERROR("SetHostCallbacks called before Init() or after Cleanup()");
         return SQL_ERROR;
     }
 
