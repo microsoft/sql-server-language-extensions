@@ -373,6 +373,15 @@ SQLRETURN SetHostCallbacks(
         return SQL_ERROR;
     }
 
+    // Validate the struct version before reading any version-gated fields.
+    //
+    if (hostCallbacks->Version < SQLEXTENSION_HOST_CALLBACKS_VERSION_1 ||
+        hostCallbacks->Version > SQLEXTENSION_HOST_CALLBACKS_VERSION_1)
+    {
+        LOG_ERROR("SetHostCallbacks called with unsupported host callbacks version");
+        return SQL_ERROR;
+    }
+
     g_hostCallbacks = hostCallbacks;
 
     return g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
