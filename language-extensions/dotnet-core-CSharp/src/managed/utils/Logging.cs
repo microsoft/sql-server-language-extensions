@@ -170,13 +170,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                 fixed (byte* pMessage = utf8MessageBytes)
                 {
                     callback(
-                        (char*)pExtName,
+                        pExtName,
                         (ulong)s_utf8ExtNameBytes.Length,
                         sessionId,
                         taskId,
                         (ushort)traceLevel,
                         errorCode,
-                        (char*)pMessage,
+                        pMessage,
                         messageLen);
                 }
             }

@@ -606,13 +606,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void LogXEventCallbackDelegate(
-            char   *extensionName,
+            byte   *extensionName,
             ulong  extensionNameLength,
             Guid   sessionId,
             ushort taskId,
             ushort traceLevel,
             int    errorCode,
-            char   *message,
+            byte   *message,
             ulong  messageLength);
 
         /// <summary>
