@@ -166,6 +166,7 @@ typedef void (*PFunc_ExtensionLogXEvent)(
 // Host callbacks structure passed from host to Extension.
 //
 #define SQLEXTENSION_HOST_CALLBACKS_VERSION_1 1
+#define SQLEXTENSION_HOST_CALLBACKS_MAX_SUPPORTED_VERSION SQLEXTENSION_HOST_CALLBACKS_VERSION_1
 
 typedef struct _SQLEXTENSION_HOST_CALLBACKS
 {

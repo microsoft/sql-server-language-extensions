@@ -343,7 +343,24 @@ SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT taskId)
 SQLRETURN Cleanup()
 {
     LOG("nativecsharpextension::Cleanup");
-    g_hostCallbacks = nullptr;
+
+    // Clear the managed-side callbacks delegates before tearing down the
+    // runtime so any thread that races into callbacks during shutdown
+    // cannot invoke a host function pointer whose backing implementation is
+    // about to be freed.
+    //
+    if (g_dotnet_runtime != nullptr)
+    {
+        SQLEXTENSION_HOST_CALLBACKS nullCallbacks = {};
+        nullCallbacks.Version   = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        nullCallbacks.LogXEvent = nullptr;
+
+        g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
+            nameof(SetHostCallbacks),
+            &nullCallbacks);
+    }
+
+    g_hostCallbacks  = nullptr;
     delete g_dotnet_runtime;
     g_dotnet_runtime = nullptr;
     return SQL_SUCCESS;
@@ -381,7 +398,7 @@ SQLRETURN SetHostCallbacks(
     // Validate the struct version before reading any version-gated fields.
     //
     if (hostCallbacks->Version < SQLEXTENSION_HOST_CALLBACKS_VERSION_1 ||
-        hostCallbacks->Version > SQLEXTENSION_HOST_CALLBACKS_VERSION_1)
+        hostCallbacks->Version > SQLEXTENSION_HOST_CALLBACKS_MAX_SUPPORTED_VERSION)
     {
         LOG_ERROR("SetHostCallbacks called with unsupported host callbacks version");
         return SQL_ERROR;
