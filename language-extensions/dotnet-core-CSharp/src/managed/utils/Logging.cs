@@ -32,8 +32,10 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// Host-provided LogXEvent callback, set via SetHostCallbacks.
+        /// Marked volatile so concurrent readers in LogXEvent always
+        /// observe the latest write from SetLogXEventCallback.
         /// </summary>
-        private static CSharpExtension.LogXEventCallbackDelegate _logXEventCallback;
+        private static volatile CSharpExtension.LogXEventCallbackDelegate _logXEventCallback;
 
         /// <summary>
         /// Static constructor to initialize the custom text writers for stdout and stderr.
@@ -135,7 +137,11 @@ namespace Microsoft.SqlServer.CSharpExtension
             int        errorCode,
             string     message)
         {
-            if (_logXEventCallback == null)
+            // Snapshot the callback once so a concurrent cleanups between the null-check and the invocation
+            // cannot turn this into a NullReferenceException.
+            //
+            CSharpExtension.LogXEventCallbackDelegate callback = _logXEventCallback;
+            if (callback == null)
             {
                 return;
             }
@@ -158,18 +164,25 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             // Call the host's LogXEvent callback with the prepared parameters.
-            fixed (byte* pExtName = s_utf8ExtNameBytes)
-            fixed (byte* pMessage = utf8MessageBytes)
+            try
             {
-                _logXEventCallback(
-                    (char*)pExtName,
-                    (ulong)s_utf8ExtNameBytes.Length,
-                    sessionId,
-                    taskId,
-                    (ushort)traceLevel,
-                    errorCode,
-                    (char*)pMessage,
-                    messageLen);
+                fixed (byte* pExtName = s_utf8ExtNameBytes)
+                fixed (byte* pMessage = utf8MessageBytes)
+                {
+                    callback(
+                        (char*)pExtName,
+                        (ulong)s_utf8ExtNameBytes.Length,
+                        sessionId,
+                        taskId,
+                        (ushort)traceLevel,
+                        errorCode,
+                        (char*)pMessage,
+                        messageLen);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LogXEvent host callback threw: {ex}");
             }
         }
 
