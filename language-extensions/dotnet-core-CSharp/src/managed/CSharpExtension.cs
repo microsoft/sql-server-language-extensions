@@ -606,12 +606,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void LogXEventCallbackDelegate(
-            Guid   sessionId,
-            ushort taskId,
-            short  traceLevel,
-            int    errorCode,
             char   *extensionName,
             ulong  extensionNameLength,
+            Guid   sessionId,
+            ushort taskId,
+            ushort traceLevel,
+            int    errorCode,
             char   *message,
             ulong  messageLength);
 
@@ -664,7 +664,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     Logging.LogXEvent(
                         Guid.Empty,
                         taskId: 0,
-                        traceLevel: 0,
+                        traceLevel: Logging.TraceLevel.Information,
                         errorCode: 0,
                         "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
                 }

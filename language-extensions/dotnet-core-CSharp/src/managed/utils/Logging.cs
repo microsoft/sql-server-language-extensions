@@ -95,6 +95,21 @@ namespace Microsoft.SqlServer.CSharpExtension
         public static bool HasLogXEventCallback => _logXEventCallback != null;
 
         /// <summary>
+        /// Trace levels for events logged via the host's LogXEvent callback.
+        /// Lowest numeric value is the most severe, matching Windows ETW TRACE_LEVEL_* convention.
+        /// </summary>
+        public enum TraceLevel : ushort
+        {
+            Critical    = 1,
+            Error       = 2,
+            Warning     = 3,
+            Information = 4,
+            Verbose     = 5,
+        }
+
+        private const string ExtensionName = "CSharp";
+
+        /// <summary>
         /// Logs a message through the host's XEvent infrastructure.
         /// If no host callback is registered, this is a no-op.
         /// </summary>
@@ -104,25 +119,27 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="errorCode">Error code (0 for informational).</param>
         /// <param name="message">The message to log.</param>
         public static unsafe void LogXEvent(
-            Guid   sessionId,
-            ushort taskId,
-            short  traceLevel,
-            int    errorCode,
-            string message)
+            Guid       sessionId,
+            ushort     taskId,
+            TraceLevel traceLevel,
+            int        errorCode,
+            string     message)
         {
             if (_logXEventCallback == null)
                 return;
 
+            byte[] utf8ExtName = Encoding.UTF8.GetBytes(ExtensionName);
             byte[] utf8Bytes = Encoding.UTF8.GetBytes(message ?? string.Empty);
+            fixed (byte* pExtName = utf8ExtName)
             fixed (byte* pBytes = utf8Bytes)
             {
                 _logXEventCallback(
+                    (char*)pExtName,
+                    (ulong)utf8ExtName.Length,
                     sessionId,
                     taskId,
-                    traceLevel,
+                    (ushort)traceLevel,
                     errorCode,
-                    null,
-                    0,
                     (char*)pBytes,
                     (ulong)utf8Bytes.Length);
             }
