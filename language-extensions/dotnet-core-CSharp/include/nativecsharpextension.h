@@ -24,6 +24,7 @@
 #include <sql.h>
 #include "sqlexternallanguage.h"
 #include "sqlexternallibrary.h"
+#include "sqlextensionhostcallbacks.h"
 #include "DotnetEnvironment.h"
 
 //  Returns the string with the address of the first character and length
