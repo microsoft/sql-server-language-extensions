@@ -150,9 +150,7 @@ enum ExtensionTraceLevel
 	Extension_Verbose     = 5
 };
 
-// Callback function type for logging XEvents from an extension.
-// The extension calls this function pointer (implemented by ExtHost)
-// to fire XEvents from within the extension's code.
+// Callback function provided by the host for logging XEvents from Extension.
 //
 typedef void (*PFunc_ExtensionLogXEvent)(
 	const SQLCHAR	*ExtensionName,
@@ -165,8 +163,7 @@ typedef void (*PFunc_ExtensionLogXEvent)(
 	SQLULEN		MessageLength
 	);
 
-// Host callbacks structure passed from ExtHost to the extension.
-// The Version field allows future expansion without a new API version.
+// Host callbacks structure passed from host to Extension..
 //
 #define SQLEXTENSION_HOST_CALLBACKS_VERSION_1 1
 
@@ -177,7 +174,7 @@ typedef struct _SQLEXTENSION_HOST_CALLBACKS
 } SQLEXTENSION_HOST_CALLBACKS;
 
 // Optional API (v3+)
-// Receives host callback functions from ExtHost.
+// Receives host callback functions from the host.
 //
 SQLEXTENSION_INTERFACE
 SQLRETURN SetHostCallbacks(

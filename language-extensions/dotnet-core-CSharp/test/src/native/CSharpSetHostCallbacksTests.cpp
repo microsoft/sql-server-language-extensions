@@ -8,7 +8,7 @@
 //  Tests the optional SetHostCallbacks API exported by the .NET Core C#
 //  extension. Verifies symbol resolution, null-pointer handling, and that
 //  a non-null LogXEvent callback supplied via SQLEXTENSION_HOST_CALLBACKS
-//  is invoked by managed code (callback registration + forwarding).
+//  is invoked by managed code.
 //
 //*********************************************************************
 #include "CSharpExtensionApiTests.h"

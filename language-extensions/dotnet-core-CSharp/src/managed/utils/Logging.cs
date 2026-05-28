@@ -107,6 +107,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             Verbose     = 5,
         }
 
+        /// <summary>
+        /// Name of the Extension to be used for XEvent logging.
+        /// </summary>
         private const string ExtensionName = "CSharp";
 
         /// <summary>
@@ -115,8 +118,8 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         /// <param name="sessionId">Session GUID.</param>
         /// <param name="taskId">Task identifier.</param>
-        /// <param name="traceLevel">Trace level (severity).</param>
-        /// <param name="errorCode">Error code (0 for informational).</param>
+        /// <param name="traceLevel">Trace severity.</param>
+        /// <param name="errorCode">Error code for non-informational logs.</param>
         /// <param name="message">The message to log.</param>
         public static unsafe void LogXEvent(
             Guid       sessionId,

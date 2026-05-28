@@ -348,9 +348,9 @@ SQLRETURN Cleanup()
 // Name: SetHostCallbacks
 //
 // Description:
-//  Receives a pointer to the host callbacks structure from ExtHost.
+//  Receives a pointer to the host callbacks structure.
 //  Stores the pointer natively and forwards to managed code so the
-//  managed layer can call back into the host (e.g. for XEvent logging).
+//  managed layer can call back into the host.
 //
 // Returns:
 //  SQL_SUCCESS on success, else SQL_ERROR

@@ -142,8 +142,8 @@ SQLEXTENSION_INTERFACE SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT 
 //
 SQLEXTENSION_INTERFACE SQLRETURN Cleanup();
 
-//  Receives host callback function pointers from ExtHost.
-//  Optional API, supported since v3 of the extension API.
+//  Receives host callback function pointers from the host.
+//  Optional API, supported since v3 of the Extension API.
 //
 SQLEXTENSION_INTERFACE SQLRETURN SetHostCallbacks(
     SQLEXTENSION_HOST_CALLBACKS *hostCallbacks);
@@ -152,6 +152,6 @@ SQLEXTENSION_INTERFACE SQLRETURN SetHostCallbacks(
 //
 static DotnetEnvironment* g_dotnet_runtime = nullptr;
 
-//  Host callbacks pointer provided by ExtHost via SetHostCallbacks.
+//  Host callbacks pointer provided by the host via SetHostCallbacks.
 //
 static SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks = nullptr;
