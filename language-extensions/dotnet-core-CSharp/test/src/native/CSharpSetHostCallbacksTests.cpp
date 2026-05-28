@@ -40,14 +40,14 @@ namespace ExtensionApiTest
         //
         static vector<CapturedLogEvent> g_capturedLogEvents;
 
-        // Test stand-in for ExtHost's LogXEvent implementation. Records the
+        // Test stand-in for host's LogXEvent implementation. Records the
         // invocation so the test can assert on its contents.
         //
         extern "C" void TestLogXEventCallback(
             const SQLCHAR *extensionName,
             SQLULEN        extensionNameLength,
-            SQLGUID        /*sessionId*/,
-            SQLUSMALLINT   /*taskId*/,
+            SQLGUID        sessionId,
+            SQLUSMALLINT   taskId,
             SQLUSMALLINT   traceLevel,
             SQLINTEGER     errorCode,
             const SQLCHAR *message,
@@ -81,7 +81,7 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Verifies the optional SetHostCallbacks entry point is exported from
-    //  nativecsharpextension so ExtHost can discover it via GetProcAddress.
+    //  nativecsharpextension so host can discover it via GetProcAddress.
     //
     TEST_F(CSharpExtensionApiTests, SetHostCallbacks_SymbolIsExported)
     {
