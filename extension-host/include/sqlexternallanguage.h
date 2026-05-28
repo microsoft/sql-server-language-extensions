@@ -137,7 +137,7 @@ SQLRETURN CleanupSession(
 SQLEXTENSION_INTERFACE
 SQLRETURN Cleanup();
 
-// Trace levels for events logged from via LogXEvent function.
+// Trace levels for events logged via LogXEvent function.
 // Lowest numeric value is the most severe, matching the Windows ETW
 // TRACE_LEVEL_* convention.
 //
@@ -163,7 +163,7 @@ typedef void (*PFunc_ExtensionLogXEvent)(
 	SQLULEN		MessageLength
 	);
 
-// Host callbacks structure passed from host to Extension..
+// Host callbacks structure passed from host to Extension.
 //
 #define SQLEXTENSION_HOST_CALLBACKS_VERSION_1 1
 

@@ -13,6 +13,11 @@
 
 #define nameof(x) #x
 
+// Single definitions for the globals declared (extern) in the header.
+//
+DotnetEnvironment*           g_dotnet_runtime = nullptr;
+SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks  = nullptr;
+
 //--------------------------------------------------------------------------------------------------
 // Name: UTF8PtrToStr
 //

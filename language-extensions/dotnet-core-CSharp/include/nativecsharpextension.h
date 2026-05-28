@@ -148,10 +148,11 @@ SQLEXTENSION_INTERFACE SQLRETURN Cleanup();
 SQLEXTENSION_INTERFACE SQLRETURN SetHostCallbacks(
     SQLEXTENSION_HOST_CALLBACKS *hostCallbacks);
 
-//  Dotnet environment pointer
+//  Dotnet environment pointer. Defined in nativecsharpextension.cpp.
 //
-static DotnetEnvironment* g_dotnet_runtime = nullptr;
+extern DotnetEnvironment* g_dotnet_runtime;
 
 //  Host callbacks pointer provided by the host via SetHostCallbacks.
+//  Defined in nativecsharpextension.cpp.
 //
-static SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks = nullptr;
+extern SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks;

@@ -113,6 +113,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         private const string ExtensionName = "CSharp";
 
         /// <summary>
+        /// Cached UTF-8 bytes of <see cref="ExtensionName"/>, allocated once
+        /// to avoid re-encoding on every LogXEvent call. Always non-empty,
+        /// so it does not need the zero-length sentinel guard.
+        /// </summary>
+        private static readonly byte[] s_utf8ExtNameBytes = Encoding.UTF8.GetBytes(ExtensionName);
+
+        /// <summary>
         /// Logs a message through the host's XEvent infrastructure.
         /// If no host callback is registered, this is a no-op.
         /// </summary>
@@ -129,22 +136,40 @@ namespace Microsoft.SqlServer.CSharpExtension
             string     message)
         {
             if (_logXEventCallback == null)
+            {
                 return;
+            }
 
-            byte[] utf8ExtName = Encoding.UTF8.GetBytes(ExtensionName);
-            byte[] utf8Bytes = Encoding.UTF8.GetBytes(message ?? string.Empty);
-            fixed (byte* pExtName = utf8ExtName)
-            fixed (byte* pBytes = utf8Bytes)
+            // Ensure message is not null to avoid issues during UTF-8 encoding.
+            string safeMessage = message ?? string.Empty;
+
+            // Convert the message to a UTF-8 byte array for native interop.
+            byte[] utf8MessageBytes = Encoding.UTF8.GetBytes(safeMessage);
+
+            // Capture the real byte length.
+            ulong messageLen = (ulong)utf8MessageBytes.Length;
+
+            // As `fixed` on a zero-length array yields a null pointer,
+            // validate that the byte array is not empty.
+            //
+            if (utf8MessageBytes.Length == 0)
+            {
+                utf8MessageBytes = new byte[] { 0 };
+            }
+
+            // Call the host's LogXEvent callback with the prepared parameters.
+            fixed (byte* pExtName = s_utf8ExtNameBytes)
+            fixed (byte* pMessage = utf8MessageBytes)
             {
                 _logXEventCallback(
                     (char*)pExtName,
-                    (ulong)utf8ExtName.Length,
+                    (ulong)s_utf8ExtNameBytes.Length,
                     sessionId,
                     taskId,
                     (ushort)traceLevel,
                     errorCode,
-                    (char*)pBytes,
-                    (ulong)utf8Bytes.Length);
+                    (char*)pMessage,
+                    messageLen);
             }
         }
 
