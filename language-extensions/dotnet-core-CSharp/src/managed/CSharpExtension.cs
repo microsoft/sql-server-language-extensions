@@ -688,6 +688,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                         errorCode: 0,
                         "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
                 }
+                else
+                {
+                    // Host opted out of XEvent logging.
+                    // Clear any previously stored delegate.
+                    //
+                    Logging.SetLogXEventCallback(null);
+                }
             });
         }
 
