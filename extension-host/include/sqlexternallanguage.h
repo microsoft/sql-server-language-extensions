@@ -137,9 +137,9 @@ SQLRETURN CleanupSession(
 SQLEXTENSION_INTERFACE
 SQLRETURN Cleanup();
 
-// Trace levels for events logged from an extension via PFunc_ExtensionLogXEvent.
+// Trace levels for events logged from via LogXEvent function.
 // Lowest numeric value is the most severe, matching the Windows ETW
-// TRACE_LEVEL_* convention. Must match ExtHost's ExtensionTraceLevel enum.
+// TRACE_LEVEL_* convention.
 //
 enum ExtensionTraceLevel
 {
