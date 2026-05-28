@@ -18,6 +18,13 @@
 DotnetEnvironment*           g_dotnet_runtime = nullptr;
 SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks  = nullptr;
 
+// g_hostCallbacks points at internal copy of the host's callbacks
+// struct g_hostCallbacksCopy rather than the caller-owned memory, so the
+// pointer can never dangle if the host passed a stack-allocated struct to
+// SetHostCallbacks.
+//
+static SQLEXTENSION_HOST_CALLBACKS g_hostCallbacksCopy = {};
+
 //--------------------------------------------------------------------------------------------------
 // Name: UTF8PtrToStr
 //
@@ -404,7 +411,11 @@ SQLRETURN SetHostCallbacks(
         return SQL_ERROR;
     }
 
-    g_hostCallbacks = hostCallbacks;
+    // Take a shallow copy of the caller's struct so g_hostCallbacks cannot
+    // dangle if the host passed a stack-allocated SQLEXTENSION_HOST_CALLBACKS.
+    //
+    g_hostCallbacksCopy = *hostCallbacks;
+    g_hostCallbacks     = &g_hostCallbacksCopy;
 
     return g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
         nameof(SetHostCallbacks),
