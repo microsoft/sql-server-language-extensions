@@ -627,6 +627,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// Highest SQLEXTENSION_HOST_CALLBACKS version this extension understands.
+        /// Must match SQLEXTENSION_HOST_CALLBACKS_VERSION_* in sqlexternallanguage.h.
+        /// </summary>
+        private const ushort MaxSupportedHostCallbacksVersion = 1;
+
+        /// <summary>
         /// This delegate declares the delegate type of SetHostCallbacks.
         /// </summary>
         public delegate short SetHostCallbacksDelegate(
@@ -653,6 +659,20 @@ namespace Microsoft.SqlServer.CSharpExtension
                 if (hostCallbacks == null)
                 {
                     throw new ArgumentNullException(nameof(hostCallbacks));
+                }
+
+                // Validate the struct version before reading any version-gated fields.
+                //
+                if (hostCallbacks->Version == 0 ||
+                    hostCallbacks->Version > MaxSupportedHostCallbacksVersion)
+                {
+                    Logging.Error(
+                        "CSharpExtension::SetHostCallbacks: unsupported host callbacks version: " +
+                        hostCallbacks->Version);
+
+                    throw new NotSupportedException(
+                        "Unsupported SQLEXTENSION_HOST_CALLBACKS version: " +
+                        hostCallbacks->Version);
                 }
 
                 if (hostCallbacks->LogXEvent != IntPtr.Zero)
