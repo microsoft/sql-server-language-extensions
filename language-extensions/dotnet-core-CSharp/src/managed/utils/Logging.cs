@@ -133,7 +133,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             int        errorCode,
             string     message)
         {
-            // Snapshot the callback once so a concurrent cleanups between the null-check and the invocation
+            // Snapshot the callback once so a concurrent cleanup between the null-check and the invocation
             // cannot turn this into a NullReferenceException.
             //
             CSharpExtension.LogXEventCallbackDelegate callback = _logXEventCallback;

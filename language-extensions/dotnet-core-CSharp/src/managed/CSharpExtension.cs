@@ -627,10 +627,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// Highest SQLEXTENSION_HOST_CALLBACKS version this extension understands.
-        /// Must match SQLEXTENSION_HOST_CALLBACKS_VERSION_* in sqlexternallanguage.h.
+        /// Minimal SQLEXTENSION_HOST_CALLBACKS version this extension understands.
+        /// If host callbacks version is greater than this, extension will still parse and read
+        /// known host callbacks and ignore unknown fields, allowing forward compatibility.
         /// </summary>
-        private const ushort MaxSupportedHostCallbacksVersion = 1;
+        /// 
+        private const ushort MinSupportedHostCallbacksVersion = 1;
 
         /// <summary>
         /// This delegate declares the delegate type of SetHostCallbacks.
@@ -640,12 +642,12 @@ namespace Microsoft.SqlServer.CSharpExtension
 
         /// <summary>
         /// This method implements SetHostCallbacks API.
-        /// Receives a pointer to the host callbacks structure and stores the
-        /// callback function pointers so managed code can call back into the host.
+        /// Receives a pointer to the host callbacks structure, reads the callback
+        /// function pointers during this call, and stores any needed managed
+        /// delegates so managed code can call back into the host.
         /// </summary>
         /// <param name="hostCallbacks">
         /// Pointer to the SQLEXTENSION_HOST_CALLBACKS structure provided by the host.
-        /// The host owns this memory and keeps it alive for the extension's lifetime.
         /// </param>
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)
@@ -663,8 +665,7 @@ namespace Microsoft.SqlServer.CSharpExtension
 
                 // Validate the struct version before reading any version-gated fields.
                 //
-                if (hostCallbacks->Version == 0 ||
-                    hostCallbacks->Version > MaxSupportedHostCallbacksVersion)
+                if (hostCallbacks->Version < MinSupportedHostCallbacksVersion)
                 {
                     Logging.Error(
                         "CSharpExtension::SetHostCallbacks: unsupported host callbacks version: " +
