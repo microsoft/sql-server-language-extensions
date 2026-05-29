@@ -404,8 +404,7 @@ SQLRETURN SetHostCallbacks(
 
     // Validate the struct version before reading any version-gated fields.
     //
-    if (hostCallbacks->Version < SQLEXTENSION_HOST_CALLBACKS_VERSION_1 ||
-        hostCallbacks->Version > SQLEXTENSION_HOST_CALLBACKS_MAX_SUPPORTED_VERSION)
+    if (hostCallbacks->Version < SQLEXTENSION_HOST_CALLBACKS_MIN_SUPPORTED_VERSION)
     {
         LOG_ERROR("SetHostCallbacks called with unsupported host callbacks version");
         return SQL_ERROR;

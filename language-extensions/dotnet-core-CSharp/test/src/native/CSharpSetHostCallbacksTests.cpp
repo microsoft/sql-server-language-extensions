@@ -164,4 +164,68 @@ namespace ExtensionApiTest
         EXPECT_EQ(rc, SQL_SUCCESS);
         EXPECT_TRUE(g_capturedLogEvents.empty());
     }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: SetHostCallbacks_FutureVersionIsAccepted
+    //
+    // Description:
+    //  A host that advertises a newer SQLEXTENSION_HOST_CALLBACKS version than
+    //  the Extension was built against must still be accepted, preserving forward compatibility.
+    //  The Extension is expected to read only the fields it and ignore the rest.
+    //
+    TEST_F(CSharpExtensionApiTests, SetHostCallbacks_FutureVersionIsAccepted)
+    {
+        FN_setHostCallbacks *fn = RESOLVE_SET_HOST_CALLBACKS();
+        ASSERT_NE(fn, nullptr);
+
+        g_capturedLogEvents.clear();
+
+        // Hypothetical "vNext" host callbacks struct.
+        //
+        typedef void (*PFunc_FutureCallback)(void);
+        struct FutureHostCallbacks
+        {
+            SQLUSMALLINT             Version;
+            SQLUSMALLINT             Reserved0;
+            SQLUINTEGER              SizeInBytes;
+            PFunc_ExtensionLogXEvent LogXEvent;
+            void                    *Reserved1;
+            void                    *Reserved2;
+            PFunc_FutureCallback     FutureCallback;
+        };
+
+        // Dummy v2 host callback.
+        //
+        static bool s_futureCallbackInvoked = false;
+        s_futureCallbackInvoked = false;
+        struct DummyFutureCallback
+        {
+            static void Invoke() { s_futureCallbackInvoked = true; }
+        };
+
+        // Populate rest of the fields in a host callbacks struct before invoking `SetHostCallbacks`.
+        //
+        FutureHostCallbacks hostCallbacks{};
+        hostCallbacks.Version        = SQLEXTENSION_HOST_CALLBACKS_VERSION_1 + 1;
+        hostCallbacks.SizeInBytes    = sizeof(FutureHostCallbacks);
+        hostCallbacks.LogXEvent      = &TestLogXEventCallback;
+        hostCallbacks.FutureCallback = &DummyFutureCallback::Invoke;
+
+        SQLRETURN rc = fn(reinterpret_cast<SQLEXTENSION_HOST_CALLBACKS *>(&hostCallbacks));
+        EXPECT_EQ(rc, SQL_SUCCESS)
+            << "Extension must accept newer host callback versions for "
+               "forward compatibility";
+
+        ASSERT_FALSE(g_capturedLogEvents.empty())
+            << "Extension should still consume the known v1 LogXEvent slot "
+               "when host advertises a newer version";
+
+        const CapturedLogEvent &ev = g_capturedLogEvents.front();
+        EXPECT_EQ(ev.extensionName, string("CSharp"));
+        EXPECT_EQ(ev.traceLevel, static_cast<SQLUSMALLINT>(Extension_Information));
+
+        EXPECT_FALSE(s_futureCallbackInvoked)
+            << "Extension built against v1 must not invoke unknown future "
+               "callbacks advertised by a newer host";
+    }
 }
