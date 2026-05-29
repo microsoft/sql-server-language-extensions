@@ -682,6 +682,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     Logging.SetLogXEventCallback(logXEvent);
 
                     Logging.LogXEvent(
+                        extensionName: null,
                         Guid.Empty,
                         taskId: 0,
                         traceLevel: Logging.TraceLevel.Information,

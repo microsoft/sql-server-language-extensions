@@ -110,27 +110,23 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
-        /// Name of the Extension to be used for XEvent logging.
+        /// Default name of the Extension to be used for XEvent logging when
+        /// the caller does not supply one.
         /// </summary>
-        private const string ExtensionName = "CSharp";
-
-        /// <summary>
-        /// Cached UTF-8 bytes of <see cref="ExtensionName"/>, allocated once
-        /// to avoid re-encoding on every LogXEvent call. Always non-empty,
-        /// so it does not need the zero-length sentinel guard.
-        /// </summary>
-        private static readonly byte[] s_utf8ExtNameBytes = Encoding.UTF8.GetBytes(ExtensionName);
+        private const string DefaultExtensionName = "CSharp";
 
         /// <summary>
         /// Logs a message through the host's XEvent infrastructure.
         /// If no host callback is registered, this is a no-op.
         /// </summary>
+        /// <param name="extensionName">Extension name.</param>
         /// <param name="sessionId">Session GUID.</param>
         /// <param name="taskId">Task identifier.</param>
         /// <param name="traceLevel">Trace severity.</param>
         /// <param name="errorCode">Error code for non-informational logs.</param>
         /// <param name="message">The message to log.</param>
         public static unsafe void LogXEvent(
+            string     extensionName,
             Guid       sessionId,
             ushort     taskId,
             TraceLevel traceLevel,
@@ -163,15 +159,24 @@ namespace Microsoft.SqlServer.CSharpExtension
                 utf8MessageBytes = new byte[] { 0 };
             }
 
+            // Use the caller-supplied Extension name when non-empty,
+            // otherwise fall back to the default value.
+            //
+            string safeExtensionName = string.IsNullOrEmpty(extensionName)
+                ? DefaultExtensionName
+                : extensionName;
+            byte[] utf8ExtNameBytes = Encoding.UTF8.GetBytes(safeExtensionName);
+            ulong  extNameLen       = (ulong)utf8ExtNameBytes.Length;
+
             // Call the host's LogXEvent callback with the prepared parameters.
             try
             {
-                fixed (byte* pExtName = s_utf8ExtNameBytes)
+                fixed (byte* pExtName = utf8ExtNameBytes)
                 fixed (byte* pMessage = utf8MessageBytes)
                 {
                     callback(
                         pExtName,
-                        (ulong)s_utf8ExtNameBytes.Length,
+                        extNameLen,
                         sessionId,
                         taskId,
                         (ushort)traceLevel,
