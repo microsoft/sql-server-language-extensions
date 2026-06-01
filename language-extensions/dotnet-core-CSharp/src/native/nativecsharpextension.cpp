@@ -13,6 +13,18 @@
 
 #define nameof(x) #x
 
+// Single definitions for the globals declared (extern) in the header.
+//
+DotnetEnvironment*           g_dotnet_runtime = nullptr;
+SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks  = nullptr;
+
+// g_hostCallbacks points at internal copy of the host's callbacks
+// struct g_hostCallbacksCopy rather than the caller-owned memory, so the
+// pointer can never dangle if the host passed a stack-allocated struct to
+// SetHostCallbacks.
+//
+static SQLEXTENSION_HOST_CALLBACKS g_hostCallbacksCopy = {};
+
 //--------------------------------------------------------------------------------------------------
 // Name: UTF8PtrToStr
 //
@@ -338,6 +350,73 @@ SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT taskId)
 SQLRETURN Cleanup()
 {
     LOG("nativecsharpextension::Cleanup");
+
+    // Clear the managed-side callbacks delegates before tearing down the
+    // runtime so any thread that races into callbacks during shutdown
+    // cannot invoke a host function pointer whose backing implementation is
+    // about to be freed.
+    //
+    if (g_dotnet_runtime != nullptr)
+    {
+        SQLEXTENSION_HOST_CALLBACKS nullCallbacks = {};
+        nullCallbacks.Version   = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        nullCallbacks.LogXEvent = nullptr;
+
+        g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
+            nameof(SetHostCallbacks),
+            &nullCallbacks);
+    }
+
+    g_hostCallbacks  = nullptr;
     delete g_dotnet_runtime;
+    g_dotnet_runtime = nullptr;
     return SQL_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Name: SetHostCallbacks
+//
+// Description:
+//  Receives a pointer to the host callbacks structure.
+//  Stores the pointer natively and forwards to managed code so the
+//  managed layer can call back into the host.
+//
+// Returns:
+//  SQL_SUCCESS on success, else SQL_ERROR
+//
+SQLRETURN SetHostCallbacks(
+    SQLEXTENSION_HOST_CALLBACKS *hostCallbacks
+)
+{
+    LOG("nativecsharpextension::SetHostCallbacks");
+
+    if (hostCallbacks == nullptr)
+    {
+        LOG_ERROR("SetHostCallbacks called with null pointer");
+        return SQL_ERROR;
+    }
+
+    if (g_dotnet_runtime == nullptr)
+    {
+        LOG_ERROR("SetHostCallbacks called before Init() or after Cleanup()");
+        return SQL_ERROR;
+    }
+
+    // Validate the struct version before reading any version-gated fields.
+    //
+    if (hostCallbacks->Version < SQLEXTENSION_HOST_CALLBACKS_MIN_SUPPORTED_VERSION)
+    {
+        LOG_ERROR("SetHostCallbacks called with unsupported host callbacks version");
+        return SQL_ERROR;
+    }
+
+    // Take a shallow copy of the caller's struct so g_hostCallbacks cannot
+    // dangle if the host passed a stack-allocated SQLEXTENSION_HOST_CALLBACKS.
+    //
+    g_hostCallbacksCopy = *hostCallbacks;
+    g_hostCallbacks     = &g_hostCallbacksCopy;
+
+    return g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
+        nameof(SetHostCallbacks),
+        hostCallbacks);
 }

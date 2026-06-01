@@ -602,6 +602,127 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// Delegate type matching the host's LogXEvent callback signature.
+        /// </summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void LogXEventCallbackDelegate(
+            byte   *extensionName,
+            ulong  extensionNameLength,
+            Guid   sessionId,
+            ushort taskId,
+            ushort traceLevel,
+            int    errorCode,
+            byte   *message,
+            ulong  messageLength);
+
+        /// <summary>
+        /// Managed representation of the SQLEXTENSION_HOST_CALLBACKS structure.
+        /// Must match the native struct layout exactly.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SqlExtensionHostCallbacks
+        {
+            // Highest SQLEXTENSION_HOST_CALLBACKS_VERSION_* the host populates.
+            // Extension must validate before reading version-gated fields.
+            //
+            public ushort Version;
+
+            // Explicit padding so SizeInBytes is naturally 4-byte aligned regardless
+            // of compiler packing settings. Must be zero.
+            //
+            public ushort Reserved0;
+
+            // sizeof(SQLEXTENSION_HOST_CALLBACKS) as the host saw it at build time.
+            // Extension must validate this is greater or equal the size of every field it intends
+            // to read. Lets a newer Extension safely run against an older host that supplied a smaller struct.
+            //
+            public uint SizeInBytes;
+
+            // Version 1 callbacks.
+            //
+            public IntPtr LogXEvent;
+
+            // Reserved for future expansion. Zero-initialized by the host. Extension must not read or call these.
+            //
+            public IntPtr Reserved1;
+            public IntPtr Reserved2;
+        }
+
+        /// <summary>
+        /// Minimal SQLEXTENSION_HOST_CALLBACKS version this extension understands.
+        /// If host callbacks version is greater than this, extension will still parse and read
+        /// known host callbacks and ignore unknown fields, allowing forward compatibility.
+        /// </summary>
+        /// 
+        private const ushort MinSupportedHostCallbacksVersion = 1;
+
+        /// <summary>
+        /// This delegate declares the delegate type of SetHostCallbacks.
+        /// </summary>
+        public delegate short SetHostCallbacksDelegate(
+            SqlExtensionHostCallbacks *hostCallbacks);
+
+        /// <summary>
+        /// This method implements SetHostCallbacks API.
+        /// Receives a pointer to the host callbacks structure, reads the callback
+        /// function pointers during this call, and stores any needed managed
+        /// delegates so managed code can call back into the host.
+        /// </summary>
+        /// <param name="hostCallbacks">
+        /// Pointer to the SQLEXTENSION_HOST_CALLBACKS structure provided by the host.
+        /// </param>
+        /// <returns>
+        /// SQL_SUCCESS(0), SQL_ERROR(-1)
+        /// </returns>
+        public static short SetHostCallbacks(
+            SqlExtensionHostCallbacks *hostCallbacks)
+        {
+            Logging.Trace("CSharpExtension::SetHostCallbacks");
+            return ExceptionUtils.WrapError(() =>
+            {
+                if (hostCallbacks == null)
+                {
+                    throw new ArgumentNullException(nameof(hostCallbacks));
+                }
+
+                // Validate the struct version before reading any version-gated fields.
+                //
+                if (hostCallbacks->Version < MinSupportedHostCallbacksVersion)
+                {
+                    Logging.Error(
+                        "CSharpExtension::SetHostCallbacks: unsupported host callbacks version: " +
+                        hostCallbacks->Version);
+
+                    throw new NotSupportedException(
+                        "Unsupported SQLEXTENSION_HOST_CALLBACKS version: " +
+                        hostCallbacks->Version);
+                }
+
+                if (hostCallbacks->LogXEvent != IntPtr.Zero)
+                {
+                    var logXEvent = Marshal.GetDelegateForFunctionPointer<LogXEventCallbackDelegate>(
+                        hostCallbacks->LogXEvent);
+                    Logging.SetLogXEventCallback(logXEvent);
+
+                    Logging.LogXEvent(
+                        extensionName: null,
+                        Guid.Empty,
+                        taskId: 0,
+                        traceLevel: Logging.TraceLevel.Information,
+                        errorCode: 0,
+                        "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
+                }
+                else
+                {
+                    // Host opted out of XEvent logging.
+                    // Clear any previously stored delegate.
+                    //
+                    Logging.SetLogXEventCallback(null);
+                }
+            });
+        }
+
+        /// <summary>
         /// This delegate declares the delegate type of CleanupSession.
         /// </summary>
         public delegate short CleanupSessionDelegate(

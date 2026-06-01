@@ -31,6 +31,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         private const int StdErr = 2;
 
         /// <summary>
+        /// Host-provided LogXEvent callback, set via SetHostCallbacks.
+        /// Marked volatile so concurrent readers in LogXEvent always
+        /// observe the latest write from SetLogXEventCallback.
+        /// </summary>
+        private static volatile CSharpExtension.LogXEventCallbackDelegate _logXEventCallback;
+
+        /// <summary>
         /// Static constructor to initialize the custom text writers for stdout and stderr.
         /// This ensures that any Console.WriteLine or Console.Error.WriteLine calls
         /// are routed through our InteropTextWriter, which bypasses the .NET Console
@@ -71,6 +78,122 @@ namespace Microsoft.SqlServer.CSharpExtension
             {
                 // Ignore exceptions during error logging but log to debug output
                 Debug.WriteLine($"Error logging failed: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// Stores the host-provided LogXEvent callback for later use.
+        /// Called from CSharpExtension.SetHostCallbacks.
+        /// </summary>
+        /// <param name="callback">The delegate wrapping the host's LogXEvent function pointer.</param>
+        public static void SetLogXEventCallback(CSharpExtension.LogXEventCallbackDelegate callback)
+        {
+            _logXEventCallback = callback;
+        }
+
+        /// <summary>
+        /// Returns true if the host has provided a LogXEvent callback.
+        /// </summary>
+        public static bool HasLogXEventCallback => _logXEventCallback != null;
+
+        /// <summary>
+        /// Trace levels for events logged via the host's LogXEvent callback.
+        /// Lowest numeric value is the most severe, matching Windows ETW TRACE_LEVEL_* convention.
+        /// </summary>
+        public enum TraceLevel : ushort
+        {
+            Critical    = 1,
+            Error       = 2,
+            Warning     = 3,
+            Information = 4,
+            Verbose     = 5,
+        }
+
+        /// <summary>
+        /// Default name of the Extension to be used for XEvent logging when
+        /// the caller does not supply one.
+        /// </summary>
+        private const string DefaultExtensionName = "CSharp";
+
+        /// <summary>
+        /// Logs a message through the host's XEvent infrastructure.
+        /// If no host callback is registered, this is a no-op.
+        /// 
+        /// Note:
+        /// If `sessionId` is `Guid.Empty`, the event will not be propagated to SQL Engine and will not
+        /// be visible in ad-hoc XEvent session created with `CREATE EVENT SESSION`. Therefore, end users will not be able
+        /// to see this event. As soon as the session is initialized and provided `sessionId` is non-`Guid.Empty`, events
+        /// will be propagated and visible by end users.
+        /// </summary>
+        /// <param name="extensionName">Extension name.</param>
+        /// <param name="sessionId">Session GUID.</param>
+        /// <param name="taskId">Task identifier.</param>
+        /// <param name="traceLevel">Trace severity.</param>
+        /// <param name="errorCode">Error code for non-informational logs.</param>
+        /// <param name="message">The message to log.</param>
+        public static unsafe void LogXEvent(
+            string     extensionName,
+            Guid       sessionId,
+            ushort     taskId,
+            TraceLevel traceLevel,
+            int        errorCode,
+            string     message)
+        {
+            // Snapshot the callback once so a concurrent cleanup between the null-check and the invocation
+            // cannot turn this into a NullReferenceException.
+            //
+            CSharpExtension.LogXEventCallbackDelegate callback = _logXEventCallback;
+            if (callback == null)
+            {
+                return;
+            }
+
+            // Ensure message is not null to avoid issues during UTF-8 encoding.
+            string safeMessage = message ?? string.Empty;
+
+            // Convert the message to a UTF-8 byte array for native interop.
+            byte[] utf8MessageBytes = Encoding.UTF8.GetBytes(safeMessage);
+
+            // Capture the real byte length.
+            ulong messageLen = (ulong)utf8MessageBytes.Length;
+
+            // As `fixed` on a zero-length array yields a null pointer,
+            // validate that the byte array is not empty.
+            //
+            if (utf8MessageBytes.Length == 0)
+            {
+                utf8MessageBytes = new byte[] { 0 };
+            }
+
+            // Use the caller-supplied Extension name when non-empty,
+            // otherwise fall back to the default value.
+            //
+            string safeExtensionName = string.IsNullOrEmpty(extensionName)
+                ? DefaultExtensionName
+                : extensionName;
+            byte[] utf8ExtNameBytes = Encoding.UTF8.GetBytes(safeExtensionName);
+            ulong  extNameLen       = (ulong)utf8ExtNameBytes.Length;
+
+            // Call the host's LogXEvent callback with the prepared parameters.
+            try
+            {
+                fixed (byte* pExtName = utf8ExtNameBytes)
+                fixed (byte* pMessage = utf8MessageBytes)
+                {
+                    callback(
+                        pExtName,
+                        extNameLen,
+                        sessionId,
+                        taskId,
+                        (ushort)traceLevel,
+                        errorCode,
+                        pMessage,
+                        messageLen);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LogXEvent host callback threw: {ex}");
             }
         }
 
