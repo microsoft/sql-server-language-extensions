@@ -622,8 +622,30 @@ namespace Microsoft.SqlServer.CSharpExtension
         [StructLayout(LayoutKind.Sequential)]
         public struct SqlExtensionHostCallbacks
         {
+            // Highest SQLEXTENSION_HOST_CALLBACKS_VERSION_* the host populates.
+            // Extension must validate before reading version-gated fields.
+            //
             public ushort Version;
+
+            // Explicit padding so SizeInBytes is naturally 4-byte aligned regardless
+            // of compiler packing settings. Must be zero.
+            //
+            public ushort Reserved0;
+
+            // sizeof(SQLEXTENSION_HOST_CALLBACKS) as the host saw it at build time.
+            // Extension must validate this is greater or equal the size of every field it intends
+            // to read. Lets a newer Extension safely run against an older host that supplied a smaller struct.
+            //
+            public uint SizeInBytes;
+
+            // Version 1 callbacks.
+            //
             public IntPtr LogXEvent;
+
+            // Reserved for future expansion. Zero-initialized by the host. Extension must not read or call these.
+            //
+            public IntPtr Reserved1;
+            public IntPtr Reserved2;
         }
 
         /// <summary>

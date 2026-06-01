@@ -118,6 +118,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// Logs a message through the host's XEvent infrastructure.
         /// If no host callback is registered, this is a no-op.
+        /// 
+        /// Note:
+        /// If `sessionId` is `Guid.Empty`, the event will not be propagated to SQL Engine and will not
+        /// be visible in ad-hoc XEvent session created with `CREATE EVENT SESSION`. Therefore, end users will not be able
+        /// to see this event. As soon as the session is initialized and provided `sessionId` is non-`Guid.Empty`, events
+        /// will be propagated and visible by end users.
         /// </summary>
         /// <param name="extensionName">Extension name.</param>
         /// <param name="sessionId">Session GUID.</param>
