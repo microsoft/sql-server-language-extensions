@@ -102,6 +102,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             {SqlDataType.DotNetBit, sizeof(bool)},
             {SqlDataType.DotNetChar, MinUtf8CharSize},
             {SqlDataType.DotNetWChar, MinUtf16CharSize},
+            {SqlDataType.DotNetNVarChar, MinUtf16CharSize},
             {SqlDataType.DotNetNumeric, SqlNumericStructSize}
         };
 
