@@ -940,8 +940,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             catch (Exception e)
             {
-                string stackTracePart = string.IsNullOrEmpty(e.StackTrace) ? string.Empty : e.StackTrace + Environment.NewLine;
-                Logging.Error(stackTracePart + "Error: " + e.Message);
+                Logging.Error(e.ToString());
                 SetLibraryError(e.Message, libraryError, libraryErrorLength);
                 result = SQL_ERROR;
             }
@@ -1417,8 +1416,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             catch (Exception e)
             {
-                string stackTracePart = string.IsNullOrEmpty(e.StackTrace) ? string.Empty : e.StackTrace + Environment.NewLine;
-                Logging.Error(stackTracePart + "Error: " + e.Message);
+                Logging.Error(e.ToString());
                 SetLibraryError(e.Message, libraryError, libraryErrorLength);
                 result = SQL_ERROR;
             }

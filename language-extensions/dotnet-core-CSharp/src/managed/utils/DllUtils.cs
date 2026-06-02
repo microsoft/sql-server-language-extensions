@@ -54,7 +54,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // Catch unexpected exception without throwing the exception so that
                     // all the dlls will be loaded to find matched user executor
                     //
-                    Logging.Error(e.StackTrace + "Error: " + e.Message);
+                    Logging.Error(e.ToString());
                 }
             }
 
