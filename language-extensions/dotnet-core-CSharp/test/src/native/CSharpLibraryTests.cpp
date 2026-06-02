@@ -778,7 +778,7 @@ namespace ExtensionApiTest
             "%2e%2e%2fevil",           // URL-encoded "../evil"
             "%2eevil",                 // URL-encoded leading dot
             "foo%5cbar",               // URL-encoded backslash
-            "foo\xEF\xBC\x8Fbar",      // U+FF0F FULLWIDTH SOLIDUS (UTF-8)
+            "foo\xEF\xBC\x8F" "bar",   // U+FF0F FULLWIDTH SOLIDUS (UTF-8)
             ".hidden",                 // leading dot
             "trailingdot.",            // trailing dot
             "trailingspace ",          // trailing space
