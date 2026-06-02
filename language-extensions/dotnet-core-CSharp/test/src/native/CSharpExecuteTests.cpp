@@ -528,7 +528,7 @@ namespace ExtensionApiTest
         }
         else
         {
-            EXPECT_TRUE(error.find("Unable to find user class with full name:") != string::npos);
+            EXPECT_TRUE(error.find("Error: Unable to find user class with full name:") != string::npos);
         }
     }
 
