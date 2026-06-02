@@ -190,13 +190,31 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
                 case SqlDataType.DotNetWChar:
+                case SqlDataType.DotNetNVarChar:
                     // Calculate column size from actual data.
-                    // columnSize = max character count (UTF-16 byte length / 2).
-                    // Minimum size is 1 character (nchar(0) is illegal in SQL).
+                    // GetStrLenNullMap returns the per-row byte length
+                    // (Encoding.Unicode.GetByteCount) and the SQL_C_WCHAR
+                    // ODBC contract requires the column Size and the
+                    // strLenOrNullMap entries to use the same unit. Report
+                    // Size in BYTES; do NOT convert to a character count
+                    // here -- a character-count Size combined with a
+                    // byte-count length map causes SPEES to log
+                    // "Reading one row failed for column N row M. The
+                    // length information is incorrect." and reject the
+                    // rowset.
+                    //
+                    // DotNetNVarChar is treated as an alias of DotNetWChar
+                    // (both are SQL_C_WCHAR-shaped at the ODBC layer).
+                    // Without this case, callers who set
+                    // DataTypeMap[typeof(string)] = SqlDataType.DotNetNVarChar
+                    // hit a KeyNotFoundException in DataTypeSize and the
+                    // column never reaches the dispatch switch.
+                    //
+                    // Minimum size is 2 bytes (one UTF-16 code unit -- nchar(0)
+                    // is illegal in SQL).
                     //
                     int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    int maxCharCount = maxUnicodeByteLen / sizeof(char);
-                    _columns[columnNumber].Size = (ulong)Math.Max(maxCharCount, MinUtf16CharSize);
+                    _columns[columnNumber].Size = (ulong)Math.Max(maxUnicodeByteLen, MinUtf16CharSize);
 
                     SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
                     break;
@@ -429,8 +447,11 @@ namespace Microsoft.SqlServer.CSharpExtension
                             Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");
                             break;
                         case SqlDataType.DotNetWChar:
+                        case SqlDataType.DotNetNVarChar:
                             // Report the byte length of the UTF-16 encoded string (2 bytes per code unit).
-                            // This must match the buffer size emitted by GetUnicodeStringArray().
+                            // This must match the buffer size emitted by GetUnicodeStringArray()
+                            // and the column Size set in ExtractColumn (also bytes for SQL_C_WCHAR).
+                            // DotNetNVarChar is an alias of DotNetWChar at the ODBC layer.
                             //
                             colMap[rowNumber] = Encoding.Unicode.GetByteCount((string)column[rowNumber]);
                             Logging.Trace($"GetStrLenNullMap: Row {rowNumber}, Value='{column[rowNumber]}', ByteLen={colMap[rowNumber]}");

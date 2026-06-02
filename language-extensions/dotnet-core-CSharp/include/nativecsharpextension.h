@@ -143,6 +143,46 @@ SQLEXTENSION_INTERFACE SQLRETURN CleanupSession(SQLGUID sessionId, SQLUSMALLINT 
 //
 SQLEXTENSION_INTERFACE SQLRETURN Cleanup();
 
+//  Installs an external library to the specified directory.
+//
+//  Dispatch is by the registered library name (libraryName), not the
+//  contents of libraryFile:
+//    - libraryName ending in ".zip"  -> ZIP archive install. If the archive
+//      contains a single inner zip, that inner zip is extracted to the
+//      install directory; otherwise the outer archive's files are copied
+//      directly. A "{libName}.manifest" listing every extracted file is
+//      written so UninstallExternalLibrary can clean up exactly what was
+//      installed.
+//    - libraryName ending in ".dll"  -> raw DLL install. libraryFile is
+//      copied verbatim to "{installDir}\{libraryName}" and a one-entry
+//      manifest is written.
+//    - libraryName with neither extension -> falls back to libraryFile's
+//      extension (preserves the legacy contract for callers that register
+//      libraries by bare name and point libraryFile at a "*.zip" or
+//      "*.dll" fixture).
+//
+SQLEXTENSION_INTERFACE SQLRETURN InstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryFile,
+    SQLINTEGER libraryFileLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength);
+
+//  Uninstalls an external library from the specified directory.
+//
+SQLEXTENSION_INTERFACE SQLRETURN UninstallExternalLibrary(
+    SQLGUID    setupSessionId,
+    SQLCHAR    *libraryName,
+    SQLINTEGER libraryNameLength,
+    SQLCHAR    *libraryInstallDirectory,
+    SQLINTEGER libraryInstallDirectoryLength,
+    SQLCHAR    **libraryError,
+    SQLINTEGER *libraryErrorLength);
+
 //  Receives host callback function pointers from the host.
 //  Optional API, supported since v3 of the Extension API.
 //
