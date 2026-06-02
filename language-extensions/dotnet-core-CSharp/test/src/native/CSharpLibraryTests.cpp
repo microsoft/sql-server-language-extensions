@@ -748,6 +748,67 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: InstallRejectsUnsafeLibraryNameTest
+    //
+    // Description:
+    //  ValidateLibraryName must reject any library name that could escape the
+    //  install directory when composed into "{libName}.dll" /
+    //  "{libName}.manifest". This covers raw separators and traversal, plus
+    //  encoded ("%2e%2e", "%2f") and homoglyph (U+FF0F FULLWIDTH SOLIDUS)
+    //  forms that the hardened validator decodes / normalizes before applying
+    //  its whitelist, plus names with leading/trailing '.'/' ' that Windows
+    //  would silently strip. Every case must fail with SQL_ERROR and write
+    //  nothing into (or outside) the install directory.
+    //
+    TEST_F(CSharpExtensionApiTests, InstallRejectsUnsafeLibraryNameTest)
+    {
+        string packagesPath = GetPackagesPath();
+        // A valid package -- the rejection must come from the library NAME,
+        // not from the package contents.
+        string packagePath = (fs::path(packagesPath) / "testpackageB-DLL.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath)) << "Test package not found: " << packagePath;
+
+        const char *unsafeNames[] =
+        {
+            "../evil",                 // traversal
+            "..\\evil",                // traversal (Windows separator)
+            "foo/bar",                 // embedded forward separator
+            "foo\\bar",                // embedded backslash separator
+            "/etc/passwd",             // rooted (POSIX)
+            "%2e%2e%2fevil",           // URL-encoded "../evil"
+            "%2eevil",                 // URL-encoded leading dot
+            "foo%5cbar",               // URL-encoded backslash
+            "foo\xEF\xBC\x8Fbar",      // U+FF0F FULLWIDTH SOLIDUS (UTF-8)
+            ".hidden",                 // leading dot
+            "trailingdot.",            // trailing dot
+            "trailingspace ",          // trailing space
+            " leadingspace",           // leading space
+            "CON",                     // reserved DOS device name
+            ".dll",                    // extension only
+        };
+
+        for (const char *name : unsafeNames)
+        {
+            string installDir = CreateInstallDir();
+
+            SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+                name, packagePath, installDir);
+            EXPECT_EQ(result, SQL_ERROR)
+                << "Unsafe library name was not rejected: '" << name << "'";
+
+            // Nothing should have been written outside the install dir, and
+            // the install dir itself should hold no library payload.
+            fs::path parentDir = fs::path(installDir).parent_path();
+            EXPECT_FALSE(fs::exists(parentDir / "evil"))
+                << "Unsafe name escaped install directory: '" << name << "'";
+            EXPECT_FALSE(fs::exists(parentDir / "evil.dll"))
+                << "Unsafe name escaped install directory: '" << name << "'";
+
+            CleanupInstallDir(installDir);
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: DoubleUninstallTest
     //
     // Description:
@@ -904,6 +965,54 @@ namespace ExtensionApiTest
         }
         EXPECT_TRUE(hasNestedDll) << "Manifest missing lib/net8.0/MyLib.dll entry";
         EXPECT_TRUE(hasRuntimeDll) << "Manifest missing runtimes/win-x64/native.dll entry";
+
+        CleanupInstallDir(installDir);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ManifestUsesForwardSlashSeparatorsTest
+    //
+    // Description:
+    //  Manifest entries for nested files must use '/' as the path separator
+    //  on every platform. CollectRelativeFiles canonicalizes separators so a
+    //  manifest written on Windows is byte-identical to one written on Linux;
+    //  this keeps CheckForConflicts ownership matching and CleanupManifest
+    //  deletion working when an install directory is read back by a different
+    //  host/build. A regression to Path.Combine's native separator would put
+    //  '\' into the manifest on Windows and break that contract.
+    //
+    TEST_F(CSharpExtensionApiTests, ManifestUsesForwardSlashSeparatorsTest)
+    {
+        string packagesPath = GetPackagesPath();
+        string packagePath = (fs::path(packagesPath) / "testpackageD-NESTED.zip").string();
+        ASSERT_TRUE(fs::exists(packagePath));
+
+        string installDir = CreateInstallDir();
+
+        SQLRETURN result = CallInstall(sm_installExternalLibraryFuncPtr,
+            "nestedslashlib", packagePath, installDir);
+        EXPECT_EQ(result, SQL_SUCCESS);
+
+        string manifestPath = (fs::path(installDir) / "nestedslashlib.manifest").string();
+        ASSERT_TRUE(fs::exists(manifestPath));
+
+        vector<string> entries = ReadManifest(manifestPath);
+
+        bool sawNestedEntry = false;
+        for (const string &e : entries)
+        {
+            // No entry may contain a backslash -- separators must be '/'.
+            EXPECT_EQ(e.find('\\'), string::npos)
+                << "Manifest entry uses backslash separator: '" << e << "'";
+
+            if (e.find('/') != string::npos)
+            {
+                sawNestedEntry = true;
+            }
+        }
+
+        EXPECT_TRUE(sawNestedEntry)
+            << "Expected at least one nested '/'-separated manifest entry";
 
         CleanupInstallDir(installDir);
     }

@@ -11,10 +11,13 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
@@ -86,6 +89,29 @@ namespace Microsoft.SqlServer.CSharpExtension
                 "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
                 "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
             };
+
+        /// <summary>
+        /// Whitelist of characters permitted in a library name. A library
+        /// name is a SQL identifier supplied to InstallExternalLibrary /
+        /// UninstallExternalLibrary and is used to compose on-disk paths
+        /// ("{libName}.dll", "{libName}.manifest"). Restricting it to ASCII
+        /// letters, digits, underscore, dot, and hyphen blocks every path
+        /// separator and traversal sequence -- including ones reachable only
+        /// after URL-decoding ("%2e%2e", "%2f") or Unicode compatibility
+        /// normalization (e.g. U+FF0F FULLWIDTH SOLIDUS folding to '/') --
+        /// at the source. See <see cref="ValidateLibraryName"/>.
+        /// </summary>
+        private static readonly Regex s_libNameWhitelist =
+            new Regex(@"^[a-zA-Z0-9_.\-]+$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// Maximum time to wait for the per-installDir install lock before
+        /// giving up. Without an upper bound a wedged or crashed peer holding
+        /// the lock file (FileShare.None + DeleteOnClose) would make
+        /// <see cref="AcquireInstallLock"/> spin forever, hanging the engine
+        /// thread that called InstallExternalLibrary / UninstallExternalLibrary.
+        /// </summary>
+        private static readonly TimeSpan s_lockAcquireTimeout = TimeSpan.FromMinutes(2);
 
         /// <summary>
         /// This delegate declares the delegate type of Init.
@@ -1098,8 +1124,32 @@ namespace Microsoft.SqlServer.CSharpExtension
 
             CheckForConflicts(installDir, libName, extractedFiles, oldManifestEntries);
 
+            // TOCTOU note: there is a window between CheckForConflicts (the
+            // "check") and the CleanupManifest / ExtractContentToInstallDir /
+            // WriteAllLines below (the "use") during which the on-disk state
+            // of installDir is assumed not to change underneath us. That
+            // assumption holds because of two invariants established by the
+            // caller, NOT by re-checking here:
+            //   1. Cross-process exclusion: this method only runs while the
+            //      caller holds the per-installDir install.lock (FileShare.None)
+            //      acquired via AcquireInstallLock. No other CSharp extension
+            //      process can be in its own check/use window for the same
+            //      installDir concurrently.
+            //   2. Restricted ACLs: installDir is the SQL Server satellite's
+            //      per-library leaf directory, writable only by this
+            //      satellite's AppContainer SID. No unprivileged external
+            //      principal can race a file into installDir between the check
+            //      and the use.
+            // Because both invariants are enforced outside this window, a
+            // second filesystem probe immediately before the copy would add
+            // cost without closing any reachable race; the lock + ACL pair is
+            // the actual mitigation. If either invariant is ever relaxed (e.g.
+            // the lock is removed, or installDir becomes writable by other
+            // principals), this sequence must be revisited.
+            //
             // All checks passed. Remove the previous version's files (if any),
             // then extract / copy the new content into installDir.
+
             if (File.Exists(manifestPath))
             {
                 CleanupManifest(manifestPath, installDir);
@@ -1514,18 +1564,43 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// different extraction library. Regression test:
         /// <see cref="!:InnerZipFutureSymlinkRejectedTest"/> in
         /// CSharpLibraryTests.cpp.
+        /// <para>
+        /// Hard links are deliberately NOT covered by this check, and that
+        /// is safe given the current extraction path. A hard link is a second
+        /// directory entry pointing at an existing inode; it carries no
+        /// FileAttributes.ReparsePoint flag, so File.GetAttributes cannot
+        /// distinguish it from an ordinary file and IsReparsePoint returns
+        /// false for it. That would matter only if extraction could create a
+        /// hard link from a staged tree entry to a file OUTSIDE the staged
+        /// tree. .NET's ZipArchive has no concept of a hard-link entry: every
+        /// entry is materialized as an independent regular file with its own
+        /// freshly-allocated inode (System.IO.Compression never calls
+        /// link(2)/CreateHardLink), so a ZIP cannot smuggle a cross-tree hard
+        /// link through ExtractToDirectory. The copy into installDir therefore
+        /// only ever sees regular files and reparse points, both of which this
+        /// method classifies correctly. If extraction is ever changed to a
+        /// library that can emit hard links, this guard must be extended to
+        /// detect them (e.g. via FileInfo link-count / target inspection),
+        /// because a hard link to an out-of-tree file would let File.Copy read
+        /// privileged content exactly as the symlink scenario above describes.
+        /// </para>
         /// </remarks>
         private static bool IsReparsePoint(string path)
         {
             return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
         }
 
-        // Block forever in AcquireInstallLock -- match the engine's
-        // "this install will eventually finish" contract. SQL Server's outer
-        // statement-level cancellation is the right place to interrupt a
-        // pathologically-stuck install, not an arbitrary timeout in here.
-        // (s_lockRetryDelayMs is declared at the top of the class with the
-        // other class members.)
+        // AcquireInstallLock retries with a fixed s_lockRetryDelayMs interval
+        // up to an overall s_lockAcquireTimeout deadline, then throws
+        // TimeoutException. The bounded wait protects the engine thread from a
+        // wedged or crashed peer that left the lock file held: under the
+        // FileShare.None + DeleteOnClose scheme a clean crash releases the
+        // handle (OS-reclaimed), but a hung-but-alive holder would otherwise
+        // make this spin forever. The timeout is generous (minutes) so it
+        // never trips during a legitimately slow install; SQL Server's outer
+        // statement-level cancellation remains the primary way to interrupt.
+        // (s_lockRetryDelayMs and s_lockAcquireTimeout are declared at the top
+        // of the class with the other class members.)
 
         /// <summary>
         /// Acquires an exclusive cross-process lock for operations on
@@ -1566,11 +1641,21 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// name. The collision surfaces as a sharing violation at
         /// install time rather than silent overwrite.
         ///
-        /// Acquisition blocks indefinitely with a 100ms retry interval.
-        /// In the uncontended common case (single session), acquisition
-        /// completes on the first attempt with no measurable overhead.
+        /// Acquisition retries on a 100ms interval until it succeeds or the
+        /// <paramref name="timeout"/> deadline elapses, at which point it
+        /// throws <see cref="TimeoutException"/>. In the uncontended common
+        /// case (single session), acquisition completes on the first attempt
+        /// with no measurable overhead.
         /// </remarks>
-        private static FileStream AcquireInstallLock(string installDir)
+        /// <param name="installDir">
+        /// The per-library install directory to lock.
+        /// </param>
+        /// <param name="timeout">
+        /// Maximum time to keep retrying before throwing
+        /// <see cref="TimeoutException"/>. Defaults to
+        /// <see cref="s_lockAcquireTimeout"/> when null.
+        /// </param>
+        private static FileStream AcquireInstallLock(string installDir, TimeSpan? timeout = null)
         {
             // Ensure installDir exists -- the lock file lives inside it.
             Directory.CreateDirectory(installDir);
@@ -1579,6 +1664,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             // rationale (the satellite's AppContainer SID has write access
             // on installDir only, not on its parent).
             string lockPath = Path.Combine(installDir, "install.lock");
+
+            TimeSpan effectiveTimeout = timeout ?? s_lockAcquireTimeout;
+            DateTime deadline = DateTime.UtcNow + effectiveTimeout;
 
             while (true)
             {
@@ -1601,6 +1689,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // (UnauthorizedAccessException, ArgumentException,
                     // SecurityException, ...) propagates so that
                     // non-transient failures fail fast rather than spinning.
+                    if (DateTime.UtcNow >= deadline)
+                    {
+                        throw new TimeoutException(
+                            $"Timed out after {effectiveTimeout.TotalSeconds:F0}s waiting for the " +
+                            $"install lock on '{installDir}'. Another install/uninstall operation " +
+                            "may be holding it.");
+                    }
+
                     Thread.Sleep(s_lockRetryDelayMs);
                 }
             }
@@ -1652,7 +1748,17 @@ namespace Microsoft.SqlServer.CSharpExtension
                 string relPath = string.IsNullOrEmpty(prefix)
                     ? Path.GetFileName(file)
                     : Path.Combine(prefix, Path.GetFileName(file));
-                results.Add(relPath);
+                // Canonicalize separators to '/' so the manifest is identical
+                // regardless of which OS produced it. Path.Combine emits '\'
+                // on Windows and '/' on Linux; if a library installed on
+                // Windows (manifest entry "lib\net8.0\MyLib.dll") were later
+                // read on Linux -- or compared against the '/'-based relative
+                // paths the runtime computes -- the entries would not match,
+                // breaking CheckForConflicts ownership and CleanupManifest
+                // deletion. '/' is accepted by Path.Combine on Windows and is
+                // the native separator on Linux, so the canonical form works
+                // on both. See ReadManifestEntries for the read-side counterpart.
+                results.Add(relPath.Replace('\\', '/'));
             }
 
             foreach (string dir in Directory.GetDirectories(directory))
@@ -1720,6 +1826,19 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// names (CON, PRN, NUL, AUX, COM1-9, LPT1-9) because CreateFile
         /// maps any path ending in those stems to a device handle even on
         /// modern NTFS.
+        ///
+        /// Defense in depth against encoded / homoglyph traversal: before
+        /// the structural checks we URL-decode the name and normalize it to
+        /// Unicode NFKC, then require it to match a strict whitelist
+        /// (<see cref="s_libNameWhitelist"/>). This closes the gap where a
+        /// caller (or some future caller that decodes/normalizes before us)
+        /// could smuggle a separator in as "%2f", "%2e%2e", U+2044 FRACTION
+        /// SLASH, or U+FF0F FULLWIDTH SOLIDUS. SQL Server passes the T-SQL
+        /// identifier through verbatim today, so this is hardening rather
+        /// than a fix for a reachable bug, but it makes the contract explicit
+        /// and host-independent. We also reject leading/trailing '.' or ' '
+        /// because Windows silently strips trailing dots and spaces from path
+        /// components, which would let "foo." and "foo" collide.
         /// </remarks>
         /// <param name="libName">
         /// The library name as supplied via libraryName to
@@ -1730,6 +1849,46 @@ namespace Microsoft.SqlServer.CSharpExtension
             if (string.IsNullOrWhiteSpace(libName))
             {
                 throw new ArgumentException("Library name must not be empty or whitespace.");
+            }
+
+            // Collapse any percent-encoding and Unicode-fold to NFKC so that a
+            // separator or traversal sequence hidden as "%2f" / "%2e%2e" or as
+            // a homoglyph (e.g. U+FF0F -> '/') is exposed before the structural
+            // checks below. We validate the decoded/normalized form; the
+            // original string is what is actually used on disk, so any name
+            // that survives must be byte-for-byte identical to its
+            // decoded/normalized form (the whitelist guarantees this -- it
+            // permits no '%' and only characters that are already in NFKC
+            // canonical form).
+            string normalized;
+            try
+            {
+                normalized = WebUtility.UrlDecode(libName).Normalize(NormalizationForm.FormKC);
+            }
+            catch (ArgumentException)
+            {
+                // Malformed surrogate pairs etc. -- treat as invalid input.
+                throw new ArgumentException(
+                    $"Library name '{libName}' contains invalid characters.");
+            }
+
+            if (!s_libNameWhitelist.IsMatch(normalized) ||
+                !string.Equals(normalized, libName, StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    $"Library name '{libName}' contains invalid characters. " +
+                    "Allowed characters are letters, digits, '_', '.', and '-'.");
+            }
+
+            // Reject leading/trailing '.' or ' '. Windows strips trailing dots
+            // and spaces from filename components, so "foo." and "foo " would
+            // silently map to "foo" on disk and could collide with or shadow
+            // another library's files.
+            if (libName[0] == '.' || libName[0] == ' ' ||
+                libName[libName.Length - 1] == '.' || libName[libName.Length - 1] == ' ')
+            {
+                throw new ArgumentException(
+                    $"Library name '{libName}' must not begin or end with '.' or ' '.");
             }
 
             if (libName.IndexOfAny(new[] { '/', '\\', '\0' }) >= 0 ||
@@ -1854,7 +2013,15 @@ namespace Microsoft.SqlServer.CSharpExtension
                 {
                     if (!string.IsNullOrWhiteSpace(line))
                     {
-                        set.Add(line);
+                        // Canonicalize separators to '/' to match the form
+                        // CollectRelativeFiles writes. This lets a manifest
+                        // produced by an older build (or on a different OS)
+                        // that recorded '\' separators still match the
+                        // '/'-based staged relative paths in CheckForConflicts
+                        // and resolve correctly in CleanupManifest. Trim the
+                        // line as well so trailing CR/whitespace from a manifest
+                        // authored on another platform does not defeat the match.
+                        set.Add(line.Trim().Replace('\\', '/'));
                     }
                 }
             }
@@ -1904,10 +2071,16 @@ namespace Microsoft.SqlServer.CSharpExtension
                     continue;
                 }
 
+                // Canonicalize separators to '/' (see CollectRelativeFiles /
+                // ReadManifestEntries) so an entry recorded with '\' on Windows
+                // still resolves through Path.Combine on Linux, where '\' is a
+                // literal filename character rather than a separator.
+                string normalizedRelPath = relPath.Trim().Replace('\\', '/');
+
                 string fullPath;
                 try
                 {
-                    fullPath = Path.GetFullPath(Path.Combine(fullInstall, relPath));
+                    fullPath = Path.GetFullPath(Path.Combine(fullInstall, normalizedRelPath));
                 }
                 catch (Exception ex)
                 {
