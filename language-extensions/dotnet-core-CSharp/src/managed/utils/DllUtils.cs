@@ -22,6 +22,9 @@ namespace Microsoft.SqlServer.CSharpExtension
     /// </summary>
     internal class DllUtils
     {
+        private static readonly object s_dependencySearchPathLock = new object();
+        private static readonly HashSet<string> s_dependencySearchPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// This method loops through all dll in the paths and returns the first class that implements the executor.
         /// </summary>
@@ -77,6 +80,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             string userLibName)
         {
             List<string>dllList = new List<string>();
+            RegisterDependencySearchPath(privatePath);
+            RegisterDependencySearchPath(publicPath);
+
             if(string.IsNullOrEmpty(userLibName))
             {
                 if (!string.IsNullOrEmpty(privatePath))
@@ -170,7 +176,61 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         private static Assembly AssemblyResolve(object sender, ResolveEventArgs args)
         {
-            return AppDomain.CurrentDomain.GetAssemblies().Where(a => a.FullName == args.Name).SingleOrDefault();
+            Assembly loadedAssembly = AppDomain.CurrentDomain.GetAssemblies().Where(a => a.FullName == args.Name).SingleOrDefault();
+            if (loadedAssembly != null)
+            {
+                return loadedAssembly;
+            }
+
+            string assemblyFileName;
+            try
+            {
+                assemblyFileName = new AssemblyName(args.Name).Name + ".dll";
+            }
+            catch (Exception e)
+            {
+                Logging.Error(e.StackTrace + "Error: " + e.Message);
+                return null;
+            }
+
+            List<string> dependencySearchPaths;
+            lock (s_dependencySearchPathLock)
+            {
+                dependencySearchPaths = s_dependencySearchPaths.ToList();
+            }
+
+            foreach (string searchPath in dependencySearchPaths)
+            {
+                try
+                {
+                    string candidate = Path.Combine(searchPath, assemblyFileName);
+                    if (File.Exists(candidate))
+                    {
+                        return Assembly.LoadFrom(candidate);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logging.Error(e.StackTrace + "Error: " + e.Message);
+                }
+            }
+
+            return null;
         }
+
+        private static void RegisterDependencySearchPath(string searchPath)
+        {
+            if (string.IsNullOrEmpty(searchPath) || !Directory.Exists(searchPath))
+            {
+                return;
+            }
+
+            string fullPath = Path.GetFullPath(searchPath);
+            lock (s_dependencySearchPathLock)
+            {
+                s_dependencySearchPaths.Add(fullPath);
+            }
+        }
+
     }
 }
