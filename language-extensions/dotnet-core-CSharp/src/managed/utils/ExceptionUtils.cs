@@ -37,10 +37,7 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             catch (Exception e)
             {
-                // Log full exception chain so inner exceptions are visible in satellite logs.
-                // TargetInvocationException (from Activator.CreateInstance reflection) wraps
-                // the real error — e.ToString() unwinds the whole chain.
-                Logging.Error(e.ToString());
+                Logging.Error(e.StackTrace + "Error: " + e.Message);
                 return SQL_ERROR;
             }
         }
