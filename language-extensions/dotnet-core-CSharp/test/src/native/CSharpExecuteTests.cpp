@@ -528,7 +528,14 @@ namespace ExtensionApiTest
         }
         else
         {
-            EXPECT_TRUE(error.find("Error: Unable to find user class with full name:") != string::npos);
+            // On failure, surface the captured stdout/stderr so logs show the actual extension output.
+            //
+            bool matched = error.find("Unable to find user class with full name:") != string::npos;
+            EXPECT_TRUE(matched)
+                << "Expected stderr to contain 'Unable to find user class with full name:'.\n"
+                << "----- Captured stdout -----\n" << output << "\n"
+                << "----- Captured stderr -----\n" << error << "\n"
+                << "---------------------------";
         }
     }
 
