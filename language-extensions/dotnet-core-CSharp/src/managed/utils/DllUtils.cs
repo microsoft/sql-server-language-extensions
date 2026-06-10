@@ -51,10 +51,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                 }
                 catch (Exception e)
                 {
-                    // Catch unexpected exception without throwing the exception so that
-                    // all the dlls will be loaded to find matched user executor
-                    //
-                    Logging.Error(e.StackTrace + "Error: " + e.Message);
+                    // Catch unexpected exception without throwing so the loop can keep
+                    // trying remaining DLLs. Log the full exception chain (including the
+                    // inner exception) and identify which DLL failed.
+                    Logging.Error($"Failed to load or inspect '{dllPath}': {e}");
                 }
             }
 
