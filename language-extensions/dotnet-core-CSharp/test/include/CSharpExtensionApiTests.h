@@ -304,6 +304,24 @@ namespace ExtensionApiTest
             SQLINTEGER *expectedColumnStrLenOrInd,
             SQLINTEGER *columnStrLenOrInd);
 
+        // Test GetResults to verify the expected Unicode (UTF-16) string results are obtained.
+        //
+        void GetWStringResults(
+            SQLULEN                  expectedRowsNumber,
+            SQLPOINTER               *expectedData,
+            SQLINTEGER               **expectedStrLen_or_Ind,
+            std::vector<std::string> columnNames);
+
+        // Compare the given Unicode (UTF-16) string column data and nullMap for equality.
+        // strLenOrInd is expressed in bytes.
+        //
+        void CheckWStringDataEquality(
+            SQLULEN    rowsNumber,
+            wchar_t    *expectedColumnData,
+            wchar_t    *columnData,
+            SQLINTEGER *expectedColumnStrLenOrInd,
+            SQLINTEGER *columnStrLenOrInd);
+
         // Objects declared here can be used by all tests in the test suite.
         //
         std::shared_ptr<SQLGUID> m_sessionId;

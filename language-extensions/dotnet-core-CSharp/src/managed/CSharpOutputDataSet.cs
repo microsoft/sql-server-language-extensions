@@ -14,6 +14,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
+using Microsoft.SqlServer.CSharpExtension.SDK;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -45,14 +46,35 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// by extracting data and information from every DataFrameColumn.
         /// </summary>
         /// <param name="dataFrame">The DataFrame containing the output data.</param>
-        /// <param name="outputColumnDataTypes">Optional user-specified column data types by name.</param>
+        /// <param name="stringOutputColumnTypes">
+        /// Per-name output type overrides for string columns. Always supplied by the SDK
+        /// (initialized to an empty dictionary), so it is never null.
+        /// </param>
         public unsafe void ExtractColumns(
             DataFrame dataFrame,
-            Dictionary<string, SqlDataType> outputColumnDataTypes = null)
+            Dictionary<string, StringOutputType> stringOutputColumnTypes)
         {
             Logging.Trace("CSharpOutputDataSet::ExtractColumns");
             _strLenOrNullMapPtrs = new IntPtr[ColumnsNumber];
             _dataPtrs = new IntPtr[ColumnsNumber];
+
+            // Diagnostic: flag override keys that don't match any output column.
+            // Such entries are silently ignored, most often because of a misspelled
+            // column name, so surface them to make the no-op discoverable.
+            //
+            if (stringOutputColumnTypes.Count > 0)
+            {
+                var columnNames = new HashSet<string>(dataFrame.Columns.Select(c => c.Name));
+                foreach (string key in stringOutputColumnTypes.Keys)
+                {
+                    if (!columnNames.Contains(key))
+                    {
+                        Logging.Trace(
+                            $"ExtractColumns: Output type override specified for '{key}', " +
+                            $"but no such output column exists. The override will be ignored.");
+                    }
+                }
+            }
 
             for(ushort columnNumber = 0; columnNumber < ColumnsNumber; ++columnNumber)
             {
@@ -63,22 +85,30 @@ namespace Microsoft.SqlServer.CSharpExtension
                 //
                 SqlDataType dataType = DataTypeMap[column.DataType];
 
-                // For string columns, check for user-specified type override
+                // For string columns, check for a user-specified output type override.
+                // The StringOutputType enum makes VARCHAR/NVARCHAR the only expressible
+                // choices, so no runtime type validation is needed here.
                 //
-                if (column.DataType == typeof(string) && outputColumnDataTypes != null)
+                if (column.DataType == typeof(string)
+                    && stringOutputColumnTypes.TryGetValue(column.Name, out var outputType))
                 {
-                    if (outputColumnDataTypes.TryGetValue(column.Name, out var userType))
-                    {
-                        if (userType != SqlDataType.DotNetChar && userType != SqlDataType.DotNetWChar)
-                        {
-                            throw new ArgumentException(
-                                $"Invalid type override '{userType}' for string column '{column.Name}'. " +
-                                $"Only DotNetChar and DotNetWChar are supported for string columns.");
-                        }
-
-                        dataType = userType;
-                        Logging.Trace($"ExtractColumns: Column '{column.Name}' using user-specified type: {dataType}");
-                    }
+                    dataType = outputType == StringOutputType.NVarChar
+                        ? SqlDataType.DotNetWChar
+                        : SqlDataType.DotNetChar;
+                    Logging.Trace(
+                        $"ExtractColumns: Column '{column.Name}' output type override -> {outputType} ({dataType}).");
+                }
+                else if (column.DataType != typeof(string)
+                    && stringOutputColumnTypes.ContainsKey(column.Name))
+                {
+                    // An override was supplied for a non-string column. It cannot be applied
+                    // (only string columns support VARCHAR/NVARCHAR overrides), so log it to
+                    // help diagnose silent no-ops caused by misspelled column names.
+                    //
+                    Logging.Trace(
+                        $"ExtractColumns: Ignoring output type override for column '{column.Name}' " +
+                        $"because its .NET type is {column.DataType.Name}, not string. " +
+                        $"StringOutputColumnTypes only affects string columns.");
                 }
 
                 ulong columnSize = (ulong)DataTypeSize[dataType];
@@ -198,22 +228,22 @@ namespace Microsoft.SqlServer.CSharpExtension
                     SetDataPtrs<double>(columnNumber, GetArray<double>(column));
                     break;
                 case SqlDataType.DotNetChar:
-                    // Calculate column size from actual data.
-                    // columnSize = max UTF-8 byte length across all rows.
-                    // Minimum size is 1 byte (char(0) is illegal in SQL).
+                    // Refine the column size from the actual data. The initial Size (set above
+                    // from DataTypeSize) is the floor; grow it to the max UTF-8 byte length.
                     //
                     int maxStrLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    _columns[columnNumber].Size = (ulong)Math.Max(maxStrLen, MinUtf8CharSize);
+                    _columns[columnNumber].Size = Math.Max((ulong)maxStrLen, _columns[columnNumber].Size);
 
                     SetDataPtrs<byte>(columnNumber, GetStringArray(column));
                     break;
                 case SqlDataType.DotNetWChar:
-                    // Calculate column size from actual data.
-                    // For WCHAR types, column size should be the max byte length.
-                    // Minimum size is 2 bytes (1 UTF-16 character).
+                    // Refine the column size from the actual data. For WCHAR types, Size is
+                    // reported in BYTES (not UTF-16 code units), matching GetStrLenNullMap and the
+                    // extension host's SQL_C_WCHAR contract. The initial Size (MinUtf16ByteSize ==
+                    // 2 bytes; one UTF-16 code unit) is the floor; grow it to the max byte length.
                     //
                     int maxUnicodeByteLen = colMap.Length > 0 ? colMap.Where(x => x > 0).DefaultIfEmpty(0).Max() : 0;
-                    _columns[columnNumber].Size = (ulong)Math.Max(maxUnicodeByteLen, MinUtf16CharSize);
+                    _columns[columnNumber].Size = Math.Max((ulong)maxUnicodeByteLen, _columns[columnNumber].Size);
 
                     SetDataPtrs<char>(columnNumber, GetUnicodeStringArray(column));
                     break;

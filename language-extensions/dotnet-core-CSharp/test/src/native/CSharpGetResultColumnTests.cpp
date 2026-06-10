@@ -373,7 +373,7 @@ namespace ExtensionApiTest
     // Description:
     //  Test GetResultColumn with an InputDataSet of nvarchar/nchar (Unicode) columns.
     //  Tests nullptr, empty strings, and basic Unicode characters.
-    //  Note: Without explicit OutputColumnDataTypes configuration, string columns
+    //  Note: Without explicit StringOutputColumnTypes configuration, string columns
     //  default to SQL_C_CHAR (VARCHAR) output, regardless of input type.
     //
     TEST_F(CSharpExtensionApiTests, GetWStringResultColumnsTest)
@@ -436,7 +436,7 @@ namespace ExtensionApiTest
             columnNames);
 
         // NVARCHAR input columns are converted to SQL_C_CHAR output by default.
-        // To preserve NVARCHAR, use OutputColumnDataTypes["columnName"] = SqlDataType.DotNetWChar.
+        // To preserve NVARCHAR, use StringOutputColumnTypes["columnName"] = StringOutputType.NVarChar.
         // For ASCII strings, UTF-8 byte length == character count.
         //
         SQLULEN maxCol1CharCount = GetMaxLength(strLenOrIndCol1.data(), rowsNumber) / sizeof(wchar_t);
@@ -471,12 +471,12 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Test GetResultColumn with an InputDataSet of nvarchar columns where the executor
-    //  explicitly specifies NVARCHAR output using OutputColumnDataTypes["text"] = SqlDataType.DotNetWChar.
+    //  explicitly specifies NVARCHAR output using StringOutputColumnTypes["text"] = StringOutputType.NVarChar.
     //  This verifies that user-specified column metadata is correctly applied.
     //
     TEST_F(CSharpExtensionApiTests, GetNVarcharOutputResultColumnsTest)
     {
-        // Use the executor that explicitly sets OutputColumnDataTypes["text"] = SqlDataType.DotNetWChar
+        // Use the executor that explicitly sets StringOutputColumnTypes["text"] = StringOutputType.NVarChar
         //
         string scriptNVarcharOutput = m_UserLibName + m_Separator +
             "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorNVarcharOutput";
@@ -515,10 +515,12 @@ namespace ExtensionApiTest
             strLen_or_Ind.data(),
             columnNames);
 
-        // With OutputColumnDataTypes["text"] = SqlDataType.DotNetWChar, output should be SQL_C_WCHAR
-        // Column size is max byte count (matching extension host expectations)
+        // With StringOutputColumnTypes["text"] = StringOutputType.NVarChar, output should be SQL_C_WCHAR
+        // Column size is max byte count (matching extension host expectations).
+        // Derive the expected length from the actual data so it stays correct if the
+        // test input changes. strLenOrIndCol1 is already in bytes, so no divisor is needed.
         //
-        SQLULEN maxCol1ByteLen = 7 * sizeof(wchar_t);  // "Unicode" is the longest at 7 characters * 2 bytes
+        SQLULEN maxCol1ByteLen = GetMaxLength(strLenOrIndCol1.data(), rowsNumber);
 
         GetResultColumn(
             0,                                           // columnNumber
@@ -533,12 +535,12 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Test GetResultColumn where input columns are NVARCHAR but output defaults to VARCHAR
-    //  since no explicit OutputColumnDataTypes configuration is provided.
+    //  since no explicit StringOutputColumnTypes configuration is provided.
     //  Uses CSharpTestExecutorPreserveInputTypes which doesn't set explicit column metadata.
     //
     TEST_F(CSharpExtensionApiTests, GetPreserveNVarcharTypeResultColumnsTest)
     {
-        // Use the executor that just returns input unchanged without explicit OutputColumnDataTypes config
+        // Use the executor that just returns input unchanged without explicit StringOutputColumnTypes config
         //
         string scriptPreserve = m_UserLibName + m_Separator +
             "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorPreserveInputTypes";
@@ -585,7 +587,7 @@ namespace ExtensionApiTest
             columnNames);
 
         // Column 0: Input was NVARCHAR, but output defaults to SQL_C_CHAR (VARCHAR)
-        // since no OutputColumnDataTypes configuration is provided.
+        // since no StringOutputColumnTypes configuration is provided.
         //
         GetResultColumn(
             0,                                           // columnNumber
@@ -609,12 +611,12 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Test GetResultColumn with mixed VARCHAR and NVARCHAR output columns.
-    //  Uses CSharpTestExecutorMixedStringOutput which sets OutputColumnDataTypes
+    //  Uses CSharpTestExecutorMixedStringOutput which sets StringOutputColumnTypes
     //  for "unicode_col" only, leaving "ascii_col" as default VARCHAR.
     //
     TEST_F(CSharpExtensionApiTests, GetMixedStringOutputResultColumnsTest)
     {
-        // Use the executor that sets OutputColumnDataTypes["unicode_col"] = SqlDataType.DotNetWChar
+        // Use the executor that sets StringOutputColumnTypes["unicode_col"] = StringOutputType.NVarChar
         //
         string scriptMixed = m_UserLibName + m_Separator +
             "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorMixedStringOutput";
@@ -654,13 +656,17 @@ namespace ExtensionApiTest
 
         vector<string> columnNames{ asciiColumnName, unicodeColumnName };
 
+        // The template type params are inert here: Execute forwards dataSet and
+        // strLen_or_Ind as opaque void**, so they do not have to match the per-column
+        // C types. This is required for the mixed CHAR/WCHAR case below.
+        //
         Execute<SQLCHAR, SQL_C_CHAR>(
             rowsNumber,
             dataSet,
             strLen_or_Ind.data(),
             columnNames);
 
-        // Column 0 (ascii_col): No OutputColumnDataTypes config -> default SQL_C_CHAR (VARCHAR)
+        // Column 0 (ascii_col): No StringOutputColumnTypes config -> default SQL_C_CHAR (VARCHAR)
         //
         GetResultColumn(
             0,                                           // columnNumber
@@ -669,12 +675,14 @@ namespace ExtensionApiTest
             0,                                           // decimalDigits
             SQL_NO_NULLS);                               // nullable
 
-        // Column 1 (unicode_col): Explicitly set to DotNetWChar -> SQL_C_WCHAR (NVARCHAR)
+        // Column 1 (unicode_col): Explicitly set to StringOutputType.NVarChar -> SQL_C_WCHAR (NVARCHAR)
+        // Derive the expected byte length from the data so the test stays correct if
+        // wstringCol changes. strLenOrIndCol2 is already in bytes, so no divisor is needed.
         //
-        SQLULEN maxCol2ByteLen = 5 * sizeof(wchar_t);   // "Alpha"/"Gamma"/"Delta"/"Omega" are 5 chars
+        SQLULEN maxCol2ByteLen = GetMaxLength(strLenOrIndCol2.data(), rowsNumber);
         GetResultColumn(
             1,                                           // columnNumber
-            SQL_C_WCHAR,                                 // dataType (NVARCHAR due to OutputColumnDataTypes)
+            SQL_C_WCHAR,                                 // dataType (NVARCHAR due to StringOutputColumnTypes)
             maxCol2ByteLen,                              // columnSize (byte count)
             0,                                           // decimalDigits
             SQL_NO_NULLS);                               // nullable

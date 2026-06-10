@@ -53,11 +53,11 @@ This [tutorial](./sample/regex/README.md) will walk you through an end to end sa
 
 ## Output Schema Support
 
-By default, output column types are inferred from the .NET DataFrame column types. For string columns, you can explicitly specify the SQL data type using the `OutputColumnDataTypes` property.
+By default, output column types are inferred from the .NET DataFrame column types. For string columns, you can explicitly choose the SQL output type using the `StringOutputColumnTypes` property.
 
 ### Specifying Output Column Types
 
-Use `OutputColumnDataTypes` to specify the SQL data type for output columns by name:
+Use `StringOutputColumnTypes` to choose the SQL output type for string columns by name:
 
 ```csharp
 using Microsoft.SqlServer.CSharpExtension.SDK;
@@ -69,20 +69,20 @@ public class MyExecutor : AbstractSqlServerExtensionExecutor
     public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
     {
         // Specify NVARCHAR (UTF-16) output for a string column
-        OutputColumnDataTypes["unicode_column"] = SqlDataType.DotNetWChar;
+        StringOutputColumnTypes["unicode_column"] = StringOutputType.NVarChar;
         
-        // Process and return data
-        return resultDataFrame;
+        // Process data if needed and return the DataFrame
+        return input;
     }
 }
 ```
 
 ### Supported String Types
 
-| SqlDataType | SQL Type | Encoding | Description |
-|-------------|----------|----------|-------------|
-| `SqlDataType.DotNetChar` | VARCHAR | UTF-8 | Default for string columns |
-| `SqlDataType.DotNetWChar` | NVARCHAR | UTF-16 | Use for Unicode data |
+| StringOutputType | SQL Type | Encoding | Description |
+|------------------|----------|----------|-------------|
+| `StringOutputType.VarChar` | VARCHAR | UTF-8 | Default for string columns |
+| `StringOutputType.NVarChar` | NVARCHAR | UTF-16 | Use for Unicode data |
 
 ### Example: Mixed VARCHAR and NVARCHAR Output
 
@@ -94,7 +94,7 @@ public class MixedOutputExecutor : AbstractSqlServerExtensionExecutor
         // "ascii_col" will default to VARCHAR (no configuration needed)
         
         // "unicode_col" should be NVARCHAR
-        OutputColumnDataTypes["unicode_col"] = SqlDataType.DotNetWChar;
+        StringOutputColumnTypes["unicode_col"] = StringOutputType.NVarChar;
         
         return input;
     }
@@ -104,5 +104,15 @@ public class MixedOutputExecutor : AbstractSqlServerExtensionExecutor
 ### Default Behavior
 
 If no explicit type is specified for a string column:
-- String columns default to `DotNetChar` (VARCHAR/UTF-8)
+- String columns default to `StringOutputType.VarChar` (VARCHAR/UTF-8)
 - Numeric and other types are automatically mapped from their .NET types
+
+Notes:
+- `StringOutputColumnTypes` only affects string columns. Entries for non-string
+  columns (or names that match no output column) are ignored (a trace message is
+  logged to aid debugging).
+- Setting `StringOutputType.VarChar` for a string column is a no-op, since VARCHAR
+  is already the default.
+- `StringOutputType.NVarChar` output columns report their column size in **bytes**
+  (not UTF-16 code units), matching the extension host's `SQL_C_WCHAR` contract and
+  the byte length emitted by `GetStrLenNullMap`.
