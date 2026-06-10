@@ -103,9 +103,12 @@ namespace ExtensionApiTest
     //
     TEST_F(CSharpExtensionApiTests, ExecuteInvalidLibraryNameScriptTest)
     {
-        // Unmatched library name with the dll file name.
+        // Use a library name that cannot resolve to any DLL on the search path.
+        // The pre-PR literal "Microsoft.SqlServer.CSharpExtensionTest" is the basename of
+        // m_UserLibName ("Microsoft.SqlServer.CSharpExtensionTest.dll"), so the loader now
+        // resolves it successfully and the test would fail to observe the expected error.
         //
-        string userLibName = "Microsoft.SqlServer.CSharpExtensionTest";
+        string userLibName = "NonExistentLibrary";
         string scriptString = userLibName + m_Separator + m_UserClassFullName;
         InitializeSession(
             0,   // inputSchemaColumnsNumber
@@ -528,4 +531,18 @@ namespace ExtensionApiTest
             EXPECT_TRUE(error.find("Error: Unable to find user class with full name:") != string::npos);
         }
     }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC> (Explicit Template Instantiation)
+    //
+    // Description:
+    //  Explicit template instantiation for Execute function with SQL_NUMERIC_STRUCT type.
+    //  Required for linking decimal/numeric column tests that use SQL_C_NUMERIC data type.
+    //
+    template void CSharpExtensionApiTests::Execute<SQL_NUMERIC_STRUCT, SQL_C_NUMERIC>(
+        SQLULEN        rowsNumber,
+        void           **dataSet,
+        SQLINTEGER     **strLen_or_Ind,
+        vector<string> columnNames,
+        SQLRETURN      SQLResult);
 }

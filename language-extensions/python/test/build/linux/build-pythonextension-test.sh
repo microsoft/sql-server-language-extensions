@@ -57,7 +57,7 @@ PYTHONEXTENSIONTEST_WORKING_DIR=${ENL_ROOT}/build-output/pythonextension-test/li
 INCLUDE_ROOT=/usr/local/include
 
 DEFAULT_PYTHONHOME=/usr/local
-DEFAULT_BOOST_ROOT=/usr/local/lib/boost_1_87_0
+DEFAULT_BOOST_ROOT=/usr/local/lib/boost_1_90_0
 
 # Find PYTHONHOME from user, or set to default for tests.
 # Error code 1 is generic bash error.

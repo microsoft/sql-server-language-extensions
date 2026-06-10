@@ -18,7 +18,7 @@ RECONFIGURE WITH OVERRIDE;`.
 
 + SQL Server Management Studio or Azure Data Studio for executing T-SQL.
 
-+ [.NET 5.0 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) on Windows.
++ [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) on Windows.
 
 ## Download required files
 
@@ -125,7 +125,7 @@ Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
@@ -134,7 +134,7 @@ Replace **[path]\Microsoft.SqlServer.CSharpExtension.dll** with the path to the 
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Analysis" Version="0.4.0" />
+    <PackageReference Include="Microsoft.Data.Analysis" Version="0.23.0" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SqlServer.CSharpExtension.SDK">

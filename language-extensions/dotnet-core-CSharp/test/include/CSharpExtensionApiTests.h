@@ -99,6 +99,26 @@ typedef SQLRETURN FN_cleanupSession(
 
 typedef SQLRETURN FN_cleanup();
 
+typedef SQLRETURN FN_installExternalLibrary(
+    SQLGUID,     // setupSessionId
+    SQLCHAR *,   // libraryName
+    SQLINTEGER,  // libraryNameLength
+    SQLCHAR *,   // libraryFile
+    SQLINTEGER,  // libraryFileLength
+    SQLCHAR *,   // libraryInstallDirectory
+    SQLINTEGER,  // libraryInstallDirectoryLength
+    SQLCHAR **,  // libraryError
+    SQLINTEGER *);// libraryErrorLength
+
+typedef SQLRETURN FN_uninstallExternalLibrary(
+    SQLGUID,     // setupSessionId
+    SQLCHAR *,   // libraryName
+    SQLINTEGER,  // libraryNameLength
+    SQLCHAR *,   // libraryInstallDirectory
+    SQLINTEGER,  // libraryInstallDirectoryLength
+    SQLCHAR **,  // libraryError
+    SQLINTEGER *);// libraryErrorLength
+
 namespace ExtensionApiTest
 {
     // Forward declaration
@@ -359,7 +379,7 @@ namespace ExtensionApiTest
         // User library name and class full name
         // The name of the library is same as the dll file name.
         //
-        const std::string m_UserLibName = "Microsoft.SqlServer.CSharpExtensionTest.dll";;
+        const std::string m_UserLibName = "Microsoft.SqlServer.CSharpExtensionTest.dll";
         const std::string m_UserClassFullName = "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutor";
         const std::string m_Separator = ";";
 
@@ -414,6 +434,10 @@ namespace ExtensionApiTest
         const SQLDOUBLE m_MaxDouble = 1.79e308;
         const SQLDOUBLE m_MinDouble = -1.79e308;
 
+        // Maximum precision for SQL DECIMAL/NUMERIC types (1-38 per SQL Server specification)
+        //
+        static constexpr SQLULEN SqlDecimalMaxPrecision = 38;
+
         // Path of .NET Core CSharp Extension
         //
         static std::string sm_extensionPath;
@@ -465,6 +489,14 @@ namespace ExtensionApiTest
         // Pointer to the Cleanup function
         //
         static FN_cleanup *sm_cleanupFuncPtr;
+
+        // Pointer to the InstallExternalLibrary function
+        //
+        static FN_installExternalLibrary *sm_installExternalLibraryFuncPtr;
+
+        // Pointer to the UninstallExternalLibrary function
+        //
+        static FN_uninstallExternalLibrary *sm_uninstallExternalLibraryFuncPtr;
     };
 
     // ColumnInfo template class to store information
@@ -499,4 +531,55 @@ namespace ExtensionApiTest
         std::vector<SQLSMALLINT> m_nullable;
         std::vector<SQLSMALLINT> m_partitionByIndexes;
     };
+
+    //----------------------------------------------------------------------------------------------
+    // TestHelpers namespace - Utility functions for test data generation
+    //
+    namespace TestHelpers
+    {
+        //----------------------------------------------------------------------------------------------
+        // Name: CreateNumericStruct
+        //
+        // Description:
+        //  Helper function to create SQL_NUMERIC_STRUCT from decimal value components.
+        //  Creates a properly initialized ODBC numeric structure with little-endian mantissa encoding.
+        //
+        // Arguments:
+        //  mantissa - The unsigned unscaled integer representation of the decimal value.
+        //             Sign is conveyed separately via isNegative.
+        //             The actual decimal value is calculated as: mantissa / 10^scale
+        //             Examples:
+        //               * 12345.6789 -> mantissa=123456789, scale=4
+        //               * 555.5000   -> mantissa=5555000, scale=4
+        //               * 0.00001    -> mantissa=1, scale=5
+        //  precision - Total number of digits (1-38, as per SQL NUMERIC/DECIMAL spec)
+        //  scale - Number of digits after decimal point (0-precision)
+        //  isNegative - true for negative values, false for positive/zero
+        //
+        // Returns:
+        //  SQL_NUMERIC_STRUCT - Fully initialized 19-byte ODBC numeric structure
+        //
+        inline SQL_NUMERIC_STRUCT CreateNumericStruct(
+            unsigned long long mantissa,
+            SQLCHAR precision,
+            SQLSCHAR scale,
+            bool isNegative)
+        {
+            SQL_NUMERIC_STRUCT result{};
+            
+            result.precision = precision;
+            result.scale = scale;
+            result.sign = isNegative ? 0 : 1;  // 0 = negative, 1 = positive (ODBC convention)
+            
+            // Convert mantissa to little-endian byte array in val[0..15]
+            unsigned long long value = mantissa;
+            for (size_t i = 0; i < sizeof(result.val); i++)
+            {
+                result.val[i] = static_cast<SQLCHAR>(value & 0xFF);
+                value >>= 8;
+            }
+            
+            return result;
+        }
+    }
 }

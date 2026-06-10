@@ -91,15 +91,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             else
             {
-                if (!string.IsNullOrEmpty(privatePath))
-                {
-                    dllList.AddRange(Directory.GetFiles(privatePath, userLibName));
-                }
-
-                if (!string.IsNullOrEmpty(publicPath))
-                {
-                    dllList.AddRange(Directory.GetFiles(publicPath, userLibName));
-                }
+                // Callers may pass either a bare library name ("regex") or an explicit
+                // filename ("Foo.dll"). Try the exact name first so filenames with
+                // extensions resolve correctly; fall back to the "{name}.*" wildcard
+                // for bare names.
+                AddMatches(privatePath, userLibName, dllList);
+                AddMatches(publicPath, userLibName, dllList);
             }
 
             if (dllList.Count == 0)
@@ -108,6 +105,63 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
 
             return dllList;
+        }
+
+        /// <summary>
+        /// Adds DLL matches for <paramref name="userLibName"/> under
+        /// <paramref name="searchPath"/>. Tries the exact name first (so callers
+        /// that pass "Foo.dll" resolve correctly) and falls back to all .dll
+        /// files whose stem equals <paramref name="userLibName"/> (so callers
+        /// that pass "Foo" still match "Foo.dll").
+        /// </summary>
+        /// <param name="searchPath">
+        /// Directory to search. Returns immediately if null/empty or absent;
+        /// missing public/private library paths are not an error -- the other
+        /// path may still yield matches.
+        /// </param>
+        /// <param name="userLibName">
+        /// Library name to match. May be a bare stem ("regex") or include a
+        /// .dll suffix ("Foo.dll"). Wildcards / path separators are not
+        /// expected -- the caller is responsible for validation.
+        /// </param>
+        /// <param name="dllList">
+        /// Output list to append discovered .dll paths to. Caller-owned;
+        /// AddMatches never clears or replaces.
+        /// </param>
+        /// <remarks>
+        /// We deliberately avoid <see cref="Directory.GetFiles(string, string)"/>'s
+        /// search-pattern argument and its Win32 <c>FindFirstFile</c>
+        /// wildcard semantics, which over-match in two well-known ways on
+        /// Windows: <c>"*.dll"</c> matches files like <c>"foo.dllx"</c>
+        /// (3-char-extension prefix-match quirk inherited from FAT), and
+        /// <c>"Foo.*"</c> can spuriously match short-name (8.3) aliases of
+        /// long-named files. Enumerating all entries and filtering with
+        /// <see cref="StringComparison.OrdinalIgnoreCase"/> equality on
+        /// both the extension and the stem gives exact, predictable
+        /// matches and avoids loading anything we did not intend.
+        /// </remarks>
+        private static void AddMatches(string searchPath, string userLibName, List<string> dllList)
+        {
+            if (string.IsNullOrEmpty(searchPath) || !Directory.Exists(searchPath))
+            {
+                return;
+            }
+
+            string exactPath = Path.Combine(searchPath, userLibName);
+            if (File.Exists(exactPath))
+            {
+                dllList.Add(exactPath);
+                return;
+            }
+
+            foreach (string f in Directory.EnumerateFiles(searchPath))
+            {
+                if (Path.GetExtension(f).Equals(".dll", StringComparison.OrdinalIgnoreCase) &&
+                    Path.GetFileNameWithoutExtension(f).Equals(userLibName, StringComparison.OrdinalIgnoreCase))
+                {
+                    dllList.Add(f);
+                }
+            }
         }
 
         /// <summary>
