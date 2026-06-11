@@ -14,13 +14,26 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.Data.Analysis;
 using Microsoft.SqlServer.CSharpExtension.SDK;
+using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtensionTest
 {
+    /// <summary>
+    /// Shared constants for the test executors.
+    /// </summary>
+    internal static class CSharpTestExecutorConstants
+    {
+        /// <summary>
+        /// Marker line the native test harness asserts on (see CSharpExecuteTests.cpp).
+        /// Kept in one place so executors can't drift or typo it.
+        /// </summary>
+        public const string HelloMessage = "Hello .NET Core CSharpExtension!";
+    }
+
     public class CSharpTestExecutor: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
-            Console.WriteLine("Hello .NET Core CSharpExtension!");
+            Console.WriteLine(CSharpTestExecutorConstants.HelloMessage);
             return input;
         }
     }
@@ -244,6 +257,51 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param3"] = "€100 £50 ¥1000 ©®™";
 
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Test executor demonstrating NVARCHAR output support for DataFrame columns.
+    /// Uses StringOutputColumnTypes to specify that string columns should be NVARCHAR.
+    /// </summary>
+    public class CSharpTestExecutorNVarcharOutput: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine(CSharpTestExecutorConstants.HelloMessage);
+            // Specify that output column "text" should be NVARCHAR (UTF-16)
+            StringOutputColumnTypes["text"] = StringOutputType.NVarChar;
+            
+            // Return input unchanged - the column type will be NVARCHAR instead of VARCHAR
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor demonstrating mixed VARCHAR and NVARCHAR output columns.
+    /// </summary>
+    public class CSharpTestExecutorMixedStringOutput: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine(CSharpTestExecutorConstants.HelloMessage);
+            // Column "ascii_col" stays VARCHAR (default, no need to specify)
+            
+            // Column "unicode_col" should be NVARCHAR (by name)
+            StringOutputColumnTypes["unicode_col"] = StringOutputType.NVarChar;
+            
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor for basic pass-through (no NVARCHAR configuration).
+    /// </summary>
+    public class CSharpTestExecutorPreserveInputTypes: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            Console.WriteLine(CSharpTestExecutorConstants.HelloMessage);
+            // No explicit StringOutputColumnTypes configuration.
+            // All string columns will be VARCHAR (default).
+            return input;
         }
     }
 }

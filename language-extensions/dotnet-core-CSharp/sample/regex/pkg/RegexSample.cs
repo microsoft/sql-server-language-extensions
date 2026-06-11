@@ -60,6 +60,11 @@ namespace UserExecutor
             sqlParams["@rowsCount"]  = output.Rows.Count;
             sqlParams["@regexExpr"] = "Success!";
 
+            // Optionally, specify that "text" column should be output as NVARCHAR (UTF-16)
+            // instead of the default VARCHAR (UTF-8). Uncomment the line below to enable:
+            //
+            // StringOutputColumnTypes["text"] = StringOutputType.NVarChar;
+
             // Return output dataset as a DataFrame
             //
             return output;

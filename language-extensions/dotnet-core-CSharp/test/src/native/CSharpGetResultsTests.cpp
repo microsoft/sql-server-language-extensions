@@ -404,6 +404,65 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: GetNVarcharOutputResultsTest
+    //
+    // Description:
+    //  Test GetResults for an executor that opts a string column into NVARCHAR output via
+    //  StringOutputColumnTypes["text"] = StringOutputType.NVarChar. Unlike the default path
+    //  (which emits UTF-8), the output buffer must contain the original UTF-16 bytes. This
+    //  guards against a regression where the column metadata reports WCHAR but the data path
+    //  still writes UTF-8.
+    //
+    TEST_F(CSharpExtensionApiTests, GetNVarcharOutputResultsTest)
+    {
+        string scriptNVarcharOutput = m_UserLibName + m_Separator +
+            "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorNVarcharOutput";
+
+        InitializeSession(
+            1, // inputSchemaColumnsNumber
+            0, // parametersNumber
+            scriptNVarcharOutput);
+
+        string textColumnName = "text";
+        InitializeColumn(0, textColumnName, SQL_C_WCHAR, m_CharSize);
+
+        // Input data as UTF-16 (nvarchar)
+        //
+        vector<const wchar_t*> wstringCol1{ L"Hello", L"World", L"Test", L"Unicode", L"\x4F60\x597D" };
+        int rowsNumber = wstringCol1.size();
+
+        vector<SQLINTEGER> strLenOrIndCol1 =
+        { static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(4 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(7 * sizeof(wchar_t)),
+          static_cast<SQLINTEGER>(2 * sizeof(wchar_t)) };
+
+        vector<SQLINTEGER*> strLen_or_Ind{ strLenOrIndCol1.data() };
+
+        vector<wchar_t> wstringCol1Data =
+            GenerateContiguousData<wchar_t>(wstringCol1, strLenOrIndCol1.data());
+
+        void* dataSet[] = { wstringCol1Data.data() };
+
+        vector<string> columnNames{ textColumnName };
+
+        Execute<wchar_t, SQL_C_WCHAR>(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+
+        // Output is NVARCHAR (UTF-16), so the output bytes must match the UTF-16 input exactly.
+        //
+        GetWStringResults(
+            rowsNumber,
+            dataSet,
+            strLen_or_Ind.data(),
+            columnNames);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: CSharpExtensionApiTest::GetResults
     //
     // Description:
@@ -586,6 +645,101 @@ namespace ExtensionApiTest
                     }
 
                     cumulativeLength += expectedColumnStrLenOrInd[index];
+                }
+            }
+            else
+            {
+                EXPECT_EQ(columnStrLenOrInd[index], SQL_NULL_DATA);
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::GetWStringResults
+    //
+    // Description:
+    //  Test GetResults to verify the expected results are obtained for Unicode (UTF-16) data.
+    //
+    void CSharpExtensionApiTests::GetWStringResults(
+        SQLULEN        expectedRowsNumber,
+        SQLPOINTER     *expectedData,
+        SQLINTEGER     **expectedStrLen_or_Ind,
+        vector<string> columnNames)
+    {
+        SQLULEN    rowsNumber = 0;
+        SQLPOINTER *data = nullptr;
+        SQLINTEGER **strLen_or_Ind = nullptr;
+        SQLRETURN result = (*sm_getResultsFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            &rowsNumber,
+            &data,
+            &strLen_or_Ind);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        EXPECT_EQ(rowsNumber, expectedRowsNumber);
+
+        for (size_t columnNumber = 0; columnNumber < columnNames.size(); ++columnNumber)
+        {
+            wchar_t *expectedColumnData = static_cast<wchar_t *>(expectedData[columnNumber]);
+            wchar_t *columnData = static_cast<wchar_t *>(data[columnNumber]);
+
+            SQLINTEGER *expectedColumnStrLenOrInd = expectedStrLen_or_Ind[columnNumber];
+            SQLINTEGER *columnStrLenOrInd = strLen_or_Ind[columnNumber];
+
+            CheckWStringDataEquality(
+                rowsNumber,
+                expectedColumnData,
+                columnData,
+                expectedColumnStrLenOrInd,
+                columnStrLenOrInd);
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: CSharpExtensionApiTest::CheckWStringDataEquality
+    //
+    // Description:
+    //  Compare the given Unicode (UTF-16) column data & nullMap with rowsNumber for equality.
+    //  strLenOrInd values are byte lengths, so the contiguous buffer is walked in bytes while
+    //  individual code units are compared as wchar_t.
+    //
+    void CSharpExtensionApiTests::CheckWStringDataEquality(
+        SQLULEN    rowsNumber,
+        wchar_t    *expectedColumnData,
+        wchar_t    *columnData,
+        SQLINTEGER *expectedColumnStrLenOrInd,
+        SQLINTEGER *columnStrLenOrInd)
+    {
+        SQLINTEGER cumulativeByteLength = 0;
+        if (rowsNumber == 0)
+        {
+            EXPECT_EQ(columnData, nullptr);
+            EXPECT_EQ(columnStrLenOrInd, nullptr);
+        }
+
+        for (SQLULEN index = 0; index < rowsNumber; ++index)
+        {
+            if (expectedColumnStrLenOrInd != nullptr)
+            {
+                EXPECT_EQ(columnStrLenOrInd[index], expectedColumnStrLenOrInd[index]);
+
+                if (columnStrLenOrInd[index] != SQL_NULL_DATA)
+                {
+                    // strLenOrInd is in bytes; compare code unit by code unit.
+                    //
+                    SQLINTEGER codeUnits = columnStrLenOrInd[index] / static_cast<SQLINTEGER>(sizeof(wchar_t));
+                    const wchar_t *expectedStart = reinterpret_cast<const wchar_t *>(
+                        reinterpret_cast<const char *>(expectedColumnData) + cumulativeByteLength);
+                    const wchar_t *actualStart = reinterpret_cast<const wchar_t *>(
+                        reinterpret_cast<const char *>(columnData) + cumulativeByteLength);
+
+                    for (SQLINTEGER unitIndex = 0; unitIndex < codeUnits; ++unitIndex)
+                    {
+                        EXPECT_EQ(expectedStart[unitIndex], actualStart[unitIndex]);
+                    }
+
+                    cumulativeByteLength += expectedColumnStrLenOrInd[index];
                 }
             }
             else
