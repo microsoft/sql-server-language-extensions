@@ -81,24 +81,24 @@ namespace Microsoft.SqlServer.CSharpExtension
             List<string>dllList = new List<string>();
             if(string.IsNullOrEmpty(userLibName))
             {
-                if (!string.IsNullOrEmpty(privatePath))
+                if (!string.IsNullOrEmpty(privatePath) && Directory.Exists(privatePath))
                 {
                     dllList.AddRange(Directory.GetFiles(privatePath));
                 }
 
-                if (!string.IsNullOrEmpty(publicPath))
+                if (!string.IsNullOrEmpty(publicPath) && Directory.Exists(publicPath))
                 {
                     dllList.AddRange(Directory.GetFiles(publicPath));
                 }
             }
             else
             {
-                if (!string.IsNullOrEmpty(privatePath))
+                if (!string.IsNullOrEmpty(privatePath) && Directory.Exists(privatePath))
                 {
                     dllList.AddRange(Directory.GetFiles(privatePath, userLibName));
                 }
 
-                if (!string.IsNullOrEmpty(publicPath))
+                if (!string.IsNullOrEmpty(publicPath) && Directory.Exists(publicPath))
                 {
                     dllList.AddRange(Directory.GetFiles(publicPath, userLibName));
                 }
