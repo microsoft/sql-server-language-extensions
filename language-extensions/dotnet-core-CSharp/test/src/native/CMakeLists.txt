@@ -26,6 +26,11 @@ add_executable(dotnet-core-CSharp-extension-test
 	${DOTNETCORE_CSHARP_EXTENSION_TEST_SOURCE_FILES}
 )
 
+target_compile_options(dotnet-core-CSharp-extension-test PRIVATE
+    "$<$<CXX_COMPILER_ID:MSVC>:/std:c++17>"
+    "$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-std=c++17>"
+)
+
 file(TO_CMAKE_PATH ${ENL_ROOT}/language-extensions/dotnet-core-CSharp/test/include/ DOTNETCORE_CSHARP_EXTENSION_TEST_INCLUDE_DIR)
 file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/dotnet-core-CSharp-extension-test/${PLATFORM}/ DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR)
 file(TO_CMAKE_PATH ${DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR}/${CMAKE_CONFIGURATION} DOTNETCORE_CSHARP_EXTENSION_TEST_INSTALL_DIR)

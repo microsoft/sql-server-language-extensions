@@ -23,7 +23,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// This method calls the APIs and handles exceptions.
         /// </summary>
         /// <param name="func">
-        /// Managed language extensions APIs fucntion
+        /// Managed language extensions APIs function
         /// </param>
         /// <returns>
         /// SQL_SUCCESS(0), SQL_ERROR(-1)
@@ -37,7 +37,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             }
             catch (Exception e)
             {
-                Logging.Error(e.StackTrace + "Error: " + e.Message);
+                // Log full exception chain so inner exceptions are visible.
+                Logging.Error(e.ToString());
                 return SQL_ERROR;
             }
         }
