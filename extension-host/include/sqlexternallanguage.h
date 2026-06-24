@@ -28,7 +28,11 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define EXTERNAL_LANGUAGE_EXTENSION_API 3
+// NOTE: Pinned to v2 to match the mssql-server host shipped in the adhoc Linux drop
+// (host advertises min=2,max=2). PR #90 bumped this to v3 (host-callbacks/XEvent) but the
+// matching host-side v3 support has not yet shipped in this drop. The v3 SetHostCallbacks
+// function remains exported but dormant under v2. Decimal support (PR #83) is v2-compatible.
+#define EXTERNAL_LANGUAGE_EXTENSION_API 2
 
 SQLEXTENSION_INTERFACE
 SQLUSMALLINT GetInterfaceVersion();
