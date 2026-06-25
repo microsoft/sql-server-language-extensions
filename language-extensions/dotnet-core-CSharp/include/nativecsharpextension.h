@@ -27,7 +27,6 @@
 #include <sql.h>
 #include "sqlexternallanguage.h"
 #include "sqlexternallibrary.h"
-#include "sqlextensionhostcallbacks.h"
 #include "DotnetEnvironment.h"
 
 //  Returns the string with the address of the first character and length
@@ -186,17 +185,6 @@ SQLEXTENSION_INTERFACE SQLRETURN UninstallExternalLibrary(
     SQLCHAR    **libraryError,
     SQLINTEGER *libraryErrorLength);
 
-//  Receives host callback function pointers from the host.
-//  Optional API, supported since v3 of the Extension API.
-//
-SQLEXTENSION_INTERFACE SQLRETURN SetHostCallbacks(
-    SQLEXTENSION_HOST_CALLBACKS *hostCallbacks);
-
 //  Dotnet environment pointer. Defined in nativecsharpextension.cpp.
 //
 extern DotnetEnvironment* g_dotnet_runtime;
-
-//  Host callbacks pointer provided by the host via SetHostCallbacks.
-//  Defined in nativecsharpextension.cpp.
-//
-extern SQLEXTENSION_HOST_CALLBACKS* g_hostCallbacks;
