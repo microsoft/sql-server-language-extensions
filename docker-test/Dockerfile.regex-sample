@@ -1,0 +1,16 @@
+# Builds the regex sample external library against the locally-built C# extension SDK DLL.
+FROM csharp-ext-package AS base
+
+# Point the sample's HintPath-referenced SDK DLL at the linux build output by copying it
+# into the windows/release path the csproj expects, then build.
+RUN set -e; \
+    SDK_DLL=/src/build-output/dotnet-core-CSharp-extension/linux/release/Microsoft.SqlServer.CSharpExtension.dll; \
+    WIN_DIR=/src/build-output/dotnet-core-CSharp-extension/windows/release; \
+    mkdir -p "$WIN_DIR"; \
+    cp -v "$SDK_DLL" "$WIN_DIR/"; \
+    cd /src/language-extensions/dotnet-core-CSharp/sample/regex/pkg; \
+    dotnet restore RegexSample.csproj; \
+    dotnet build RegexSample.csproj -c Release -p:BinRoot=/regexout; \
+    ls -la /regexout
+
+CMD ["ls", "-la", "/regexout/Release"]

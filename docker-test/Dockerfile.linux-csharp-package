@@ -1,0 +1,35 @@
+# Build the C# language extension and produce the deployable Linux zip package.
+# Stops before gtest (which is slow and surfaces the hosting defect separately).
+#   docker build -f docker-test/Dockerfile.linux-csharp-package -t csharp-ext-package .
+#   docker create --name pkg csharp-ext-package
+#   docker cp pkg:/out/. ./pkg-out/
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends g++ unixodbc-dev cmake git make python3 zip && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+# Provide libnethost.a from the SDK AppHost pack.
+RUN NETHOST_DIR=$(find /usr/share/dotnet -path "*/runtimes/linux-x64/native/libnethost.a" -print -quit) && \
+    if [ -z "$NETHOST_DIR" ]; then echo "ERROR: libnethost.a not found"; exit 1; fi && \
+    cp "$NETHOST_DIR" /src/language-extensions/dotnet-core-CSharp/lib/libnethost.a
+
+# Normalize line endings.
+RUN find /src -name "*.sh" -exec sed -i 's/\r$//' {} +
+
+# Restore + build the extension (native .so + managed .dll).
+RUN dotnet restore /src/language-extensions/dotnet-core-CSharp/src/managed/Microsoft.SqlServer.CSharpExtension.csproj -r linux-x64
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/build-dotnet-core-CSharp-extension.sh release
+
+# Produce the deployable archives (zip + tar.gz).
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/create-dotnet-core-CSharp-extension-tar.sh release
+
+# Collect packages for extraction.
+RUN mkdir -p /out && \
+    cp -v /src/build-output/dotnet-core-CSharp-extension/linux/release/packages/* /out/ && \
+    ls -la /out
+
+CMD ["ls", "-la", "/out"]

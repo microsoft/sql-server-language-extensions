@@ -1,0 +1,35 @@
+# Build-only Dockerfile: produces decimal-capable C# Linux extension zips (debug+release)
+# and exports them, WITHOUT running the (known-broken) test harness.
+#   docker build -f docker-test/Dockerfile.linux-csharp-zip --target export --output type=local,dest=Q:\src\_linuxext_inspect\ext-zip .
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends g++ unixodbc-dev cmake git make python3 zip && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+RUN NETHOST_DIR=$(find /usr/share/dotnet -path "*/runtimes/linux-x64/native/libnethost.a" -print -quit) && \
+    if [ -z "$NETHOST_DIR" ]; then echo "ERROR: libnethost.a not found"; exit 1; fi && \
+    cp "$NETHOST_DIR" /src/language-extensions/dotnet-core-CSharp/lib/libnethost.a
+
+RUN find /src -name "*.sh" -exec sed -i 's/\r$//' {} +
+
+RUN dotnet restore /src/language-extensions/dotnet-core-CSharp/src/managed/Microsoft.SqlServer.CSharpExtension.csproj -r linux-x64
+
+# Build + package RELEASE, then stage its zip (each config build cleans the output dir,
+# so the zip must be created and copied out before the next config builds).
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/build-dotnet-core-CSharp-extension.sh release && \
+    /src/language-extensions/dotnet-core-CSharp/build/linux/create-dotnet-core-CSharp-extension-tar.sh release && \
+    mkdir -p /export/release && \
+    cp /src/build-output/dotnet-core-CSharp-extension/linux/release/packages/dotnet-core-CSharp-lang-extension-linux.zip /export/release/
+
+# Build + package DEBUG, then stage its zip.
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/build-dotnet-core-CSharp-extension.sh debug && \
+    /src/language-extensions/dotnet-core-CSharp/build/linux/create-dotnet-core-CSharp-extension-tar.sh debug && \
+    mkdir -p /export/debug && \
+    cp /src/build-output/dotnet-core-CSharp-extension/linux/debug/packages/dotnet-core-CSharp-lang-extension-linux.zip /export/debug/
+
+FROM scratch AS export
+COPY --from=build /export/ /

@@ -1,0 +1,49 @@
+# Build-only Dockerfile (Ubuntu 22.04 "Jammy" base) — produces decimal-capable C# Linux
+# extension zips whose native libnativecsharpextension.so is ABI-compatible with the SQL
+# Server runtime container (glibc 2.35 / GLIBCXX_3.4.30).
+#
+# WHY JAMMY: the Noble (Ubuntu 24.04) image compiles the native shim with gcc-13, which
+# emits GLIBC_2.38/2.36 symbol references (__isoc23_strtoul@GLIBC_2.38, arc4random@GLIBC_2.36)
+# that do NOT exist on the runtime host. dlopen() then loads the .so but the unsatisfiable
+# symbol versions make even a basic sp_execute_external_script abort (HRESULT 0x80004004).
+# Ubuntu 22.04 ships g++-11 as the default g++ and glibc 2.35, matching the official pipeline
+# (baseline NuGet zip), so the produced .so only needs <= GLIBC_2.34.
+#
+#   docker build -f docker-test/Dockerfile.linux-csharp-zip-jammy --target export --output type=local,dest=Q:\src\_linuxext_inspect\ext-zip-jammy .
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
+
+# g++ on jammy == g++-11; install it explicitly so the build script's g++-11 preference is satisfied.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends g++ g++-11 unixodbc-dev cmake git make python3 zip && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+RUN NETHOST_DIR=$(find /usr/share/dotnet -path "*/runtimes/linux-x64/native/libnethost.a" -print -quit) && \
+    if [ -z "$NETHOST_DIR" ]; then echo "ERROR: libnethost.a not found"; exit 1; fi && \
+    cp "$NETHOST_DIR" /src/language-extensions/dotnet-core-CSharp/lib/libnethost.a
+
+RUN find /src -name "*.sh" -exec sed -i 's/\r$//' {} +
+
+RUN dotnet restore /src/language-extensions/dotnet-core-CSharp/src/managed/Microsoft.SqlServer.CSharpExtension.csproj -r linux-x64
+
+# Force the native build to use g++-11 (matches runtime ABI). The build script already prefers
+# g++-11 when present, but set CXX explicitly to be deterministic.
+ENV CXX=g++-11
+
+# Build + package RELEASE, then stage its zip (each config build cleans the output dir,
+# so the zip must be created and copied out before the next config builds).
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/build-dotnet-core-CSharp-extension.sh release && \
+    /src/language-extensions/dotnet-core-CSharp/build/linux/create-dotnet-core-CSharp-extension-tar.sh release && \
+    mkdir -p /export/release && \
+    cp /src/build-output/dotnet-core-CSharp-extension/linux/release/packages/dotnet-core-CSharp-lang-extension-linux.zip /export/release/
+
+# Build + package DEBUG, then stage its zip.
+RUN /src/language-extensions/dotnet-core-CSharp/build/linux/build-dotnet-core-CSharp-extension.sh debug && \
+    /src/language-extensions/dotnet-core-CSharp/build/linux/create-dotnet-core-CSharp-extension-tar.sh debug && \
+    mkdir -p /export/debug && \
+    cp /src/build-output/dotnet-core-CSharp-extension/linux/debug/packages/dotnet-core-CSharp-lang-extension-linux.zip /export/debug/
+
+FROM scratch AS export
+COPY --from=build /export/ /
