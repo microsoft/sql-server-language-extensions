@@ -72,9 +72,15 @@ namespace ExtensionApiTest
         }
     }
 
+#ifdef _WIN32
 #define RESOLVE_SET_HOST_CALLBACKS() \
     reinterpret_cast<FN_setHostCallbacks *>( \
         GetProcAddress(sm_libHandle, "SetHostCallbacks"))
+#else
+#define RESOLVE_SET_HOST_CALLBACKS() \
+    reinterpret_cast<FN_setHostCallbacks *>( \
+        dlsym(sm_libHandle, "SetHostCallbacks"))
+#endif
 
     //----------------------------------------------------------------------------------------------
     // Name: SetHostCallbacks_SymbolIsExported

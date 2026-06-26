@@ -15,12 +15,39 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#ifndef _WIN32
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+#include <stdexcept>
+#endif
 
 using namespace std;
 namespace fs = std::filesystem;
 
 namespace ExtensionApiTest
 {
+    // Helper: get the full path to the running test executable, cross-platform.
+    //
+    static fs::path GetExecutablePath()
+    {
+#ifdef _WIN32
+        char path[MAX_PATH + 1] = { 0 };
+        GetModuleFileName(NULL, path, MAX_PATH);
+        return fs::path(path);
+#else
+        char path[PATH_MAX] = { 0 };
+        ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+        if (len == -1)
+        {
+            throw std::runtime_error(
+                std::string("readlink(\"/proc/self/exe\") failed: ") + std::strerror(errno));
+        }
+        path[len] = '\0';
+        return fs::path(path);
+#endif
+    }
+
     // Helper: get path to test_packages directory
     //
     static string GetPackagesPath()
@@ -36,9 +63,7 @@ namespace ExtensionApiTest
         else
         {
             // Fallback: navigate from executable path
-            char path[MAX_PATH + 1] = { 0 };
-            GetModuleFileName(NULL, path, MAX_PATH);
-            fs::path buildOutputPath = fs::path(path).parent_path().parent_path().parent_path().parent_path();
+            fs::path buildOutputPath = GetExecutablePath().parent_path().parent_path().parent_path().parent_path();
             result = (buildOutputPath.parent_path().parent_path() /
                 "language-extensions" / "dotnet-core-CSharp" / "test" / "test_packages").string();
         }
@@ -50,9 +75,7 @@ namespace ExtensionApiTest
     //
     static string CreateInstallDir()
     {
-        char path[MAX_PATH + 1] = { 0 };
-        GetModuleFileName(NULL, path, MAX_PATH);
-        string installDir = (fs::path(path).parent_path() / "testInstallLibs").string();
+        string installDir = (GetExecutablePath().parent_path() / "testInstallLibs").string();
 
         if (fs::exists(installDir))
         {
@@ -95,7 +118,13 @@ namespace ExtensionApiTest
     {
         if (libError != nullptr)
         {
+#ifdef _WIN32
             LocalFree(reinterpret_cast<HLOCAL>(libError));
+#else
+            // On Linux, .NET's Marshal.AllocHGlobal is backed by malloc,
+            // so the matching deallocator is free().
+            free(libError);
+#endif
         }
     }
 
@@ -2017,9 +2046,7 @@ namespace ExtensionApiTest
         // Construct a path that does NOT exist. Use a sibling of the
         // standard testInstallLibs path so we know the parent directory
         // is writable but the target itself is absent.
-        char path[MAX_PATH + 1] = { 0 };
-        GetModuleFileName(NULL, path, MAX_PATH);
-        fs::path missing = fs::path(path).parent_path() / "testInstallLibs-missing";
+        fs::path missing = GetExecutablePath().parent_path() / "testInstallLibs-missing";
         if (fs::exists(missing))
         {
             fs::remove_all(missing);
