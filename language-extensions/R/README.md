@@ -60,9 +60,8 @@ B.	Installing needed packages from respective sources.
 	#bash e.g. for Ubuntu
 	sudo apt-get -q -y install unixodbc-dev
 	sudo apt-get install build-essential software-properties-common -y
-	sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 	sudo apt-get update -y
-	apt-get install gcc-13 g++-13 -y
+	sudo apt-get install gcc-13 g++-13 -y
 	sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 70 --slave /usr/bin/g++ g++ /usr/bin/g++-13
 	```
 

@@ -7,7 +7,7 @@ For more information about SQL Server Language Extensions, refer to this [docume
 
 The dotnet-core-CSharp-extension version in this repository is compatible with SQL Server 2019 CU3 onwards. It integrates .NET Core in SQL Server and works with .NET 8.0 and up on Windows and Linux.
 
-Currently, the extension supports the following data types: SQL_C_SLONG, SQL_C_ULONG, SQL_C_SSHORT, SQL_C_USHORT, SQL_C_SBIGINT, SQL_C_UBIGINT, SQL_C_STINYINT, SQL_C_UTINYINT, SQL_C_BIT, SQL_C_FLOAT, SQL_C_DOUBLE, SQL_C_CHAR, and SQL_C_WCHAR. It supports the following SQL data types: int, bigint, smallint, tinyint, real, float, bit, char(n), varchar(n), nchar(n), and nvarchar(n).
+Currently, the extension supports the following data types: SQL_C_SLONG, SQL_C_ULONG, SQL_C_SSHORT, SQL_C_USHORT, SQL_C_SBIGINT, SQL_C_UBIGINT, SQL_C_STINYINT, SQL_C_UTINYINT, SQL_C_BIT, SQL_C_FLOAT, SQL_C_DOUBLE, SQL_C_CHAR, SQL_C_WCHAR, and SQL_C_NUMERIC. It supports the following SQL data types: int, bigint, smallint, tinyint, real, float, bit, char(n), varchar(n), nchar(n), nvarchar(n), decimal(p,s), and numeric(p,s).
 
 To use this `dotnet-core-CSharp-lang-extension.zip` (Windows) or `dotnet-core-CSharp-lang-extension.tar.gz` (Linux) package, follow [this tutorial](./sample/regex/README.md). For any fixes or enhancements, you are welcome to modify, rebuild and use the binaries using the following instructions.
 
@@ -59,3 +59,69 @@ Not Supported.
 After downloading or building the dotnet-core-CSharp-lang-extension.zip, use [CREATE EXTERNAL LANGUAGE](https://docs.microsoft.com/en-us/sql/t-sql/statements/create-external-language-transact-sql?view=sql-server-ver15) to register the language with SQL Server 2019 CU3+.
 
 This [tutorial](./sample/regex/README.md) will walk you through an end to end sample using the .NET Core C# language extension.
+
+## Output Schema Support
+
+By default, output column types are inferred from the .NET DataFrame column types. For string columns, you can explicitly choose the SQL output type using the `StringOutputColumnTypes` property.
+
+### Specifying Output Column Types
+
+Use `StringOutputColumnTypes` to choose the SQL output type for string columns by name:
+
+```csharp
+using Microsoft.SqlServer.CSharpExtension.SDK;
+using Microsoft.Data.Analysis;
+using static Microsoft.SqlServer.CSharpExtension.Sql;
+
+public class MyExecutor : AbstractSqlServerExtensionExecutor
+{
+    public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+    {
+        // Specify NVARCHAR (UTF-16) output for a string column
+        StringOutputColumnTypes["unicode_column"] = StringOutputType.NVarChar;
+        
+        // Process data if needed and return the DataFrame
+        return input;
+    }
+}
+```
+
+### Supported String Types
+
+| StringOutputType | SQL Type | Encoding | Description |
+|------------------|----------|----------|-------------|
+| `StringOutputType.VarChar` | VARCHAR | UTF-8 | Default for string columns |
+| `StringOutputType.NVarChar` | NVARCHAR | UTF-16 | Use for Unicode data |
+
+### Example: Mixed VARCHAR and NVARCHAR Output
+
+```csharp
+public class MixedOutputExecutor : AbstractSqlServerExtensionExecutor
+{
+    public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+    {
+        // "ascii_col" will default to VARCHAR (no configuration needed)
+        
+        // "unicode_col" should be NVARCHAR
+        StringOutputColumnTypes["unicode_col"] = StringOutputType.NVarChar;
+        
+        return input;
+    }
+}
+```
+
+### Default Behavior
+
+If no explicit type is specified for a string column:
+- String columns default to `StringOutputType.VarChar` (VARCHAR/UTF-8)
+- Numeric and other types are automatically mapped from their .NET types
+
+Notes:
+- `StringOutputColumnTypes` only affects string columns. Entries for non-string
+  columns (or names that match no output column) are ignored (a trace message is
+  logged to aid debugging).
+- Setting `StringOutputType.VarChar` for a string column is a no-op, since VARCHAR
+  is already the default.
+- `StringOutputType.NVarChar` output columns report their column size in **bytes**
+  (not UTF-16 code units), matching the extension host's `SQL_C_WCHAR` contract and
+  the byte length emitted by `GetStrLenNullMap`.

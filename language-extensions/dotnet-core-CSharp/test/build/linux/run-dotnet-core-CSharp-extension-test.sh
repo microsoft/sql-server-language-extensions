@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Set environment variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENL_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
+# Export ENL_ROOT so the test executable can resolve test_packages via getenv("ENL_ROOT").
+export ENL_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR="$ENL_ROOT/build-output/dotnet-core-CSharp-extension-test/linux"
 
 # Default to release if no arguments

@@ -28,7 +28,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define EXTERNAL_LANGUAGE_EXTENSION_API 2
+#define EXTERNAL_LANGUAGE_EXTENSION_API 3
 
 SQLEXTENSION_INTERFACE
 SQLUSMALLINT GetInterfaceVersion();
