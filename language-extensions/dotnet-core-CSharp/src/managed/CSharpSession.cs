@@ -123,16 +123,9 @@ namespace Microsoft.SqlServer.CSharpExtension
             _paramContainer = new CSharpParamContainer(parametersNumber);
         }
 
-        /// <summary>
-        /// GUID identifying this session. Exposed at internal scope so the SDK
-        /// logging facade can attribute emitted XEvents to this session.
-        /// </summary>
+        // Exposed internally so the SDK logging facade can attribute XEvents.
         internal Guid SessionId => _sessionId;
 
-        /// <summary>
-        /// Task identifier for this session. Exposed at internal scope so the SDK
-        /// logging facade can attribute emitted XEvents to this task.
-        /// </summary>
         internal ushort TaskId => _taskId;
 
         /// <summary>
