@@ -31,6 +31,14 @@ namespace Microsoft.SqlServer.CSharpExtension
         private static CSharpSession _currentSession;
 
         /// <summary>
+        /// The session currently being executed, or null before InitSession / after
+        /// CleanupSession. Exposed at internal scope so the SDK logging facade
+        /// (ExtensionEventLogger) can attribute emitted XEvents to the active
+        /// session/task without the extension author having to thread the ids through.
+        /// </summary>
+        internal static CSharpSession CurrentSession => _currentSession;
+
+        /// <summary>
         /// The absolute path to the installation directory of the extension.
         /// </summary>
         private static string _languagePath;

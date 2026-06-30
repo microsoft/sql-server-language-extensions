@@ -124,6 +124,18 @@ namespace Microsoft.SqlServer.CSharpExtension
         }
 
         /// <summary>
+        /// GUID identifying this session. Exposed at internal scope so the SDK
+        /// logging facade can attribute emitted XEvents to this session.
+        /// </summary>
+        internal Guid SessionId => _sessionId;
+
+        /// <summary>
+        /// Task identifier for this session. Exposed at internal scope so the SDK
+        /// logging facade can attribute emitted XEvents to this task.
+        /// </summary>
+        internal ushort TaskId => _taskId;
+
+        /// <summary>
         /// This method initializes the input column for this session.
         /// </summary>
         public void InitInputColumn(
