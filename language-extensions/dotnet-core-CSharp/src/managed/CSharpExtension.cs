@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.SqlServer.CSharpExtension.SDK;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -748,7 +749,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                         extensionName: null,
                         Guid.Empty,
                         taskId: 0,
-                        traceLevel: Logging.TraceLevel.Information,
+                        traceLevel: ExtensionTraceLevel.Information,
                         errorCode: 0,
                         "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
                 }
