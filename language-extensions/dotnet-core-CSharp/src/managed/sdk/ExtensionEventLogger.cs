@@ -20,19 +20,19 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
     public enum ExtensionTraceLevel : ushort
     {
         /// <summary>Fatal condition. The operation cannot continue.</summary>
-        Critical    = 1,
+        Critical = 1,
 
         /// <summary>A recoverable error occurred.</summary>
-        Error       = 2,
+        Error = 2,
 
         /// <summary>An unexpected but non-fatal condition.</summary>
-        Warning     = 3,
+        Warning = 3,
 
         /// <summary>Informational progress or status message.</summary>
         Information = 4,
 
         /// <summary>Detailed diagnostic message for troubleshooting.</summary>
-        Verbose     = 5,
+        Verbose = 5,
     }
 
     /// <summary>
