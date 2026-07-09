@@ -745,13 +745,8 @@ namespace Microsoft.SqlServer.CSharpExtension
                         hostCallbacks->LogXEvent);
                     Logging.SetLogXEventCallback(logXEvent);
 
-                    Logging.LogXEvent(
-                        extensionName: null,
-                        Guid.Empty,
-                        taskId: 0,
-                        traceLevel: ExtensionTraceLevel.Information,
-                        errorCode: 0,
-                        "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
+                    ExtensionEventLogger.LogInformation(
+                        $"CSharp extension loaded. Host callbacks registered with version {hostCallbacks->Version}.");
                 }
                 else
                 {
