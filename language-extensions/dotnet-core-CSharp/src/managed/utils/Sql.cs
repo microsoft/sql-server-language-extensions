@@ -28,7 +28,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         public const short SQL_SIGNED_OFFSET = -20;
 
         public const short MinUtf8CharSize = 1;
-        public const short MinUtf16CharSize = 2;
+        public const short MinUtf16ByteSize = 2;
         
         /// <summary>
         /// Size of SQL_NUMERIC_STRUCT in bytes (ODBC specification).
@@ -101,8 +101,8 @@ namespace Microsoft.SqlServer.CSharpExtension
             {SqlDataType.DotNetDouble, sizeof(double)},
             {SqlDataType.DotNetBit, sizeof(bool)},
             {SqlDataType.DotNetChar, MinUtf8CharSize},
-            {SqlDataType.DotNetWChar, MinUtf16CharSize},
-            {SqlDataType.DotNetNVarChar, MinUtf16CharSize},
+            {SqlDataType.DotNetWChar, MinUtf16ByteSize},
+            {SqlDataType.DotNetNVarChar, MinUtf16ByteSize},
             {SqlDataType.DotNetNumeric, SqlNumericStructSize}
         };
 
