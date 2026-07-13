@@ -30,6 +30,8 @@ namespace ExtensionApiTest
         struct CapturedLogEvent
         {
             string       extensionName;
+            SQLGUID      sessionId;
+            SQLUSMALLINT taskId;
             SQLUSMALLINT traceLevel;
             SQLINTEGER   errorCode;
             string       message;
@@ -60,6 +62,8 @@ namespace ExtensionApiTest
                     reinterpret_cast<const char *>(extensionName),
                     static_cast<size_t>(extensionNameLength));
             }
+            ev.sessionId  = sessionId;
+            ev.taskId     = taskId;
             ev.traceLevel = traceLevel;
             ev.errorCode  = errorCode;
             if (message != nullptr && messageLength > 0)
@@ -123,8 +127,9 @@ namespace ExtensionApiTest
         g_capturedLogEvents.clear();
 
         SQLEXTENSION_HOST_CALLBACKS hostCallbacks{};
-        hostCallbacks.Version    = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
-        hostCallbacks.LogXEvent  = &TestLogXEventCallback;
+        hostCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        hostCallbacks.SizeInBytes = sizeof(hostCallbacks);
+        hostCallbacks.LogXEvent   = &TestLogXEventCallback;
 
         SQLRETURN rc = fn(&hostCallbacks);
         EXPECT_EQ(rc, SQL_SUCCESS);
@@ -139,6 +144,100 @@ namespace ExtensionApiTest
         EXPECT_EQ(ev.errorCode, 0);
         EXPECT_NE(ev.message.find("CSharp extension loaded"), string::npos)
             << "Unexpected message: " << ev.message;
+    }
+
+    TEST_F(CSharpExtensionApiTests, ExtensionEventLogger_ForwardsSessionEvent)
+    {
+        FN_setHostCallbacks *fn = RESOLVE_SET_HOST_CALLBACKS();
+        ASSERT_NE(fn, nullptr);
+
+        SQLEXTENSION_HOST_CALLBACKS hostCallbacks{};
+        hostCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        hostCallbacks.SizeInBytes = sizeof(hostCallbacks);
+        hostCallbacks.LogXEvent   = &TestLogXEventCallback;
+
+        ASSERT_EQ(fn(&hostCallbacks), SQL_SUCCESS);
+        g_capturedLogEvents.clear();
+
+        m_sessionId->Data1 = 0x01234567;
+        m_sessionId->Data2 = 0x89AB;
+        m_sessionId->Data3 = 0xCDEF;
+        const unsigned char data4[] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
+        memcpy(m_sessionId->Data4, data4, sizeof(data4));
+        m_taskId = 42;
+
+        string script = m_UserLibName + m_Separator +
+            "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorExtensionEventLogger";
+        InitializeSession(0, 0, script);
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        ASSERT_EQ(
+            (*sm_executeFuncPtr)(
+                *m_sessionId,
+                m_taskId,
+                0,
+                nullptr,
+                nullptr,
+                &outputSchemaColumnsNumber),
+            SQL_SUCCESS);
+
+        ASSERT_EQ(g_capturedLogEvents.size(), 5);
+
+        const SQLUSMALLINT expectedLevels[] = {
+            Extension_Critical,
+            Extension_Error,
+            Extension_Warning,
+            Extension_Information,
+            Extension_Verbose
+        };
+        const SQLINTEGER expectedErrorCodes[] = { 101, 102, 103, 104, 105 };
+        const string expectedMessages[] = {
+            "critical event",
+            "error event",
+            "warning event",
+            "information event",
+            "verbose event"
+        };
+
+        for (size_t i = 0; i < g_capturedLogEvents.size(); ++i)
+        {
+            const CapturedLogEvent &event = g_capturedLogEvents[i];
+            EXPECT_EQ(memcmp(&event.sessionId, m_sessionId.get(), sizeof(SQLGUID)), 0);
+            EXPECT_EQ(event.taskId, m_taskId);
+            EXPECT_EQ(event.traceLevel, expectedLevels[i]);
+            EXPECT_EQ(event.errorCode, expectedErrorCodes[i]);
+            EXPECT_EQ(event.message, expectedMessages[i]);
+            EXPECT_EQ(event.extensionName, i == 0 ? "TestExtension" : "CSharp");
+        }
+    }
+
+    TEST_F(CSharpExtensionApiTests, ExtensionEventLogger_NoCallbackIsNoOp)
+    {
+        FN_setHostCallbacks *fn = RESOLVE_SET_HOST_CALLBACKS();
+        ASSERT_NE(fn, nullptr);
+
+        SQLEXTENSION_HOST_CALLBACKS hostCallbacks{};
+        hostCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        hostCallbacks.SizeInBytes = sizeof(hostCallbacks);
+        hostCallbacks.LogXEvent   = nullptr;
+        ASSERT_EQ(fn(&hostCallbacks), SQL_SUCCESS);
+        g_capturedLogEvents.clear();
+
+        string script = m_UserLibName + m_Separator +
+            "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorExtensionEventLogger";
+        InitializeSession(0, 0, script);
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        EXPECT_EQ(
+            (*sm_executeFuncPtr)(
+                *m_sessionId,
+                m_taskId,
+                0,
+                nullptr,
+                nullptr,
+                &outputSchemaColumnsNumber),
+            SQL_SUCCESS);
+        EXPECT_TRUE(g_capturedLogEvents.empty());
     }
 
     //----------------------------------------------------------------------------------------------
@@ -157,8 +256,9 @@ namespace ExtensionApiTest
         g_capturedLogEvents.clear();
 
         SQLEXTENSION_HOST_CALLBACKS hostCallbacks{};
-        hostCallbacks.Version   = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
-        hostCallbacks.LogXEvent = nullptr;
+        hostCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        hostCallbacks.SizeInBytes = sizeof(hostCallbacks);
+        hostCallbacks.LogXEvent   = nullptr;
 
         SQLRETURN rc = fn(&hostCallbacks);
         EXPECT_EQ(rc, SQL_SUCCESS);

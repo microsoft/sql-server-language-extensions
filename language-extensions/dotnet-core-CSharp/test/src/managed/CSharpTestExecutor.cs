@@ -38,6 +38,23 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    public class CSharpTestExecutorExtensionEventLogger: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            ExtensionEventLogger.Log(
+                ExtensionTraceLevel.Critical,
+                "critical event",
+                101,
+                "TestExtension");
+            ExtensionEventLogger.Log(ExtensionTraceLevel.Error, "error event", 102);
+            ExtensionEventLogger.Log(ExtensionTraceLevel.Warning, "warning event", 103);
+            ExtensionEventLogger.Log(ExtensionTraceLevel.Information, "information event", 104);
+            ExtensionEventLogger.Log(ExtensionTraceLevel.Verbose, "verbose event", 105);
+            return input;
+        }
+    }
+
     public class CSharpTestExecutorIntParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
