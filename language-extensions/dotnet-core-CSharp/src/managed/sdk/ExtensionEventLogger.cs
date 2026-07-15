@@ -54,10 +54,15 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
     public static class ExtensionEventLogger
     {
         /// <summary>
+        /// Sink that log events are forwarded to. Assigned once by the Extension during load.
+        /// </summary>
+        internal static IExtensionLogSink Sink;
+
+        /// <summary>
         /// True when the host has registered an XEvent callback and log calls will be
         /// delivered. Check this to skip building expensive messages when logging is off.
         /// </summary>
-        public static bool IsEnabled => Logging.HasLogXEventCallback;
+        public static bool IsEnabled => Sink?.IsEnabled ?? false;
 
         /// <summary>Logs a critical-severity event.</summary>
         /// <param name="message">Message to log.</param>
@@ -95,7 +100,7 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// <param name="errorCode">Optional error code for non-informational events.</param>
         public static void Log(ExtensionTraceLevel level, string message, int errorCode = 0)
         {
-            Logging.LogXEventFromCurrentSession(level, errorCode, message);
+            Sink?.Log(level, errorCode, message);
         }
     }
 }

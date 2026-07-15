@@ -745,6 +745,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                         hostCallbacks->LogXEvent);
                     Logging.SetLogXEventCallback(logXEvent);
 
+                    // Route SDK facade logging from ExtensionEventLogger to the host's XEvent callback.
+                    //
+                    ExtensionEventLogger.Sink = new XEventLogSink();
+
                     ExtensionEventLogger.LogInformation(
                         $"CSharp extension loaded. Host callbacks registered with version {hostCallbacks->Version}.");
                 }
