@@ -156,6 +156,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <summary>
         /// Logs a message through the host's XEvent infrastructure.
         /// If no host callback is registered, this is a no-op.
+        ///
+        /// Message length is capped to 2048 characters and truncated
+        /// if necessary to avoid excessive memory usage and potential
+        /// buffer overflows in the host.
         /// 
         /// Note:
         /// If `sessionId` is `Guid.Empty`, the event will not be propagated to SQL Engine and will not
