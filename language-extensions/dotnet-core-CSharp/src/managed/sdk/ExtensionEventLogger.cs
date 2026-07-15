@@ -19,19 +19,29 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
     /// </summary>
     public enum ExtensionTraceLevel : ushort
     {
-        /// <summary>Fatal condition. The operation cannot continue.</summary>
+        /// <summary>
+        /// Fatal condition. The operation cannot continue.
+        /// </summary>
         Critical = 1,
 
-        /// <summary>A recoverable error occurred.</summary>
+        /// <summary>
+        /// A recoverable error occurred.
+        /// </summary>
         Error = 2,
 
-        /// <summary>An unexpected but non-fatal condition.</summary>
+        /// <summary>
+        /// An unexpected but non-fatal condition.
+        /// </summary>
         Warning = 3,
 
-        /// <summary>Informational progress or status message.</summary>
+        /// <summary>
+        /// Informational progress or status message.
+        /// </summary>
         Information = 4,
 
-        /// <summary>Detailed diagnostic message for troubleshooting.</summary>
+        /// <summary>
+        /// Detailed diagnostic message for troubleshooting.
+        /// </summary>
         Verbose = 5,
     }
 
@@ -63,8 +73,9 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
 
         /// <summary>Logs a warning-severity event.</summary>
         /// <param name="message">Message to log.</param>
-        public static void LogWarning(string message) =>
-            Log(ExtensionTraceLevel.Warning, message);
+        /// <param name="errorCode">Optional error code associated with the event.</param>
+        public static void LogWarning(string message, int errorCode = 0) =>
+            Log(ExtensionTraceLevel.Warning, message, errorCode);
 
         /// <summary>Logs an informational event.</summary>
         /// <param name="message">Message to log.</param>

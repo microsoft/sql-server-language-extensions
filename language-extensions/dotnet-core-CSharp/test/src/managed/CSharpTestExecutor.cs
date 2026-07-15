@@ -28,12 +28,34 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         /// Kept in one place so executors can't drift or typo it.
         /// </summary>
         public const string HelloMessage = "Hello .NET Core CSharpExtension!";
+
+        /// <summary>
+        /// Marker message emitted through the SDK ExtensionEventLogger by
+        /// CSharpTestExecutorLogInformation. The native session-tagging test
+        /// (CSharpExecuteTests.cpp) matches the forwarded XEvent on this text,
+        /// so both sides must stay in sync.
+        /// </summary>
+        public const string LogEventMessage = "CSharpTestExecutorLogInformation emitted event";
     }
 
     public class CSharpTestExecutor: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
             Console.WriteLine(CSharpTestExecutorConstants.HelloMessage);
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that emits an event through the public SDK ExtensionEventLogger
+    /// facade from inside Execute. Exercises the AsyncLocal session tagging in
+    /// Logging/CSharpSession.Execute so the native test can assert the forwarded
+    /// XEvent carries the executing session's ID and task ID.
+    /// </summary>
+    public class CSharpTestExecutorLogInformation: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            ExtensionEventLogger.LogInformation(CSharpTestExecutorConstants.LogEventMessage);
             return input;
         }
     }

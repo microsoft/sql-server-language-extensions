@@ -12,6 +12,7 @@
 //
 //*********************************************************************
 #include "CSharpExtensionApiTests.h"
+#include "LogXEventTestHarness.h"
 
 #include <cstring>
 #include <string>
@@ -22,55 +23,6 @@ using namespace std;
 namespace ExtensionApiTest
 {
     typedef SQLRETURN FN_setHostCallbacks(SQLEXTENSION_HOST_CALLBACKS *);
-
-    namespace
-    {
-        // Captured invocation of the host LogXEvent callback.
-        //
-        struct CapturedLogEvent
-        {
-            string       extensionName;
-            SQLUSMALLINT traceLevel;
-            SQLINTEGER   errorCode;
-            string       message;
-        };
-
-        // File-scope storage for events captured by TestLogXEventCallback.
-        // Cleared at the start of each test that uses it.
-        //
-        static vector<CapturedLogEvent> g_capturedLogEvents;
-
-        // Test stand-in for host's LogXEvent implementation. Records the
-        // invocation so the test can assert on its contents.
-        //
-        extern "C" void TestLogXEventCallback(
-            const SQLCHAR *extensionName,
-            SQLULEN        extensionNameLength,
-            SQLGUID        sessionId,
-            SQLUSMALLINT   taskId,
-            SQLUSMALLINT   traceLevel,
-            SQLINTEGER     errorCode,
-            const SQLCHAR *message,
-            SQLULEN        messageLength)
-        {
-            CapturedLogEvent ev;
-            if (extensionName != nullptr && extensionNameLength > 0)
-            {
-                ev.extensionName.assign(
-                    reinterpret_cast<const char *>(extensionName),
-                    static_cast<size_t>(extensionNameLength));
-            }
-            ev.traceLevel = traceLevel;
-            ev.errorCode  = errorCode;
-            if (message != nullptr && messageLength > 0)
-            {
-                ev.message.assign(
-                    reinterpret_cast<const char *>(message),
-                    static_cast<size_t>(messageLength));
-            }
-            g_capturedLogEvents.push_back(std::move(ev));
-        }
-    }
 
 #define RESOLVE_SET_HOST_CALLBACKS() \
     reinterpret_cast<FN_setHostCallbacks *>( \
