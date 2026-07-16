@@ -359,8 +359,9 @@ SQLRETURN Cleanup()
     if (g_dotnet_runtime != nullptr)
     {
         SQLEXTENSION_HOST_CALLBACKS nullCallbacks = {};
-        nullCallbacks.Version   = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
-        nullCallbacks.LogXEvent = nullptr;
+        nullCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        nullCallbacks.SizeInBytes = sizeof(nullCallbacks);
+        nullCallbacks.LogXEvent   = nullptr;
 
         g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
             nameof(SetHostCallbacks),
@@ -563,13 +564,22 @@ SQLRETURN SetHostCallbacks(
         return SQL_ERROR;
     }
 
-    // Take a shallow copy of the caller's struct so g_hostCallbacks cannot
-    // dangle if the host passed a stack-allocated SQLEXTENSION_HOST_CALLBACKS.
-    //
-    g_hostCallbacksCopy = *hostCallbacks;
+    const SQLUINTEGER minHostCallbacksSize =
+        static_cast<SQLUINTEGER>(offsetof(SQLEXTENSION_HOST_CALLBACKS, LogXEvent) + sizeof(hostCallbacks->LogXEvent));
+    if (hostCallbacks->SizeInBytes < minHostCallbacksSize)
+    {
+        LOG_ERROR("SetHostCallbacks called with incomplete host callbacks structure");
+        return SQL_ERROR;
+    }
+
+    g_hostCallbacksCopy = {};
+    g_hostCallbacksCopy.Version     = hostCallbacks->Version;
+    g_hostCallbacksCopy.Reserved0   = hostCallbacks->Reserved0;
+    g_hostCallbacksCopy.SizeInBytes = sizeof(g_hostCallbacksCopy);
+    g_hostCallbacksCopy.LogXEvent   = hostCallbacks->LogXEvent;
     g_hostCallbacks     = &g_hostCallbacksCopy;
 
     return g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
         nameof(SetHostCallbacks),
-        hostCallbacks);
+        &g_hostCallbacksCopy);
 }

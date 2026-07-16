@@ -742,6 +742,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                         hostCallbacks->Version);
                 }
 
+                if (hostCallbacks->SizeInBytes < Marshal.SizeOf<SqlExtensionHostCallbacks>())
+                {
+                    Logging.Error("CSharpExtension::SetHostCallbacks: incomplete host callbacks structure");
+                    throw new ArgumentException(
+                        "Incomplete SQLEXTENSION_HOST_CALLBACKS structure.",
+                        nameof(hostCallbacks));
+                }
+
                 if (hostCallbacks->LogXEvent != IntPtr.Zero)
                 {
                     var logXEvent = Marshal.GetDelegateForFunctionPointer<LogXEventCallbackDelegate>(
