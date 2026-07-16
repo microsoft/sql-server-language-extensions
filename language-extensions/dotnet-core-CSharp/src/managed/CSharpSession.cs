@@ -123,7 +123,6 @@ namespace Microsoft.SqlServer.CSharpExtension
             _paramContainer = new CSharpParamContainer(parametersNumber);
         }
 
-        // Exposed internally so the SDK logging facade can attribute XEvents.
         internal Guid SessionId => _sessionId;
 
         internal ushort TaskId => _taskId;

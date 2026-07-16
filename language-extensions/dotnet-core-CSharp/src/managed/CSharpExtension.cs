@@ -30,8 +30,6 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         private static CSharpSession _currentSession;
 
-        // Active session (null before InitSession / after CleanupSession). Internal
-        // so the SDK logging facade can attribute events without threading the ids.
         internal static CSharpSession CurrentSession => _currentSession;
 
         /// <summary>
