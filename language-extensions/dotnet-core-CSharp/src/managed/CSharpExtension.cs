@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.SqlServer.CSharpExtension.SDK;
 using static Microsoft.SqlServer.CSharpExtension.Sql;
 
 namespace Microsoft.SqlServer.CSharpExtension
@@ -744,13 +745,12 @@ namespace Microsoft.SqlServer.CSharpExtension
                         hostCallbacks->LogXEvent);
                     Logging.SetLogXEventCallback(logXEvent);
 
-                    Logging.LogXEvent(
-                        extensionName: null,
-                        Guid.Empty,
-                        taskId: 0,
-                        traceLevel: Logging.TraceLevel.Information,
-                        errorCode: 0,
-                        "CSharp extension loaded, host callbacks registered (version " + hostCallbacks->Version + ")");
+                    // Route SDK facade logging from ExtensionEventLogger to the host's XEvent callback.
+                    //
+                    ExtensionEventLogger.Sink = new XEventLogSink();
+
+                    ExtensionEventLogger.LogInformation(
+                        $"CSharp extension loaded. Host callbacks registered with version {hostCallbacks->Version}.");
                 }
                 else
                 {

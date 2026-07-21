@@ -12,6 +12,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
+using Microsoft.SqlServer.CSharpExtension.SDK;
 
 namespace Microsoft.SqlServer.CSharpExtension
 {
@@ -97,17 +99,13 @@ namespace Microsoft.SqlServer.CSharpExtension
         public static bool HasLogXEventCallback => _logXEventCallback != null;
 
         /// <summary>
-        /// Trace levels for events logged via the host's LogXEvent callback.
-        /// Lowest numeric value is the most severe, matching Windows ETW TRACE_LEVEL_* convention.
+        /// Ambient per-execution session context with session ID and task ID used for the 
+        /// duration of a single invocation. Stored in an <see cref="AsyncLocal{T}"/> so it
+        /// flows across async continuations in user code and stays isolated between tasks
+        /// running concurrently on different threads.
         /// </summary>
-        public enum TraceLevel : ushort
-        {
-            Critical    = 1,
-            Error       = 2,
-            Warning     = 3,
-            Information = 4,
-            Verbose     = 5,
-        }
+        private static readonly AsyncLocal<(Guid SessionId, ushort TaskId)> _currentSession =
+            new AsyncLocal<(Guid SessionId, ushort TaskId)>();
 
         /// <summary>
         /// Default name of the Extension to be used for XEvent logging when
@@ -116,8 +114,52 @@ namespace Microsoft.SqlServer.CSharpExtension
         private const string DefaultExtensionName = "CSharp";
 
         /// <summary>
+        /// Publishes the ambient session context for the current execution.
+        /// </summary>
+        /// <param name="sessionId">The session ID for the current execution.</param>
+        /// <param name="taskId">The task ID for the current execution.</param>
+        internal static void SetCurrentSession(Guid sessionId, ushort taskId)
+        {
+            _currentSession.Value = (sessionId, taskId);
+        }
+
+        /// <summary>
+        /// Clears the ambient session context once the user execution completes.
+        /// </summary>
+        internal static void ClearCurrentSession()
+        {
+            _currentSession.Value = default;
+        }
+
+        /// <summary>
+        /// Logs a message through the host's XEvent infrastructure using the ambient session
+        /// context of the current execution.
+        /// </summary>
+        /// <param name="traceLevel">Trace severity.</param>
+        /// <param name="errorCode">Error code for non-informational logs.</param>
+        /// <param name="message">The message to log.</param>
+        internal static void LogXEventFromCurrentSession(
+            ExtensionTraceLevel traceLevel,
+            int                 errorCode,
+            string              message)
+        {
+            (Guid sessionId, ushort taskId) = _currentSession.Value;
+            LogXEvent(
+                extensionName: null,
+                sessionId:     sessionId,
+                taskId:        taskId,
+                traceLevel:    traceLevel,
+                errorCode:     errorCode,
+                message:       message);
+        }
+
+        /// <summary>
         /// Logs a message through the host's XEvent infrastructure.
         /// If no host callback is registered, this is a no-op.
+        ///
+        /// Message length is capped to 2048 characters and truncated
+        /// if necessary to avoid excessive memory usage and potential
+        /// buffer overflows in the host.
         /// 
         /// Note:
         /// If `sessionId` is `Guid.Empty`, the event will not be propagated to SQL Engine and will not
@@ -132,12 +174,12 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="errorCode">Error code for non-informational logs.</param>
         /// <param name="message">The message to log.</param>
         public static unsafe void LogXEvent(
-            string     extensionName,
-            Guid       sessionId,
-            ushort     taskId,
-            TraceLevel traceLevel,
-            int        errorCode,
-            string     message)
+            string              extensionName,
+            Guid                sessionId,
+            ushort              taskId,
+            ExtensionTraceLevel traceLevel,
+            int                 errorCode,
+            string              message)
         {
             // Snapshot the callback once so a concurrent cleanup between the null-check and the invocation
             // cannot turn this into a NullReferenceException.

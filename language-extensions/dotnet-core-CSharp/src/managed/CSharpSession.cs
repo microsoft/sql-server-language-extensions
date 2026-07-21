@@ -181,29 +181,38 @@ namespace Microsoft.SqlServer.CSharpExtension
             ushort *outputSchemaColumnsNumber)
         {
             Logging.Trace("CSharpSession::Execute");
-            _inputDataSet.AddColumns(rowsNumber, data, strLenOrNullMap);
-            _userDll.UserExecutor = _userDll.InstantiateUserExecutor();
 
-            if(_userDll.UserExecutor != null)
+            Logging.SetCurrentSession(_sessionId, _taskId);
+            try
             {
-                _outputDataSet.CSharpDataFrame = _userDll.UserExecutor.Execute(_inputDataSet.CSharpDataFrame, _paramContainer.UserParams);
+                _inputDataSet.AddColumns(rowsNumber, data, strLenOrNullMap);
+                _userDll.UserExecutor = _userDll.InstantiateUserExecutor();
+
+                if(_userDll.UserExecutor != null)
+                {
+                    _outputDataSet.CSharpDataFrame = _userDll.UserExecutor.Execute(_inputDataSet.CSharpDataFrame, _paramContainer.UserParams);
+                }
+
+                if(_outputDataSet.CSharpDataFrame != null)
+                {
+                    _outputDataSet.ColumnsNumber = (ushort)_outputDataSet.CSharpDataFrame.Columns.Count;
+
+                    // Pass user-specified output column types
+                    //
+                    _outputDataSet.ExtractColumns(
+                        _outputDataSet.CSharpDataFrame,
+                        _userDll.UserExecutor.StringOutputColumnTypes);
+
+                    *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
+                }
+                else
+                {
+                    *outputSchemaColumnsNumber = 0;
+                }
             }
-
-            if(_outputDataSet.CSharpDataFrame != null)
+            finally
             {
-                _outputDataSet.ColumnsNumber = (ushort)_outputDataSet.CSharpDataFrame.Columns.Count;
-
-                // Pass user-specified output column types
-                //
-                _outputDataSet.ExtractColumns(
-                    _outputDataSet.CSharpDataFrame,
-                    _userDll.UserExecutor.StringOutputColumnTypes);
-
-                *outputSchemaColumnsNumber = _outputDataSet.ColumnsNumber;
-            }
-            else
-            {
-                *outputSchemaColumnsNumber = 0;
+                Logging.ClearCurrentSession();
             }
         }
 
