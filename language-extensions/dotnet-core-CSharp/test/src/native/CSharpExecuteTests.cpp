@@ -9,6 +9,9 @@
 //
 //*********************************************************************
 #include "CSharpExtensionApiTests.h"
+#include "LogXEventTestHarness.h"
+
+#include <cstring>
 
 using namespace std;
 
@@ -491,6 +494,131 @@ namespace ExtensionApiTest
             dataSet,
             strLen_or_Ind.data(),
             columnNames);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ExecuteForwardsSessionTaggedLogEvent
+    //
+    // Description:
+    //  Drives a session with a known session ID and task ID whose executor logs through the SDK
+    //  ExtensionEventLogger facade, and verifies the forwarded XEvent carries that
+    //  session's ID and task ID. This exercises the AsyncLocal session tagging in
+    //  Logging/CSharpSession.Execute end to end.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteForwardsSessionTaggedLogEvent)
+    {
+        ASSERT_EQ(RegisterTestLogXEventCallback(sm_libHandle), SQL_SUCCESS);
+
+        // Known, non-zero identity so it can't be confused with the empty GUID used
+        // by the registration-time "extension loaded" event.
+        // Equivalent to GUID 0A0B0C0D-1011-1213-1415-161718191A1B.
+        //
+        const SQLGUID sessionId = {
+            0x0A0B0C0D, 0x1011, 0x1213,
+            { 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B } };
+        const SQLUSMALLINT taskId = 1;
+
+        *m_sessionId = sessionId;
+        m_taskId     = taskId;
+
+        string scriptString = m_UserLibName + m_Separator + c_logInformationExecutor;
+        InitializeSession(0, 0, scriptString);
+
+        // Observe only the events emitted by the execution below.
+        //
+        g_capturedLogEvents.clear();
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        const CapturedLogEvent *tagged = FindLogInformationEvent();
+        ASSERT_NE(tagged, nullptr)
+            << "Executor's ExtensionEventLogger event was not forwarded to the host callback";
+        EXPECT_TRUE(SqlGuidEquals(tagged->sessionId, sessionId))
+            << "Forwarded event did not carry the executing session's ID";
+        EXPECT_EQ(tagged->taskId, taskId);
+        EXPECT_EQ(tagged->traceLevel, static_cast<SQLUSMALLINT>(Extension_Information));
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // Name: ExecuteIsolatesSessionTaggingBetweenSessions
+    //
+    // Description:
+    //  Runs two sessions with distinct session IDs and task IDs through the same logging executor
+    //  and verifies each forwarded event carries its own session's ID and task ID, proving
+    //  the AsyncLocal session context is isolated per execution rather than leaking
+    //  from one session into the next.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteIsolatesSessionTaggingBetweenSessions)
+    {
+        ASSERT_EQ(RegisterTestLogXEventCallback(sm_libHandle), SQL_SUCCESS);
+
+        const string scriptString = m_UserLibName + m_Separator + c_logInformationExecutor;
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+
+        // First session's ID and task ID.
+        // Equivalent to GUID 0A0B0C0D-1011-1213-1415-161718191A1B.
+        //
+        const SQLGUID sessionIdA = {
+            0x0A0B0C0D, 0x1011, 0x1213,
+            { 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B } };
+        const SQLUSMALLINT taskIdA = 1;
+
+        *m_sessionId = sessionIdA;
+        m_taskId     = taskIdA;
+        InitializeSession(0, 0, scriptString);
+
+        g_capturedLogEvents.clear();
+        ASSERT_EQ(
+            (*sm_executeFuncPtr)(
+                *m_sessionId, m_taskId, 0, nullptr, nullptr, &outputSchemaColumnsNumber),
+            SQL_SUCCESS);
+
+        const CapturedLogEvent *eventA = FindLogInformationEvent();
+        ASSERT_NE(eventA, nullptr);
+        EXPECT_TRUE(SqlGuidEquals(eventA->sessionId, sessionIdA));
+        EXPECT_EQ(eventA->taskId, taskIdA);
+
+        // Tear down the first session before starting the second.
+        //
+        SessionCleanup();
+
+        // Second session's ID and task ID.
+        // Equivalent to GUID F0E1D2C3-B4A5-9687-7869-5A4B3C2D1E0F.
+        //
+        const SQLGUID sessionIdB = {
+            0xF0E1D2C3, 0xB4A5, 0x9687,
+            { 0x78, 0x69, 0x5A, 0x4B, 0x3C, 0x2D, 0x1E, 0x0F } };
+        const SQLUSMALLINT taskIdB = 2;
+
+        *m_sessionId = sessionIdB;
+        m_taskId     = taskIdB;
+        InitializeSession(0, 0, scriptString);
+
+        g_capturedLogEvents.clear();
+        ASSERT_EQ(
+            (*sm_executeFuncPtr)(
+                *m_sessionId, m_taskId, 0, nullptr, nullptr, &outputSchemaColumnsNumber),
+            SQL_SUCCESS);
+
+        const CapturedLogEvent *eventB = FindLogInformationEvent();
+        ASSERT_NE(eventB, nullptr);
+        EXPECT_TRUE(SqlGuidEquals(eventB->sessionId, sessionIdB));
+        EXPECT_EQ(eventB->taskId, taskIdB);
+
+        // The two sessions must have produced distinct tags.
+        //
+        EXPECT_FALSE(SqlGuidEquals(sessionIdA, sessionIdB));
+        EXPECT_NE(taskIdA, taskIdB);
+
+        // TearDown cleans up the second session.
     }
 
     //----------------------------------------------------------------------------------------------

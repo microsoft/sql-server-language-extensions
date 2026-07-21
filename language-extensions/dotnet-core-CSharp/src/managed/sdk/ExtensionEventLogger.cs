@@ -5,77 +5,102 @@
 // @File: ExtensionEventLogger.cs
 //
 // Purpose:
-//  Provides session-aware XEvent logging for .NET Core C# extensions.
+//  Public SDK logging facade that lets user scripts and the external
+//  libraries they load in-process emit events through the host's
+//  XEvent callback.
 //
 //*********************************************************************
-using System;
-
 namespace Microsoft.SqlServer.CSharpExtension.SDK
 {
     /// <summary>
-    /// Severity of an extension trace event.
+    /// Severity of an event logged through <see cref="ExtensionEventLogger"/>.
+    /// Mirrors the Windows ETW TRACE_LEVEL_* convention where the lowest numeric
+    /// value is the most severe.
     /// </summary>
     public enum ExtensionTraceLevel : ushort
     {
+        /// <summary>
+        /// Fatal condition. The operation cannot continue.
+        /// </summary>
         Critical = 1,
+
+        /// <summary>
+        /// A recoverable error occurred.
+        /// </summary>
         Error = 2,
+
+        /// <summary>
+        /// An unexpected but non-fatal condition.
+        /// </summary>
         Warning = 3,
+
+        /// <summary>
+        /// Informational progress or status message.
+        /// </summary>
         Information = 4,
+
+        /// <summary>
+        /// Detailed diagnostic message for troubleshooting.
+        /// </summary>
         Verbose = 5,
     }
 
     /// <summary>
-    /// Emits session-attributed traces through the host's XEvent infrastructure.
+    /// Logging facade available to user executors and to any external library they load
+    /// in-process. Messages are forwarded to the host through the XEvent callback
+    /// the host registers when the extension is loaded, and are tagged with the session that
+    /// is currently executing so they become visible in XEvent sessions.
     /// </summary>
-    /// <remarks>
-    /// <see cref="Log"/> does nothing when no host callback is registered. Events
-    /// emitted without an active session are not visible to end users.
-    /// </remarks>
     public static class ExtensionEventLogger
     {
         /// <summary>
-        /// Gets whether the host accepts extension trace events.
+        /// Sink that log events are forwarded to. Assigned once by the Extension during load.
         /// </summary>
-        public static bool IsAvailable => Logging.HasLogXEventCallback;
+        internal static IExtensionLogSink Sink;
 
         /// <summary>
-        /// Emits a trace attributed to the current session and task.
+        /// True when the host has registered an XEvent callback and log calls will be
+        /// delivered. Check this to skip building expensive messages when logging is off.
         /// </summary>
-        /// <param name="level">Severity of the event.</param>
-        /// <param name="message">Message recorded verbatim; callers must exclude secrets.</param>
-        /// <param name="errorCode">Optional error code.</param>
-        /// <param name="extensionName">Optional originating extension name.</param>
-        public static void Log(
-            ExtensionTraceLevel level,
-            string              message,
-            int                 errorCode = 0,
-            string              extensionName = null)
+        public static bool IsEnabled => Sink?.IsEnabled ?? false;
+
+        /// <summary>Logs a critical-severity event.</summary>
+        /// <param name="message">Message to log.</param>
+        /// <param name="errorCode">Optional error code associated with the event.</param>
+        public static void LogCritical(string message, int errorCode = 0) =>
+            Log(ExtensionTraceLevel.Critical, message, errorCode);
+
+        /// <summary>Logs an error-severity event.</summary>
+        /// <param name="message">Message to log.</param>
+        /// <param name="errorCode">Optional error code associated with the event.</param>
+        public static void LogError(string message, int errorCode = 0) =>
+            Log(ExtensionTraceLevel.Error, message, errorCode);
+
+        /// <summary>Logs a warning-severity event.</summary>
+        /// <param name="message">Message to log.</param>
+        /// <param name="errorCode">Optional error code associated with the event.</param>
+        public static void LogWarning(string message, int errorCode = 0) =>
+            Log(ExtensionTraceLevel.Warning, message, errorCode);
+
+        /// <summary>Logs an informational event.</summary>
+        /// <param name="message">Message to log.</param>
+        public static void LogInformation(string message) =>
+            Log(ExtensionTraceLevel.Information, message);
+
+        /// <summary>Logs a verbose/diagnostic event.</summary>
+        /// <param name="message">Message to log.</param>
+        public static void LogVerbose(string message) =>
+            Log(ExtensionTraceLevel.Verbose, message);
+
+        /// <summary>
+        /// Logs an event at the specified severity.
+        /// </summary>
+        /// <param name="level">Event severity.</param>
+        /// <param name="message">Message to log. A null message is treated as empty.</param>
+        /// <param name="errorCode">Optional error code for non-informational events.</param>
+        public static void Log(ExtensionTraceLevel level, string message, int errorCode = 0)
         {
-            CSharpSession session = CSharpExtension.CurrentSession;
-
-            Guid   sessionId = session?.SessionId ?? Guid.Empty;
-            ushort taskId    = session?.TaskId ?? 0;
-
-            Logging.LogXEvent(
-                extensionName,
-                sessionId,
-                taskId,
-                ToLoggingTraceLevel(level),
-                errorCode,
-                message);
-        }
-
-        private static Logging.TraceLevel ToLoggingTraceLevel(ExtensionTraceLevel level)
-        {
-            switch (level)
-            {
-                case ExtensionTraceLevel.Critical:    return Logging.TraceLevel.Critical;
-                case ExtensionTraceLevel.Error:       return Logging.TraceLevel.Error;
-                case ExtensionTraceLevel.Warning:     return Logging.TraceLevel.Warning;
-                case ExtensionTraceLevel.Verbose:     return Logging.TraceLevel.Verbose;
-                case ExtensionTraceLevel.Information:  return Logging.TraceLevel.Information;
-                default:                              return Logging.TraceLevel.Information;
-            }
+            Sink?.Log(level, errorCode, message);
         }
     }
 }

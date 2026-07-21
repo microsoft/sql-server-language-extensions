@@ -28,6 +28,14 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         /// Kept in one place so executors can't drift or typo it.
         /// </summary>
         public const string HelloMessage = "Hello .NET Core CSharpExtension!";
+
+        /// <summary>
+        /// Marker message emitted through the SDK ExtensionEventLogger by
+        /// CSharpTestExecutorLogInformation. The native session-tagging test
+        /// (CSharpExecuteTests.cpp) matches the forwarded XEvent on this text,
+        /// so both sides must stay in sync.
+        /// </summary>
+        public const string LogEventMessage = "CSharpTestExecutorLogInformation emitted event";
     }
 
     public class CSharpTestExecutor: AbstractSqlServerExtensionExecutor
@@ -38,19 +46,16 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
-    public class CSharpTestExecutorExtensionEventLogger: AbstractSqlServerExtensionExecutor
+    /// <summary>
+    /// Test executor that emits an event through the public SDK ExtensionEventLogger
+    /// facade from inside Execute. Exercises the AsyncLocal session tagging in
+    /// Logging/CSharpSession.Execute so the native test can assert the forwarded
+    /// XEvent carries the executing session's ID and task ID.
+    /// </summary>
+    public class CSharpTestExecutorLogInformation: AbstractSqlServerExtensionExecutor
     {
-        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
-        {
-            ExtensionEventLogger.Log(
-                ExtensionTraceLevel.Critical,
-                "critical event",
-                101,
-                "TestExtension");
-            ExtensionEventLogger.Log(ExtensionTraceLevel.Error, "error event", 102);
-            ExtensionEventLogger.Log(ExtensionTraceLevel.Warning, "warning event", 103);
-            ExtensionEventLogger.Log(ExtensionTraceLevel.Information, "information event", 104);
-            ExtensionEventLogger.Log(ExtensionTraceLevel.Verbose, "verbose event", 105);
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            ExtensionEventLogger.LogInformation(CSharpTestExecutorConstants.LogEventMessage);
             return input;
         }
     }
