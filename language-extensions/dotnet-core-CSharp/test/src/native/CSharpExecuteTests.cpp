@@ -548,6 +548,56 @@ namespace ExtensionApiTest
     }
 
     //----------------------------------------------------------------------------------------------
+    // Name: ExecuteForwardsNamedExtensionLogEvent
+    //
+    // Description:
+    //  Drives an executor that logs through the ExtensionEventLogger.Log extensionName
+    //  overload and verifies the forwarded XEvent carries the caller-supplied extension
+    //  name rather than the extension's default. Covers the SDK facade path an in-process
+    //  library (e.g. MssqlAI) uses to attribute its own activity events.
+    //
+    TEST_F(CSharpExtensionApiTests, ExecuteForwardsNamedExtensionLogEvent)
+    {
+        ASSERT_EQ(RegisterTestLogXEventCallback(sm_libHandle), SQL_SUCCESS);
+
+        const string namedExecutor =
+            "Microsoft.SqlServer.CSharpExtensionTest.CSharpTestExecutorLogNamedExtension";
+        const string namedMessage = "CSharpTestExecutorLogNamedExtension emitted event";
+        const string expectedExtensionName = "TestExtension";
+
+        string scriptString = m_UserLibName + m_Separator + namedExecutor;
+        InitializeSession(0, 0, scriptString);
+
+        g_capturedLogEvents.clear();
+
+        SQLUSMALLINT outputSchemaColumnsNumber = 0;
+        SQLRETURN result = (*sm_executeFuncPtr)(
+            *m_sessionId,
+            m_taskId,
+            0,       // rowsNumber
+            nullptr, // dataSet
+            nullptr, // strLenOrInd
+            &outputSchemaColumnsNumber);
+        ASSERT_EQ(result, SQL_SUCCESS);
+
+        const CapturedLogEvent *named = nullptr;
+        for (const CapturedLogEvent &ev : g_capturedLogEvents)
+        {
+            if (ev.message.find(namedMessage) != string::npos)
+            {
+                named = &ev;
+                break;
+            }
+        }
+
+        ASSERT_NE(named, nullptr)
+            << "Named-extension ExtensionEventLogger event was not forwarded to the host callback";
+        EXPECT_EQ(named->extensionName, expectedExtensionName)
+            << "Forwarded event did not carry the caller-supplied extension name";
+        EXPECT_EQ(named->traceLevel, static_cast<SQLUSMALLINT>(Extension_Information));
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Name: ExecuteIsolatesSessionTaggingBetweenSessions
     //
     // Description:

@@ -36,6 +36,19 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         /// so both sides must stay in sync.
         /// </summary>
         public const string LogEventMessage = "CSharpTestExecutorLogInformation emitted event";
+
+        /// <summary>
+        /// Marker message emitted through the SDK ExtensionEventLogger extensionName
+        /// overload by CSharpTestExecutorLogNamedExtension. Matched by the native test
+        /// (CSharpExecuteTests.cpp) alongside <see cref="LogEventExtensionName"/>.
+        /// </summary>
+        public const string LogNamedEventMessage = "CSharpTestExecutorLogNamedExtension emitted event";
+
+        /// <summary>
+        /// Extension name CSharpTestExecutorLogNamedExtension attributes its event to,
+        /// proving the ExtensionEventLogger.Log extensionName overload is honored end to end.
+        /// </summary>
+        public const string LogEventExtensionName = "TestExtension";
     }
 
     public class CSharpTestExecutor: AbstractSqlServerExtensionExecutor
@@ -56,6 +69,23 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
             ExtensionEventLogger.LogInformation(CSharpTestExecutorConstants.LogEventMessage);
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that emits an event through the ExtensionEventLogger extensionName
+    /// overload, attributing it to a named extension. Lets the native test assert the
+    /// forwarded XEvent carries the caller-supplied extension name rather than the default.
+    /// </summary>
+    public class CSharpTestExecutorLogNamedExtension: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            ExtensionEventLogger.Log(
+                ExtensionTraceLevel.Information,
+                CSharpTestExecutorConstants.LogNamedEventMessage,
+                errorCode: 0,
+                extensionName: CSharpTestExecutorConstants.LogEventExtensionName);
             return input;
         }
     }
