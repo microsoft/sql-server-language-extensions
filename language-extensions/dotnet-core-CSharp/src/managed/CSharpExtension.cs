@@ -31,8 +31,6 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// </summary>
         private static CSharpSession _currentSession;
 
-        internal static CSharpSession CurrentSession => _currentSession;
-
         /// <summary>
         /// The absolute path to the installation directory of the extension.
         /// </summary>

@@ -123,10 +123,6 @@ namespace Microsoft.SqlServer.CSharpExtension
             _paramContainer = new CSharpParamContainer(parametersNumber);
         }
 
-        internal Guid SessionId => _sessionId;
-
-        internal ushort TaskId => _taskId;
-
         /// <summary>
         /// This method initializes the input column for this session.
         /// </summary>
