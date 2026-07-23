@@ -82,9 +82,8 @@ SET VSCMD_START_DIR=%PYTHONEXTENSION_TEST_WORKING_DIR%
 REM Do not call VsDevCmd if the environment is already set. Otherwise, it will keep appending
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
-if not defined DevEnvDir (
-	call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
-)
+CALL :SETUP_VS_ENV
+IF ERRORLEVEL 1 EXIT /b 1
 
 ECHO "[INFO] Generating pythonextension test project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
 
@@ -94,8 +93,8 @@ PUSHD %BUILD_OUTPUT%
 
 REM Call cmake
 REM
-call "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 16 2019" ^
+call "%VS_CMAKE_EXE%" ^
+	-G "%VS_CMAKE_GENERATOR%" ^
 	-DPLATFORM=windows ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^
@@ -111,7 +110,7 @@ ECHO "[INFO] Building pythonextension test project using CMAKE_CONFIGURATION=%CM
 
 REM Call cmake build
 REM
-CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
+CALL "%VS_CMAKE_EXE%" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Python extension test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
@@ -142,3 +141,43 @@ EXIT /b %ERRORLEVEL%
 	)
 
 	EXIT /b 0
+
+REM Locate a Visual Studio install (any version with the C++ toolset) via vswhere,
+REM initialize its developer environment, and select a matching CMake generator plus a
+REM CMake new enough to know it. Using vswhere keeps the build working across the OneBranch
+REM container images regardless of the Visual Studio version they ship (e.g. VS 2022 on the
+REM ltsc2022 image) instead of a hard-coded VS 2019 install path and generator.
+REM
+:SETUP_VS_ENV
+	REM NOTE: Visual Studio install paths contain "(x86)"; the ")" breaks parenthesized IF
+	REM blocks, so this routine deliberately uses single-line IF statements and GOTO labels.
+	SET "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+	IF NOT EXIST "%VSWHERE%" GOTO :SETUP_VS_ENV_NOVSWHERE
+	SET "VSINSTALLPATH="
+	FOR /F "usebackq tokens=*" %%i IN (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) DO SET "VSINSTALLPATH=%%i"
+	IF NOT DEFINED VSINSTALLPATH GOTO :SETUP_VS_ENV_NOVS
+	REM Only initialize the developer environment once; VsDevCmd keeps appending to PATH.
+	IF NOT DEFINED DevEnvDir CALL "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	REM Map the installed VS major version to the matching CMake generator name.
+	SET "VS_MAJOR="
+	FOR /F "usebackq tokens=1 delims=." %%v IN (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion`) DO SET "VS_MAJOR=%%v"
+	IF "%VS_MAJOR%"=="17" SET "VS_CMAKE_GENERATOR=Visual Studio 17 2022"
+	IF "%VS_MAJOR%"=="16" SET "VS_CMAKE_GENERATOR=Visual Studio 16 2019"
+	IF NOT DEFINED VS_CMAKE_GENERATOR GOTO :SETUP_VS_ENV_BADVER
+	REM Prefer the CMake bundled with Visual Studio: it knows the "Visual Studio 17 2022"
+	REM generator, whereas the packaged CMake (CMAKE_ROOT) is pinned to 3.15 and only knows
+	REM up to the VS 2019 generator. Fall back to CMAKE_ROOT when the VS-bundled CMake is
+	REM absent (e.g. an older VS install without the C++ CMake tools component).
+	SET "VS_CMAKE_EXE="
+	FOR /F "usebackq tokens=*" %%c IN (`"%VSWHERE%" -latest -products * -find "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"`) DO SET "VS_CMAKE_EXE=%%c"
+	IF NOT DEFINED VS_CMAKE_EXE SET "VS_CMAKE_EXE=%CMAKE_ROOT%\bin\cmake.exe"
+	EXIT /b 0
+:SETUP_VS_ENV_NOVSWHERE
+	ECHO [Error] vswhere.exe not found. Cannot locate Visual Studio.
+	EXIT /b 1
+:SETUP_VS_ENV_NOVS
+	ECHO [Error] No Visual Studio installation with the C++ toolset was found.
+	EXIT /b 1
+:SETUP_VS_ENV_BADVER
+	ECHO [Error] Unsupported Visual Studio version '%VS_MAJOR%' for CMake generator selection.
+	EXIT /b 1

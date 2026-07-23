@@ -38,7 +38,8 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	CALL :SETUP_VS_ENV
+	IF ERRORLEVEL 1 EXIT /b 1
 )
 
 REM VSCMD_START_DIR set the working directory to this variable after calling VsDevCmd.bat
@@ -91,3 +92,25 @@ EXIT /b %ERRORLEVEL%
 		EXIT /b %1
 	)
 	EXIT /b 0
+
+REM Locate a Visual Studio install (any version with the C++ toolset) via vswhere and
+REM initialize its developer environment. Using vswhere keeps the build working across the
+REM OneBranch container images regardless of the Visual Studio version they ship (e.g. VS
+REM 2022 on the ltsc2022 image) instead of a hard-coded VS 2019 install path.
+REM
+:SETUP_VS_ENV
+	REM NOTE: Visual Studio install paths contain "(x86)"; the ")" breaks parenthesized IF
+	REM blocks, so this routine deliberately uses single-line IF statements and GOTO labels.
+	SET "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+	IF NOT EXIST "%VSWHERE%" GOTO :SETUP_VS_ENV_NOVSWHERE
+	SET "VSINSTALLPATH="
+	FOR /F "usebackq tokens=*" %%i IN (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) DO SET "VSINSTALLPATH=%%i"
+	IF NOT DEFINED VSINSTALLPATH GOTO :SETUP_VS_ENV_NOVS
+	CALL "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	EXIT /b 0
+:SETUP_VS_ENV_NOVSWHERE
+	ECHO [Error] vswhere.exe not found. Cannot locate Visual Studio.
+	EXIT /b 1
+:SETUP_VS_ENV_NOVS
+	ECHO [Error] No Visual Studio installation with the C++ toolset was found.
+	EXIT /b 1
