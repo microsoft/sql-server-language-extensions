@@ -112,7 +112,11 @@ else()
 	target_compile_options(RExtension PRIVATE -O2)
 endif()
 
-find_library(R_LIB R ${R_LIB_DIR})
+if (${PLATFORM} STREQUAL windows)
+	find_file(R_LIB R.dll PATHS ${R_LIB_DIR} NO_DEFAULT_PATH)
+else()
+	find_library(R_LIB R ${R_LIB_DIR})
+endif()
 
 target_link_libraries(RExtension
 	${R_LIB}

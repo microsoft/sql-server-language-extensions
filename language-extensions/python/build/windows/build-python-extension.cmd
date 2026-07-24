@@ -16,7 +16,7 @@ SET BOOST_VERSION_IN_UNDERSCORE=1_90_0
 SET DEFAULT_BOOST_ROOT=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
 SET DEFAULT_BOOST_PYTHON_ROOT=%DEFAULT_BOOST_ROOT%\stage\lib
 SET DEFAULT_PYTHONHOME=C:\Python310
-SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
+SET DEFAULT_CMAKE_ROOT=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake
 
 REM If building in pipeline, Python is installed with `UsePythonVersion@0` task.
 REM This value is stored in PYTHONLOCATION in previous steps.
@@ -54,7 +54,7 @@ IF "%PYTHONHOME%" == "" (
 )
 
 IF "%CMAKE_ROOT%" == "" (
-	IF EXIST %DEFAULT_CMAKE_ROOT% (
+	IF EXIST "%DEFAULT_CMAKE_ROOT%" (
 		SET CMAKE_ROOT=%DEFAULT_CMAKE_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: CMAKE_ROOT variable must be set to build the python extension" || EXIT /b %ENVVAR_NOT_FOUND%
@@ -94,7 +94,7 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 if not defined DevEnvDir (
-	call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 ECHO "[INFO] Generating Python extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
@@ -106,7 +106,7 @@ PUSHD %BUILD_OUTPUT%
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 16 2019" ^
+	-G "Visual Studio 17 2022" ^
 	-DPLATFORM=Windows ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^

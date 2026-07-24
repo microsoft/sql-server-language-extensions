@@ -89,11 +89,14 @@ pushd %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
 echo %cd%
 dir
 REM Run Boost's bootstrap script to build the b2 build engine
-REM Explicitly set VS2019 Compiler tooling 
-REM bootstrap - "vc142"
-REM b2.exe "toolset=msvc-14.2"
+REM Initialize VS2022 compiler tooling before building Boost.Build.
 echo -- Beginning Boost b2.exe build -- Time: %time% --
-CALL bootstrap.bat vc142
+IF NOT DEFINED DevEnvDir (
+	CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
+)
+CALL bootstrap.bat vc143
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 
 REM bootstrap.bat may change the working directory (e.g. into tools\build\src\engine).
 REM Restore it to the Boost root so b2.exe can find Jamroot and build correctly.
@@ -107,7 +110,8 @@ REM
 echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\python" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\include" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\libs" ; >> project-config.jam
 
 echo -- Beginning Boost build using compiled b2.exe -- Time: %time% --
-b2.exe -j12 --with-python toolset=msvc-14.2 address-model=64 link=static,shared threading=multi
+b2.exe -j12 --with-python toolset=msvc-14.3 address-model=64 link=static,shared threading=multi
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 echo -- Finished Boost build -- Time: %time% --
 
 REM Remove unused Boost library sources to avoid false Component Governance alerts.
