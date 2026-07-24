@@ -133,7 +133,7 @@ ECHO "[INFO] Building Java extension project using CMAKE_CONFIGURATION=%CMAKE_CO
 
 REM Call cmake build
 REM
-CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
+CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL --parallel
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Java extension for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
