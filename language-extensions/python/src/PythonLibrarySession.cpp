@@ -105,6 +105,24 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 			"external library must be a python package inside a zip.");
 	}
 
+	// Older package fixtures and customer packages created on Windows can contain backslashes in
+	// ZIP entry names. Modern pip treats those as literal characters on Linux, so setup.py is found
+	// but its package directory is not. Normalize the inner package ZIP before passing it to pip.
+	//
+	if (fs::path(installPath).extension().generic_string() == ".zip")
+	{
+		string normalizedInstallPath =
+			(fs::path(tempFolder) / ("normalized-" + fs::path(installPath).filename().string())).generic_string();
+		string normalizeScript = "import zipfile\n"
+			"with zipfile.ZipFile('" + installPath + "', 'r') as source_zip:\n"
+			"    with zipfile.ZipFile('" + normalizedInstallPath + "', 'w') as normalized_zip:\n"
+			"        for entry in source_zip.infolist():\n"
+			"            entry.filename = entry.filename.replace('\\\\', '/')\n"
+			"            normalized_zip.writestr(entry, source_zip.read(entry))";
+		bp::exec(normalizeScript.c_str(), m_mainNamespace);
+		installPath = normalizedInstallPath;
+	}
+
 	string pathToPython = PythonExtensionUtils::GetPathToPython();
 
 	// Set the TMPDIR so that pip uses our destination as temp. This allows us to use a

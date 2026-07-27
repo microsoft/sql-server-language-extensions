@@ -33,6 +33,14 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension/${PLATFORM} PYTHONEX
 #
 file(GLOB PYTHONEXTENSION_SOURCE_FILES ${PYTHONEXTENSION_SRC_DIR}/*.cpp ${PYTHONEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
+# RHEL 9 ABI floor shims. Required because libstdc++.a and libgcc.a from the
+# Ubuntu 24.04 toolchain reference glibc symbols newer than 2.34. See
+# language-extensions/common/linux/AbiFloorCompat_linux.cpp.
+#
+if (${PLATFORM} STREQUAL linux)
+    list(APPEND PYTHONEXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
+endif()
+
 # Create the target library
 #
 add_library(PythonExtension SHARED
@@ -46,6 +54,12 @@ set_target_properties(PythonExtension
 )
 
 if (${PLATFORM} STREQUAL linux)
+	# Python links libstdc++ dynamically, so RHEL 9's 3.4.29 copy will not
+	# provide std::ios_base_library_init(). Ask the shared compat unit to
+	# define it.
+	#
+	target_compile_definitions(PythonExtension PRIVATE ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT)
+
 	# Python runtime version used in the linux environment differs from the one used in Windows at this time.
 	# This declaration should no longer be needed once the Windows version is updated to 3.12.
 	#
@@ -54,7 +68,17 @@ if (${PLATFORM} STREQUAL linux)
 
 	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -Wno-maybe-uninitialized -fshort-wchar)
 
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
+    # The shipped extension must not depend on Boost at runtime: RHEL 9 has no
+    # libboost_python312, so Boost is built link=static and absorbed here.
+    #
+    # libstdc++ is deliberately NOT linked statically. The embedded interpreter
+    # imports numpy and pandas, whose C extensions link libstdc++.so.6, so a
+    # static copy puts two C++ runtimes in one process and the test binary
+    # aborts (SIGABRT) during GetOutputParam. RHEL 9 ships libstdc++ 3.4.29, so
+    # depending on it is fine as long as nothing above that version is
+    # referenced - the one offending symbol is defined locally in
+    # language-extensions/common/linux/AbiFloorCompat_linux.cpp.
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
 	# Prefer shared libraries over static libraries
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .so .so.1.0 ${CMAKE_FIND_LIBRARY_SUFFIXES})

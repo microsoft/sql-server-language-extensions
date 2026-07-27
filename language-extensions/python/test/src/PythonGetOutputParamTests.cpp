@@ -643,38 +643,38 @@ namespace ExtensionApiTest
 		ASSERT_EQ(result, SQL_SUCCESS);
 
 		EXPECT_EQ(outputSchemaColumnsNumber, 0);
-		wstring wideStrOfValue7 = wstring(value7.begin(), value7.end());
-		const wchar_t* wideCStrOfValue7 = wideStrOfValue7.c_str();
-		vector<const wchar_t*> expectedParamValues = {
+		u16string wideStrOfValue7(value7.begin(), value7.end());
+		const char16_t* wideCStrOfValue7 = wideStrOfValue7.c_str();
+		vector<const char16_t*> expectedParamValues = {
 			// Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
 			//
-			L"HELLO",
+			u"HELLO",
 			// Test VARCHAR(6) value with string length more than the type allows - expected truncation.
 			// Above python script sets the parameter to "PyExtension" but we only expect "PyExte".
 			//
-			L"PyExte",
+			u"PyExte",
 			// Test a 0 length string
 			//
-			L"" ,
+			u"", // Empty value.
 			// Test CHAR(10) value with string length less than the type allows.
 			//
-			L"WORLD",
+			u"WORLD",
 			// Test a Unicode string
 			//
-			L"你好",
+			u"你好",
 			nullptr,
 			nullptr,
 			wideCStrOfValue7};
 
 		vector<SQLINTEGER> expectedStrLenOrInd = {
-			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
-			static_cast<SQLINTEGER>(6 * sizeof(wchar_t)),
-			static_cast<SQLINTEGER>(0 * sizeof(wchar_t)),
-			static_cast<SQLINTEGER>(5 * sizeof(wchar_t)),
-			static_cast<SQLINTEGER>(2 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(5 * sizeof(char16_t)),
+			static_cast<SQLINTEGER>(6 * sizeof(char16_t)),
+			static_cast<SQLINTEGER>(0 * sizeof(char16_t)),
+			static_cast<SQLINTEGER>(5 * sizeof(char16_t)),
+			static_cast<SQLINTEGER>(2 * sizeof(char16_t)),
 			SQL_NULL_DATA,
 			SQL_NULL_DATA,
-			static_cast<SQLINTEGER>(128000 * sizeof(wchar_t)),
+			static_cast<SQLINTEGER>(128000 * sizeof(char16_t)),
 
 		};
 
@@ -1102,8 +1102,8 @@ namespace ExtensionApiTest
 	// Test wstring output param value and strLenOrInd is as expected.
 	//
 	void PythonExtensionApiTests::TestGetWStringOutputParam(
-		vector<const wchar_t*> expectedParamValues,
-		vector<SQLINTEGER>     expectedStrLenOrInd)
+		vector<const char16_t*> expectedParamValues,
+		vector<SQLINTEGER>      expectedStrLenOrInd)
 	{
 		ASSERT_EQ(expectedParamValues.size(), expectedStrLenOrInd.size());
 
@@ -1127,20 +1127,16 @@ namespace ExtensionApiTest
 			{
 				EXPECT_NE(paramValue, nullptr);
 
-				wstring paramValueString(static_cast<wchar_t*>(paramValue),
-					strLen_or_Ind / sizeof(wchar_t));
-				wstring expectedParamValueString(expectedParamValues[paramNumber],
-					expectedStrLenOrInd[paramNumber] / sizeof(wchar_t));
+				// SQLWCHAR data is UTF-16. Compare the returned buffer directly instead of
+				// constructing std::wstring under -fshort-wchar; libstdc++ itself is built
+				// for the platform's native 4-byte wchar_t ABI.
+				const char *paramBytes = reinterpret_cast<const char*>(paramValue);
+				const char *expectedParamBytes =
+					reinterpret_cast<const char*>(expectedParamValues[paramNumber]);
 
-				// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
-				// don't work properly for wstrings in Linux with -fshort-wchar
-				//
-				const char *paramBytes = reinterpret_cast<const char*>(paramValueString.c_str());
-				const char *expectedParamBytes = reinterpret_cast<const char*>(expectedParamValueString.c_str());
-
-				for(SQLINTEGER i=0; i<strLen_or_Ind; ++i)
+				for (SQLINTEGER byteIndex = 0; byteIndex < strLen_or_Ind; ++byteIndex)
 				{
-					EXPECT_EQ(paramBytes[i], expectedParamBytes[i]);
+					EXPECT_EQ(paramBytes[byteIndex], expectedParamBytes[byteIndex]);
 				}
 			}
 			else
