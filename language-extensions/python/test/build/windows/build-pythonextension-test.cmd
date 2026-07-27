@@ -111,7 +111,7 @@ ECHO "[INFO] Building pythonextension test project using CMAKE_CONFIGURATION=%CM
 
 REM Call cmake build
 REM
-CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
+CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL --parallel
 
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build Python extension test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
