@@ -45,6 +45,12 @@
 
 #if defined(__GLIBC__)
 
+#ifdef ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT
+// For std::ios_base::Init, which is what actually constructs the standard
+// streams. See AbiFloorIosBaseLibraryInit below.
+#include <ios>
+#endif
+
 #define ABI_FLOOR_HIDDEN __attribute__((visibility("hidden")))
 
 extern "C"
@@ -157,21 +163,34 @@ extern "C"
 	// libstdc++ fails the link with "multiple definition of
 	// std::ios_base_library_init()".
 	//
-	// The R extension is the case that needs it: it cannot link libstdc++
-	// statically (libR.so already links libstdc++.so.6, and two C++ runtimes in
-	// one process abort at runtime), yet the include is unavoidable because it
-	// arrives through the Rcpp and RInside headers.
+	// The R and Python extensions are the cases that need it: neither can link
+	// libstdc++ statically (libR.so already links libstdc++.so.6, and numpy's and
+	// pandas' C extensions do too - two C++ runtimes in one process abort at
+	// runtime), yet the include is unavoidable because it arrives through the
+	// Rcpp/RInside and Boost.Python headers.
 	//
-	// Defining it as a no-op is safe here: the symbol only drives iostream
-	// initialisation ordering, the standard streams are still initialised by
-	// libstdc++'s own machinery, and none of the shipped sources use
-	// std::cout/std::cerr any more (they log through stdio). The definition is
-	// hidden, so it satisfies our own translation units without changing
-	// iostream initialisation for libR or anything else in the host process.
+	// This MUST NOT be a no-op. GCC 13 changed how the standard streams are
+	// constructed: before 13, every TU including <iostream> emitted its own static
+	// std::ios_base::Init object; GCC 13 emits a call to this function instead and
+	// performs the construction inside libstdc++. So on a host whose libstdc++ is
+	// 3.4.32 or newer the library initialises the streams itself and a stub here
+	// looks harmless - but on Ubuntu 22.04 (libstdc++.so.6.0.30) and RHEL 9 nothing
+	// initialises them, std::cout/std::cerr stay unconstructed, and the first write
+	// crashes the satellite process. That is precisely how libPythonExtension died
+	// on Ubuntu 22.04 and RHEL 9 while passing on Ubuntu 24.04, RHEL 10 and
+	// AzureLinux 3, which ship newer libstdc++.
+	//
+	// Constructing a function-local static std::ios_base::Init performs the pre-13
+	// initialisation explicitly. Its constructor is refcounted and idempotent, the
+	// local static guard runs it exactly once however many translation units call
+	// in, and std::ios_base::Init::Init is GLIBCXX_3.4 - present in every libstdc++
+	// we target, so this does not raise the ABI floor.
 #ifdef ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT
 	ABI_FLOOR_HIDDEN void AbiFloorIosBaseLibraryInit(void) __asm__("_ZSt21ios_base_library_initv");
 	ABI_FLOOR_HIDDEN void AbiFloorIosBaseLibraryInit(void)
 	{
+		static std::ios_base::Init iosBaseInit;
+		(void)iosBaseInit;
 	}
 #endif
 }
