@@ -58,7 +58,7 @@ elseif(${PLATFORM} STREQUAL windows)
 	# Define base paths
 	#
 	file(TO_CMAKE_PATH ${R_HOME}/library/RInside RINSIDE_HOME)
-	file(TO_CMAKE_PATH ${ENL_ROOT}/packages/RLib.3.5.0 R_LIB_DIR)
+	file(TO_CMAKE_PATH ${R_HOME}/bin/x64 R_LIB_DIR)
 	file(TO_CMAKE_PATH ${RINSIDE_HOME}/lib/x64/libRInside.a RINSIDE_LIB)
 	file(TO_CMAKE_PATH ${R_HOME}/include R_INCLUDE_DIR)
 endif()
@@ -93,7 +93,11 @@ if(${CMAKE_BUILD_TYPE} STREQUAL debug)
 	add_definitions(-D_DEBUG)
 endif()
 
-find_library(R_LIB R ${R_LIB_DIR})
+if (${PLATFORM} STREQUAL windows)
+	find_file(R_LIB R.dll PATHS ${R_LIB_DIR} NO_DEFAULT_PATH)
+else()
+	find_library(R_LIB R ${R_LIB_DIR})
+endif()
 
 target_link_libraries(RExtension-test
 	${GTEST_LIB}

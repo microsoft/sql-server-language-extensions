@@ -7,7 +7,7 @@ SET ENL_ROOT=%~dp0..\..\..\..
 SET JAVAEXTENSION_WORKING_DIR=%ENL_ROOT%\build-output\java-extension\windows
 SET JAVAEXTENSION_HOME=%ENL_ROOT%\language-extensions\java
 
-SET DEFAULT_CMAKE_ROOT=%ENL_ROOT%\packages\CMake-win64.3.15.5
+SET DEFAULT_CMAKE_ROOT=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake
 SET DEFAULT_JAVA_HOME=%ENL_ROOT%\packages\jdk-17.0.5+8
 
 REM Find JAVA_HOME and CMAKE_ROOT from user, or set to default for tests.
@@ -24,7 +24,7 @@ IF "%JAVA_HOME%" == "" (
 )
 
 IF "%CMAKE_ROOT%" == "" (
-	IF EXIST %DEFAULT_CMAKE_ROOT% (
+	IF EXIST "%DEFAULT_CMAKE_ROOT%" (
 		SET CMAKE_ROOT=%DEFAULT_CMAKE_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: CMAKE_ROOT variable must be set to build the java extension" || EXIT /b %ENVVAR_NOT_FOUND%
@@ -107,7 +107,7 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 ECHO "[INFO] Generating Java extension project build files using CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%"
@@ -119,7 +119,7 @@ PUSHD %BUILD_OUTPUT%
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 16 2019" ^
+	-G "Visual Studio 17 2022" ^
 	-DCMAKE_BUILD_TYPE=%CMAKE_CONFIGURATION% ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%JAVAEXTENSION_WORKING_DIR%" ^
 	-DENL_ROOT=%ENL_ROOT% ^

@@ -54,10 +54,7 @@ if (${PLATFORM} STREQUAL linux)
 
 	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -Wno-maybe-uninitialized -fshort-wchar)
 
-	# Static-link libstdc++/libgcc so libPythonExtension.so does not require a newer system
-	# GLIBCXX at load time (RHEL9 ships libstdc++ without GLIBCXX_3.4.32). --exclude-libs,ALL
-	# localizes the statically-linked symbols so they do not interpose the C++ host runtime.
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp -static-libstdc++ -static-libgcc -Wl,--exclude-libs,ALL")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
 	# Prefer shared libraries over static libraries
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .so .so.1.0 ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -75,10 +72,8 @@ if (${PLATFORM} STREQUAL linux)
 		message(STATUS "Shared Python library not found in standard locations, trying system default search")
 		find_library(PYTHON_LIB python${PYTHON_VERSION})
 	endif()
-	# Static-link Boost.Python/Boost.NumPy from the from-source boost root so
-	# libPythonExtension.so is self-contained (no external boost .so; portable across distros).
-	find_library(BOOST_PYTHON_LIB NAMES libboost_python${PYTHON_VERSION_NO_DOT}.a PATHS ${BOOST_PYTHON_ROOT} NO_DEFAULT_PATH)
-	find_library(BOOST_NUMPY_LIB NAMES libboost_numpy${PYTHON_VERSION_NO_DOT}.a PATHS ${BOOST_PYTHON_ROOT} NO_DEFAULT_PATH)
+	find_library(BOOST_PYTHON_LIB boost_python${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
+	find_library(BOOST_NUMPY_LIB boost_numpy${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
 
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
@@ -104,14 +99,14 @@ elseif(${PLATFORM} STREQUAL windows)
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MDd)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi")
 		set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /OPT:REF /OPT:ICF")
-		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc142-mt-gd-x64-1_90 ${BOOST_PYTHON_ROOT})
-		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc142-mt-gd-x64-1_90 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc143-mt-gd-x64-1_90 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc143-mt-gd-x64-1_90 ${BOOST_PYTHON_ROOT})
 	else()
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
 		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG:FULL /OPT:REF /OPT:ICF")
 		set(COMPILE_OPTIONS ${COMPILE_OPTIONS} /MD)
-		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc142-mt-x64-1_90 ${BOOST_PYTHON_ROOT})
-		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc142-mt-x64-1_90 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_PYTHON_LIB libboost_python${PYTHON_VERSION_NO_DOT}-vc143-mt-x64-1_90 ${BOOST_PYTHON_ROOT})
+		find_library(BOOST_NUMPY_LIB libboost_numpy${PYTHON_VERSION_NO_DOT}-vc143-mt-x64-1_90 ${BOOST_PYTHON_ROOT})
 	endif()
 
 	target_compile_options(PythonExtension PRIVATE ${COMPILE_OPTIONS})

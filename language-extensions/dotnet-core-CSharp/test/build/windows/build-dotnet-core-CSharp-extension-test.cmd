@@ -8,7 +8,7 @@ SET DOTNETCORE_CSHARP_EXTENSION_TEST_HOME=%ENL_ROOT%\language-extensions\dotnet-
 SET DOTNETCORE_CSHARP_EXTENSION_TEST_LIB=%DOTNETCORE_CSHARP_EXTENSION_TEST_HOME%\lib
 SET DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR=%ENL_ROOT%\build-output\dotnet-core-CSharp-extension-test\windows
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
-SET DEFAULT_CMAKE_ROOT=%PACKAGES_ROOT%\CMake-win64.3.15.5
+SET DEFAULT_CMAKE_ROOT=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake
 
 REM Find CMAKE_ROOT from user, or set to default.
 REM Error code 203 is ENVVAR_NOT_FOUND.
@@ -16,7 +16,7 @@ REM
 SET ENVVAR_NOT_FOUND=203
 
 IF "%CMAKE_ROOT%" == "" (
-	IF EXIST %DEFAULT_CMAKE_ROOT% (
+	IF EXIST "%DEFAULT_CMAKE_ROOT%" (
 		SET CMAKE_ROOT=%DEFAULT_CMAKE_ROOT%
 	) ELSE (
 		CALL :CHECKERROR %ENVVAR_NOT_FOUND% "Error: CMAKE_ROOT variable must be set to build dotnet-core-CSharp-extension-test" || EXIT /b %ENVVAR_NOT_FOUND%
@@ -48,7 +48,7 @@ REM Do not call VsDevCmd if the environment is already set. Otherwise, it will k
 REM to the PATH environment variable and it will be too long for windows to handle.
 REM
 IF NOT DEFINED DevEnvDir (
-	CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+	CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
 )
 
 SET BUILD_OUTPUT=%DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\%CMAKE_CONFIGURATION%
@@ -60,7 +60,7 @@ ECHO "[INFO] Generating dotnet-core-CSharp-extension test project build files us
 REM Call cmake
 REM
 CALL "%CMAKE_ROOT%\bin\cmake.exe" ^
-	-G "Visual Studio 16 2019" ^
+	-G "Visual Studio 17 2022" ^
 	-DCMAKE_INSTALL_PREFIX:PATH="%DOTNETCORE_CSHARP_EXTENSION_TEST_WORKING_DIR%\\%CMAKE_CONFIGURATION%" ^
 	-DENL_ROOT="%ENL_ROOT%" ^
 	-DCMAKE_CONFIGURATION=%CMAKE_CONFIGURATION% ^
