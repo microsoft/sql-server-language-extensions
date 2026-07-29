@@ -109,18 +109,42 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	// ZIP entry names. Modern pip treats those as literal characters on Linux, so setup.py is found
 	// but its package directory is not. Normalize the inner package ZIP before passing it to pip.
 	//
+	// This is best effort on purpose. It runs while installing an external library inside the
+	// satellite process, where an uncaught exception terminates the process rather than failing the
+	// statement, so every failure path has to stay inside Python and report back through a flag:
+	//
+	//  - the entry data must be read BEFORE rewriting entry.filename. ZipFile.open() compares the
+	//    central-directory name against the local header and raises BadZipFile when they differ, so
+	//    reading after the rewrite throws on exactly the archives this code exists to fix.
+	//  - the archive is only rewritten when an entry actually contains a backslash, so well-formed
+	//    packages are passed through untouched.
+	//  - any failure (unreadable source, unwritable temp folder, malformed archive) leaves
+	//    normalized False and the original path is used, which is what happened before this
+	//    normalization existed.
+	//
 	if (fs::path(installPath).extension().generic_string() == ".zip")
 	{
 		string normalizedInstallPath =
 			(fs::path(tempFolder) / ("normalized-" + fs::path(installPath).filename().string())).generic_string();
 		string normalizeScript = "import zipfile\n"
-			"with zipfile.ZipFile('" + installPath + "', 'r') as source_zip:\n"
-			"    with zipfile.ZipFile('" + normalizedInstallPath + "', 'w') as normalized_zip:\n"
-			"        for entry in source_zip.infolist():\n"
-			"            entry.filename = entry.filename.replace('\\\\', '/')\n"
-			"            normalized_zip.writestr(entry, source_zip.read(entry))";
+			"normalized = False\n"
+			"try:\n"
+			"    with zipfile.ZipFile('" + installPath + "', 'r') as source_zip:\n"
+			"        if any('\\\\' in n for n in source_zip.namelist()):\n"
+			"            with zipfile.ZipFile('" + normalizedInstallPath + "', 'w') as normalized_zip:\n"
+			"                for entry in source_zip.infolist():\n"
+			"                    data = source_zip.read(entry)\n"
+			"                    entry.filename = entry.filename.replace('\\\\', '/')\n"
+			"                    normalized_zip.writestr(entry, data)\n"
+			"            normalized = True\n"
+			"except Exception:\n"
+			"    normalized = False";
 		bp::exec(normalizeScript.c_str(), m_mainNamespace);
-		installPath = normalizedInstallPath;
+
+		if (bp::extract<bool>(m_mainNamespace["normalized"]))
+		{
+			installPath = normalizedInstallPath;
+		}
 	}
 
 	string pathToPython = PythonExtensionUtils::GetPathToPython();

@@ -13,6 +13,8 @@
 
 #include "Logger.h"
 
+#include <cstdio>
+
 #define TIMESTAMP_LENGTH 35
 using namespace std;
 
@@ -24,9 +26,21 @@ char Logger::sm_timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 // Description:
 //  Log an error to stderr with format "TIMESTAMP Error: <message>".
 //
+// Note:
+//  These write through stdio rather than std::cerr/std::cout on purpose. The extension is compiled
+//  with GCC 13 but is loaded into hosts whose libstdc++ is older - RHEL 9 ships
+//  libstdc++.so.6.0.29 and Ubuntu 22.04 ships 6.0.30 - and the stream insertion operators are
+//  inlined from the GCC 13 headers into this library, so they execute against stream objects owned
+//  by the older runtime. That combination segfaults inside libstdc++ on the very first log call,
+//  which is why the Python satellite core-dumped on those two distros while passing on Ubuntu
+//  24.04, RHEL 10 and AzureLinux 3. The symbol-version ABI gate cannot catch this: every symbol we
+//  reference is within GLIBCXX_3.4.29, the problem is inlined code depending on newer internals.
+//  stdio has no such coupling. EKM and the ONNX extension were fixed the same way.
+//
 void Logger::LogError(const string &errorMsg)
 {
-	cerr << GetCurrentTimestamp() << "Error: " << errorMsg << endl;
+	fprintf(stderr, "%sError: %s\n", GetCurrentTimestamp().c_str(), errorMsg.c_str());
+	fflush(stderr);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -38,7 +52,8 @@ void Logger::LogError(const string &errorMsg)
 //
 void Logger::LogException(const exception &e)
 {
-	cerr << GetCurrentTimestamp() << "Exception occurred: " << e.what() << endl;
+	fprintf(stderr, "%sException occurred: %s\n", GetCurrentTimestamp().c_str(), e.what());
+	fflush(stderr);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -50,7 +65,8 @@ void Logger::LogException(const exception &e)
 void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG)
-	cout << GetCurrentTimestamp() << msg << endl;
+	fprintf(stdout, "%s%s\n", GetCurrentTimestamp().c_str(), msg.c_str());
+	fflush(stdout);
 #endif
 }
 

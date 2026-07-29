@@ -211,8 +211,15 @@ void PythonSession::ExecuteWorkflow(
 	string pyStdOut = bp::extract<string>(m_mainNamespace["_temp_out_"]);
 	string pyStdErr = bp::extract<string>(m_mainNamespace["_temp_err_"]);
 
-	cout << pyStdOut << endl;
-	cerr << pyStdErr << endl;
+	// Relayed through stdio rather than std::cout/std::cerr. The stream insertion operators are
+	// inlined from the GCC 13 headers but run against the host's older libstdc++ (RHEL 9 ships
+	// 6.0.29, Ubuntu 22.04 ships 6.0.30), which segfaults inside libstdc++. See the note in
+	// Logger.cpp.
+	//
+	fprintf(stdout, "%s\n", pyStdOut.c_str());
+	fflush(stdout);
+	fprintf(stderr, "%s\n", pyStdErr.c_str());
+	fflush(stderr);
 
 	// In case of streaming clean up the previous stream batch's output buffers
 	//
