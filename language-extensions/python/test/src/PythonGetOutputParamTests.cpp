@@ -655,7 +655,7 @@ namespace ExtensionApiTest
 			u"PyExte",
 			// Test a 0 length string
 			//
-			u"", // Empty value.
+			u"" ,
 			// Test CHAR(10) value with string length less than the type allows.
 			//
 			u"WORLD",
