@@ -9,11 +9,19 @@
 //  in by the toolchain rather than by our own code, so they cannot be removed at
 //  the call site:
 //
-//    __isoc23_strtoll  @GLIBC_2.38  glibc 2.38 <stdlib.h> redirects the strtol
-//    __isoc23_strtoull @GLIBC_2.38  family to C23 variants; the references come
-//    __isoc23_strtoul  @GLIBC_2.38  from vendored headers and from libstdc++.a
+//    __isoc23_strtol   @GLIBC_2.38  glibc 2.38 <stdlib.h> redirects the strtol
+//    __isoc23_strtoll  @GLIBC_2.38  family to C23 variants under a single
+//    __isoc23_strtoull @GLIBC_2.38  __GLIBC_USE (C2X_STRTOL) guard, so all four
+//    __isoc23_strtoul  @GLIBC_2.38  are redirected together; the references come
+//                                   from vendored headers and from libstdc++.a
 //    arc4random        @GLIBC_2.36  used by libstdc++.a
-//    _dl_find_object   @GLIBC_2.35  used by the libgcc.a unwinder
+//
+//  _dl_find_object @GLIBC_2.35 is deliberately NOT shimmed. It is referenced only
+//  by the libgcc.a unwinder, which is only linked in when -static-libgcc is used.
+//  A stub cannot answer that query: GCC 13's _Unwind_Find_FDE #else's out the
+//  dl_iterate_phdr fallback when it is built against _dl_find_object, so a stub
+//  return makes it yield NULL for every PC and the first throw terminates. The
+//  extensions therefore link libgcc dynamically instead.
 //
 //  Each shim is defined under a distinct C++ name carrying an __asm__ label, so
 //  the emitted symbol is the glibc name. Defining a function literally named
@@ -25,7 +33,11 @@
 //  and are not exported, so this library never interposes on glibc for the rest
 //  of the host process.
 //
-//  Enforced by build/linux/validate-native-elf.sh (MAX GLIBC <= 2.34).
+//  Enforced by build/linux/validate-native-elf.sh and build/linux/validate-python-elf.sh
+//  in the Data-SQL-Language-Extensions superproject (this repository is consumed
+//  there as a submodule and carries no CI of its own, so neither script is
+//  runnable from here). Between them they gate MAX GLIBC <= 2.34 on the R, Python
+//  and Java extensions - the three targets that compile this file.
 //**************************************************************************************************
 
 #if defined(__linux__)
@@ -38,6 +50,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/random.h>
@@ -58,19 +71,25 @@ extern "C"
 	// Bind to the classic, always-present glibc entry points. The explicit
 	// assembler labels bypass the <stdlib.h> C23 redirect, so these cannot
 	// recurse back into the shims below.
+	long int AbiFloorClassicStrtol(const char *nptr, char **endptr, int base) __asm__("strtol");
 	long long int AbiFloorClassicStrtoll(const char *nptr, char **endptr, int base) __asm__("strtoll");
 	unsigned long long int AbiFloorClassicStrtoull(const char *nptr, char **endptr, int base) __asm__("strtoull");
 	unsigned long int AbiFloorClassicStrtoul(const char *nptr, char **endptr, int base) __asm__("strtoul");
 
+	ABI_FLOOR_HIDDEN long int AbiFloorIsoc23Strtol(const char *nptr, char **endptr, int base) __asm__("__isoc23_strtol");
 	ABI_FLOOR_HIDDEN long long int AbiFloorIsoc23Strtoll(const char *nptr, char **endptr, int base) __asm__("__isoc23_strtoll");
 	ABI_FLOOR_HIDDEN unsigned long long int AbiFloorIsoc23Strtoull(const char *nptr, char **endptr, int base) __asm__("__isoc23_strtoull");
 	ABI_FLOOR_HIDDEN unsigned long int AbiFloorIsoc23Strtoul(const char *nptr, char **endptr, int base) __asm__("__isoc23_strtoul");
 	ABI_FLOOR_HIDDEN uint32_t AbiFloorArc4Random(void) __asm__("arc4random");
-	ABI_FLOOR_HIDDEN int AbiFloorDlFindObject(void *address, void *result) __asm__("_dl_find_object");
 
 	// The only behavioural difference between the C23 and classic strtol forms
 	// is that the C23 forms also accept a "0b" binary prefix when base is 0 or
 	// 2. No caller in these extensions parses binary literals.
+	ABI_FLOOR_HIDDEN long int AbiFloorIsoc23Strtol(const char *nptr, char **endptr, int base)
+	{
+		return AbiFloorClassicStrtol(nptr, endptr, base);
+	}
+
 	ABI_FLOOR_HIDDEN long long int AbiFloorIsoc23Strtoll(const char *nptr, char **endptr, int base)
 	{
 		return AbiFloorClassicStrtoll(nptr, endptr, base);
@@ -93,16 +112,25 @@ extern "C"
 	// bytes we abort rather than return predictable output.
 	ABI_FLOOR_HIDDEN uint32_t AbiFloorArc4Random(void)
 	{
+		// glibc's arc4random uses __getrandom_nocancel and never disturbs errno.
+		// This shim binds ahead of it for everything in this shared object,
+		// including std::random_device, so it must not leak errno from its own
+		// syscalls to a caller that is about to inspect it.
+		const int savedErrno = errno;
+
 		uint32_t value = 0;
 		unsigned char *out = reinterpret_cast<unsigned char *>(&value);
 		size_t filled = 0;
 
 		while (filled < sizeof(value))
 		{
+			// A zero return makes no progress and would re-enter the same call
+			// forever (a seccomp SECCOMP_RET_ERRNO(0) filter can produce it), so
+			// it is treated as terminal exactly like the /dev/urandom loop below.
 			ssize_t received = getrandom(out + filled, sizeof(value) - filled, 0);
-			if (received < 0)
+			if (received <= 0)
 			{
-				if (errno == EINTR)
+				if (received < 0 && errno == EINTR)
 				{
 					continue;
 				}
@@ -135,22 +163,18 @@ extern "C"
 
 		if (filled < sizeof(value))
 		{
+			// Aborting is correct for a CSPRNG - returning predictable output is
+			// worse - but a bare abort() leaves a DBA with nothing but SIGABRT.
+			fprintf(stderr,
+				"AbiFloorCompat: arc4random could not obtain %zu bytes of entropy "
+				"(got %zu; last errno %d). Aborting rather than returning "
+				"predictable output.\n",
+				sizeof(value), filled, errno);
 			abort();
 		}
 
+		errno = savedErrno;
 		return value;
-	}
-
-	// _dl_find_object is the glibc 2.35+ fast path the libgcc unwinder uses to
-	// locate exception-handling frames. A non-zero return means "no information
-	// available", which makes libgcc fall back to its dl_iterate_phdr path. That
-	// fallback is the same code path used on every glibc older than 2.35, so
-	// unwinding stays correct - only marginally slower on the throw path.
-	ABI_FLOOR_HIDDEN int AbiFloorDlFindObject(void *address, void *result)
-	{
-		(void)address;
-		(void)result;
-		return -1;
 	}
 
 	// std::ios_base_library_init() is GLIBCXX_3.4.32, i.e. GCC 13's libstdc++.

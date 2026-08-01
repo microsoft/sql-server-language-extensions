@@ -33,12 +33,12 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension/${PLATFORM} PYTHONEX
 #
 file(GLOB PYTHONEXTENSION_SOURCE_FILES ${PYTHONEXTENSION_SRC_DIR}/*.cpp ${PYTHONEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
-# RHEL 9 ABI floor shims. Required because libstdc++.a and libgcc.a from the
-# Ubuntu 24.04 toolchain reference glibc symbols newer than 2.34. See
+# RHEL 9 ABI floor shims. Required because the Ubuntu 24.04 toolchain references
+# glibc symbols newer than 2.34. See
 # language-extensions/common/linux/AbiFloorCompat_linux.cpp.
 #
 if (${PLATFORM} STREQUAL linux)
-    list(APPEND PYTHONEXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
+	list(APPEND PYTHONEXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
 endif()
 
 # Create the target library

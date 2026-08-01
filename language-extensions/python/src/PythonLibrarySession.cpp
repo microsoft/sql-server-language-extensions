@@ -118,32 +118,63 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	//    reading after the rewrite throws on exactly the archives this code exists to fix.
 	//  - the archive is only rewritten when an entry actually contains a backslash, so well-formed
 	//    packages are passed through untouched.
-	//  - any failure (unreadable source, unwritable temp folder, malformed archive) leaves
-	//    normalized False and the original path is used, which is what happened before this
-	//    normalization existed.
+	//  - any failure (unreadable source, unwritable temp folder, malformed archive, or an entry
+	//    whose name would escape the extraction root) leaves normalized False and the original
+	//    path is used, which is what happened before this normalization existed.
+	//  - the two paths are BOUND as namespace variables rather than spliced into the script
+	//    text. A quote in a customer-supplied filename would otherwise break the script at
+	//    COMPILE time, and a SyntaxError is raised before the try: below can catch anything -
+	//    terminating the satellite process. Binding also removes the injection vector.
+	//  - "needed" and "normalized" are tracked separately, so "no backslashes present" is
+	//    distinguishable from "rewrite attempted and failed". The latter is logged: without
+	//    that, the recovery path fails silently, pip then exits 0 on the un-normalized archive,
+	//    and the install returns SQL_SUCCESS with a broken package layout.
 	//
 	if (fs::path(installPath).extension().generic_string() == ".zip")
 	{
 		string normalizedInstallPath =
 			(fs::path(tempFolder) / ("normalized-" + fs::path(installPath).filename().string())).generic_string();
+
+		m_mainNamespace["_normalize_src_zip_"] = installPath;
+		m_mainNamespace["_normalize_dst_zip_"] = normalizedInstallPath;
+
 		string normalizeScript = "import zipfile\n"
+			"needed = False\n"
 			"normalized = False\n"
+			"error = ''\n"
 			"try:\n"
-			"    with zipfile.ZipFile('" + installPath + "', 'r') as source_zip:\n"
-			"        if any('\\\\' in n for n in source_zip.namelist()):\n"
-			"            with zipfile.ZipFile('" + normalizedInstallPath + "', 'w') as normalized_zip:\n"
+			"    with zipfile.ZipFile(_normalize_src_zip_, 'r') as source_zip:\n"
+			"        needed = any('\\\\' in n for n in source_zip.namelist())\n"
+			"        if needed:\n"
+			"            with zipfile.ZipFile(_normalize_dst_zip_, 'w') as normalized_zip:\n"
 			"                for entry in source_zip.infolist():\n"
 			"                    data = source_zip.read(entry)\n"
-			"                    entry.filename = entry.filename.replace('\\\\', '/')\n"
+			"                    name = entry.filename.replace('\\\\', '/')\n"
+			// Replacing backslashes turns a name that is inert on Linux (one flat file
+			// called '..\\..\\.bashrc') into a real traversal path, so containment has to
+			// be checked after the rewrite, not before.
+			"                    if name.startswith('/') or '..' in name.split('/'):\n"
+			"                        raise ValueError('unsafe entry name: ' + entry.filename)\n"
+			"                    entry.filename = name\n"
 			"                    normalized_zip.writestr(entry, data)\n"
 			"            normalized = True\n"
-			"except Exception:\n"
-			"    normalized = False";
+			"except Exception as ex:\n"
+			"    normalized = False\n"
+			"    error = str(ex)";
 		bp::exec(normalizeScript.c_str(), m_mainNamespace);
 
-		if (bp::extract<bool>(m_mainNamespace["normalized"]))
+		bool normalizeNeeded = bp::extract<bool>(m_mainNamespace["needed"]);
+		bool normalizeSucceeded = bp::extract<bool>(m_mainNamespace["normalized"]);
+
+		if (normalizeNeeded && normalizeSucceeded)
 		{
 			installPath = normalizedInstallPath;
+		}
+		else if (normalizeNeeded)
+		{
+			LOG_ERROR("Failed to normalize backslash-separated entry names in the external "
+				"library archive; falling back to the original archive. Error: " +
+				bp::extract<string>(m_mainNamespace["error"])());
 		}
 	}
 

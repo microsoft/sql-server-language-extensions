@@ -216,9 +216,15 @@ void PythonSession::ExecuteWorkflow(
 	// 6.0.29, Ubuntu 22.04 ships 6.0.30), which segfaults inside libstdc++. See the note in
 	// Logger.cpp.
 	//
-	fprintf(stdout, "%s\n", pyStdOut.c_str());
+	// fwrite, not fprintf("%s"): this is an arbitrary user script's captured output, so it can
+	// contain an embedded NUL. "%s" would stop there and silently drop the rest of the batch,
+	// whereas the std::cout insertion this replaced wrote all size() bytes.
+	//
+	fwrite(pyStdOut.data(), 1, pyStdOut.size(), stdout);
+	fputc('\n', stdout);
 	fflush(stdout);
-	fprintf(stderr, "%s\n", pyStdErr.c_str());
+	fwrite(pyStdErr.data(), 1, pyStdErr.size(), stderr);
+	fputc('\n', stderr);
 	fflush(stderr);
 
 	// In case of streaming clean up the previous stream batch's output buffers

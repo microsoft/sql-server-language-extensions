@@ -32,12 +32,12 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/extension-host/include EXTENSION_API_INCLUDE_DIR)
 #
 file(GLOB JAVAEXTENSION_SOURCE_FILES ${JAVAEXTENSION_SRC_DIR}/*.cpp ${JAVAEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
-# RHEL 9 ABI floor shims. Required because libstdc++.a and libgcc.a from the
-# Ubuntu 24.04 toolchain reference glibc symbols newer than 2.34. See
+# RHEL 9 ABI floor shims. Required because libstdc++.a from the Ubuntu 24.04
+# toolchain references glibc symbols newer than 2.34. See
 # language-extensions/common/linux/AbiFloorCompat_linux.cpp.
 #
 if (${PLATFORM} STREQUAL linux)
-    list(APPEND JAVAEXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
+	list(APPEND JAVAEXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
 endif()
 
 # Create the target library
@@ -75,7 +75,17 @@ if (${PLATFORM} STREQUAL linux)
 
 	target_compile_options(JavaExtension PRIVATE ${CXXFLAGS})
 	
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -static-libstdc++ -static-libgcc -Wl,--exclude-libs,ALL -Wl,-rpath,${JRE_ROOT}:/opt/mssql-extensibility/lib")
+	# libgcc is deliberately NOT linked statically. -static-libgcc pulls libgcc_eh.a's
+	# unwinder into this .so, where its _dl_find_object reference binds to a hidden,
+	# non-preemptible stub. GCC 13's _Unwind_Find_FDE has no runtime fallback when it
+	# is built against _dl_find_object: the dl_iterate_phdr path is #else'd out, so a
+	# stub that cannot answer the query makes it return NULL for every PC and the
+	# first throw hits _URC_FATAL_PHASE1_ERROR -> std::terminate(). Linking libgcc
+	# dynamically keeps the real unwinder in the host libgcc_s.so.1. RHEL 9's
+	# libgcc_s.so.1 exports only GCC_* symbol versions, so the glibc floor is
+	# unaffected.
+	#
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -static-libstdc++ -Wl,--exclude-libs,ALL -Wl,-rpath,${JRE_ROOT}:/opt/mssql-extensibility/lib")
 	target_link_libraries(JavaExtension dl)
 	set(ADDITIONAL_INCLUDES ${JDK_INCLUDE} ${JDK_INCLUDE_LINUX})
 	
