@@ -1,8 +1,7 @@
-//*********************************************************************
+//**************************************************************************************************
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
-//**************************************************************************************************
 // @File: AbiFloorCompat_linux.cpp
 //
 // Purpose:
@@ -189,9 +188,10 @@ extern "C"
 			// Aborting is correct for a CSPRNG - returning predictable output is worse - but a
 			// bare abort() leaves a DBA with nothing but SIGABRT.
 			//
-			// snprintf into a local buffer + write(2) rather than fprintf: write is
-			// async-signal-safe and takes no FILE lock, so a concurrent writer wedged inside
-			// stdio cannot turn this diagnosable crash into a hang. It also needs no fflush.
+			// snprintf into a local buffer + write(2) rather than fprintf: write takes no FILE
+			// lock, so a concurrent writer wedged inside stdio cannot turn this diagnosable
+			// crash into a hang, and it needs no fflush. (write(2) is async-signal-safe;
+			// snprintf is not - the reason here is the lock, not AS-safety.)
 			//
 			char msg[256];
 			int n = snprintf(msg, sizeof(msg),
@@ -201,8 +201,22 @@ extern "C"
 				sizeof(value), filled, failStage, failErrno);
 			if (n > 0)
 			{
-				ssize_t ignored = write(2, msg, (static_cast<size_t>(n) < sizeof(msg)) ? static_cast<size_t>(n) : sizeof(msg) - 1);
-				(void)ignored;
+				size_t remaining = (static_cast<size_t>(n) < sizeof(msg)) ? static_cast<size_t>(n) : sizeof(msg) - 1;
+				const char *p = msg;
+				while (remaining > 0)
+				{
+					ssize_t written = write(2, p, remaining);
+					if (written <= 0)
+					{
+						if (written < 0 && errno == EINTR)
+						{
+							continue;
+						}
+						break;
+					}
+					p += written;
+					remaining -= static_cast<size_t>(written);
+				}
 			}
 			abort();
 		}
@@ -227,31 +241,48 @@ extern "C"
 	// runtime), yet the include is unavoidable because it arrives through the
 	// Rcpp/RInside and Boost.Python headers.
 	//
-	// This MUST NOT be a no-op. GCC 13 changed how the standard streams are
-	// constructed: before 13, every TU including <iostream> emitted its own static
-	// std::ios_base::Init object; GCC 13 emits a call to this function instead and
-	// performs the construction inside libstdc++. So on a host whose libstdc++ is
-	// 3.4.32 or newer the library initialises the streams itself and a stub here
-	// looks harmless - but on Ubuntu 22.04 (libstdc++.so.6.0.30) and RHEL 9 nothing
-	// initialises them, std::cout/std::cerr stay unconstructed, and the first write
-	// crashes the satellite process. That is precisely how libPythonExtension died
-	// on Ubuntu 22.04 and RHEL 9 while passing on Ubuntu 24.04, RHEL 10 and
-	// AzureLinux 3, which ship newer libstdc++.
+	// WHAT GCC 13 ACTUALLY DOES - verified against the built binary, because an earlier
+	// version of this comment asserted the opposite and was wrong:
 	//
-	// Constructing a function-local static std::ios_base::Init performs the pre-13
-	// initialisation explicitly. Its constructor is refcounted and idempotent, the
-	// local static guard runs it exactly once however many translation units call
-	// in, and std::ios_base::Init::Init is GLIBCXX_3.4 - present in every libstdc++
-	// we target, so this does not raise the ABI floor.
+	// GCC 13's <iostream> does NOT call this function. It emits the name via a `.globl`
+	// asm directive with no call site and no relocation, purely as a link-time SENTINEL:
+	// the resulting undefined symbol forces a GLIBCXX_3.4.32 VERNEED entry so the object
+	// REFUSES TO LOAD against a libstdc++ that would leave the standard streams
+	// unconstructed. In libstdc++ 13 the symbol is not even a real function - ios_init.cc
+	// aliases it to _ZNSt8ios_base4InitC1Ev - and the actual initialisation moved into the
+	// library via init_priority(90) in ios_base_init.h.
+	//
+	// So DEFINING the symbol here satisfies the sentinel and REMOVES the version
+	// dependency. Measured on the shipped libPythonExtension.so.1.2: GLIBCXX_3.4.32 is
+	// absent from .gnu.version_r and MAX GLIBCXX is 3.4.29. That is the intended outcome
+	// for loading on RHEL 9 - but it means a function-local static inside this function
+	// would NEVER be constructed, because the function is never called. Relying on that
+	// would trade a deterministic load failure for silently unconstructed streams.
+	//
+	// Hence two separate pieces below:
+	//   1. the sentinel definition, which exists only to satisfy the link; and
+	//   2. a NAMESPACE-SCOPE std::ios_base::Init, whose dynamic initialiser runs at
+	//      dlopen exactly as the pre-13 per-TU __ioinit did. Its constructor is
+	//      refcounted and idempotent, and std::ios_base::Init::Init is GLIBCXX_3.4 -
+	//      present in every libstdc++ we target, so it does not raise the ABI floor.
 #ifdef ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT
 	ABI_FLOOR_HIDDEN void AbiFloorIosBaseLibraryInit(void) __asm__("_ZSt21ios_base_library_initv");
 	ABI_FLOOR_HIDDEN void AbiFloorIosBaseLibraryInit(void)
 	{
-		static std::ios_base::Init iosBaseInit;
-		(void)iosBaseInit;
+		// Deliberately empty. This is a link-time sentinel: GCC 13 emits the name but
+		// never calls it. The real initialisation is the namespace-scope object below.
 	}
 #endif
 }
+
+#ifdef ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT
+// This is what actually constructs std::cin/cout/cerr/clog on hosts whose libstdc++ is
+// older than 3.4.32. Namespace scope, so it participates in this object's dynamic
+// initialisation and runs when the extension is dlopen'd - before any extension code,
+// or any statically linked Boost.Python / Rcpp / RInside code, can touch a stream.
+//
+static std::ios_base::Init g_abiFloorIosBaseInit;
+#endif
 
 #else
 #error "AbiFloorCompat_linux.cpp is compiled for Linux but __GLIBC__ is not defined; the shims would be silently empty."

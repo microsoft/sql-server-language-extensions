@@ -4,9 +4,10 @@
 # enums in public headers, so the compiler must not vary between languages.
 set -euo pipefail
 
-# apt-get update must precede the first install. It was already ordered this way
-# before, but the installs were tolerant of a stale index; under set -e a stale
-# index now aborts the entire restore.
+# apt-get update must precede the first install. It did NOT before this change:
+# `apt-get install unixodbc-dev` ran ahead of `apt-get update`, which was tolerable
+# while a stale index only produced a warning. Under set -e it aborts the whole
+# restore, so the update has been moved to the front. Do not reorder these back.
 apt-get update -y
 apt-get -q -y install unixodbc-dev
 apt-get install -y build-essential software-properties-common gcc-13 g++-13 cmake

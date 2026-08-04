@@ -39,10 +39,10 @@ char Logger::sm_timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 //
 void Logger::LogError(const string &errorMsg)
 {
-	// fwrite, not fprintf("%s"): errorMsg can carry an embedded NUL (it may be built from a
-	// customer-supplied ZIP entry name via bp::extract<string>, which uses the Python length
-	// rather than strlen). "%s" would stop at the NUL and silently drop the rest, whereas the
-	// std::cerr insertion this replaced wrote all size() bytes.
+	// fwrite, not fprintf("%s"): errorMsg is a std::string and may legitimately contain an
+	// embedded NUL - callers build it from arbitrary runtime data. "%s" stops at the first
+	// NUL and silently drops the rest, whereas the std::cerr insertion this replaced wrote
+	// all size() bytes.
 	//
 	const string timestamp = GetCurrentTimestamp();
 	fwrite(timestamp.data(), 1, timestamp.size(), stderr);

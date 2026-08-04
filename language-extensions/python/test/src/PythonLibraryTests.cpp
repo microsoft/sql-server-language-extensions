@@ -679,4 +679,93 @@ namespace LibraryApiTests
 			true,                // Successful install
 			false);              // Successful import
 	}
+
+	// Name: BackslashEntryZipInstallTest
+	//
+	// Description:
+	//  A package built on Windows can carry backslash-separated entry names. pip treats those
+	//  as literal characters on Linux, so setup.py is found but the package directory never is.
+	//  PythonLibrarySession normalizes such an archive before handing it to pip. This derives
+	//  one from a known-good fixture at runtime (rather than committing a second binary) and
+	//  asserts the install still succeeds.
+	//
+	TEST_F(ExternalLibraryApiTests, BackslashEntryZipInstallTest)
+	{
+		string libName = "testpackageA";
+		fs::path srcPkg = m_packagesPath / "testpackageA-ZIP.zip";
+		string version = "0.0.1";
+
+		EXPECT_TRUE(fs::exists(srcPkg));
+
+		fs::path backslashPkg = fs::temp_directory_path() / "testpackageA-backslash.zip";
+
+		m_mainNamespace["_bs_src_"] = srcPkg.generic_string();
+		m_mainNamespace["_bs_dst_"] = backslashPkg.generic_string();
+
+		// Rewrite every entry name to use backslashes, reading the data BEFORE the rename:
+		// ZipFile.open() compares the central-directory name against the local header and
+		// raises BadZipFile if they differ.
+		//
+		string makeScript = "import zipfile\n"
+			"with zipfile.ZipFile(_bs_src_, 'r') as s:\n"
+			"    with zipfile.ZipFile(_bs_dst_, 'w') as d:\n"
+			"        for e in s.infolist():\n"
+			"            data = s.read(e)\n"
+			"            e.filename = e.filename.replace('/', '\\\\')\n"
+			"            d.writestr(e, data)";
+		bp::exec(makeScript.c_str(), m_mainNamespace);
+
+		EXPECT_TRUE(fs::exists(backslashPkg));
+
+		InstallAndTest(
+			libName,             // extLibName
+			libName,             // moduleName
+			backslashPkg.string(),
+			m_publicLibraryPath,
+			version);
+
+		UninstallAndTest(
+			libName,             // extLibName
+			libName,             // moduleName
+			m_publicLibraryPath);
+
+		fs::remove(backslashPkg);
+	}
+
+	// Name: UnsafeEntryZipInstallFailsTest
+	//
+	// Description:
+	//  Replacing backslashes turns a name that is inert on Linux - "..\..\evil.txt" is one flat
+	//  filename there - into a real traversal path. The normalizer rejects such names, and the
+	//  install must then FAIL rather than fall back to the unrepaired archive: falling back
+	//  would let pip exit 0 on a package whose layout is broken and report SQL_SUCCESS.
+	//
+	TEST_F(ExternalLibraryApiTests, UnsafeEntryZipInstallFailsTest)
+	{
+		string libName = "unsafepkg";
+		fs::path unsafePkg = fs::temp_directory_path() / "testpackage-unsafe.zip";
+
+		m_mainNamespace["_un_dst_"] = unsafePkg.generic_string();
+
+		string makeScript = "import zipfile\n"
+			"with zipfile.ZipFile(_un_dst_, 'w') as d:\n"
+			"    d.writestr('setup.py', \"from setuptools import setup\\n\"\n"
+			"                           \"setup(name='unsafepkg', version='0.0.1')\\n\")\n"
+			"    d.writestr('..\\\\..\\\\evil.txt', 'x')";
+		bp::exec(makeScript.c_str(), m_mainNamespace);
+
+		EXPECT_TRUE(fs::exists(unsafePkg));
+
+		InstallAndTest(
+			libName,             // extLibName
+			libName,             // moduleName
+			unsafePkg.string(),
+			m_publicLibraryPath,
+			"",                  // expectedVersion - unused on the failure path
+			"",                  // expectedLocation
+			false,               // Successful install -> expects SQL_ERROR
+			false);              // Successful import
+
+		fs::remove(unsafePkg);
+	}
 }

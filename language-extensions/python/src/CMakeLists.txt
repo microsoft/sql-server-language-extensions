@@ -68,17 +68,21 @@ if (${PLATFORM} STREQUAL linux)
 
 	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -Wno-maybe-uninitialized -fshort-wchar)
 
-    # The shipped extension must not depend on Boost at runtime: RHEL 9 has no
-    # libboost_python312, so Boost is built link=static and absorbed here.
-    #
-    # libstdc++ is deliberately NOT linked statically. The embedded interpreter
-    # imports numpy and pandas, whose C extensions link libstdc++.so.6, so a
-    # static copy puts two C++ runtimes in one process and the test binary
-    # aborts (SIGABRT) during GetOutputParam. RHEL 9 ships libstdc++ 3.4.29, so
-    # depending on it is fine as long as nothing above that version is
-    # referenced - the one offending symbol is defined locally in
-    # language-extensions/common/linux/AbiFloorCompat_linux.cpp.
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
+	# libstdc++ is deliberately NOT linked statically. The embedded interpreter
+	# imports numpy and pandas, whose C extensions link libstdc++.so.6, so a
+	# static copy puts two C++ runtimes in one process and the test binary
+	# aborts (SIGABRT) during GetOutputParam. RHEL 9 ships libstdc++ 3.4.29, so
+	# depending on it is fine as long as nothing above that version is
+	# referenced - the one offending symbol is defined locally in
+	# language-extensions/common/linux/AbiFloorCompat_linux.cpp.
+	#
+	# NOTE: the Boost-must-not-be-a-runtime-dependency requirement is NOT enforced
+	# by this line. It comes from -DBOOST_USE_STATIC_LIBS (see below) plus the
+	# find_library calls, which run AFTER CMAKE_FIND_LIBRARY_SUFFIXES below is set
+	# to prefer .so - so if a shared Boost were ever present alongside the static
+	# one, the static-only invariant would break silently here. The ELF gate in the
+	# superproject is what actually catches that (no libboost_* in DT_NEEDED).
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
 	# Prefer shared libraries over static libraries
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .so .so.1.0 ${CMAKE_FIND_LIBRARY_SUFFIXES})
