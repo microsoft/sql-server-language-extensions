@@ -69,6 +69,16 @@ REM Extract the downloaded Boost zip file to the packages directory
 REM Remove the Boost zip file
 REM Navigate to the extracted Boost directory
 REM
+REM Skip the Boost download + b2 build when a previously compiled Boost is already
+REM present (restored by the pipeline's Cache@2 task before this script runs). The
+REM compiled import libraries live under stage\lib; Boost is version-pinned, so a
+REM cache hit is safe to reuse. This avoids the multi-minute from-source rebuild.
+REM
+IF EXIST "%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\stage\lib" (
+	echo -- Boost %BOOST_VERSION% cache hit at %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE% - skipping download and build --
+	GOTO :BOOST_CACHED
+)
+
 curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 
 REM -o Output directory
@@ -137,10 +147,13 @@ if NOT "%BUILD_BUILDID%"=="" (
 	)
 )
 
-REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME
+popd
+
+:BOOST_CACHED
+REM If building in pipeline, set the PYTHONHOME here to overwrite the existing PYTHONHOME.
+REM Runs on both the fresh-build path and the Boost cache-hit path (which skips the
+REM pushd/popd above), so PYTHONHOME is always set for the subsequent build steps.
 REM
 if NOT "%BUILD_BUILDID%"=="" (
 	setx PYTHONHOME "%PYTHON_INSTALLATION_PATH%"
 )
-
-popd
