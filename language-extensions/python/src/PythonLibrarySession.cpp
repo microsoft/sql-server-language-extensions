@@ -16,6 +16,7 @@
 #include <regex>
 #include <unordered_map>
 
+#include "EmbeddedScripts.h"
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 #include "PythonLibrarySession.h"
@@ -103,6 +104,62 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	{
 		throw runtime_error("Could not find the package inside the zip - "
 			"external library must be a python package inside a zip.");
+	}
+
+	// Packages authored on Windows can carry backslash-separated ZIP entry names. pip treats those
+	// as literal characters on Linux, so setup.py is found but its package directory is not: pip
+	// exits 0 and the caller reports SQL_SUCCESS for a broken layout.
+	//
+	// The script itself lives in src/scripts/normalize_zip.py and is embedded at build time; see
+	// that file for why each step is ordered the way it is. It runs in the satellite process, where
+	// an uncaught exception kills the process rather than failing the statement, so failures stay
+	// inside Python and come back through the flags below. "needed" and "normalized" are separate so
+	// "nothing to do" is distinguishable from "tried and failed"; only the latter throws.
+	//
+	if (fs::path(installPath).extension().generic_string() == ".zip")
+	{
+		string normalizedInstallPath =
+			(fs::path(tempFolder) / ("normalized-" + fs::path(installPath).filename().string())).generic_string();
+
+		m_mainNamespace["_normalize_src_zip_"] = installPath;
+		m_mainNamespace["_normalize_dst_zip_"] = normalizedInstallPath;
+
+		bp::exec(EmbeddedScripts::NormalizeZip, m_mainNamespace);
+
+		bool normalizeNeeded = bp::extract<bool>(m_mainNamespace["needed"]);
+		bool normalizeSucceeded = bp::extract<bool>(m_mainNamespace["normalized"]);
+
+		if (normalizeNeeded && normalizeSucceeded)
+		{
+			installPath = normalizedInstallPath;
+		}
+		else if (normalizeNeeded)
+		{
+			// Falling through would hand pip the ORIGINAL archive - the one that needs
+			// repairing - so pip exits 0 and the caller reports SQL_SUCCESS for a broken
+			// install. Logging cannot prevent that: LOG_ERROR never reaches *libraryError,
+			// which InstallExternalLibrary fills only from its catch blocks. Throw instead.
+			//
+			string normalizeError = bp::extract<string>(m_mainNamespace["error"])();
+
+			// The message embeds a customer-supplied entry name: strip CR/LF/NUL so it cannot
+			// forge log records, and bound the length.
+			//
+			for (char &ch : normalizeError)
+			{
+				if (ch == '\r' || ch == '\n' || ch == '\0')
+				{
+					ch = ' ';
+				}
+			}
+			if (normalizeError.size() > 512)
+			{
+				normalizeError.resize(512);
+			}
+
+			throw runtime_error("Failed to normalize backslash-separated entry names in the "
+				"external library archive: " + normalizeError);
+		}
 	}
 
 	string pathToPython = PythonExtensionUtils::GetPathToPython();

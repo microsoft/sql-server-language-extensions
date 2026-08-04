@@ -33,6 +33,21 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension/${PLATFORM} PYTHONEX
 #
 file(GLOB PYTHONEXTENSION_SOURCE_FILES ${PYTHONEXTENSION_SRC_DIR}/*.cpp ${PYTHONEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
+# Python helpers are authored as real .py files under src/scripts so they can be linted and
+# syntax-checked, then embedded verbatim into the binary as raw string literals. Nothing is
+# shipped alongside the extension - see scripts/EmbeddedScripts.h.in.
+#
+set(NORMALIZE_ZIP_SCRIPT ${PYTHONEXTENSION_SRC_DIR}/scripts/normalize_zip.py)
+file(READ ${NORMALIZE_ZIP_SCRIPT} NORMALIZE_ZIP_PY)
+configure_file(
+	${PYTHONEXTENSION_SRC_DIR}/scripts/EmbeddedScripts.h.in
+	${CMAKE_CURRENT_BINARY_DIR}/EmbeddedScripts.h
+	@ONLY)
+
+# Re-run CMake when the script changes, otherwise the generated header would go stale.
+#
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${NORMALIZE_ZIP_SCRIPT})
+
 # Create the target library
 #
 add_library(PythonExtension SHARED
@@ -137,7 +152,21 @@ target_link_libraries(PythonExtension
 )
 
 target_include_directories(PythonExtension
-	PRIVATE ${EXTENSION_API_INCLUDE_DIR} ${PYTHONEXTENSION_INCLUDE_DIR} ${ADDITIONAL_INCLUDES} 
+	PRIVATE ${EXTENSION_API_INCLUDE_DIR} ${PYTHONEXTENSION_INCLUDE_DIR} ${ADDITIONAL_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+# A syntax error in an embedded script would otherwise surface only at runtime, inside the
+# satellite process that an uncaught exception terminates. Compile it at build time instead.
+# The copy keeps __pycache__ out of the source tree.
+#
+find_program(PYTHON_SYNTAX_CHECKER NAMES python3 python)
+if (PYTHON_SYNTAX_CHECKER)
+	configure_file(${NORMALIZE_ZIP_SCRIPT} ${CMAKE_CURRENT_BINARY_DIR}/normalize_zip.py COPYONLY)
+	add_custom_command(TARGET PythonExtension PRE_BUILD
+		COMMAND ${PYTHON_SYNTAX_CHECKER} -m py_compile ${CMAKE_CURRENT_BINARY_DIR}/normalize_zip.py
+		COMMENT "Syntax-checking embedded Python: normalize_zip.py")
+else()
+	message(WARNING "No python interpreter found; embedded scripts will not be syntax-checked.")
+endif()
 
 install(TARGETS PythonExtension DESTINATION "${PYTHONEXTENSION_WORKING_DIR}" LIBRARY NAMELINK_ONLY)

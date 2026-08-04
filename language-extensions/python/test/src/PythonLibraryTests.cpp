@@ -679,4 +679,138 @@ namespace LibraryApiTests
 			true,                // Successful install
 			false);              // Successful import
 	}
+
+	// Name: BackslashEntryZipInstallTest
+	//
+	// Description:
+	//  The INNER archive - the one the normalizer runs on - gets mixed separators: metadata keeps
+	//  forward slashes, package modules use backslashes. Install and import must still succeed.
+	//
+	TEST_F(ExternalLibraryApiTests, BackslashEntryZipInstallTest)
+	{
+		string libName = "testpackageA";
+		fs::path srcPkg = m_packagesPath / "testpackageA-ZIP.zip";
+		string version = "0.0.1";
+
+		EXPECT_TRUE(fs::exists(srcPkg));
+
+		fs::path backslashPkg = fs::temp_directory_path() / "testpackageA-backslash.zip";
+
+		m_mainNamespace["_bs_src_"] = srcPkg.generic_string();
+		m_mainNamespace["_bs_dst_"] = backslashPkg.generic_string();
+
+		// Rebuild the inner package, then re-wrap it: the normalizer runs on installPath, which
+		// is the inner archive, not the outer wrapper.
+		//
+		string makeScript = "import io, zipfile\n"
+			"with zipfile.ZipFile(_bs_src_, 'r') as outer_src:\n"
+			"    inner_name = next((n for n in outer_src.namelist() if n.endswith('.zip')), None)\n"
+			"    if not inner_name:\n"
+			"        raise RuntimeError('missing inner package zip')\n"
+			"    inner_bytes = outer_src.read(inner_name)\n"
+			"    rebuilt_inner = io.BytesIO()\n"
+			"    with zipfile.ZipFile(io.BytesIO(inner_bytes), 'r') as inner_src:\n"
+			"        with zipfile.ZipFile(rebuilt_inner, 'w') as inner_dst:\n"
+			"            for entry in inner_src.infolist():\n"
+			"                data = inner_src.read(entry)\n"
+			"                name = entry.filename.replace('\\\\', '/')\n"
+			"                if name.endswith('setup.py') or name.endswith('pyproject.toml') or name.endswith('PKG-INFO'):\n"
+			"                    entry.filename = name\n"
+			"                else:\n"
+			"                    entry.filename = name.replace('/', '\\\\')\n"
+			"                inner_dst.writestr(entry, data)\n"
+			"    with zipfile.ZipFile(_bs_dst_, 'w') as outer_dst:\n"
+			"        for entry in outer_src.infolist():\n"
+			"            if entry.filename == inner_name:\n"
+			"                outer_dst.writestr(entry, rebuilt_inner.getvalue())\n"
+			"            else:\n"
+			"                outer_dst.writestr(entry, outer_src.read(entry))";
+		bp::exec(makeScript.c_str(), m_mainNamespace);
+
+		EXPECT_TRUE(fs::exists(backslashPkg));
+
+		InstallAndTest(
+			libName,             // extLibName
+			libName,             // moduleName
+			backslashPkg.string(),
+			m_publicLibraryPath,
+			version);
+
+		UninstallAndTest(
+			libName,             // extLibName
+			libName,             // moduleName
+			m_publicLibraryPath);
+
+		fs::remove(backslashPkg);
+	}
+
+	// Name: UnsafeEntryZipInstallFailsTest
+	//
+	// Description:
+	//  A traversal name in the INNER archive must fail with SQL_ERROR through the normalization
+	//  throw - not the older "could not find the package" path - and say why in *libraryError.
+	//
+	TEST_F(ExternalLibraryApiTests, UnsafeEntryZipInstallFailsTest)
+	{
+		string libName = "testpackageA";
+		fs::path srcPkg = m_packagesPath / "testpackageA-ZIP.zip";
+		fs::path unsafePkg = fs::temp_directory_path() / "testpackage-unsafe.zip";
+
+		EXPECT_TRUE(fs::exists(srcPkg));
+
+		m_mainNamespace["_un_src_"] = srcPkg.generic_string();
+		m_mainNamespace["_un_dst_"] = unsafePkg.generic_string();
+
+		string makeScript = "import io, zipfile\n"
+			"with zipfile.ZipFile(_un_src_, 'r') as outer_src:\n"
+			"    inner_name = next((n for n in outer_src.namelist() if n.endswith('.zip')), None)\n"
+			"    if not inner_name:\n"
+			"        raise RuntimeError('missing inner package zip')\n"
+			"    inner_bytes = outer_src.read(inner_name)\n"
+			"    rebuilt_inner = io.BytesIO()\n"
+			"    with zipfile.ZipFile(io.BytesIO(inner_bytes), 'r') as inner_src:\n"
+			"        with zipfile.ZipFile(rebuilt_inner, 'w') as inner_dst:\n"
+			"            for entry in inner_src.infolist():\n"
+			"                inner_dst.writestr(entry, inner_src.read(entry))\n"
+			"            inner_dst.writestr('..\\\\..\\\\evil.txt', 'x')\n"
+			"    with zipfile.ZipFile(_un_dst_, 'w') as outer_dst:\n"
+			"        for entry in outer_src.infolist():\n"
+			"            if entry.filename == inner_name:\n"
+			"                outer_dst.writestr(entry, rebuilt_inner.getvalue())\n"
+			"            else:\n"
+			"                outer_dst.writestr(entry, outer_src.read(entry))";
+		bp::exec(makeScript.c_str(), m_mainNamespace);
+
+		EXPECT_TRUE(fs::exists(unsafePkg));
+
+		SQLCHAR *libError = nullptr;
+		SQLINTEGER libErrorLength = 0;
+		string unsafePkgPath = unsafePkg.string();
+
+		SQLRETURN result = InstallExternalLibrary(
+			SQLGUID(),
+			reinterpret_cast<SQLCHAR *>(const_cast<char *>(libName.c_str())),
+			libName.length(),
+			reinterpret_cast<SQLCHAR *>(const_cast<char *>(unsafePkgPath.c_str())),
+			unsafePkgPath.length(),
+			reinterpret_cast<SQLCHAR *>(const_cast<char *>(m_publicLibraryPath.c_str())),
+			m_publicLibraryPath.length(),
+			&libError,
+			&libErrorLength);
+
+		EXPECT_EQ(result, SQL_ERROR);
+		ASSERT_NE(libError, nullptr);
+		ASSERT_GT(libErrorLength, 0);
+
+		string errorMessage(
+			reinterpret_cast<char *>(libError),
+			static_cast<size_t>(libErrorLength));
+
+		EXPECT_NE(
+			errorMessage.find("Failed to normalize backslash-separated entry names"),
+			string::npos);
+		EXPECT_NE(errorMessage.find("unsafe entry name"), string::npos);
+
+		fs::remove(unsafePkg);
+	}
 }
