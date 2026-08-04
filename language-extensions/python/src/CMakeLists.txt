@@ -33,6 +33,14 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension/${PLATFORM} PYTHONEX
 #
 file(GLOB PYTHONEXTENSION_SOURCE_FILES ${PYTHONEXTENSION_SRC_DIR}/*.cpp ${PYTHONEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
+# RHEL 9 ABI floor shims. Required because the Ubuntu 24.04 toolchain references
+# glibc symbols newer than 2.34. See
+# language-extensions/common/linux/AbiFloorCompat_linux.cpp.
+#
+if (${PLATFORM} STREQUAL linux)
+	list(APPEND PYTHONEXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
+endif()
+
 # Create the target library
 #
 add_library(PythonExtension SHARED
@@ -46,6 +54,12 @@ set_target_properties(PythonExtension
 )
 
 if (${PLATFORM} STREQUAL linux)
+	# Python links libstdc++ dynamically, so RHEL 9's 3.4.29 copy will not
+	# provide std::ios_base_library_init(). Ask the shared compat unit to
+	# define it.
+	#
+	target_compile_definitions(PythonExtension PRIVATE ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT)
+
 	# Python runtime version used in the linux environment differs from the one used in Windows at this time.
 	# This declaration should no longer be needed once the Windows version is updated to 3.12.
 	#
@@ -54,6 +68,20 @@ if (${PLATFORM} STREQUAL linux)
 
 	target_compile_options(PythonExtension PRIVATE -Wall -Wextra -g -O2 -fPIC -Werror -std=c++17 -Wno-unused-parameter -Wno-maybe-uninitialized -fshort-wchar)
 
+	# libstdc++ is deliberately NOT linked statically. The embedded interpreter
+	# imports numpy and pandas, whose C extensions link libstdc++.so.6, so a
+	# static copy puts two C++ runtimes in one process and the test binary
+	# aborts (SIGABRT) during GetOutputParam. RHEL 9 ships libstdc++ 3.4.29, so
+	# depending on it is fine as long as nothing above that version is
+	# referenced - the one offending symbol is defined locally in
+	# language-extensions/common/linux/AbiFloorCompat_linux.cpp.
+	#
+	# NOTE: the Boost-must-not-be-a-runtime-dependency requirement is NOT enforced
+	# by this line. It comes from -DBOOST_USE_STATIC_LIBS (see below) plus the
+	# find_library calls, which run AFTER CMAKE_FIND_LIBRARY_SUFFIXES below is set
+	# to prefer .so - so if a shared Boost were ever present alongside the static
+	# one, the static-only invariant would break silently here. The ELF gate in the
+	# superproject is what actually catches that (no libboost_* in DT_NEEDED).
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,--export-dynamic -fopenmp")
 
 	# Prefer shared libraries over static libraries

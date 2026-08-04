@@ -27,7 +27,6 @@
 //**************************************************************************************************
 
 #include <ctime>
-#include <iostream>
 #include <stdio.h>
 
 #include "Common.h"
@@ -74,8 +73,11 @@ void Logger::LogException(const exception &e)
 void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
+	// fwrite, not fputs: the message may carry an embedded NUL, at which fputs would stop -
+	// silently dropping the rest. The std::cout insertion this replaced wrote all size() bytes.
+	//
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
-	cout << msgWithTimestamp;
+	fwrite(msgWithTimestamp.data(), 1, msgWithTimestamp.size(), stdout);
 #endif
 }
 
@@ -136,9 +138,11 @@ const char* Logger::GetCurrentTimestamp()
 //
 // Description:
 //  Logs the given message to stderr; if R is initialized uses its error printing function,
-//  else uses std::cerr.
+//  else writes directly to stderr.
 //
 void Logger::LogToStdErr(const string &errorMsgWithTimestamp)
 {
-	cerr << errorMsgWithTimestamp;
+	// fwrite, not fputs - see Logger::Log; an embedded NUL must not truncate the record.
+	//
+	fwrite(errorMsgWithTimestamp.data(), 1, errorMsgWithTimestamp.size(), stderr);
 }

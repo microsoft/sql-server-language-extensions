@@ -11,6 +11,8 @@
 //
 //*************************************************************************************************
 
+#include <cstdio>
+
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 #include "PythonNamespace.h"
@@ -211,8 +213,21 @@ void PythonSession::ExecuteWorkflow(
 	string pyStdOut = bp::extract<string>(m_mainNamespace["_temp_out_"]);
 	string pyStdErr = bp::extract<string>(m_mainNamespace["_temp_err_"]);
 
-	cout << pyStdOut << endl;
-	cerr << pyStdErr << endl;
+	// Relayed through stdio rather than std::cout/std::cerr. The stream insertion operators are
+	// inlined from the GCC 13 headers but run against the host's older libstdc++ (RHEL 9 ships
+	// 6.0.29, Ubuntu 22.04 ships 6.0.30), which segfaults inside libstdc++. See the note in
+	// Logger.cpp.
+	//
+	// fwrite, not fprintf("%s"): this is an arbitrary user script's captured output, so it can
+	// contain an embedded NUL. "%s" would stop there and silently drop the rest of the batch,
+	// whereas the std::cout insertion this replaced wrote all size() bytes.
+	//
+	fwrite(pyStdOut.data(), 1, pyStdOut.size(), stdout);
+	fputc('\n', stdout);
+	fflush(stdout);
+	fwrite(pyStdErr.data(), 1, pyStdErr.size(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 
 	// In case of streaming clean up the previous stream batch's output buffers
 	//
