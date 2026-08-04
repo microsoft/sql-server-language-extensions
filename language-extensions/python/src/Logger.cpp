@@ -39,7 +39,16 @@ char Logger::sm_timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 //
 void Logger::LogError(const string &errorMsg)
 {
-	fprintf(stderr, "%sError: %s\n", GetCurrentTimestamp().c_str(), errorMsg.c_str());
+	// fwrite, not fprintf("%s"): errorMsg can carry an embedded NUL (it may be built from a
+	// customer-supplied ZIP entry name via bp::extract<string>, which uses the Python length
+	// rather than strlen). "%s" would stop at the NUL and silently drop the rest, whereas the
+	// std::cerr insertion this replaced wrote all size() bytes.
+	//
+	const string timestamp = GetCurrentTimestamp();
+	fwrite(timestamp.data(), 1, timestamp.size(), stderr);
+	fputs("Error: ", stderr);
+	fwrite(errorMsg.data(), 1, errorMsg.size(), stderr);
+	fputc('\n', stderr);
 	fflush(stderr);
 }
 
@@ -65,7 +74,12 @@ void Logger::LogException(const exception &e)
 void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG)
-	fprintf(stdout, "%s%s\n", GetCurrentTimestamp().c_str(), msg.c_str());
+	// See LogError: fwrite preserves embedded NULs that "%s" would truncate at.
+	//
+	const string timestamp = GetCurrentTimestamp();
+	fwrite(timestamp.data(), 1, timestamp.size(), stdout);
+	fwrite(msg.data(), 1, msg.size(), stdout);
+	fputc('\n', stdout);
 	fflush(stdout);
 #endif
 }

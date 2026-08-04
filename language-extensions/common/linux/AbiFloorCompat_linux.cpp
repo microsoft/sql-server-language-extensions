@@ -1,3 +1,7 @@
+//*********************************************************************
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+//
 //**************************************************************************************************
 // @File: AbiFloorCompat_linux.cpp
 //
@@ -33,11 +37,15 @@
 //  and are not exported, so this library never interposes on glibc for the rest
 //  of the host process.
 //
-//  Enforced by build/linux/validate-native-elf.sh and build/linux/validate-python-elf.sh
-//  in the Data-SQL-Language-Extensions superproject (this repository is consumed
-//  there as a submodule and carries no CI of its own, so neither script is
-//  runnable from here). Between them they gate MAX GLIBC <= 2.34 on the R, Python
-//  and Java extensions - the three targets that compile this file.
+//  Gated by build/linux/validate-native-elf.sh and build/linux/validate-python-elf.sh, which
+//  live in the Data-SQL-Language-Extensions superproject that consumes this repository as a
+//  submodule. NOTE: those scripts are added by the companion DSLE branch and are NOT on that
+//  repository's master yet - if this merges first, the shims ship ungated. Neither script is
+//  runnable from this repository, which has no CI of its own.
+//
+//  Their limit is worth stating: they compare symbol VERSIONS only. They cannot detect a symbol
+//  that resolves to a local definition which is present but wrong - that is exactly how an
+//  earlier _dl_find_object stub here passed the gate while breaking exception unwinding.
 //**************************************************************************************************
 
 #if defined(__linux__)
@@ -52,7 +60,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/random.h>
 #include <unistd.h>
 
@@ -122,6 +129,13 @@ extern "C"
 		unsigned char *out = reinterpret_cast<unsigned char *>(&value);
 		size_t filled = 0;
 
+		// Captured at each terminal break. Reading errno at the abort site instead would
+		// report something unrelated: the received==0 seccomp case sets no errno at all,
+		// a failing open() masks a preceding read() failure, and close() runs in between.
+		//
+		int failErrno = 0;
+		const char *failStage = "none";
+
 		while (filled < sizeof(value))
 		{
 			// A zero return makes no progress and would re-enter the same call
@@ -134,6 +148,8 @@ extern "C"
 				{
 					continue;
 				}
+				failStage = (received == 0) ? "getrandom returned 0" : "getrandom";
+				failErrno = (received == 0) ? 0 : errno;
 				break;
 			}
 			filled += static_cast<size_t>(received);
@@ -142,7 +158,12 @@ extern "C"
 		if (filled < sizeof(value))
 		{
 			int fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
-			if (fd >= 0)
+			if (fd < 0)
+			{
+				failStage = "open(/dev/urandom)";
+				failErrno = errno;
+			}
+			else
 			{
 				while (filled < sizeof(value))
 				{
@@ -153,6 +174,8 @@ extern "C"
 						{
 							continue;
 						}
+						failStage = (received == 0) ? "read(/dev/urandom) returned 0" : "read(/dev/urandom)";
+						failErrno = (received == 0) ? 0 : errno;
 						break;
 					}
 					filled += static_cast<size_t>(received);
@@ -163,13 +186,24 @@ extern "C"
 
 		if (filled < sizeof(value))
 		{
-			// Aborting is correct for a CSPRNG - returning predictable output is
-			// worse - but a bare abort() leaves a DBA with nothing but SIGABRT.
-			fprintf(stderr,
+			// Aborting is correct for a CSPRNG - returning predictable output is worse - but a
+			// bare abort() leaves a DBA with nothing but SIGABRT.
+			//
+			// snprintf into a local buffer + write(2) rather than fprintf: write is
+			// async-signal-safe and takes no FILE lock, so a concurrent writer wedged inside
+			// stdio cannot turn this diagnosable crash into a hang. It also needs no fflush.
+			//
+			char msg[256];
+			int n = snprintf(msg, sizeof(msg),
 				"AbiFloorCompat: arc4random could not obtain %zu bytes of entropy "
-				"(got %zu; last errno %d). Aborting rather than returning "
+				"(got %zu; failed at %s, errno %d). Aborting rather than returning "
 				"predictable output.\n",
-				sizeof(value), filled, errno);
+				sizeof(value), filled, failStage, failErrno);
+			if (n > 0)
+			{
+				ssize_t ignored = write(2, msg, (static_cast<size_t>(n) < sizeof(msg)) ? static_cast<size_t>(n) : sizeof(msg) - 1);
+				(void)ignored;
+			}
 			abort();
 		}
 

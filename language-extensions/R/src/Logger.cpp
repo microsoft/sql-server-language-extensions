@@ -73,8 +73,11 @@ void Logger::LogException(const exception &e)
 void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
+	// fwrite, not fputs: the message may carry an embedded NUL, at which fputs would stop -
+	// silently dropping the rest. The std::cout insertion this replaced wrote all size() bytes.
+	//
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
-	fputs(msgWithTimestamp.c_str(), stdout);
+	fwrite(msgWithTimestamp.data(), 1, msgWithTimestamp.size(), stdout);
 #endif
 }
 
@@ -139,5 +142,7 @@ const char* Logger::GetCurrentTimestamp()
 //
 void Logger::LogToStdErr(const string &errorMsgWithTimestamp)
 {
-	fputs(errorMsgWithTimestamp.c_str(), stderr);
+	// fwrite, not fputs - see Logger::Log; an embedded NUL must not truncate the record.
+	//
+	fwrite(errorMsgWithTimestamp.data(), 1, errorMsgWithTimestamp.size(), stderr);
 }

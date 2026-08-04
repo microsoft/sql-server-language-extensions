@@ -126,9 +126,11 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	//    COMPILE time, and a SyntaxError is raised before the try: below can catch anything -
 	//    terminating the satellite process. Binding also removes the injection vector.
 	//  - "needed" and "normalized" are tracked separately, so "no backslashes present" is
-	//    distinguishable from "rewrite attempted and failed". The latter is logged: without
-	//    that, the recovery path fails silently, pip then exits 0 on the un-normalized archive,
-	//    and the install returns SQL_SUCCESS with a broken package layout.
+	//    distinguishable from "rewrite attempted and failed". The latter THROWS rather than
+	//    falling through: the fallback archive is the very one that needs repairing, so pip
+	//    would exit 0 having installed a package whose directory is never found, and the caller
+	//    would report SQL_SUCCESS for a broken layout. Logging alone cannot prevent that -
+	//    LOG_ERROR never reaches *libraryError.
 	//
 	if (fs::path(installPath).extension().generic_string() == ".zip")
 	{
@@ -172,9 +174,33 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 		}
 		else if (normalizeNeeded)
 		{
-			LOG_ERROR("Failed to normalize backslash-separated entry names in the external "
-				"library archive; falling back to the original archive. Error: " +
-				bp::extract<string>(m_mainNamespace["error"])());
+			// The archive needed normalization and we could not produce it. Falling through
+			// would hand pip the ORIGINAL archive - precisely the archive this code exists to
+			// repair - so pip finds setup.py, never finds the package directory, exits 0, and
+			// the caller reports SQL_SUCCESS for a broken install. Logging alone does not
+			// prevent that: LOG_ERROR goes to the satellite's stderr and never reaches
+			// *libraryError, which InstallExternalLibrary fills only from its catch blocks.
+			// Throw so that catch converts this to SQL_ERROR and surfaces the reason.
+			//
+			string normalizeError = bp::extract<string>(m_mainNamespace["error"])();
+
+			// The message embeds a customer-supplied ZIP entry name. Strip CR/LF/NUL so it
+			// cannot forge additional log records, and bound the length.
+			//
+			for (char &ch : normalizeError)
+			{
+				if (ch == '\r' || ch == '\n' || ch == '\0')
+				{
+					ch = ' ';
+				}
+			}
+			if (normalizeError.size() > 512)
+			{
+				normalizeError.resize(512);
+			}
+
+			throw runtime_error("Failed to normalize backslash-separated entry names in the "
+				"external library archive: " + normalizeError);
 		}
 	}
 

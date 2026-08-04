@@ -13,8 +13,10 @@ apt-get install -y build-essential software-properties-common gcc-13 g++-13 cmak
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 70 \
 	--slave /usr/bin/g++ g++ /usr/bin/g++-13
 
-test "$(gcc -dumpfullversion -dumpversion | cut -d. -f1)" = "13"
-test "$(g++ -dumpfullversion -dumpversion | cut -d. -f1)" = "13"
+# Print before asserting: under set -e a failing test aborts the script, so if the
+# assertions came first there would be no record of which compiler was actually selected.
 gcc -dumpfullversion -dumpversion
 g++ -dumpfullversion -dumpversion
+test "$(gcc -dumpfullversion -dumpversion | cut -d. -f1)" = "13"
+test "$(g++ -dumpfullversion -dumpversion | cut -d. -f1)" = "13"
 

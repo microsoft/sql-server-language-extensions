@@ -11,6 +11,8 @@
 //
 //*************************************************************************************************
 
+#include <cstdio>
+
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 #include "PythonNamespace.h"

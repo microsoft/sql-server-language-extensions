@@ -31,8 +31,9 @@ file(GLOB REXTENSION_SOURCE_FILES
 	${REXTENSION_HOME}/common/src/*.cpp
 	${REXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
-# RHEL 9 ABI floor shims. Required because libstdc++.a and libgcc.a from the
-# Ubuntu 24.04 toolchain reference glibc symbols newer than 2.34. See
+# RHEL 9 ABI floor shims. Required because the Ubuntu 24.04 toolchain references
+# glibc symbols newer than 2.34 - for R they arrive through the vendored
+# Rcpp/RInside headers. See
 # language-extensions/common/linux/AbiFloorCompat_linux.cpp.
 #
 if (${PLATFORM} STREQUAL linux)
