@@ -75,7 +75,7 @@ if (${PLATFORM} STREQUAL linux)
 	
 elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
-	target_compile_options(JavaExtension PRIVATE /EHsc /MTd /W2 /c)
+	target_compile_options(JavaExtension PRIVATE /MP /EHsc /MTd /W2 /c)
 
 	# Set the DLLEXPORT variable to export symbols
 	#

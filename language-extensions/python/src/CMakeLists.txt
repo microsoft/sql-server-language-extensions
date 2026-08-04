@@ -87,9 +87,9 @@ if (${PLATFORM} STREQUAL linux)
 elseif(${PLATFORM} STREQUAL windows)
 	add_definitions(-DWIN_EXPORT -D_WIN64 -D_WINDOWS)
 
-	# Compile option /c to compile only
+	# Compile option /c to compile only; /MP for parallel (multi-processor) compilation
 	#
-	set(COMPILE_OPTIONS /c /std:c++17)
+	set(COMPILE_OPTIONS /MP /c /std:c++17)
 
 	find_library(PYTHON_LIB python${PYTHON_VERSION_NO_DOT} ${PYTHONHOME}/libs)
 
