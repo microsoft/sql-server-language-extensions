@@ -114,12 +114,12 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	// "needed" and "normalized" are separate so "nothing to do" is distinguishable from "tried and
 	// failed"; only the latter throws.
 	//
-	// Entries are opened before entry.filename is rewritten, because ZipFile.open() compares the
-	// central-directory name against the local header and raises BadZipFile when they differ - on
-	// exactly the archives this exists to fix. They are streamed in bounded chunks with declared and
-	// actual size caps, so a compressed bomb cannot exhaust the satellite. Both paths are bound as
-	// namespace variables rather than spliced into the script text: a quote in a customer filename
-	// would otherwise be a SyntaxError raised before the try: could catch it.
+	// Entry data is read before entry.filename is rewritten: reading afterwards would compare the
+	// rewritten name against the local header and raise BadZipFile on exactly the archives this
+	// exists to fix. Containment is checked after the rewrite, because '..\..\.bashrc' is one inert
+	// flat name on Linux but a real traversal path once backslashes become separators. Both paths
+	// are bound as namespace variables rather than spliced into the script text, so a quote in a
+	// customer filename cannot become a SyntaxError raised before the try: can catch it.
 	//
 	if (fs::path(installPath).extension().generic_string() == ".zip")
 	{
@@ -129,51 +129,30 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 		m_mainNamespace["_normalize_src_zip_"] = installPath;
 		m_mainNamespace["_normalize_dst_zip_"] = normalizedInstallPath;
 
-		string normalizeScript = "import zipfile\n"
-			"needed = False\n"
-			"normalized = False\n"
-			"error = ''\n"
-			"max_entry_size = 256 * 1024 * 1024\n"
-			"max_total_size = 1024 * 1024 * 1024\n"
-			"copy_chunk_size = 1024 * 1024\n"
-			"try:\n"
-			"    with zipfile.ZipFile(_normalize_src_zip_, 'r') as source_zip:\n"
-			"        needed = any('\\\\' in n for n in source_zip.namelist())\n"
-			"        if needed:\n"
-			"            declared_total = 0\n"
-			"            for entry in source_zip.infolist():\n"
-			"                if entry.file_size > max_entry_size:\n"
-			"                    raise ValueError('entry exceeds 256 MiB uncompressed-size limit: ' + entry.filename)\n"
-			"                declared_total += entry.file_size\n"
-			"                if declared_total > max_total_size:\n"
-			"                    raise ValueError('archive exceeds 1 GiB aggregate uncompressed-size limit')\n"
-			"            copied_total = 0\n"
-			"            with zipfile.ZipFile(_normalize_dst_zip_, 'w') as normalized_zip:\n"
-			"                for entry in source_zip.infolist():\n"
-			"                    name = entry.filename.replace('\\\\', '/')\n"
-			// Containment is checked after the rewrite: '..\\..\\.bashrc' is one inert flat
-			// name on Linux, but a real traversal path once backslashes become separators.
-			"                    if name.startswith('/') or '..' in name.split('/'):\n"
-			"                        raise ValueError('unsafe entry name: ' + entry.filename)\n"
-			"                    with source_zip.open(entry, 'r') as source_entry:\n"
-			"                        entry.filename = name\n"
-			"                        entry_copied = 0\n"
-			"                        with normalized_zip.open(entry, 'w') as normalized_entry:\n"
-			"                            while True:\n"
-			"                                chunk = source_entry.read(copy_chunk_size)\n"
-			"                                if not chunk:\n"
-			"                                    break\n"
-			"                                entry_copied += len(chunk)\n"
-			"                                copied_total += len(chunk)\n"
-			"                                if entry_copied > max_entry_size:\n"
-			"                                    raise ValueError('entry exceeds 256 MiB uncompressed-size limit: ' + name)\n"
-			"                                if copied_total > max_total_size:\n"
-			"                                    raise ValueError('archive exceeds 1 GiB aggregate uncompressed-size limit')\n"
-			"                                normalized_entry.write(chunk)\n"
-			"            normalized = True\n"
-			"except Exception as ex:\n"
-			"    normalized = False\n"
-			"    error = str(ex)";
+		// Raw string literal, so the script below reads as Python rather than as escaped C++.
+		//
+		string normalizeScript = R"PY(
+import zipfile
+needed = False
+normalized = False
+error = ''
+try:
+    with zipfile.ZipFile(_normalize_src_zip_, 'r') as source_zip:
+        needed = any('\\' in n for n in source_zip.namelist())
+        if needed:
+            with zipfile.ZipFile(_normalize_dst_zip_, 'w') as normalized_zip:
+                for entry in source_zip.infolist():
+                    name = entry.filename.replace('\\', '/')
+                    if name.startswith('/') or '..' in name.split('/'):
+                        raise ValueError('unsafe entry name: ' + entry.filename)
+                    data = source_zip.read(entry)
+                    entry.filename = name
+                    normalized_zip.writestr(entry, data)
+            normalized = True
+except Exception as ex:
+    normalized = False
+    error = str(ex)
+)PY";
 		bp::exec(normalizeScript.c_str(), m_mainNamespace);
 
 		bool normalizeNeeded = bp::extract<bool>(m_mainNamespace["needed"]);
