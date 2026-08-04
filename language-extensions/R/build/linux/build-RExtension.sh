@@ -42,7 +42,7 @@ function build {
 		-DENL_ROOT=${ENL_ROOT} \
 		-DPLATFORM=linux \
 		${REXTENSION_SRC_DIR}
-	cmake --build ${REXTENSION_WORKING_DIR} --target install
+	cmake --build ${REXTENSION_WORKING_DIR} --target install --parallel $(nproc)
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

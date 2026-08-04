@@ -50,7 +50,7 @@ function build {
 		-DJAVA_HOME=${JAVA_HOME} \
 		-DJAVAEXTENSION_WORKING_DIR=${JAVAEXTENSION_WORKING_DIR} \
 		${JAVAEXTENSION_HOME}/src
-	cmake --build ${JAVAEXTENSION_WORKING_DIR} --target install
+	cmake --build ${JAVAEXTENSION_WORKING_DIR} --target install --parallel $(nproc)
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
 	#

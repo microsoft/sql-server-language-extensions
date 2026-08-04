@@ -47,7 +47,7 @@ CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to configure googletest-framework |
 
 REM Call build
 REM
-CALL "mingw32-make.exe" all
+CALL "mingw32-make.exe" -j%NUMBER_OF_PROCESSORS% all
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build googletest-framework." || EXIT /b %ERRORLEVEL%
 
 REM Continue building using more configs until argv has been exhausted

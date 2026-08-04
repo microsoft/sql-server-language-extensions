@@ -81,7 +81,7 @@ DEL /S /Q %BUILD_OUTPUT%\Microsoft.SqlServer.CSharpExtension.dll
 
 REM Call cmake build
 REM
-CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL
+CALL "%CMAKE_ROOT%\bin\cmake.exe" --build . --config %CMAKE_CONFIGURATION% --target INSTALL --parallel %NUMBER_OF_PROCESSORS%
 CALL :CHECKERROR %ERRORLEVEL% "Error: Failed to build dotnet-core-CSharp-extension-test for CMAKE_CONFIGURATION=%CMAKE_CONFIGURATION%" || EXIT /b %ERRORLEVEL%
 
 REM Advance arg passed to build-dotnet-core-CSharp-extension-test.cmd
