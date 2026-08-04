@@ -118,9 +118,9 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	//    reading after the rewrite throws on exactly the archives this code exists to fix.
 	//  - the archive is only rewritten when an entry actually contains a backslash, so well-formed
 	//    packages are passed through untouched.
-	//  - any failure (unreadable source, unwritable temp folder, malformed archive, or an entry
-	//    whose name would escape the extraction root) leaves normalized False and the original
-	//    path is used, which is what happened before this normalization existed.
+	//  - if no backslash entries are present, installPath is left untouched. If backslash entries
+	//    are present but rewrite fails (for example malformed zip or an unsafe rewritten name),
+	//    normalized stays false and the caller throws instead of falling through to the original path.
 	//  - the two paths are BOUND as namespace variables rather than spliced into the script
 	//    text. A quote in a customer-supplied filename would otherwise break the script at
 	//    COMPILE time, and a SyntaxError is raised before the try: below can catch anything -

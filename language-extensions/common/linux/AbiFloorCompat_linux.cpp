@@ -278,8 +278,8 @@ extern "C"
 #ifdef ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT
 // This is what actually constructs std::cin/cout/cerr/clog on hosts whose libstdc++ is
 // older than 3.4.32. Namespace scope, so it participates in this object's dynamic
-// initialisation and runs when the extension is dlopen'd - before any extension code,
-// or any statically linked Boost.Python / Rcpp / RInside code, can touch a stream.
+// initialisation and runs when the extension is dlopen'd. That guarantees this object's
+// constructor runs without relying on calls to _ZSt21ios_base_library_initv.
 //
 static std::ios_base::Init g_abiFloorIosBaseInit;
 #endif
