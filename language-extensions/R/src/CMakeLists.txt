@@ -31,11 +31,27 @@ file(GLOB REXTENSION_SOURCE_FILES
 	${REXTENSION_HOME}/common/src/*.cpp
 	${REXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
+# RHEL 9 ABI floor shims. Required because the Ubuntu 24.04 toolchain references
+# glibc symbols newer than 2.34 - for R they arrive through the vendored
+# Rcpp/RInside headers. See
+# language-extensions/common/linux/AbiFloorCompat_linux.cpp.
+#
+if (${PLATFORM} STREQUAL linux)
+	list(APPEND REXTENSION_SOURCE_FILES ${ENL_ROOT}/language-extensions/common/linux/AbiFloorCompat_linux.cpp)
+endif()
+
 # Create the target library
 #
 add_library(RExtension SHARED
 	${REXTENSION_SOURCE_FILES}
 )
+
+# R links libstdc++ dynamically, so RHEL9's 3.4.29 copy will not provide
+# std::ios_base_library_init(). Ask the shared compat unit to define it.
+#
+if (${PLATFORM} STREQUAL linux)
+	target_compile_definitions(RExtension PRIVATE ABI_FLOOR_PROVIDE_IOS_BASE_LIBRARY_INIT)
+endif()
 
 set_target_properties(RExtension
 	PROPERTIES
@@ -47,17 +63,29 @@ if (${PLATFORM} STREQUAL linux)
 	target_compile_options(RExtension PRIVATE -Wall -Wextra -g -fPIC -Werror
 		-std=c++17 -Wno-unused-parameter -Wno-cast-function-type -Wno-format-overflow 
 		-Wno-deprecated-copy -Wno-sign-conversion -Wno-conversion -Wno-maybe-uninitialized)
+	# RHEL9 ABI floor (GLIBCXX <= 3.4.29): GCC 13 emits a reference to
+	# std::ios_base_library_init()@GLIBCXX_3.4.32 into any translation unit that
+	# includes <iostream>. The RExtension sources no longer include it directly,
+	# but the Rcpp and RInside headers do, so the reference cannot be removed at
+	# the source level.
+	#
+	# libstdc++ is deliberately NOT linked statically here. libR.so already links
+	# libstdc++.so.6, so a static copy would put two C++ runtimes in one process
+	# and the R extension aborts (SIGABRT) part-way through a script execution.
+	# -Wl,-z,nodelete does not help: the fault is duplication, not unload order.
+	# The single offending symbol is instead defined locally in
+	# language-extensions/common/linux/AbiFloorCompat_linux.cpp.
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed \
 		-Wl,--export-dynamic -fopenmp -Wl,-rpath,'${ORIGIN}'")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES};.so.1;.so.3;.so.5")
-	set(USR_LIB_PATH "/usr/lib/x86_64-linux-gnu")
+	set(USR_LIB_PATH "/usr/lib64")
 
 	# Find dependent libraries with fallback paths
 	#
-	find_library(PCRE_LIB NAMES pcre libpcre PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
-	find_library(LZMA_LIB NAMES lzma liblzma PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
-	find_library(BZ2_LIB NAMES bz2 libbz2 PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
-	find_library(Z_LIB NAMES z libz PATHS ${USR_LIB_PATH} /usr/lib /lib NO_DEFAULT_PATH)
+	find_library(PCRE_LIB NAMES pcre libpcre PATHS ${USR_LIB_PATH} /usr/lib /lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
+	find_library(LZMA_LIB NAMES lzma liblzma PATHS ${USR_LIB_PATH} /usr/lib /lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
+	find_library(BZ2_LIB NAMES bz2 libbz2 PATHS ${USR_LIB_PATH} /usr/lib /lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
+	find_library(Z_LIB NAMES z libz PATHS ${USR_LIB_PATH} /usr/lib /lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
 	find_library(RT_LIB rt ${USR_LIB_PATH})
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	find_library(M_LIB m ${USR_LIB_PATH})

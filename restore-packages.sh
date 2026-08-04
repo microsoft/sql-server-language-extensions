@@ -1,10 +1,10 @@
 #!/bin/bash
 
+apt-get update -y
+
 # Install unixodbc-dev for development headers
 #
 apt-get -q -y install unixodbc-dev
-
-apt-get update -y
 apt-get install build-essential software-properties-common -y
 apt-get install gcc-13 g++-13 -y
 apt-get install cmake -y
