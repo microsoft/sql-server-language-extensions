@@ -683,10 +683,8 @@ namespace LibraryApiTests
 	// Name: BackslashEntryZipInstallTest
 	//
 	// Description:
-	//  Build an OUTER package archive whose INNER package archive has mixed separators:
-	//  metadata/setup entries keep forward slashes, while package-module entries use
-	//  backslashes. That forces the inner-archive normalizer path in InstallLibrary.
-	//  The install and import must still succeed.
+	//  The INNER archive - the one the normalizer runs on - gets mixed separators: metadata keeps
+	//  forward slashes, package modules use backslashes. Install and import must still succeed.
 	//
 	TEST_F(ExternalLibraryApiTests, BackslashEntryZipInstallTest)
 	{
@@ -701,8 +699,8 @@ namespace LibraryApiTests
 		m_mainNamespace["_bs_src_"] = srcPkg.generic_string();
 		m_mainNamespace["_bs_dst_"] = backslashPkg.generic_string();
 
-		// Rebuild the INNER zip package entry names, then wrap it back into a new OUTER zip.
-		// The normalizer executes against installPath (the inner package), not the outer zip.
+		// Rebuild the inner package, then re-wrap it: the normalizer runs on installPath, which
+		// is the inner archive, not the outer wrapper.
 		//
 		string makeScript = "import io, zipfile\n"
 			"with zipfile.ZipFile(_bs_src_, 'r') as outer_src:\n"
@@ -749,9 +747,8 @@ namespace LibraryApiTests
 	// Name: UnsafeEntryZipInstallFailsTest
 	//
 	// Description:
-	//  Build a valid OUTER package with a malformed INNER package entry name. This must fail
-	//  with SQL_ERROR through the normalization throw path (not the older "no package inside zip"
-	//  path), and the reason must be surfaced through *libraryError.
+	//  A traversal name in the INNER archive must fail with SQL_ERROR through the normalization
+	//  throw - not the older "could not find the package" path - and say why in *libraryError.
 	//
 	TEST_F(ExternalLibraryApiTests, UnsafeEntryZipInstallFailsTest)
 	{
@@ -820,8 +817,8 @@ namespace LibraryApiTests
 	// Name: OversizedEntryZipInstallFailsTest
 	//
 	// Description:
-	//  A highly compressed INNER package entry whose declared uncompressed size exceeds the
-	//  normalizer's per-entry limit must fail before the satellite decompresses its contents.
+	//  A compressed entry whose declared size exceeds the per-entry limit must be rejected before
+	//  the satellite decompresses it.
 	//
 	TEST_F(ExternalLibraryApiTests, OversizedEntryZipInstallFailsTest)
 	{
