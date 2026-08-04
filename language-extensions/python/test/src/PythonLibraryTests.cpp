@@ -816,4 +816,76 @@ namespace LibraryApiTests
 
 		fs::remove(unsafePkg);
 	}
+
+	// Name: OversizedEntryZipInstallFailsTest
+	//
+	// Description:
+	//  A highly compressed INNER package entry whose declared uncompressed size exceeds the
+	//  normalizer's per-entry limit must fail before the satellite decompresses its contents.
+	//
+	TEST_F(ExternalLibraryApiTests, OversizedEntryZipInstallFailsTest)
+	{
+		string libName = "testpackageA";
+		fs::path srcPkg = m_packagesPath / "testpackageA-ZIP.zip";
+		fs::path oversizedPkg = fs::temp_directory_path() / "testpackage-oversized.zip";
+
+		EXPECT_TRUE(fs::exists(srcPkg));
+
+		m_mainNamespace["_os_src_"] = srcPkg.generic_string();
+		m_mainNamespace["_os_dst_"] = oversizedPkg.generic_string();
+
+		string makeScript = "import io, zipfile\n"
+			"with zipfile.ZipFile(_os_src_, 'r') as outer_src:\n"
+			"    inner_name = next((n for n in outer_src.namelist() if n.endswith('.zip')), None)\n"
+			"    if not inner_name:\n"
+			"        raise RuntimeError('missing inner package zip')\n"
+			"    inner_bytes = outer_src.read(inner_name)\n"
+			"    rebuilt_inner = io.BytesIO()\n"
+			"    with zipfile.ZipFile(io.BytesIO(inner_bytes), 'r') as inner_src:\n"
+			"        with zipfile.ZipFile(rebuilt_inner, 'w', compression=zipfile.ZIP_DEFLATED) as inner_dst:\n"
+			"            for entry in inner_src.infolist():\n"
+			"                inner_dst.writestr(entry, inner_src.read(entry))\n"
+			"            with inner_dst.open('oversized\\\\payload.bin', 'w') as payload:\n"
+			"                zero_chunk = b'\\0' * (1024 * 1024)\n"
+			"                for _ in range(257):\n"
+			"                    payload.write(zero_chunk)\n"
+			"    with zipfile.ZipFile(_os_dst_, 'w') as outer_dst:\n"
+			"        for entry in outer_src.infolist():\n"
+			"            if entry.filename == inner_name:\n"
+			"                outer_dst.writestr(entry, rebuilt_inner.getvalue())\n"
+			"            else:\n"
+			"                outer_dst.writestr(entry, outer_src.read(entry))";
+		bp::exec(makeScript.c_str(), m_mainNamespace);
+
+		EXPECT_TRUE(fs::exists(oversizedPkg));
+
+		SQLCHAR *libError = nullptr;
+		SQLINTEGER libErrorLength = 0;
+		string oversizedPkgPath = oversizedPkg.string();
+
+		SQLRETURN result = InstallExternalLibrary(
+			SQLGUID(),
+			reinterpret_cast<SQLCHAR *>(const_cast<char *>(libName.c_str())),
+			libName.length(),
+			reinterpret_cast<SQLCHAR *>(const_cast<char *>(oversizedPkgPath.c_str())),
+			oversizedPkgPath.length(),
+			reinterpret_cast<SQLCHAR *>(const_cast<char *>(m_publicLibraryPath.c_str())),
+			m_publicLibraryPath.length(),
+			&libError,
+			&libErrorLength);
+
+		EXPECT_EQ(result, SQL_ERROR);
+		ASSERT_NE(libError, nullptr);
+		ASSERT_GT(libErrorLength, 0);
+
+		string errorMessage(
+			reinterpret_cast<char *>(libError),
+			static_cast<size_t>(libErrorLength));
+
+		EXPECT_NE(
+			errorMessage.find("entry exceeds 256 MiB uncompressed-size limit"),
+			string::npos);
+
+		fs::remove(oversizedPkg);
+	}
 }
