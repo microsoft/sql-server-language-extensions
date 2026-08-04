@@ -16,6 +16,7 @@
 #include <regex>
 #include <unordered_map>
 
+#include "EmbeddedScripts.h"
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 #include "PythonLibrarySession.h"
@@ -109,17 +110,11 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 	// as literal characters on Linux, so setup.py is found but its package directory is not: pip
 	// exits 0 and the caller reports SQL_SUCCESS for a broken layout.
 	//
-	// This runs in the satellite process, where an uncaught exception kills the process rather than
-	// failing the statement, so failures stay inside Python and report back through a flag.
-	// "needed" and "normalized" are separate so "nothing to do" is distinguishable from "tried and
-	// failed"; only the latter throws.
-	//
-	// Entry data is read before entry.filename is rewritten: reading afterwards would compare the
-	// rewritten name against the local header and raise BadZipFile on exactly the archives this
-	// exists to fix. Containment is checked after the rewrite, because '..\..\.bashrc' is one inert
-	// flat name on Linux but a real traversal path once backslashes become separators. Both paths
-	// are bound as namespace variables rather than spliced into the script text, so a quote in a
-	// customer filename cannot become a SyntaxError raised before the try: can catch it.
+	// The script itself lives in src/scripts/normalize_zip.py and is embedded at build time; see
+	// that file for why each step is ordered the way it is. It runs in the satellite process, where
+	// an uncaught exception kills the process rather than failing the statement, so failures stay
+	// inside Python and come back through the flags below. "needed" and "normalized" are separate so
+	// "nothing to do" is distinguishable from "tried and failed"; only the latter throws.
 	//
 	if (fs::path(installPath).extension().generic_string() == ".zip")
 	{
@@ -129,31 +124,7 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 		m_mainNamespace["_normalize_src_zip_"] = installPath;
 		m_mainNamespace["_normalize_dst_zip_"] = normalizedInstallPath;
 
-		// Raw string literal, so the script below reads as Python rather than as escaped C++.
-		//
-		string normalizeScript = R"PY(
-import zipfile
-needed = False
-normalized = False
-error = ''
-try:
-    with zipfile.ZipFile(_normalize_src_zip_, 'r') as source_zip:
-        needed = any('\\' in n for n in source_zip.namelist())
-        if needed:
-            with zipfile.ZipFile(_normalize_dst_zip_, 'w') as normalized_zip:
-                for entry in source_zip.infolist():
-                    name = entry.filename.replace('\\', '/')
-                    if name.startswith('/') or '..' in name.split('/'):
-                        raise ValueError('unsafe entry name: ' + entry.filename)
-                    data = source_zip.read(entry)
-                    entry.filename = name
-                    normalized_zip.writestr(entry, data)
-            normalized = True
-except Exception as ex:
-    normalized = False
-    error = str(ex)
-)PY";
-		bp::exec(normalizeScript.c_str(), m_mainNamespace);
+		bp::exec(EmbeddedScripts::NormalizeZip, m_mainNamespace);
 
 		bool normalizeNeeded = bp::extract<bool>(m_mainNamespace["needed"]);
 		bool normalizeSucceeded = bp::extract<bool>(m_mainNamespace["normalized"]);
