@@ -105,6 +105,130 @@ SQLRETURN PythonLibrarySession::InstallLibrary(
 			"external library must be a python package inside a zip.");
 	}
 
+	// Older package fixtures and customer packages created on Windows can contain backslashes in
+	// ZIP entry names. Modern pip treats those as literal characters on Linux, so setup.py is found
+	// but its package directory is not. Normalize the inner package ZIP before passing it to pip.
+	//
+	// This is best effort on purpose. It runs while installing an external library inside the
+	// satellite process, where an uncaught exception terminates the process rather than failing the
+	// statement, so every failure path has to stay inside Python and report back through a flag:
+	//
+	//  - the source entry must be opened BEFORE rewriting entry.filename. ZipFile.open() compares
+	//    the central-directory name against the local header and raises BadZipFile when they differ,
+	//    so opening after the rewrite throws on exactly the archives this code exists to fix.
+	//  - entries are streamed in bounded chunks rather than materialized in the satellite process.
+	//    Declared and actual uncompressed sizes are both limited per entry and across the archive.
+	//  - the archive is only rewritten when an entry actually contains a backslash, so well-formed
+	//    packages are passed through untouched.
+	//  - if no backslash entries are present, installPath is left untouched. If backslash entries
+	//    are present but rewrite fails (for example malformed zip or an unsafe rewritten name),
+	//    normalized stays false and the caller throws instead of falling through to the original path.
+	//  - the two paths are BOUND as namespace variables rather than spliced into the script
+	//    text. A quote in a customer-supplied filename would otherwise break the script at
+	//    COMPILE time, and a SyntaxError is raised before the try: below can catch anything -
+	//    terminating the satellite process. Binding also removes the injection vector.
+	//  - "needed" and "normalized" are tracked separately, so "no backslashes present" is
+	//    distinguishable from "rewrite attempted and failed". The latter THROWS rather than
+	//    falling through: the fallback archive is the very one that needs repairing, so pip
+	//    would exit 0 having installed a package whose directory is never found, and the caller
+	//    would report SQL_SUCCESS for a broken layout. Logging alone cannot prevent that -
+	//    LOG_ERROR never reaches *libraryError.
+	//
+	if (fs::path(installPath).extension().generic_string() == ".zip")
+	{
+		string normalizedInstallPath =
+			(fs::path(tempFolder) / ("normalized-" + fs::path(installPath).filename().string())).generic_string();
+
+		m_mainNamespace["_normalize_src_zip_"] = installPath;
+		m_mainNamespace["_normalize_dst_zip_"] = normalizedInstallPath;
+
+		string normalizeScript = "import zipfile\n"
+			"needed = False\n"
+			"normalized = False\n"
+			"error = ''\n"
+			"max_entry_size = 256 * 1024 * 1024\n"
+			"max_total_size = 1024 * 1024 * 1024\n"
+			"copy_chunk_size = 1024 * 1024\n"
+			"try:\n"
+			"    with zipfile.ZipFile(_normalize_src_zip_, 'r') as source_zip:\n"
+			"        needed = any('\\\\' in n for n in source_zip.namelist())\n"
+			"        if needed:\n"
+			"            declared_total = 0\n"
+			"            for entry in source_zip.infolist():\n"
+			"                if entry.file_size > max_entry_size:\n"
+			"                    raise ValueError('entry exceeds 256 MiB uncompressed-size limit: ' + entry.filename)\n"
+			"                declared_total += entry.file_size\n"
+			"                if declared_total > max_total_size:\n"
+			"                    raise ValueError('archive exceeds 1 GiB aggregate uncompressed-size limit')\n"
+			"            copied_total = 0\n"
+			"            with zipfile.ZipFile(_normalize_dst_zip_, 'w') as normalized_zip:\n"
+			"                for entry in source_zip.infolist():\n"
+			"                    name = entry.filename.replace('\\\\', '/')\n"
+			// Replacing backslashes turns a name that is inert on Linux (one flat file
+			// called '..\\..\\.bashrc') into a real traversal path, so containment has to
+			// be checked after the rewrite, not before.
+			"                    if name.startswith('/') or '..' in name.split('/'):\n"
+			"                        raise ValueError('unsafe entry name: ' + entry.filename)\n"
+			"                    with source_zip.open(entry, 'r') as source_entry:\n"
+			"                        entry.filename = name\n"
+			"                        entry_copied = 0\n"
+			"                        with normalized_zip.open(entry, 'w') as normalized_entry:\n"
+			"                            while True:\n"
+			"                                chunk = source_entry.read(copy_chunk_size)\n"
+			"                                if not chunk:\n"
+			"                                    break\n"
+			"                                entry_copied += len(chunk)\n"
+			"                                copied_total += len(chunk)\n"
+			"                                if entry_copied > max_entry_size:\n"
+			"                                    raise ValueError('entry exceeds 256 MiB uncompressed-size limit: ' + name)\n"
+			"                                if copied_total > max_total_size:\n"
+			"                                    raise ValueError('archive exceeds 1 GiB aggregate uncompressed-size limit')\n"
+			"                                normalized_entry.write(chunk)\n"
+			"            normalized = True\n"
+			"except Exception as ex:\n"
+			"    normalized = False\n"
+			"    error = str(ex)";
+		bp::exec(normalizeScript.c_str(), m_mainNamespace);
+
+		bool normalizeNeeded = bp::extract<bool>(m_mainNamespace["needed"]);
+		bool normalizeSucceeded = bp::extract<bool>(m_mainNamespace["normalized"]);
+
+		if (normalizeNeeded && normalizeSucceeded)
+		{
+			installPath = normalizedInstallPath;
+		}
+		else if (normalizeNeeded)
+		{
+			// The archive needed normalization and we could not produce it. Falling through
+			// would hand pip the ORIGINAL archive - precisely the archive this code exists to
+			// repair - so pip finds setup.py, never finds the package directory, exits 0, and
+			// the caller reports SQL_SUCCESS for a broken install. Logging alone does not
+			// prevent that: LOG_ERROR goes to the satellite's stderr and never reaches
+			// *libraryError, which InstallExternalLibrary fills only from its catch blocks.
+			// Throw so that catch converts this to SQL_ERROR and surfaces the reason.
+			//
+			string normalizeError = bp::extract<string>(m_mainNamespace["error"])();
+
+			// The message embeds a customer-supplied ZIP entry name. Strip CR/LF/NUL so it
+			// cannot forge additional log records, and bound the length.
+			//
+			for (char &ch : normalizeError)
+			{
+				if (ch == '\r' || ch == '\n' || ch == '\0')
+				{
+					ch = ' ';
+				}
+			}
+			if (normalizeError.size() > 512)
+			{
+				normalizeError.resize(512);
+			}
+
+			throw runtime_error("Failed to normalize backslash-separated entry names in the "
+				"external library archive: " + normalizeError);
+		}
+	}
+
 	string pathToPython = PythonExtensionUtils::GetPathToPython();
 
 	// Set the TMPDIR so that pip uses our destination as temp. This allows us to use a
