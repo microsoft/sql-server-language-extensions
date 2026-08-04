@@ -475,8 +475,9 @@ namespace ExtensionApiTest
 		//
 		vector<char> chineseBytes = { -28, -67, -96, -27, -91, -67 };
 		string chineseString = string(chineseBytes.data(), 6);
+		string worldChineseString = "World" + chineseString;
 
-		vector<const char*> charCol1{ "Hello", "test", "data", ("World" + chineseString).c_str(),
+		vector<const char*> charCol1{ "Hello", "test", "data", worldChineseString.c_str(),
 			chineseString.c_str() };
 		vector<const char*> charCol2{ "", 0, nullptr, "verify", "-1" };
 
