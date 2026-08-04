@@ -33,7 +33,6 @@ file(TO_CMAKE_PATH ${ENL_ROOT}/build-output/pythonextension/${PLATFORM} PYTHONEX
 #
 file(GLOB PYTHONEXTENSION_SOURCE_FILES ${PYTHONEXTENSION_SRC_DIR}/*.cpp ${PYTHONEXTENSION_SRC_DIR}/${PLATFORM}/*.cpp)
 
-<<<<<<< HEAD
 # RHEL 9 ABI floor shims. Required because the Ubuntu 24.04 toolchain references
 # glibc symbols newer than 2.34. See
 # language-extensions/common/linux/AbiFloorCompat_linux.cpp.
