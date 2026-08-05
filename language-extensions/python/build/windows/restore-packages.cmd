@@ -71,21 +71,26 @@ REM Navigate to the extracted Boost directory
 REM
 REM Skip the Boost download + b2 build when a previously compiled Boost is already
 REM present (restored by the pipeline's Cache@2 task before this script runs). The
-REM compiled import libraries live under stage\lib; Boost is version-pinned, so a
+REM compiled static libraries live under stage\lib; Boost is version-pinned, so a
 REM cache hit is safe to reuse. This avoids the multi-minute from-source rebuild.
 REM
-REM Validate the actual compiled Boost.Python AND Boost.NumPy import libraries are
-REM present, not just the stage\lib directory: a failed/partial prior build (or an
-REM incompletely restored cache) can leave stage\lib without the required .lib files,
-REM which would otherwise cause this guard to skip the rebuild and make the later
-REM CMake link step fail. The libs are named e.g. libboost_python310-vc143-mt-x64-1_90.lib.
+REM Validate the exact Boost.Python and Boost.NumPy static libraries required by the
+REM Debug and Release CMake builds. A failed/partial build or incomplete cache can
+REM contain only one configuration, or only shared import libraries, which would
+REM otherwise make the later CMake link step fail.
 REM
 SET "BOOST_STAGE_LIB=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\stage\lib"
-IF EXIST "%BOOST_STAGE_LIB%\*boost_python%PYTHON_VERSION_NO_DOT%*.lib" IF EXIST "%BOOST_STAGE_LIB%\*boost_numpy%PYTHON_VERSION_NO_DOT%*.lib" (
-	echo -- Boost %BOOST_VERSION% cache hit at %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE% with compiled Boost.Python/Boost.NumPy libs - skipping download and build --
-	GOTO :BOOST_CACHED
-)
+SET "BOOST_RELEASE_LIB_SUFFIX=vc143-mt-x64-1_90"
+SET "BOOST_DEBUG_LIB_SUFFIX=vc143-mt-gd-x64-1_90"
+IF NOT EXIST "%BOOST_STAGE_LIB%\libboost_python%PYTHON_VERSION_NO_DOT%-%BOOST_RELEASE_LIB_SUFFIX%.lib" GOTO :BUILD_BOOST
+IF NOT EXIST "%BOOST_STAGE_LIB%\libboost_numpy%PYTHON_VERSION_NO_DOT%-%BOOST_RELEASE_LIB_SUFFIX%.lib" GOTO :BUILD_BOOST
+IF NOT EXIST "%BOOST_STAGE_LIB%\libboost_python%PYTHON_VERSION_NO_DOT%-%BOOST_DEBUG_LIB_SUFFIX%.lib" GOTO :BUILD_BOOST
+IF NOT EXIST "%BOOST_STAGE_LIB%\libboost_numpy%PYTHON_VERSION_NO_DOT%-%BOOST_DEBUG_LIB_SUFFIX%.lib" GOTO :BUILD_BOOST
 
+echo -- Boost %BOOST_VERSION% cache hit with all required Debug/Release Boost.Python and Boost.NumPy static libraries - skipping download and build --
+GOTO :BOOST_CACHED
+
+:BUILD_BOOST
 curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 
 REM -o Output directory
