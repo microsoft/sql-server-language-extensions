@@ -587,8 +587,8 @@ SQLRETURN SetHostCallbacks(
         "SQLEXTENSION_HOST_CALLBACKS layout changed: copy the new callback in "
         "SetHostCallbacks and cover it in the forwarded SizeInBytes below.");
 
-    // Cap the forwarded extent at what this build can hold. Reporting
-    // sizeof(g_hostCallbacksCopy) unconditionally would tell the managed layer that
+    // Cap the forwarded extent at what this build can hold. Reporting the
+    // copy buffer's full size unconditionally would tell the managed layer that
     // trailing fields a smaller, older host never supplied are valid.
     //
     g_hostCallbacksCopy = {};

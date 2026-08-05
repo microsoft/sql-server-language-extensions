@@ -38,15 +38,14 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         public const string LogEventMessage = "CSharpTestExecutorLogInformation emitted event";
 
         /// <summary>
-        /// Marker message emitted through the SDK ExtensionEventLogger extensionName
-        /// overload by CSharpTestExecutorLogNamedExtension. Matched by the native test
-        /// (CSharpExecuteTests.cpp) alongside <see cref="LogEventExtensionName"/>.
+        /// Marker message used to verify that a caller-supplied extension name flows
+        /// end to end through the XEvent callback.
         /// </summary>
         public const string LogNamedEventMessage = "CSharpTestExecutorLogNamedExtension emitted event";
 
         /// <summary>
-        /// Extension name CSharpTestExecutorLogNamedExtension attributes its event to,
-        /// proving the ExtensionEventLogger.Log extensionName overload is honored end to end.
+        /// Extension name used to verify caller-supplied attribution survives the
+        /// managed-to-native-to-host callback path.
         /// </summary>
         public const string LogEventExtensionName = "TestExtension";
     }
