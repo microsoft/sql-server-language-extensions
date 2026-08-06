@@ -34,6 +34,10 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// <param name="level">Event severity.</param>
         /// <param name="errorCode">Error code for non-informational events; 0 when unused.</param>
         /// <param name="message">Message to log. A null message is treated as empty.</param>
-        void Log(ExtensionTraceLevel level, int errorCode, string message);
+        /// <param name="extensionName">
+        /// Name recorded as the event's originating extension; null or empty selects the
+        /// Extension's default name.
+        /// </param>
+        void Log(ExtensionTraceLevel level, int errorCode, string message, string extensionName);
     }
 }

@@ -33,8 +33,9 @@ namespace ExtensionApiTest
         }
 
         SQLEXTENSION_HOST_CALLBACKS hostCallbacks{};
-        hostCallbacks.Version   = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
-        hostCallbacks.LogXEvent = &TestLogXEventCallback;
+        hostCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        hostCallbacks.SizeInBytes = sizeof(hostCallbacks);
+        hostCallbacks.LogXEvent   = &TestLogXEventCallback;
         return setHostCallbacks(&hostCallbacks);
     }
 

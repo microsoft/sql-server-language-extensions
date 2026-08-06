@@ -36,6 +36,18 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         /// so both sides must stay in sync.
         /// </summary>
         public const string LogEventMessage = "CSharpTestExecutorLogInformation emitted event";
+
+        /// <summary>
+        /// Marker message used to verify that a caller-supplied extension name flows
+        /// end to end through the XEvent callback.
+        /// </summary>
+        public const string LogNamedEventMessage = "CSharpTestExecutorLogNamedExtension emitted event";
+
+        /// <summary>
+        /// Extension name used to verify caller-supplied attribution survives the
+        /// managed-to-native-to-host callback path.
+        /// </summary>
+        public const string LogEventExtensionName = "TestExtension";
     }
 
     public class CSharpTestExecutor: AbstractSqlServerExtensionExecutor
@@ -56,6 +68,23 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
             ExtensionEventLogger.LogInformation(CSharpTestExecutorConstants.LogEventMessage);
+            return input;
+        }
+    }
+
+    /// <summary>
+    /// Test executor that emits an event through the ExtensionEventLogger extensionName
+    /// overload, attributing it to a named extension. Lets the native test assert the
+    /// forwarded XEvent carries the caller-supplied extension name rather than the default.
+    /// </summary>
+    public class CSharpTestExecutorLogNamedExtension: AbstractSqlServerExtensionExecutor
+    {
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
+            ExtensionEventLogger.Log(
+                ExtensionTraceLevel.Information,
+                CSharpTestExecutorConstants.LogNamedEventMessage,
+                errorCode: 0,
+                extensionName: CSharpTestExecutorConstants.LogEventExtensionName);
             return input;
         }
     }

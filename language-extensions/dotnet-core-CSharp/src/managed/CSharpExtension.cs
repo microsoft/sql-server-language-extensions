@@ -697,6 +697,10 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// 
         private const ushort MinSupportedHostCallbacksVersion = 1;
 
+        private static readonly uint MinimumHostCallbacksSize = checked(
+            (uint)(Marshal.OffsetOf<SqlExtensionHostCallbacks>(
+                nameof(SqlExtensionHostCallbacks.LogXEvent)).ToInt64() + IntPtr.Size));
+
         /// <summary>
         /// This delegate declares the delegate type of SetHostCallbacks.
         /// </summary>
@@ -737,6 +741,14 @@ namespace Microsoft.SqlServer.CSharpExtension
                     throw new NotSupportedException(
                         "Unsupported SQLEXTENSION_HOST_CALLBACKS version: " +
                         hostCallbacks->Version);
+                }
+
+                if (hostCallbacks->SizeInBytes < MinimumHostCallbacksSize)
+                {
+                    Logging.Error("CSharpExtension::SetHostCallbacks: incomplete host callbacks structure");
+                    throw new ArgumentException(
+                        "Incomplete SQLEXTENSION_HOST_CALLBACKS structure.",
+                        nameof(hostCallbacks));
                 }
 
                 if (hostCallbacks->LogXEvent != IntPtr.Zero)

@@ -98,9 +98,23 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// <param name="level">Event severity.</param>
         /// <param name="message">Message to log. A null message is treated as empty.</param>
         /// <param name="errorCode">Optional error code for non-informational events.</param>
-        public static void Log(ExtensionTraceLevel level, string message, int errorCode = 0)
+        public static void Log(ExtensionTraceLevel level, string message, int errorCode = 0) =>
+            Log(level, message, errorCode, extensionName: null);
+
+        /// <summary>
+        /// Logs an event at the specified severity, attributed to a named extension.
+        /// </summary>
+        /// <param name="level">Event severity.</param>
+        /// <param name="message">Message to log. A null message is treated as empty.</param>
+        /// <param name="errorCode">Error code for non-informational events; 0 when unused.</param>
+        /// <param name="extensionName">
+        /// Name recorded as the event's originating extension. When null or empty the
+        /// Extension's default name is used. Lets an in-process library (e.g. one loaded
+        /// by a user script) attribute its events to itself rather than the host Extension.
+        /// </param>
+        public static void Log(ExtensionTraceLevel level, string message, int errorCode, string extensionName)
         {
-            Sink?.Log(level, errorCode, message);
+            Sink?.Log(level, errorCode, message, extensionName);
         }
     }
 }

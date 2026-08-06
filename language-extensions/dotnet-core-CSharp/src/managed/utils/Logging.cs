@@ -138,14 +138,18 @@ namespace Microsoft.SqlServer.CSharpExtension
         /// <param name="traceLevel">Trace severity.</param>
         /// <param name="errorCode">Error code for non-informational logs.</param>
         /// <param name="message">The message to log.</param>
+        /// <param name="extensionName">
+        /// Originating extension name; null or empty selects the default name.
+        /// </param>
         internal static void LogXEventFromCurrentSession(
             ExtensionTraceLevel traceLevel,
             int                 errorCode,
-            string              message)
+            string              message,
+            string              extensionName = null)
         {
             (Guid sessionId, ushort taskId) = _currentSession.Value;
             LogXEvent(
-                extensionName: null,
+                extensionName: extensionName,
                 sessionId:     sessionId,
                 taskId:        taskId,
                 traceLevel:    traceLevel,

@@ -27,7 +27,7 @@ namespace Microsoft.SqlServer.CSharpExtension
         public bool IsEnabled => Logging.HasLogXEventCallback;
 
         /// <inheritdoc/>
-        public void Log(ExtensionTraceLevel level, int errorCode, string message) =>
-            Logging.LogXEventFromCurrentSession(level, errorCode, message);
+        public void Log(ExtensionTraceLevel level, int errorCode, string message, string extensionName) =>
+            Logging.LogXEventFromCurrentSession(level, errorCode, message, extensionName);
     }
 }

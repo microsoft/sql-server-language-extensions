@@ -359,8 +359,9 @@ SQLRETURN Cleanup()
     if (g_dotnet_runtime != nullptr)
     {
         SQLEXTENSION_HOST_CALLBACKS nullCallbacks = {};
-        nullCallbacks.Version   = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
-        nullCallbacks.LogXEvent = nullptr;
+        nullCallbacks.Version     = SQLEXTENSION_HOST_CALLBACKS_VERSION_1;
+        nullCallbacks.SizeInBytes = sizeof(nullCallbacks);
+        nullCallbacks.LogXEvent   = nullptr;
 
         g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
             nameof(SetHostCallbacks),
@@ -563,13 +564,43 @@ SQLRETURN SetHostCallbacks(
         return SQL_ERROR;
     }
 
-    // Take a shallow copy of the caller's struct so g_hostCallbacks cannot
-    // dangle if the host passed a stack-allocated SQLEXTENSION_HOST_CALLBACKS.
+    // Smallest structure this Extension can consume: everything through LogXEvent,
+    // the last field it reads.
     //
-    g_hostCallbacksCopy = *hostCallbacks;
+    const SQLUINTEGER minHostCallbacksSize =
+        static_cast<SQLUINTEGER>(offsetof(SQLEXTENSION_HOST_CALLBACKS, LogXEvent) + sizeof(hostCallbacks->LogXEvent));
+    if (hostCallbacks->SizeInBytes < minHostCallbacksSize)
+    {
+        LOG_ERROR("SetHostCallbacks called with incomplete host callbacks structure");
+        return SQL_ERROR;
+    }
+
+    // The copy below is field-by-field, so a callback added to SQLEXTENSION_HOST_CALLBACKS
+    // is dropped silently: the Extension still builds and simply never forwards it. Fail
+    // the build instead, whether that callback claims a Reserved slot or is appended.
+    //
+    static_assert(
+        sizeof(SQLEXTENSION_HOST_CALLBACKS::Reserved1) == sizeof(void *) &&
+        sizeof(SQLEXTENSION_HOST_CALLBACKS::Reserved2) == sizeof(void *) &&
+        sizeof(SQLEXTENSION_HOST_CALLBACKS) ==
+            offsetof(SQLEXTENSION_HOST_CALLBACKS, Reserved2) + sizeof(void *),
+        "SQLEXTENSION_HOST_CALLBACKS layout changed: copy the new callback in "
+        "SetHostCallbacks and cover it in the forwarded SizeInBytes below.");
+
+    // Cap the forwarded extent at what this build can hold. Reporting the
+    // copy buffer's full size unconditionally would tell the managed layer that
+    // trailing fields a smaller, older host never supplied are valid.
+    //
+    g_hostCallbacksCopy = {};
+    g_hostCallbacksCopy.Version     = hostCallbacks->Version;
+    g_hostCallbacksCopy.Reserved0   = hostCallbacks->Reserved0;
+    g_hostCallbacksCopy.SizeInBytes = hostCallbacks->SizeInBytes < sizeof(g_hostCallbacksCopy)
+        ? hostCallbacks->SizeInBytes
+        : static_cast<SQLUINTEGER>(sizeof(g_hostCallbacksCopy));
+    g_hostCallbacksCopy.LogXEvent   = hostCallbacks->LogXEvent;
     g_hostCallbacks     = &g_hostCallbacksCopy;
 
     return g_dotnet_runtime->call_managed_method<decltype(&SetHostCallbacks)>(
         nameof(SetHostCallbacks),
-        hostCallbacks);
+        &g_hostCallbacksCopy);
 }
