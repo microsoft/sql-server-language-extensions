@@ -10,7 +10,6 @@
 //*********************************************************************
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 #include <sstream>
 #include <cstring> // Needed for memcpy in Linux
 

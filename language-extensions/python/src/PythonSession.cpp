@@ -11,6 +11,8 @@
 //
 //*************************************************************************************************
 
+#include <cstdio>
+
 #include "Logger.h"
 #include "PythonExtensionUtils.h"
 #include "PythonNamespace.h"
@@ -211,8 +213,12 @@ void PythonSession::ExecuteWorkflow(
 	string pyStdOut = bp::extract<string>(m_mainNamespace["_temp_out_"]);
 	string pyStdErr = bp::extract<string>(m_mainNamespace["_temp_err_"]);
 
-	cout << pyStdOut << endl;
-	cerr << pyStdErr << endl;
+	fwrite(pyStdOut.data(), 1, pyStdOut.size(), stdout);
+	fputc('\n', stdout);
+	fflush(stdout);
+	fwrite(pyStdErr.data(), 1, pyStdErr.size(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 
 	// In case of streaming clean up the previous stream batch's output buffers
 	//

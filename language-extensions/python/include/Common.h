@@ -18,7 +18,6 @@
 #endif
 
 #include <string>
-#include <iostream>
 #include <exception>
 #include <stdio.h>
 #include <vector>

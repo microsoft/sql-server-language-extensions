@@ -46,8 +46,28 @@ if (${PLATFORM} STREQUAL linux)
 	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
 
 	find_library(PYTHON_LIB python${PYTHON_VERSION} ${PYTHON_LIB_PATH})
-	find_library(BOOST_PYTHON_LIB boost_python${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
-	find_library(BOOST_NUMPY_LIB boost_numpy${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
+
+	# Same static archives the extension links - see language-extensions/python/src/CMakeLists.txt.
+	# The test links libPythonExtension and Boost both, so a shared Boost here would put two
+	# Boost.Python copies with independent type registries in one process.
+	#
+	if(NOT BOOST_PYTHON_ROOT)
+		set(BOOST_PYTHON_ROOT /usr/local/lib/boost_1_90_0/stage/lib)
+	endif()
+
+	unset(BOOST_PYTHON_LIB CACHE)
+	unset(BOOST_NUMPY_LIB CACHE)
+
+	find_library(BOOST_PYTHON_LIB NAMES libboost_python${PYTHON_VERSION_NO_DOT}.a
+		PATHS ${BOOST_PYTHON_ROOT} NO_DEFAULT_PATH)
+	find_library(BOOST_NUMPY_LIB NAMES libboost_numpy${PYTHON_VERSION_NO_DOT}.a
+		PATHS ${BOOST_PYTHON_ROOT} NO_DEFAULT_PATH)
+
+	if(NOT BOOST_PYTHON_LIB OR NOT BOOST_NUMPY_LIB)
+		message(FATAL_ERROR
+			"Static Boost.Python/Boost.NumPy not found under ${BOOST_PYTHON_ROOT}. "
+			"Override -DBOOST_PYTHON_ROOT=<dir> if the build moved them.")
+	endif()
 
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)

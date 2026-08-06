@@ -11,6 +11,8 @@
 //
 //*************************************************************************************************
 
+#include <cstdio>
+
 #include "Logger.h"
 
 #define TIMESTAMP_LENGTH 35
@@ -26,7 +28,12 @@ char Logger::sm_timestampBuffer[TIMESTAMP_LENGTH] = { 0 };
 //
 void Logger::LogError(const string &errorMsg)
 {
-	cerr << GetCurrentTimestamp() << "Error: " << errorMsg << endl;
+	const string timestamp = GetCurrentTimestamp();
+	fwrite(timestamp.data(), 1, timestamp.size(), stderr);
+	fputs("Error: ", stderr);
+	fwrite(errorMsg.data(), 1, errorMsg.size(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -38,7 +45,12 @@ void Logger::LogError(const string &errorMsg)
 //
 void Logger::LogException(const exception &e)
 {
-	cerr << GetCurrentTimestamp() << "Exception occurred: " << e.what() << endl;
+	const string timestamp = GetCurrentTimestamp();
+	fwrite(timestamp.data(), 1, timestamp.size(), stderr);
+	fputs("Exception occurred: ", stderr);
+	fputs(e.what(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -50,7 +62,11 @@ void Logger::LogException(const exception &e)
 void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG)
-	cout << GetCurrentTimestamp() << msg << endl;
+	const string timestamp = GetCurrentTimestamp();
+	fwrite(timestamp.data(), 1, timestamp.size(), stdout);
+	fwrite(msg.data(), 1, msg.size(), stdout);
+	fputc('\n', stdout);
+	fflush(stdout);
 #endif
 }
 
