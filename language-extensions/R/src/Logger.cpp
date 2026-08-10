@@ -27,7 +27,6 @@
 //**************************************************************************************************
 
 #include <ctime>
-#include <iostream>
 #include <stdio.h>
 
 #include "Common.h"
@@ -75,7 +74,7 @@ void Logger::Log(const string &msg)
 {
 #if defined(_DEBUG) || defined(_VERBOSE)
 	string msgWithTimestamp = string(GetCurrentTimestamp()) + msg + "\n";
-	cout << msgWithTimestamp;
+	fwrite(msgWithTimestamp.data(), 1, msgWithTimestamp.size(), stdout);
 #endif
 }
 
@@ -135,10 +134,11 @@ const char* Logger::GetCurrentTimestamp()
 // Name: Logger::LogToStdErr
 //
 // Description:
-//  Logs the given message to stderr; if R is initialized uses its error printing function,
-//  else uses std::cerr.
+//  Writes the given message to stderr and flushes, matching the unit-buffered behaviour of the
+//  std::cerr insertion this replaced.
 //
 void Logger::LogToStdErr(const string &errorMsgWithTimestamp)
 {
-	cerr << errorMsgWithTimestamp;
+	fwrite(errorMsgWithTimestamp.data(), 1, errorMsgWithTimestamp.size(), stderr);
+	fflush(stderr);
 }

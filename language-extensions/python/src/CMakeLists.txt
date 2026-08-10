@@ -72,8 +72,30 @@ if (${PLATFORM} STREQUAL linux)
 		message(STATUS "Shared Python library not found in standard locations, trying system default search")
 		find_library(PYTHON_LIB python${PYTHON_VERSION})
 	endif()
-	find_library(BOOST_PYTHON_LIB boost_python${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
-	find_library(BOOST_NUMPY_LIB boost_numpy${PYTHON_VERSION_NO_DOT} ${BOOST_PYTHON_ROOT})
+
+	# Boost must not become a runtime dependency: the SQL container images ship no libboost_*.so,
+	# so a shared link fails at load time and every external script fails with it.
+	#
+	if(NOT BOOST_PYTHON_ROOT)
+		set(BOOST_PYTHON_ROOT /usr/local/lib/boost_1_90_0/stage/lib)
+	endif()
+
+	unset(BOOST_PYTHON_LIB CACHE)
+	unset(BOOST_NUMPY_LIB CACHE)
+
+	find_library(BOOST_PYTHON_LIB NAMES libboost_python${PYTHON_VERSION_NO_DOT}.a
+		PATHS ${BOOST_PYTHON_ROOT} NO_DEFAULT_PATH)
+	find_library(BOOST_NUMPY_LIB NAMES libboost_numpy${PYTHON_VERSION_NO_DOT}.a
+		PATHS ${BOOST_PYTHON_ROOT} NO_DEFAULT_PATH)
+
+	# Fail at configure time rather than silently shipping a package that cannot load.
+	#
+	if(NOT BOOST_PYTHON_LIB OR NOT BOOST_NUMPY_LIB)
+		message(FATAL_ERROR
+			"libboost_python${PYTHON_VERSION_NO_DOT}.a / libboost_numpy${PYTHON_VERSION_NO_DOT}.a "
+			"not found under ${BOOST_PYTHON_ROOT}. Override -DBOOST_PYTHON_ROOT=<dir> if the "
+			"build moved them.")
+	endif()
 
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)

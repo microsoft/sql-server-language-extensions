@@ -9,7 +9,7 @@
 //
 //*********************************************************************
 #include "Logger.h"
-#include <iostream>
+#include <cstdio>
 #include <ctime>
 
 using namespace std;
@@ -22,7 +22,11 @@ using namespace std;
 //
 void Logger::LogError(const string &errorMsg)
 {
-	cerr << GetCurrentTimestamp() << "Error: " << errorMsg << endl;
+	fputs(GetCurrentTimestamp(), stderr);
+	fputs("Error: ", stderr);
+	fwrite(errorMsg.data(), 1, errorMsg.size(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 //---------------------------------------------------------------------
@@ -34,7 +38,11 @@ void Logger::LogError(const string &errorMsg)
 //
 void Logger::LogException(const exception &e)
 {
-	cerr << GetCurrentTimestamp() << "Exception occurred: " << e.what() << endl;
+	fputs(GetCurrentTimestamp(), stderr);
+	fputs("Exception occurred: ", stderr);
+	fputs(e.what(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 //---------------------------------------------------------------------
@@ -46,7 +54,11 @@ void Logger::LogException(const exception &e)
 //
 void Logger::LogJavaException(const string &exceptionMsg)
 {
-	cerr << GetCurrentTimestamp() << "Exception occurred in Java: " << exceptionMsg << endl;
+	fputs(GetCurrentTimestamp(), stderr);
+	fputs("Exception occurred in Java: ", stderr);
+	fwrite(exceptionMsg.data(), 1, exceptionMsg.size(), stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 }
 
 //---------------------------------------------------------------------
@@ -58,6 +70,9 @@ void Logger::LogJavaException(const string &exceptionMsg)
 void Logger::Log(const string &msg)
 {
 #ifdef DEBUG
-	cout << GetCurrentTimestamp() << msg << endl;
+	fputs(GetCurrentTimestamp(), stdout);
+	fwrite(msg.data(), 1, msg.size(), stdout);
+	fputc('\n', stdout);
+	fflush(stdout);
 #endif
 }
