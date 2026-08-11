@@ -66,12 +66,10 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -L${OUTPUT_DIRECTORY}/lib -L${LIBS} -Wl,-rpath,${JRE_ROOT}:/opt/mssql-extensibility/lib")
 	set(USR_LIB_PATH "/usr/local/lib")
 	
-	# Do NOT link LLVM's libc++ / libc++abi. This target is compiled with GCC and already
-	# links GNU libstdc++, so adding libc++ put two C++ runtimes in one .so and pulled in
-	# libunwind through libc++abi. The SQL container images are not required to ship any of
-	# the three, and RHEL images carry none of them:
-	#
-	#   Exthost: Load extension failed libunwind.so.1: cannot open shared object file
+	# Keep this .so dependent only on the C/C++ runtime every SQL container image provides:
+	# libstdc++, libgcc_s and libc, which GCC supplies for us, plus libdl linked below.
+	# Any other library named here becomes a runtime dependency the images must also carry,
+	# and they are not required to - RHEL images ship no LLVM runtime, for example.
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	
 	target_link_libraries(JavaExtension ${DL_LIB})
