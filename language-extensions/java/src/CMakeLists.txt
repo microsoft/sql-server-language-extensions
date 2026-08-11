@@ -66,11 +66,13 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -L${OUTPUT_DIRECTORY}/lib -L${LIBS} -Wl,-rpath,${JRE_ROOT}:/opt/mssql-extensibility/lib")
 	set(USR_LIB_PATH "/usr/local/lib")
 	
-	find_library(CXX_LIB c++ ${USR_LIB_PATH})
-	find_library(ABI_LIB c++abi ${USR_LIB_PATH})
+	# Keep this .so dependent only on the C/C++ runtime every SQL container image provides:
+	# libstdc++, libgcc_s and libc, which GCC supplies for us, plus libdl linked below.
+	# Any other library named here becomes a runtime dependency the images must also carry,
+	# and they are not required to - RHEL images ship no LLVM runtime, for example.
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	
-	target_link_libraries(JavaExtension ${CXX_LIB} ${ABI_LIB} ${DL_LIB})
+	target_link_libraries(JavaExtension ${DL_LIB})
 	set(ADDITIONAL_INCLUDES ${JDK_INCLUDE} ${JDK_INCLUDE_LINUX})
 	
 elseif(${PLATFORM} STREQUAL windows)
