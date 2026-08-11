@@ -66,17 +66,12 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -shared -L${OUTPUT_DIRECTORY}/lib -L${LIBS} -Wl,-rpath,${JRE_ROOT}:/opt/mssql-extensibility/lib")
 	set(USR_LIB_PATH "/usr/local/lib")
 	
-	# Do NOT link LLVM's libc++ / libc++abi here. This target is compiled with GCC, so it
-	# already links GNU libstdc++; adding libc++ put two C++ runtimes in one .so and, via
-	# libc++abi, pulled in libunwind. That made libc++.so.1, libc++abi.so.1 and
-	# libunwind.so.1 runtime dependencies which the SQL container images are not required
-	# to ship. RHEL images carry none of them, so the Java extension failed to load there
-	# on every distro release:
+	# Do NOT link LLVM's libc++ / libc++abi. This target is compiled with GCC and already
+	# links GNU libstdc++, so adding libc++ put two C++ runtimes in one .so and pulled in
+	# libunwind through libc++abi. The SQL container images are not required to ship any of
+	# the three, and RHEL images carry none of them:
 	#
 	#   Exthost: Load extension failed libunwind.so.1: cannot open shared object file
-	#
-	# Ubuntu only worked by accident, because its images happen to carry those libraries.
-	# Python and R link libstdc++ alone; Java now matches them.
 	find_library(DL_LIB dl ${USR_LIB_PATH})
 	
 	target_link_libraries(JavaExtension ${DL_LIB})
