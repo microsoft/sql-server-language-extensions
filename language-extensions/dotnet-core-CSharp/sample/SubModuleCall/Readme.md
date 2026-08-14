@@ -25,7 +25,7 @@ dotnet build C:\Dev\language-extensions\language-extensions\dotnet-core-CSharp\s
 3. Move this DLL file to the respective folder of the SQL Server Language Extension.
 ```bash
 
-copy "C:\Dev\language-extensions\language-extensions\dotnet-core-CSharp\sample\SubModuleCall\SubModuleProject\SubModule\bin\Debug\net8.0\SubModule.dll"  "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1"
+copy "C:\Dev\language-extensions\language-extensions\dotnet-core-CSharp\sample\SubModuleCall\SubModuleProject\SubModule\bin\Debug\net10.0\SubModule.dll"  "C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSERVER2022\MSSQL\ExternalLibraries\6\65537\1"
 
 
 ```
