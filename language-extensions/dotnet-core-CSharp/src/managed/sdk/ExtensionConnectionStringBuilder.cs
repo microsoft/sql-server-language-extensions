@@ -22,18 +22,17 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
     /// endpoint published to the external extension host process
     /// (exthost.exe).
     /// <para>
-    /// The primary entry point,
-    /// <see cref="BuildLoopbackConnectionString"/>, selects between the
-    /// XDB (SQL DB) and classic on-prem loopback shapes based
-    /// on the <c>IS_XDB</c> environment variable that launchpad sets
-    /// on every XDB satellite process. Extension user code should call
-    /// it without inspecting the environment itself.
+    /// The <see cref="BuildLoopbackConnectionString"/> entry point
+    /// builds either an implied-auth or SQL-authenticated connection
+    /// string. When a user name is supplied, SQL authentication is
+    /// used; otherwise, implied authentication is used.
     /// </para>
     /// <para>
-    /// A separate <see cref="BuildSqlAuthLoopbackConnectionString"/>
-    /// overload is provided for the small set of internal test
-    /// scenarios that need explicit SQL-auth loopbacks; that path is
-    /// NOT intended for extension user code.
+    /// The method selects between the
+    /// XDB (SQL DB) and classic on-prem loopback shapes based
+    /// on the <c>IS_XDB</c> environment variable that launchpad sets
+    /// on every XDB satellite process, so callers do not need to inspect
+    /// the environment themselves.
     /// </para>
     /// </summary>
     public static class ExtensionConnectionStringBuilder
@@ -48,8 +47,7 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
 
         /// <summary>
         /// Environment variable holding the TDS loopback endpoint in
-        /// "host,port" form. Set by launchpad on XDB. Read by the
-        /// SQL-auth path when running on XDB.
+        /// "host,port" form.
         /// </summary>
         public const string LoopbackEndpointEnvVar = "SqlTdsLoopbackConnectionEndpoint";
 
@@ -89,10 +87,6 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
 
         /// <summary>
         /// ODBC option that suppresses server-certificate validation.
-        /// ODBC Driver 18 defaults <c>Encrypt=Yes</c>, so this is
-        /// included on paths that connect to endpoints presenting a
-        /// self-signed certificate (the on-prem <c>localhost</c>
-        /// loopback and the XDB SNI named-pipe loopback).
         /// </summary>
         public const string TrustServerCertificateClause = "TrustServerCertificate=Yes;";
 
@@ -110,10 +104,9 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         private const string DefaultApplicationName = "CSharpExtension";
 
         /// <summary>
-        /// Returns <c>true</c> when the current process is an XDB /
-        /// WCOW satellite (SQL DB or SQL MI); <c>false</c> for classic
-        /// on-prem SQL Server. Determined from the <c>IS_XDB</c>
-        /// environment variable set by launchpad at satellite launch.
+        /// Returns <c>true</c> when the current process is an XDB
+        /// (SQL DB); <c>false</c> for classic on-prem SQL Server.
+        /// Determined from the <c>IS_XDB</c> environment variable.
         /// </summary>
         public static bool IsXdbHost()
         {
@@ -122,14 +115,12 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         }
 
         /// <summary>
-        /// Builds an implied-auth loopback ODBC connection string for
-        /// the local SQL Server, selecting between the XDB (cert-based
-        /// SNI named-pipe) and on-prem (trusted <c>localhost</c>)
-        /// transports from the <c>IS_XDB</c> environment variable that
-        /// launchpad sets on XDB satellites.
-        /// 
-        /// In both cases the resulting connection authenticates as the
-        /// original caller, not as the satellite process identity.
+        /// Builds a loopback ODBC connection string for the local SQL
+        /// Server. When <paramref name="userName"/> is supplied, the
+        /// connection uses SQL authentication; otherwise, it uses
+        /// implied authentication as the original caller.
+        /// The transport is selected between XDB and on-prem from the
+        /// <c>IS_XDB</c> environment variable.
         /// </summary>
         /// <param name="dbName">
         /// Target database name. When null or empty the value of the
@@ -137,16 +128,53 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// used; if that is also not set the connection string targets
         /// <see cref="DefaultDatabaseName"/>.
         /// </param>
+        /// <param name="userName">
+        /// Optional SQL-authentication user name. When null or empty,
+        /// implied authentication is used.
+        /// </param>
+        /// <param name="password">
+        /// SQL-authentication password. Required when
+        /// <paramref name="userName"/> is supplied.
+        /// </param>
         /// <returns>ODBC connection string for the loopback endpoint.</returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown when <c>IS_XDB=TRUE</c> but launchpad has not also
-        /// published <see cref="LoopbackPipeEnvVar"/> and
-        /// <see cref="CertificateHashEnvVar"/>. Silent fallback to
-        /// on-prem in that case would connect as the wrong identity.
+        /// <exception cref="ArgumentException">
+        /// Thrown when <paramref name="userName"/> is supplied without
+        /// a non-empty <paramref name="password"/>.
         /// </exception>
-        public static string BuildLoopbackConnectionString(string dbName = null)
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when <c>IS_XDB=TRUE</c> but launchpad has not published
+        /// the environment variables required by the selected
+        /// authentication mode.
+        /// </exception>
+        public static string BuildLoopbackConnectionString(
+            string dbName = null,
+            string userName = null,
+            string password = null)
         {
             string targetDb = ResolveDatabaseName(dbName);
+
+            if (!string.IsNullOrEmpty(userName))
+            {
+                if (string.IsNullOrEmpty(password))
+                {
+                    throw new ArgumentException(
+                        "SQL authentication requires a non-empty password.",
+                        nameof(password));
+                }
+
+                if (IsXdbHost())
+                {
+                    string endpoint = RequireEnvironmentVariable(LoopbackEndpointEnvVar);
+                    return
+                        $"{DriverClause}Server={endpoint};Database={targetDb};"
+                        + $"UID={userName};PWD={password};";
+                }
+
+                return
+                    $"{DriverClause}{TrustServerCertificateClause}"
+                    + $"Server=localhost;Database={targetDb};"
+                    + $"UID={userName};PWD={password};";
+            }
 
             if (IsXdbHost())
             {
@@ -156,60 +184,6 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
             }
 
             return BuildOnPremImpliedAuthConnectionString(targetDb);
-        }
-
-        /// <summary>
-        /// Builds a SQL-authenticated ODBC loopback connection string,
-        /// selecting the loopback transport from the <c>IS_XDB</c>
-        /// environment variable. EFX implied auth is NOT used - the
-        /// loopback authenticates with the supplied SQL login.
-        /// Intended for internal test scenarios that need an explicit
-        /// SQL login; extension user code should use
-        /// <see cref="BuildLoopbackConnectionString"/> instead.
-
-        /// </summary>
-        /// <param name="dbName">
-        /// Target database name. When null or empty the value of the
-        /// <see cref="PhysicalDbNameEnvVar"/> environment variable is
-        /// used; if that is also not set the connection string targets
-        /// <see cref="DefaultDatabaseName"/>.
-        /// </param>
-        /// <param name="userName">SQL-auth user name. Required.</param>
-        /// <param name="password">SQL-auth password.</param>
-        /// <returns>ODBC connection string for the loopback endpoint.</returns>
-        /// <exception cref="ArgumentException">
-        /// Thrown when <paramref name="userName"/> is null or empty.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown when <c>IS_XDB=TRUE</c> but
-        /// <see cref="LoopbackEndpointEnvVar"/> is not set.
-        /// </exception>
-        public static string BuildSqlAuthLoopbackConnectionString(
-            string dbName,
-            string userName,
-            string password)
-        {
-            if (string.IsNullOrEmpty(userName))
-            {
-                throw new ArgumentException(
-                    "SQL authentication requires a non-empty user name.",
-                    nameof(userName));
-            }
-
-            string targetDb = ResolveDatabaseName(dbName);
-
-            if (IsXdbHost())
-            {
-                string endpoint = RequireEnvironmentVariable(LoopbackEndpointEnvVar);
-                return
-                    $"{DriverClause}Server={endpoint};Database={targetDb};"
-                    + $"UID={userName};PWD={password};";
-            }
-
-            return
-                $"{DriverClause}{TrustServerCertificateClause}"
-                + $"Server=localhost;Database={targetDb};"
-                + $"UID={userName};PWD={password};";
         }
 
         /// <summary>
