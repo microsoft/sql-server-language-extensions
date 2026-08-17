@@ -96,13 +96,19 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     /// </summary>
     public class CSharpTestExecutorConnectionStringBuilder: AbstractSqlServerExtensionExecutor
     {
+        private const string IsXdbEnvVar = "IS_XDB";
+        private const string LoopbackEndpointEnvVar = "SqlTdsLoopbackConnectionEndpoint";
+        private const string LoopbackPipeEnvVar = "LoopbackConnectionPipe";
+        private const string CertificateHashEnvVar = "ExtensibilityCertificateHash";
+        private const string PhysicalDbNameEnvVar = "PhysicalDbName";
+
         private static readonly string[] s_environmentVariableNames =
         {
-            ExtensionConnectionStringBuilder.IsXdbEnvVar,
-            ExtensionConnectionStringBuilder.LoopbackEndpointEnvVar,
-            ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
-            ExtensionConnectionStringBuilder.CertificateHashEnvVar,
-            ExtensionConnectionStringBuilder.PhysicalDbNameEnvVar,
+            IsXdbEnvVar,
+            LoopbackEndpointEnvVar,
+            LoopbackPipeEnvVar,
+            CertificateHashEnvVar,
+            PhysicalDbNameEnvVar,
         };
 
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
@@ -120,43 +126,43 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                     ExtensionConnectionStringBuilder.BuildLoopbackConnectionString("TestDb");
 
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.IsXdbEnvVar,
+                    IsXdbEnvVar,
                     "TRUE");
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+                    LoopbackPipeEnvVar,
                     "loopback-pipe");
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.CertificateHashEnvVar,
+                    CertificateHashEnvVar,
                     "0123456789ABCDEF");
                 sqlParams["@param1"] =
                     ExtensionConnectionStringBuilder.BuildLoopbackConnectionString("TestDb");
 
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+                    LoopbackPipeEnvVar,
                     null);
                 sqlParams["@param2"] = CaptureInvalidOperationMessage(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
 
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+                    LoopbackPipeEnvVar,
                     "loopback-pipe");
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.CertificateHashEnvVar,
+                    CertificateHashEnvVar,
                     null);
                 sqlParams["@param3"] = CaptureInvalidOperationMessage(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
 
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.IsXdbEnvVar,
+                    IsXdbEnvVar,
                     null);
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.PhysicalDbNameEnvVar,
+                    PhysicalDbNameEnvVar,
                     "PhysicalDb");
                 sqlParams["@param4"] =
                     ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(string.Empty);
 
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.PhysicalDbNameEnvVar,
+                    PhysicalDbNameEnvVar,
                     null);
                 sqlParams["@param5"] =
                     ExtensionConnectionStringBuilder.BuildLoopbackConnectionString();
@@ -168,10 +174,10 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                         "TestPassword");
 
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.IsXdbEnvVar,
+                    IsXdbEnvVar,
                     "TRUE");
                 Environment.SetEnvironmentVariable(
-                    ExtensionConnectionStringBuilder.LoopbackEndpointEnvVar,
+                    LoopbackEndpointEnvVar,
                     "localhost,1433");
                 sqlParams["@param7"] =
                     ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
@@ -183,6 +189,29 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
                         "TestDb",
                         "TestUser"));
+
+                sqlParams["@param9"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb;Encrypt=no"));
+
+                sqlParams["@param10"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser=Injected",
+                        "TestPassword"));
+
+                sqlParams["@param11"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser",
+                        "{TestPassword}"));
+
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, null);
+                Environment.SetEnvironmentVariable(
+                    PhysicalDbNameEnvVar,
+                    "PhysicalDb;UID=Injected");
+                sqlParams["@param12"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
             }
             finally
             {

@@ -43,13 +43,13 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// used to distinguish XDB (SQL DB) from classic
         /// on-prem SQL Server. Absent on on-prem.
         /// </summary>
-        public const string IsXdbEnvVar = "IS_XDB";
+        private const string IsXdbEnvVar = "IS_XDB";
 
         /// <summary>
         /// Environment variable holding the TDS loopback endpoint in
         /// "host,port" form.
         /// </summary>
-        public const string LoopbackEndpointEnvVar = "SqlTdsLoopbackConnectionEndpoint";
+        private const string LoopbackEndpointEnvVar = "SqlTdsLoopbackConnectionEndpoint";
 
         /// <summary>
         /// Environment variable holding the SNI loopback named-pipe
@@ -57,38 +57,38 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// launchpad on XDB. Read to build the cert-based implied-auth
         /// XDB loopback.
         /// </summary>
-        public const string LoopbackPipeEnvVar = "LoopbackConnectionPipe";
+        private const string LoopbackPipeEnvVar = "LoopbackConnectionPipe";
 
         /// <summary>
         /// Environment variable holding the SHA-1 thumbprint of the
         /// extensibility client certificate the loopback should
         /// present. Set by launchpad on XDB.
         /// </summary>
-        public const string CertificateHashEnvVar = "ExtensibilityCertificateHash";
+        private const string CertificateHashEnvVar = "ExtensibilityCertificateHash";
 
         /// <summary>
         /// Environment variable holding the name of the physical
         /// database the caller is executing against. Read as the
         /// default when no <c>dbName</c> is passed. Set by launchpad.
         /// </summary>
-        public const string PhysicalDbNameEnvVar = "PhysicalDbName";
+        private const string PhysicalDbNameEnvVar = "PhysicalDbName";
 
         /// <summary>
         /// Fallback database name used when no <c>dbName</c> is passed
         /// and <see cref="PhysicalDbNameEnvVar"/> is not set.
         /// </summary>
-        public const string DefaultDatabaseName = "master";
+        private const string DefaultDatabaseName = "master";
 
         /// <summary>
         /// ODBC driver clause used for every loopback connection
         /// string.
         /// </summary>
-        public const string DriverClause = "Driver={ODBC Driver 18 for SQL Server};";
+        private const string DriverClause = "Driver={ODBC Driver 18 for SQL Server};";
 
         /// <summary>
         /// ODBC option that suppresses server-certificate validation.
         /// </summary>
-        public const string TrustServerCertificateClause = "TrustServerCertificate=Yes;";
+        private const string TrustServerCertificateClause = "TrustServerCertificate=Yes;";
 
         /// <summary>
         /// Named-pipe prefix required by SNI to select the Named Pipes
@@ -104,11 +104,23 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         private const string DefaultApplicationName = "CSharpExtension";
 
         /// <summary>
+        /// Characters that can alter ODBC connection-string parsing
+        /// when inserted into an unquoted value.
+        /// </summary>
+        private static readonly char[] s_invalidConnectionStringValueCharacters =
+        {
+            ';',
+            '{',
+            '}',
+            '=',
+        };
+
+        /// <summary>
         /// Returns <c>true</c> when the current process is an XDB
         /// (SQL DB); <c>false</c> for classic on-prem SQL Server.
         /// Determined from the <c>IS_XDB</c> environment variable.
         /// </summary>
-        public static bool IsXdbHost()
+        private static bool IsXdbHost()
         {
             string value = Environment.GetEnvironmentVariable(IsXdbEnvVar);
             return string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase);
@@ -139,12 +151,15 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// <returns>ODBC connection string for the loopback endpoint.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when <paramref name="userName"/> is supplied without
-        /// a non-empty <paramref name="password"/>.
+        /// a non-empty <paramref name="password"/>, or when a supplied
+        /// database name, user name, or password contains an ODBC
+        /// connection-string metacharacter.
         /// </exception>
         /// <exception cref="InvalidOperationException">
         /// Thrown when <c>IS_XDB=TRUE</c> but launchpad has not published
-        /// the environment variables required by the selected
-        /// authentication mode.
+        /// valid environment variables required by the selected
+        /// authentication mode, or when the launchpad-provided database
+        /// name is not valid for an ODBC connection string.
         /// </exception>
         public static string BuildLoopbackConnectionString(
             string dbName = null,
@@ -161,6 +176,9 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
                         "SQL authentication requires a non-empty password.",
                         nameof(password));
                 }
+
+                    ValidateConnectionStringArgument(userName, nameof(userName));
+                    ValidateConnectionStringArgument(password, nameof(password));
 
                 if (IsXdbHost())
                 {
@@ -241,13 +259,14 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         {
             if (!string.IsNullOrEmpty(dbName))
             {
+                ValidateConnectionStringArgument(dbName, nameof(dbName));
                 return dbName;
             }
 
             string fromEnv = Environment.GetEnvironmentVariable(PhysicalDbNameEnvVar);
             if (!string.IsNullOrEmpty(fromEnv))
             {
-                return fromEnv;
+                return ValidateEnvironmentVariableValue(PhysicalDbNameEnvVar, fromEnv);
             }
 
             return DefaultDatabaseName;
@@ -256,7 +275,8 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// <summary>
         /// Reads a required environment variable and throws
         /// <see cref="InvalidOperationException"/> when it is missing
-        /// or empty. Used for XDB loopback inputs whose absence
+        /// empty, or contains an ODBC connection-string metacharacter.
+        /// Used for XDB loopback inputs whose absence or malformed value
         /// indicates a launchpad misconfiguration that must not be
         /// silently masked by falling back to on-prem.
         /// </summary>
@@ -273,7 +293,53 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
                     + "its absence indicates a launchpad misconfiguration.");
             }
 
+            return ValidateEnvironmentVariableValue(name, value);
+        }
+
+        /// <summary>
+        /// Rejects a caller-supplied value that could append or alter an
+        /// ODBC connection-string keyword.
+        /// </summary>
+        /// <param name="value">Value to validate.</param>
+        /// <param name="parameterName">Public API parameter name.</param>
+        private static void ValidateConnectionStringArgument(string value, string parameterName)
+        {
+            if (ContainsConnectionStringMetacharacter(value))
+            {
+                throw new ArgumentException(
+                    "The value contains a character that is not allowed in an ODBC connection string.",
+                    parameterName);
+            }
+        }
+
+        /// <summary>
+        /// Rejects a launchpad-provided value that could append or alter
+        /// an ODBC connection-string keyword.
+        /// </summary>
+        /// <param name="name">Environment variable name.</param>
+        /// <param name="value">Environment variable value.</param>
+        /// <returns>The validated value.</returns>
+        private static string ValidateEnvironmentVariableValue(string name, string value)
+        {
+            if (ContainsConnectionStringMetacharacter(value))
+            {
+                throw new InvalidOperationException(
+                    $"Environment variable '{name}' contains a character that is not allowed "
+                    + "in an ODBC connection string.");
+            }
+
             return value;
+        }
+
+        /// <summary>
+        /// Determines whether a value contains an ODBC connection-string
+        /// metacharacter.
+        /// </summary>
+        /// <param name="value">Value to inspect.</param>
+        /// <returns><c>true</c> when the value contains a metacharacter.</returns>
+        private static bool ContainsConnectionStringMetacharacter(string value)
+        {
+            return value.IndexOfAny(s_invalidConnectionStringValueCharacters) >= 0;
         }
     }
 }

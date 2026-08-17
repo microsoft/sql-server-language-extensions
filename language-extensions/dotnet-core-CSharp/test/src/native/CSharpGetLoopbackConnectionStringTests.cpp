@@ -19,7 +19,7 @@ namespace ExtensionApiTest
     //
     // Description:
     //  Verify implied-auth and SQL-auth loopback connection string shapes, required
-    //  environment variable failures, password validation, and database name fallbacks.
+    //  environment variable failures, input validation, and database name fallbacks.
     //
     TEST_F(CSharpExtensionApiTests, GetConnectionStringBuilderOutputParamTest)
     {
@@ -29,11 +29,11 @@ namespace ExtensionApiTest
 
         InitializeSession(
             0,   // inputSchemaColumnsNumber
-            9,   // parametersNumber
+            13,  // parametersNumber
             scriptString);
 
         constexpr SQLULEN connectionStringParameterSize = 512;
-        for (SQLUSMALLINT paramNumber = 0; paramNumber < 9; ++paramNumber)
+        for (SQLUSMALLINT paramNumber = 0; paramNumber < 13; ++paramNumber)
         {
             InitStringParameter(
                 paramNumber,
@@ -74,7 +74,12 @@ namespace ExtensionApiTest
                 "Server=localhost;Database=TestDb;UID=TestUser;PWD=TestPassword;",
             "Driver={ODBC Driver 18 for SQL Server};Server=localhost,1433;Database=TestDb;"
                 "UID=TestUser;PWD=TestPassword;",
-            "password" };
+            "password",
+            "dbName",
+            "userName",
+            "password",
+            "Environment variable 'PhysicalDbName' contains a character that is not allowed "
+                "in an ODBC connection string." };
 
         vector<const char*> expectedParamValues;
         vector<SQLINTEGER> expectedStrLenOrInd;
