@@ -89,6 +89,141 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    /// <summary>
+    /// Test executor that builds loopback connection strings under on-prem and XDB
+    /// environment configurations. Results and expected failure messages are returned
+    /// through output parameters for the native test harness to verify.
+    /// </summary>
+    public class CSharpTestExecutorConnectionStringBuilder: AbstractSqlServerExtensionExecutor
+    {
+        private static readonly string[] s_environmentVariableNames =
+        {
+            ExtensionConnectionStringBuilder.IsXdbEnvVar,
+            ExtensionConnectionStringBuilder.LoopbackEndpointEnvVar,
+            ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+            ExtensionConnectionStringBuilder.CertificateHashEnvVar,
+            ExtensionConnectionStringBuilder.PhysicalDbNameEnvVar,
+        };
+
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            var originalEnvironment = new Dictionary<string, string>();
+            foreach (string name in s_environmentVariableNames)
+            {
+                originalEnvironment.Add(name, Environment.GetEnvironmentVariable(name));
+                Environment.SetEnvironmentVariable(name, null);
+            }
+
+            try
+            {
+                sqlParams["@param0"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString("TestDb");
+
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.IsXdbEnvVar,
+                    "TRUE");
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+                    "loopback-pipe");
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.CertificateHashEnvVar,
+                    "0123456789ABCDEF");
+                sqlParams["@param1"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString("TestDb");
+
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+                    null);
+                sqlParams["@param2"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.LoopbackPipeEnvVar,
+                    "loopback-pipe");
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.CertificateHashEnvVar,
+                    null);
+                sqlParams["@param3"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.IsXdbEnvVar,
+                    null);
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.PhysicalDbNameEnvVar,
+                    "PhysicalDb");
+                sqlParams["@param4"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(string.Empty);
+
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.PhysicalDbNameEnvVar,
+                    null);
+                sqlParams["@param5"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString();
+
+                sqlParams["@param6"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser",
+                        "TestPassword");
+
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.IsXdbEnvVar,
+                    "TRUE");
+                Environment.SetEnvironmentVariable(
+                    ExtensionConnectionStringBuilder.LoopbackEndpointEnvVar,
+                    "localhost,1433");
+                sqlParams["@param7"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser",
+                        "TestPassword");
+
+                sqlParams["@param8"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser"));
+            }
+            finally
+            {
+                foreach (KeyValuePair<string, string> variable in originalEnvironment)
+                {
+                    Environment.SetEnvironmentVariable(variable.Key, variable.Value);
+                }
+            }
+
+            return input;
+        }
+
+        private static string CaptureInvalidOperationMessage(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (InvalidOperationException exception)
+            {
+                return exception.Message;
+            }
+
+            return string.Empty;
+        }
+
+        private static string CaptureArgumentExceptionParameterName(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (ArgumentException exception)
+            {
+                return exception.ParamName;
+            }
+
+            return string.Empty;
+        }
+    }
+
     public class CSharpTestExecutorIntParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
