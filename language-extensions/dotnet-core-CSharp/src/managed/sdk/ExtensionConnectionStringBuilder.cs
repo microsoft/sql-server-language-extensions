@@ -177,8 +177,8 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
                         nameof(password));
                 }
 
-                    ValidateConnectionStringArgument(userName, nameof(userName));
-                    ValidateConnectionStringArgument(password, nameof(password));
+                ValidateConnectionStringArgument(userName, nameof(userName));
+                ValidateConnectionStringArgument(password, nameof(password));
 
                 if (IsXdbHost())
                 {
