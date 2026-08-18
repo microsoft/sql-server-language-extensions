@@ -140,6 +140,9 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(
                     LoopbackPipeEnvVar,
                     null);
+
+                // Expected message: LoopbackConnectionPipe is missing. XDB implied
+                // authentication requires the launchpad-provided named-pipe endpoint.
                 sqlParams["@param2"] = CaptureInvalidOperationMessage(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
 
@@ -149,6 +152,9 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(
                     CertificateHashEnvVar,
                     null);
+
+                // Expected message: ExtensibilityCertificateHash is missing. XDB implied
+                // authentication requires the launchpad-provided client certificate hash.
                 sqlParams["@param3"] = CaptureInvalidOperationMessage(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
 
@@ -185,21 +191,29 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                         "TestUser",
                         "TestPassword");
 
+                // Expected parameter: password. SQL authentication requires a non-empty
+                // password whenever a user name is supplied, so omitting it must fail.
                 sqlParams["@param8"] = CaptureArgumentExceptionParameterName(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
                         "TestDb",
                         "TestUser"));
 
+                // Expected parameter: dbName. The semicolon could inject another ODBC
+                // keyword into the connection string, so database-name validation must fail.
                 sqlParams["@param9"] = CaptureArgumentExceptionParameterName(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
                         "TestDb;Encrypt=no"));
 
+                // Expected parameter: userName. The equals sign is an ODBC metacharacter,
+                // so user-name validation must reject the value before interpolation.
                 sqlParams["@param10"] = CaptureArgumentExceptionParameterName(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
                         "TestDb",
                         "TestUser=Injected",
                         "TestPassword"));
 
+                // Expected parameter: password. Braces affect ODBC value parsing, so
+                // password validation must reject the value before interpolation.
                 sqlParams["@param11"] = CaptureArgumentExceptionParameterName(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
                         "TestDb",
@@ -210,6 +224,9 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(
                     PhysicalDbNameEnvVar,
                     "PhysicalDb;UID=Injected");
+
+                // Expected message: PhysicalDbName contains a disallowed ODBC character.
+                // The semicolon could inject a UID keyword, so environment validation must fail.
                 sqlParams["@param12"] = CaptureInvalidOperationMessage(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
             }
