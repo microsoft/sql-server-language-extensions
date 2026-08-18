@@ -229,6 +229,22 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 // The semicolon could inject a UID keyword, so environment validation must fail.
                 sqlParams["@param12"] = CaptureInvalidOperationMessage(
                     () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(PhysicalDbNameEnvVar, null);
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, "TRUE");
+                Environment.SetEnvironmentVariable(LoopbackPipeEnvVar, "loopback-pipe");
+                Environment.SetEnvironmentVariable(CertificateHashEnvVar, "0123456789ABCDEF");
+                sqlParams["@param13"] =
+                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        applicationName: "OtherExtension");
+
+                // Expected parameter: applicationName. The semicolon could inject another
+                // ODBC keyword, so application-name validation must fail.
+                sqlParams["@param14"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                        "TestDb",
+                        applicationName: "OtherExtension;UID=Injected"));
             }
             finally
             {

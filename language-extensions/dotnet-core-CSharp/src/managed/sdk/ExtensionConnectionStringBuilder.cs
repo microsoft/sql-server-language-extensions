@@ -148,12 +148,16 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// SQL-authentication password. Required when
         /// <paramref name="userName"/> is supplied.
         /// </param>
+        /// <param name="applicationName">
+        /// Optional application name recorded for XDB implied-auth
+        /// connections. When null or empty, <c>CSharpExtension</c> is used.
+        /// </param>
         /// <returns>ODBC connection string for the loopback endpoint.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when <paramref name="userName"/> is supplied without
         /// a non-empty <paramref name="password"/>, or when a supplied
-        /// database name, user name, or password contains an ODBC
-        /// connection-string metacharacter.
+        /// database name, user name, password, or application name
+        /// contains an ODBC connection-string metacharacter.
         /// </exception>
         /// <exception cref="InvalidOperationException">
         /// Thrown when <c>IS_XDB=TRUE</c> but launchpad has not published
@@ -164,9 +168,14 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         public static string BuildLoopbackConnectionString(
             string dbName = null,
             string userName = null,
-            string password = null)
+            string password = null,
+            string applicationName = null)
         {
             string targetDb = ResolveDatabaseName(dbName);
+            string resolvedApplicationName = string.IsNullOrEmpty(applicationName)
+                ? DefaultApplicationName
+                : applicationName;
+            ValidateConnectionStringArgument(resolvedApplicationName, nameof(applicationName));
 
             if (!string.IsNullOrEmpty(userName))
             {
@@ -198,7 +207,11 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
             {
                 string pipe = RequireEnvironmentVariable(LoopbackPipeEnvVar);
                 string thumbprint = RequireEnvironmentVariable(CertificateHashEnvVar);
-                return BuildXdbImpliedAuthConnectionString(pipe, thumbprint, targetDb);
+                return BuildXdbImpliedAuthConnectionString(
+                    pipe,
+                    thumbprint,
+                    targetDb,
+                    resolvedApplicationName);
             }
 
             return BuildOnPremImpliedAuthConnectionString(targetDb);
@@ -213,9 +226,10 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
         /// Extensibility client certificate SHA-1 hash from launchpad.
         /// </param>
         /// <param name="targetDb">Resolved target database name.</param>
+        /// <param name="applicationName">Application name recorded for the connection.</param>
         /// <returns>ODBC connection string for the XDB loopback.</returns>
         private static string BuildXdbImpliedAuthConnectionString(
-            string pipe, string thumbprint, string targetDb)
+            string pipe, string thumbprint, string targetDb, string applicationName)
         {
             // Prefix server with "np:" so SNI selects the Named Pipes
             // provider without auto-detection. Preserve any prefix
@@ -230,7 +244,7 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
                 $"{DriverClause}Server={server};Database={targetDb};"
                 + $"Encrypt=yes;{TrustServerCertificateClause}"
                 + $"ClientCertificate=sha1:{thumbprint};"
-                + $"Connection Timeout=10;ConnectRetryCount=0;APP={DefaultApplicationName}";
+                + $"Connection Timeout=10;ConnectRetryCount=0;APP={applicationName}";
         }
 
         /// <summary>

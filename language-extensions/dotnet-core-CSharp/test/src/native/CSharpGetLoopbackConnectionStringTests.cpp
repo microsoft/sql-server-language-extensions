@@ -29,11 +29,11 @@ namespace ExtensionApiTest
 
         InitializeSession(
             0,   // inputSchemaColumnsNumber
-            13,  // parametersNumber
+            15,  // parametersNumber
             scriptString);
 
         constexpr SQLULEN connectionStringParameterSize = 512;
-        for (SQLUSMALLINT paramNumber = 0; paramNumber < 13; ++paramNumber)
+        for (SQLUSMALLINT paramNumber = 0; paramNumber < 15; ++paramNumber)
         {
             InitStringParameter(
                 paramNumber,
@@ -79,7 +79,11 @@ namespace ExtensionApiTest
             "userName",
             "password",
             "Environment variable 'PhysicalDbName' contains a character that is not allowed "
-                "in an ODBC connection string." };
+                "in an ODBC connection string.",
+            "Driver={ODBC Driver 18 for SQL Server};Server=np:loopback-pipe;Database=TestDb;"
+                "Encrypt=yes;TrustServerCertificate=Yes;ClientCertificate=sha1:0123456789ABCDEF;"
+                "Connection Timeout=10;ConnectRetryCount=0;APP=OtherExtension",
+            "applicationName" };
 
         vector<const char*> expectedParamValues;
         vector<SQLINTEGER> expectedStrLenOrInd;
