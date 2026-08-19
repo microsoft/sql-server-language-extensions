@@ -97,6 +97,7 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     public class CSharpTestExecutorConnectionStringBuilder: AbstractSqlServerExtensionExecutor
     {
         private const string IsXdbEnvVar = "IS_XDB";
+        private const string IsWcowEnvVar = "IS_WCOW";
         private const string LoopbackEndpointEnvVar = "SqlTdsLoopbackConnectionEndpoint";
         private const string LoopbackPipeEnvVar = "LoopbackConnectionPipe";
         private const string CertificateHashEnvVar = "ExtensibilityCertificateHash";
@@ -105,12 +106,24 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         private static readonly string[] s_environmentVariableNames =
         {
             IsXdbEnvVar,
+            IsWcowEnvVar,
             LoopbackEndpointEnvVar,
             LoopbackPipeEnvVar,
             CertificateHashEnvVar,
             PhysicalDbNameEnvVar,
         };
 
+        /// <summary>
+        /// Builds ODBC loopback connection strings under representative box,
+        /// SQL DB, and invalid host configurations. Each result or captured
+        /// exception detail is returned through a descriptively named output
+        /// parameter for the native test harness.
+        /// </summary>
+        /// <param name="input">Input data frame supplied by the test harness.</param>
+        /// <param name="sqlParams">
+        /// Input/output parameter dictionary used to return test observations.
+        /// </param>
+        /// <returns>The unmodified input data frame.</returns>
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
         {
             var originalEnvironment = new Dictionary<string, string>();
@@ -122,8 +135,8 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
 
             try
             {
-                sqlParams["@param0"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString("TestDb");
+                sqlParams["@onPremImpliedAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString("TestDb");
 
                 Environment.SetEnvironmentVariable(
                     IsXdbEnvVar,
@@ -134,8 +147,8 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(
                     CertificateHashEnvVar,
                     "0123456789ABCDEF");
-                sqlParams["@param1"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString("TestDb");
+                sqlParams["@xdbImpliedAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString("TestDb");
 
                 Environment.SetEnvironmentVariable(
                     LoopbackPipeEnvVar,
@@ -143,8 +156,8 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
 
                 // Expected message: LoopbackConnectionPipe is missing. XDB implied
                 // authentication requires the launchpad-provided named-pipe endpoint.
-                sqlParams["@param2"] = CaptureInvalidOperationMessage(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
+                sqlParams["@missingXdbPipeError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
 
                 Environment.SetEnvironmentVariable(
                     LoopbackPipeEnvVar,
@@ -155,8 +168,8 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
 
                 // Expected message: ExtensibilityCertificateHash is missing. XDB implied
                 // authentication requires the launchpad-provided client certificate hash.
-                sqlParams["@param3"] = CaptureInvalidOperationMessage(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
+                sqlParams["@missingXdbCertificateError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
 
                 Environment.SetEnvironmentVariable(
                     IsXdbEnvVar,
@@ -164,17 +177,17 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(
                     PhysicalDbNameEnvVar,
                     "PhysicalDb");
-                sqlParams["@param4"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(string.Empty);
+                sqlParams["@physicalDbFallback"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(string.Empty);
 
                 Environment.SetEnvironmentVariable(
                     PhysicalDbNameEnvVar,
                     null);
-                sqlParams["@param5"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString();
+                sqlParams["@masterDbFallback"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString();
 
-                sqlParams["@param6"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                sqlParams["@onPremSqlAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
                         "TestUser",
                         "TestPassword");
@@ -185,66 +198,76 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(
                     LoopbackEndpointEnvVar,
                     "localhost,1433");
-                sqlParams["@param7"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                sqlParams["@xdbSqlAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
                         "TestUser",
                         "TestPassword");
 
                 // Expected parameter: password. SQL authentication requires a non-empty
                 // password whenever a user name is supplied, so omitting it must fail.
-                sqlParams["@param8"] = CaptureArgumentExceptionParameterName(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                sqlParams["@missingPasswordParamName"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
                         "TestUser"));
 
-                // Expected parameter: dbName. The semicolon could inject another ODBC
-                // keyword into the connection string, so database-name validation must fail.
-                sqlParams["@param9"] = CaptureArgumentExceptionParameterName(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
-                        "TestDb;Encrypt=no"));
-
-                // Expected parameter: userName. The equals sign is an ODBC metacharacter,
-                // so user-name validation must reject the value before interpolation.
-                sqlParams["@param10"] = CaptureArgumentExceptionParameterName(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                // Expected parameter: userName. A password without a user name is
+                // incomplete SQL-auth configuration and must not select implied auth.
+                sqlParams["@missingUserNameParamName"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
-                        "TestUser=Injected",
+                        password: "TestPassword"));
+
+                sqlParams["@emptyUserNameParamName"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        string.Empty,
                         "TestPassword"));
 
-                // Expected parameter: password. Braces affect ODBC value parsing, so
-                // password validation must reject the value before interpolation.
-                sqlParams["@param11"] = CaptureArgumentExceptionParameterName(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
-                        "TestDb",
-                        "TestUser",
-                        "{TestPassword}"));
-
                 Environment.SetEnvironmentVariable(IsXdbEnvVar, null);
+                sqlParams["@escapedDbName"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb;Encrypt=no");
+
+                sqlParams["@escapedCredentials"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser=Injected",
+                        "{Test;Password}");
+
                 Environment.SetEnvironmentVariable(
                     PhysicalDbNameEnvVar,
                     "PhysicalDb;UID=Injected");
-
-                // Expected message: PhysicalDbName contains a disallowed ODBC character.
-                // The semicolon could inject a UID keyword, so environment validation must fail.
-                sqlParams["@param12"] = CaptureInvalidOperationMessage(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString());
+                sqlParams["@escapedPhysicalDb"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString();
 
                 Environment.SetEnvironmentVariable(PhysicalDbNameEnvVar, null);
                 Environment.SetEnvironmentVariable(IsXdbEnvVar, "TRUE");
                 Environment.SetEnvironmentVariable(LoopbackPipeEnvVar, "loopback-pipe");
                 Environment.SetEnvironmentVariable(CertificateHashEnvVar, "0123456789ABCDEF");
-                sqlParams["@param13"] =
-                    ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                sqlParams["@customApplicationName"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
-                        applicationName: "OtherExtension");
+                        applicationName: "OtherExtension;UID=Injected");
 
-                // Expected parameter: applicationName. The semicolon could inject another
-                // ODBC keyword, so application-name validation must fail.
-                sqlParams["@param14"] = CaptureArgumentExceptionParameterName(
-                    () => ExtensionConnectionStringBuilder.BuildLoopbackConnectionString(
+                Environment.SetEnvironmentVariable(IsWcowEnvVar, "TRUE");
+                sqlParams["@unsupportedWcowError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(IsWcowEnvVar, null);
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, "FALSE");
+                sqlParams["@invalidXdbMarkerError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, "TRUE");
+                Environment.SetEnvironmentVariable(
+                    LoopbackEndpointEnvVar,
+                    "localhost,1433;Encrypt=no");
+                sqlParams["@invalidXdbEndpointError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
-                        applicationName: "OtherExtension;UID=Injected"));
+                        "TestUser",
+                        "TestPassword"));
             }
             finally
             {

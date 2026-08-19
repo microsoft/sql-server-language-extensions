@@ -222,7 +222,8 @@ namespace ExtensionApiTest
             SQLULEN     paramSize,
             bool        isFixedType,
             SQLSMALLINT inputOutputType = SQL_PARAM_INPUT_OUTPUT,
-            SQLRETURN   SQLResult = SQL_SUCCESS);
+            SQLRETURN   SQLResult = SQL_SUCCESS,
+            const char  *parameterName = nullptr);
 
         // Init and test a string parameter
         //
