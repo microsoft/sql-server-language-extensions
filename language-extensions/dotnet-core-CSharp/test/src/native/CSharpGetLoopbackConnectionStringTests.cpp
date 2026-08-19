@@ -14,6 +14,44 @@ using namespace std;
 
 namespace ExtensionApiTest
 {
+    namespace
+    {
+        constexpr const char *DriverClause =
+            "Driver={ODBC Driver 18 for SQL Server};";
+        constexpr const char *OnPremPrefix =
+            "Driver={ODBC Driver 18 for SQL Server};Server=localhost;Database=TestDb;";
+        constexpr const char *XdbImpliedPrefix =
+            "Driver={ODBC Driver 18 for SQL Server};Server=np:loopback-pipe;Database=TestDb;";
+        constexpr const char *XdbCertificateOptions =
+            "Encrypt=yes;TrustServerCertificate=Yes;ClientCertificate=sha1:0123456789ABCDEF;"
+            "Connection Timeout=10;ConnectRetryCount=0;";
+
+        constexpr const char *ParameterNames[] =
+        {
+            "@onPremImpliedAuth",
+            "@xdbImpliedAuth",
+            "@missingXdbPipeError",
+            "@missingXdbCertificateError",
+            "@physicalDbFallback",
+            "@masterDbFallback",
+            "@onPremSqlAuth",
+            "@xdbSqlAuth",
+            "@missingPasswordParamName",
+            "@missingUserNameParamName",
+            "@emptyUserNameParamName",
+            "@escapedDbName",
+            "@escapedCredentials",
+            "@escapedPhysicalDb",
+            "@customApplicationName",
+            "@unsupportedWcowError",
+            "@invalidXdbMarkerError",
+            "@invalidXdbEndpointError",
+        };
+
+        constexpr SQLUSMALLINT ParameterCount =
+            sizeof(ParameterNames) / sizeof(ParameterNames[0]);
+    }
+
     //----------------------------------------------------------------------------------------------
     // Name: GetConnectionStringBuilderOutputParamTest
     //
@@ -29,18 +67,20 @@ namespace ExtensionApiTest
 
         InitializeSession(
             0,   // inputSchemaColumnsNumber
-            15,  // parametersNumber
+            ParameterCount,
             scriptString);
 
         constexpr SQLULEN connectionStringParameterSize = 512;
-        for (SQLUSMALLINT paramNumber = 0; paramNumber < 15; ++paramNumber)
+        for (SQLUSMALLINT paramNumber = 0; paramNumber < ParameterCount; ++paramNumber)
         {
             InitStringParameter(
                 paramNumber,
-                "",
+                "" /*paramValue*/,
                 connectionStringParameterSize,
-                false, // isFixedType
-                SQL_PARAM_INPUT_OUTPUT);
+                false /*isFixedType*/,
+                SQL_PARAM_INPUT_OUTPUT,
+                SQL_SUCCESS,
+                ParameterNames[paramNumber]);
         }
 
         SQLUSMALLINT outputSchemaColumnsNumber = 0;
@@ -55,35 +95,38 @@ namespace ExtensionApiTest
         EXPECT_EQ(outputSchemaColumnsNumber, 0);
 
         const vector<string> expectedParamValueStrings = {
-            "Driver={ODBC Driver 18 for SQL Server};TrustServerCertificate=Yes;"
-                "Server=localhost;Database=TestDb;Trusted_Connection=Yes;",
-            "Driver={ODBC Driver 18 for SQL Server};Server=np:loopback-pipe;Database=TestDb;"
-                "Encrypt=yes;TrustServerCertificate=Yes;ClientCertificate=sha1:0123456789ABCDEF;"
-                "Connection Timeout=10;ConnectRetryCount=0;APP=CSharpExtension",
+            string(OnPremPrefix) + "TrustServerCertificate=Yes;Trusted_Connection=Yes;",
+            string(XdbImpliedPrefix) + XdbCertificateOptions + "APP=CSharpExtension;",
             "XDB satellite is missing required environment variable 'LoopbackConnectionPipe'. "
                 "This variable is normally published by launchpad; "
                 "its absence indicates a launchpad misconfiguration.",
             "XDB satellite is missing required environment variable 'ExtensibilityCertificateHash'. "
                 "This variable is normally published by launchpad; "
                 "its absence indicates a launchpad misconfiguration.",
-            "Driver={ODBC Driver 18 for SQL Server};TrustServerCertificate=Yes;"
-                "Server=localhost;Database=PhysicalDb;Trusted_Connection=Yes;",
-            "Driver={ODBC Driver 18 for SQL Server};TrustServerCertificate=Yes;"
-                "Server=localhost;Database=master;Trusted_Connection=Yes;",
-            "Driver={ODBC Driver 18 for SQL Server};TrustServerCertificate=Yes;"
-                "Server=localhost;Database=TestDb;UID=TestUser;PWD=TestPassword;",
-            "Driver={ODBC Driver 18 for SQL Server};Server=localhost,1433;Database=TestDb;"
+            string(DriverClause) + "Server=localhost;Database=PhysicalDb;"
+                "TrustServerCertificate=Yes;Trusted_Connection=Yes;",
+            string(DriverClause) + "Server=localhost;Database=master;"
+                "TrustServerCertificate=Yes;Trusted_Connection=Yes;",
+            string(OnPremPrefix) + "TrustServerCertificate=Yes;"
+                "UID=TestUser;PWD=TestPassword;",
+            string(DriverClause) + "Server=localhost,1433;Database=TestDb;"
                 "UID=TestUser;PWD=TestPassword;",
             "password",
-            "dbName",
             "userName",
-            "password",
-            "Environment variable 'PhysicalDbName' contains a character that is not allowed "
-                "in an ODBC connection string.",
-            "Driver={ODBC Driver 18 for SQL Server};Server=np:loopback-pipe;Database=TestDb;"
-                "Encrypt=yes;TrustServerCertificate=Yes;ClientCertificate=sha1:0123456789ABCDEF;"
-                "Connection Timeout=10;ConnectRetryCount=0;APP=OtherExtension",
-            "applicationName" };
+            "userName",
+            string(DriverClause) + "Server=localhost;Database=\"TestDb;Encrypt=no\";"
+                "TrustServerCertificate=Yes;Trusted_Connection=Yes;",
+            string(OnPremPrefix) + "TrustServerCertificate=Yes;"
+                "UID=\"TestUser=Injected\";PWD=\"{Test;Password}\";",
+            string(DriverClause) + "Server=localhost;Database=\"PhysicalDb;UID=Injected\";"
+                "TrustServerCertificate=Yes;Trusted_Connection=Yes;",
+            string(XdbImpliedPrefix) + XdbCertificateOptions
+                + "APP=\"OtherExtension;UID=Injected\";",
+            "SQL Managed Instance (WCOW) is not supported by ODBC loopback connections.",
+            "Environment variable 'IS_XDB' must be either absent or set to 'TRUE'.",
+            "Environment variable 'SqlTdsLoopbackConnectionEndpoint' contains a character "
+                "that is not allowed in an ODBC connection string.",
+        };
 
         vector<const char*> expectedParamValues;
         vector<SQLINTEGER> expectedStrLenOrInd;

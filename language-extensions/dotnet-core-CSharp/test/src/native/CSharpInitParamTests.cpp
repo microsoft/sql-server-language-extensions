@@ -616,10 +616,12 @@ namespace ExtensionApiTest
         const SQLULEN paramSize,
         bool          isFixedType,
         SQLSMALLINT   inputOutputType,
-        SQLRETURN     SQLResult)
+        SQLRETURN     SQLResult,
+        const char    *parameterName)
     {
-        string paramName = "param" + to_string(paramNumber);
-        string atParam = "@" + paramName;
+        string atParam = parameterName == nullptr
+            ? "@param" + to_string(paramNumber)
+            : parameterName;
         SQLCHAR *unsignedParamName = static_cast<SQLCHAR *>(
             static_cast<void *>(const_cast<char *>(atParam.c_str())));
 
