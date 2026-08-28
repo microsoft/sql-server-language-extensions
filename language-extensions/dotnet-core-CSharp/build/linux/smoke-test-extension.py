@@ -12,6 +12,9 @@ extension = ctypes.CDLL(str(extension_path), mode=os.RTLD_NOW | os.RTLD_LOCAL)
 extension.GetInterfaceVersion.restype = ctypes.c_ushort
 print(f"GetInterfaceVersion={extension.GetInterfaceVersion()}")
 
+# A bundled deployment must not inherit another product's .NET installation.
+os.environ["DOTNET_ROOT"] = "/nonexistent/ambient-dotnet-root"
+
 extension.Init.argtypes = [
     ctypes.c_char_p,
     ctypes.c_ulonglong,

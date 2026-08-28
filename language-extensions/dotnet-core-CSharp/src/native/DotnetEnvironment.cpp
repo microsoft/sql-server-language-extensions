@@ -343,16 +343,14 @@ hostfxr_handle DotnetEnvironment::get_dotnet(const char_t *config_path){
     // root DLLs/SOs. File copies are used because SQL Server's tar extraction does
     // not preserve symbolic links or hard links when extracting CREATE EXTERNAL
     // LANGUAGE payloads.
-    // For framework-dependent deployments, leave dotnet_root as nullptr
-    // so hostfxr uses its default discovery mechanism.
-    const char *dotnet_root_env = getenv("DOTNET_ROOT");
-    if (dotnet_root_env != nullptr)
-    {
-        params.dotnet_root = dotnet_root_env;
-    }
-    else if (m_is_self_contained)
+    // For framework-dependent deployments, honor an ambient DOTNET_ROOT when present.
+    if (m_is_self_contained)
     {
         params.dotnet_root = m_root_path.c_str();
+    }
+    else
+    {
+        params.dotnet_root = getenv("DOTNET_ROOT");
     }
 #endif
 
