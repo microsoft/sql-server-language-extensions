@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 import ctypes
 import os
+import sys
 from pathlib import Path
 
 
-build_output = Path(__file__).resolve().parents[4] / "build-output" / "dotnet-core-CSharp-extension" / "linux" / "release"
+if len(sys.argv) != 2 or sys.argv[1] not in {"debug", "release"}:
+    raise SystemExit(f"Usage: {Path(sys.argv[0]).name} <debug|release>")
+
+configuration = sys.argv[1]
+build_output = Path(__file__).resolve().parents[4] / "build-output" / "dotnet-core-CSharp-extension" / "linux" / configuration
 extension_path = build_output / "libnativecsharpextension.so"
 
 extension = ctypes.CDLL(str(extension_path), mode=os.RTLD_NOW | os.RTLD_LOCAL)
@@ -38,4 +43,4 @@ result = extension.Cleanup()
 if result != 0:
     raise RuntimeError(f"CSharp extension Cleanup failed with SQLRETURN {result}")
 
-print("CSharp extension load, Init, and Cleanup succeeded")
+print(f"CSharp {configuration} extension load, Init, and Cleanup succeeded")
