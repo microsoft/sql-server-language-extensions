@@ -36,6 +36,7 @@ extension.Init.restype = ctypes.c_short
 
 root = os.fsencode(build_output)
 public_library_path = os.fsencode(test_output)
+private_library_path = os.fsencode(test_output / "nonexistent-private-library-path")
 empty = b""
 result = extension.Init(
     empty,
@@ -44,8 +45,8 @@ result = extension.Init(
     len(root),
     public_library_path,
     len(public_library_path),
-    empty,
-    0,
+    private_library_path,
+    len(private_library_path),
 )
 if result != 0:
     raise RuntimeError(f"CSharp extension Init failed with SQLRETURN {result}")
