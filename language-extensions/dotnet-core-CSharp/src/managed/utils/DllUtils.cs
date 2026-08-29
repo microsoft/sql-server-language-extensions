@@ -12,6 +12,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Collections.Generic;
 using Microsoft.SqlServer.CSharpExtension.SDK;
 
@@ -36,13 +37,19 @@ namespace Microsoft.SqlServer.CSharpExtension
             // AppDomain.CurrentDomain.AssemblyResolve occurs when the resolution of an assembly fails.
             //
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
-            foreach(string dllPath in dllList)
+
+            AssemblyLoadContext extensionLoadContext =
+                AssemblyLoadContext.GetLoadContext(typeof(AbstractSqlServerExtensionExecutor).Assembly);
+
+            foreach(string dllPath in dllList.Where(
+                path => string.Equals(Path.GetExtension(path), ".dll", StringComparison.OrdinalIgnoreCase)))
             {
                 // Catch unexpected exception while loading other dlls
                 //
                 try
                 {
-                    Assembly userDll = Assembly.LoadFrom(dllPath);
+                    Assembly userDll = extensionLoadContext.LoadFromAssemblyPath(Path.GetFullPath(dllPath));
+
                     Type userExecutorClass = userDll.GetType(userClassName);
                     if (userExecutorClass != null)
                     {
@@ -79,12 +86,12 @@ namespace Microsoft.SqlServer.CSharpExtension
             List<string>dllList = new List<string>();
             if(string.IsNullOrEmpty(userLibName))
             {
-                if (!string.IsNullOrEmpty(privatePath))
+                if (!string.IsNullOrEmpty(privatePath) && Directory.Exists(privatePath))
                 {
                     dllList.AddRange(Directory.GetFiles(privatePath));
                 }
 
-                if (!string.IsNullOrEmpty(publicPath))
+                if (!string.IsNullOrEmpty(publicPath) && Directory.Exists(publicPath))
                 {
                     dllList.AddRange(Directory.GetFiles(publicPath));
                 }

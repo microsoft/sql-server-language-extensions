@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Note: errexit (-e) is intentionally NOT set. Each significant command is
+# followed by check_exit_code, which prints a descriptive message and exits
+# with the failing command's status. Enabling -e would abort before those
+# messages could be emitted, making failures harder to diagnose.
+set -uo pipefail
+
+check_exit_code() {
+    local exit_code=$?
+    if [ ${exit_code} -eq 0 ]; then
+        echo "$1"
+    else
+        echo "$2"
+        exit ${exit_code}
+    fi
+}
+
+# Install .NET SDK 8.0 for building the C# extension managed code
+# and for obtaining libnethost.a (used by the native host to discover hostfxr).
+#
+
+# Check if dotnet is already installed and is version 8.x
+if command -v dotnet &>/dev/null && dotnet --version 2>/dev/null | grep -q "^8\."; then
+    echo "Info: .NET SDK 8.x already installed ($(dotnet --version))"
+else
+    echo "Info: Installing .NET SDK 8.0..."
+    apt-get update
+    apt-get install -y --no-install-recommends wget apt-transport-https
+    wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
+    chmod +x /tmp/dotnet-install.sh
+    /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet
+    ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet
+    check_exit_code "Success: Installed .NET SDK 8.0" "Error: Failed to install .NET SDK 8.0"
+fi
+
+# Install gcc-11 / g++-11 if not present.
+#
+# IMPORTANT: SQL Server's mssql-server-extensibility binaries (including the
+# satellite/exthost) are built and shipped against Ubuntu 22.04 (glibc 2.35,
+# libstdc++ GLIBCXX_3.4.30). When the extension .so is built with newer
+# toolchains (Ubuntu 24.04 / gcc 13), it requires:
+#   - GLIBCXX_3.4.32 (e.g. std::ios_base_library_init - GCC 13 auto-inject)
+#   - GLIBC_2.38 (e.g. __isoc23_strtoul)
+# which don't exist on the runtime container. dlopen() then silently fails
+# with "version `GLIBC_2.38' not found" and the extension is never loaded.
+#
+# Static-linking libstdc++ + building with gcc-11 produces a binary whose
+# external symbol requirements stay within glibc 2.34, compatible with both
+# Ubuntu 22.04 and 24.04 SQL Server runtimes.
+if command -v gcc-11 &>/dev/null && command -v g++-11 &>/dev/null; then
+    echo "Info: gcc-11 already installed ($(gcc-11 --version | head -1))"
+else
+    echo "Info: Installing gcc-11/g++-11 (matches Ubuntu 22.04 toolchain - SQL runtime ABI)..."
+    # Ensure universe repo is enabled (gcc-11 lives there on Ubuntu 24.04)
+    if command -v add-apt-repository &>/dev/null; then
+        add-apt-repository -y universe 2>/dev/null || true
+    fi
+    apt-get update -qq || true
+    apt-get install -y --no-install-recommends gcc-11 g++-11 || {
+        # gcc-11 not available; fall back to default and hope GLIBC backcompat works.
+        # Caller will see GLIBC_2.38 requirement in the .so and dlopen will fail
+        # on Ubuntu 22.04-based runtimes - but we've at least tried.
+        echo "Warning: gcc-11 install failed - falling back to default toolchain"
+        echo "Warning: Built .so may require glibc > 2.35 (incompatible with SQL Server 2022 Ubuntu 22.04 SFP)"
+    }
+fi
+
+# Copy libnethost.a from the .NET SDK runtime packs into the extension's lib directory.
+# The SDK ships this as part of the AppHost pack.
+#
+SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+ENL_ROOT=${SCRIPTDIR}/../../../..
+DOTNET_EXTENSION_HOME=${ENL_ROOT}/language-extensions/dotnet-core-CSharp
+
+NETHOST_DIR=$(find /usr/share/dotnet -path "*/runtimes/linux-x64/native/libnethost.a" -print -quit 2>/dev/null)
+if [ -z "$NETHOST_DIR" ]; then
+    echo "Error: libnethost.a not found in .NET SDK. Ensure .NET SDK 8.0 is installed."
+    exit 1
+fi
+
+echo "Info: Found libnethost.a at: $NETHOST_DIR"
+mkdir -p "${DOTNET_EXTENSION_HOME}/lib"
+cp "$NETHOST_DIR" "${DOTNET_EXTENSION_HOME}/lib/libnethost.a"
+check_exit_code "Success: Copied libnethost.a to extension lib directory" "Error: Failed to copy libnethost.a"
+
+# Pre-restore NuGet packages while network is still available.
+# OneBranch enables network isolation after package-restore phases,
+# so dotnet restore must happen here rather than during the build step.
+#
+# Use the parent repo's NuGet.Config which points to the ADO artifact feed
+# (with nuget.org as upstream) rather than the submodule's NuGet.Config
+# which points directly to nuget.org (unreachable from OneBranch containers).
+#
+MANAGED_PROJ="${DOTNET_EXTENSION_HOME}/src/managed/Microsoft.SqlServer.CSharpExtension.csproj"
+MANAGED_TEST_PROJ="${DOTNET_EXTENSION_HOME}/test/src/managed/Microsoft.SqlServer.CSharpExtensionTest.csproj"
+PARENT_NUGET_CONFIG="${ENL_ROOT}/../NuGet.Config"
+
+echo "Info: Restoring NuGet packages for Microsoft.SqlServer.CSharpExtension (linux-x64 self-contained)..."
+if [ -f "$PARENT_NUGET_CONFIG" ]; then
+    echo "Info: Using NuGet.Config from parent repo: $PARENT_NUGET_CONFIG"
+    dotnet restore "$MANAGED_PROJ" --configfile "$PARENT_NUGET_CONFIG" -r linux-x64
+    check_exit_code "Success: NuGet packages restored (extension)" "Error: Failed to restore NuGet packages (extension)"
+
+    echo "Info: Restoring NuGet packages for Microsoft.SqlServer.CSharpExtensionTest..."
+    dotnet restore "$MANAGED_TEST_PROJ" --configfile "$PARENT_NUGET_CONFIG"
+    check_exit_code "Success: NuGet packages restored (test)" "Error: Failed to restore NuGet packages (test)"
+else
+    echo "Info: Parent NuGet.Config not found, using default"
+    dotnet restore "$MANAGED_PROJ" -r linux-x64
+    check_exit_code "Success: NuGet packages restored (extension)" "Error: Failed to restore NuGet packages (extension)"
+
+    dotnet restore "$MANAGED_TEST_PROJ"
+    check_exit_code "Success: NuGet packages restored (test)" "Error: Failed to restore NuGet packages (test)"
+fi
+
+exit 0

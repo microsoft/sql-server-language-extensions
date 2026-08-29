@@ -12,11 +12,21 @@
 
 #ifdef _WIN64
 #include <windows.h>
+#else
+#include <dlfcn.h>
+#include <limits.h>
+#include <unistd.h>
+typedef void* HINSTANCE;
 #endif
 
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #include <iostream>
+#include <cstring>
+#ifdef _WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #include <experimental/filesystem>
+#else
+#include <filesystem>
+#endif
 #include <math.h>
 #include <memory>
 #include <sql.h>
