@@ -12,6 +12,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Collections.Generic;
 using Microsoft.SqlServer.CSharpExtension.SDK;
 
@@ -37,13 +38,17 @@ namespace Microsoft.SqlServer.CSharpExtension
             //
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
 
-            foreach(string dllPath in dllList)
+            AssemblyLoadContext extensionLoadContext =
+                AssemblyLoadContext.GetLoadContext(typeof(AbstractSqlServerExtensionExecutor).Assembly);
+
+            foreach(string dllPath in dllList.Where(
+                path => string.Equals(Path.GetExtension(path), ".dll", StringComparison.OrdinalIgnoreCase)))
             {
                 // Catch unexpected exception while loading other dlls
                 //
                 try
                 {
-                    Assembly userDll = Assembly.LoadFrom(dllPath);
+                    Assembly userDll = extensionLoadContext.LoadFromAssemblyPath(Path.GetFullPath(dllPath));
 
                     Type userExecutorClass = userDll.GetType(userClassName);
                     if (userExecutorClass != null)
