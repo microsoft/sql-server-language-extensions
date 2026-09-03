@@ -89,6 +89,226 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
         }
     }
 
+    /// <summary>
+    /// Test executor that builds loopback connection strings under on-prem and XDB
+    /// environment configurations. Results and expected failure messages are returned
+    /// through output parameters for the native test harness to verify.
+    /// </summary>
+    public class CSharpTestExecutorConnectionStringBuilder: AbstractSqlServerExtensionExecutor
+    {
+        private const string IsXdbEnvVar = "IS_XDB";
+        private const string IsWcowEnvVar = "IS_WCOW";
+        private const string LoopbackEndpointEnvVar = "SqlTdsLoopbackConnectionEndpoint";
+        private const string LoopbackPipeEnvVar = "LoopbackConnectionPipe";
+        private const string CertificateHashEnvVar = "ExtensibilityCertificateHash";
+        private const string PhysicalDbNameEnvVar = "PhysicalDbName";
+
+        private static readonly string[] s_environmentVariableNames =
+        {
+            IsXdbEnvVar,
+            IsWcowEnvVar,
+            LoopbackEndpointEnvVar,
+            LoopbackPipeEnvVar,
+            CertificateHashEnvVar,
+            PhysicalDbNameEnvVar,
+        };
+
+        /// <summary>
+        /// Builds ODBC loopback connection strings under representative box,
+        /// SQL DB, and invalid host configurations. Each result or captured
+        /// exception detail is returned through a descriptively named output
+        /// parameter for the native test harness.
+        /// </summary>
+        /// <param name="input">Input data frame supplied by the test harness.</param>
+        /// <param name="sqlParams">
+        /// Input/output parameter dictionary used to return test observations.
+        /// </param>
+        /// <returns>The unmodified input data frame.</returns>
+        public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams)
+        {
+            var originalEnvironment = new Dictionary<string, string>();
+            foreach (string name in s_environmentVariableNames)
+            {
+                originalEnvironment.Add(name, Environment.GetEnvironmentVariable(name));
+                Environment.SetEnvironmentVariable(name, null);
+            }
+
+            try
+            {
+                sqlParams["@onPremImpliedAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString("TestDb");
+
+                Environment.SetEnvironmentVariable(
+                    IsXdbEnvVar,
+                    "TRUE");
+                Environment.SetEnvironmentVariable(
+                    LoopbackPipeEnvVar,
+                    "loopback-pipe");
+                Environment.SetEnvironmentVariable(
+                    CertificateHashEnvVar,
+                    "01 23 45 67 89 AB CD EF");
+                sqlParams["@xdbImpliedAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString("TestDb");
+
+                Environment.SetEnvironmentVariable(
+                    LoopbackPipeEnvVar,
+                    null);
+
+                // Expected message: LoopbackConnectionPipe is missing. XDB implied
+                // authentication requires the launchpad-provided named-pipe endpoint.
+                sqlParams["@missingXdbPipeError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(
+                    LoopbackPipeEnvVar,
+                    "loopback-pipe");
+                Environment.SetEnvironmentVariable(
+                    CertificateHashEnvVar,
+                    null);
+
+                // Expected message: ExtensibilityCertificateHash is missing. XDB implied
+                // authentication requires the launchpad-provided client certificate hash.
+                sqlParams["@missingXdbCertificateError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(
+                    IsXdbEnvVar,
+                    null);
+                Environment.SetEnvironmentVariable(
+                    PhysicalDbNameEnvVar,
+                    "PhysicalDb");
+                sqlParams["@physicalDbFallback"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(string.Empty);
+
+                Environment.SetEnvironmentVariable(
+                    PhysicalDbNameEnvVar,
+                    null);
+                sqlParams["@masterDbFallback"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString();
+
+                sqlParams["@onPremSqlAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser",
+                        "TestPassword");
+
+                Environment.SetEnvironmentVariable(
+                    IsXdbEnvVar,
+                    "TRUE");
+                Environment.SetEnvironmentVariable(
+                    LoopbackEndpointEnvVar,
+                    "localhost,1433");
+                sqlParams["@xdbSqlAuth"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser",
+                        "TestPassword");
+
+                // Expected parameter: password. SQL authentication requires a non-empty
+                // password whenever a user name is supplied, so omitting it must fail.
+                sqlParams["@missingPasswordParamName"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser"));
+
+                // Expected parameter: userName. A password without a user name is
+                // incomplete SQL-auth configuration and must not select implied auth.
+                sqlParams["@missingUserNameParamName"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        password: "TestPassword"));
+
+                sqlParams["@emptyUserNameParamName"] = CaptureArgumentExceptionParameterName(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        string.Empty,
+                        "TestPassword"));
+
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, null);
+                sqlParams["@escapedDbName"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb;Encrypt=no");
+
+                sqlParams["@escapedCredentials"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser=Injected",
+                        "{Test;Password}");
+
+                Environment.SetEnvironmentVariable(
+                    PhysicalDbNameEnvVar,
+                    "PhysicalDb;UID=Injected");
+                sqlParams["@escapedPhysicalDb"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString();
+
+                Environment.SetEnvironmentVariable(PhysicalDbNameEnvVar, null);
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, "TRUE");
+                Environment.SetEnvironmentVariable(LoopbackPipeEnvVar, "loopback-pipe");
+                Environment.SetEnvironmentVariable(CertificateHashEnvVar, "01 23 45 67 89 AB CD EF");
+                sqlParams["@customApplicationName"] =
+                    ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        applicationName: "OtherExtension;UID=Injected");
+
+                Environment.SetEnvironmentVariable(IsWcowEnvVar, "TRUE");
+                sqlParams["@unsupportedWcowError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(IsWcowEnvVar, null);
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, "FALSE");
+                sqlParams["@invalidXdbMarkerError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString());
+
+                Environment.SetEnvironmentVariable(IsXdbEnvVar, "TRUE");
+                Environment.SetEnvironmentVariable(
+                    LoopbackEndpointEnvVar,
+                    "localhost,1433;Encrypt=no");
+                sqlParams["@invalidXdbEndpointError"] = CaptureInvalidOperationMessage(
+                    () => ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
+                        "TestDb",
+                        "TestUser",
+                        "TestPassword"));
+            }
+            finally
+            {
+                foreach (KeyValuePair<string, string> variable in originalEnvironment)
+                {
+                    Environment.SetEnvironmentVariable(variable.Key, variable.Value);
+                }
+            }
+
+            return input;
+        }
+
+        private static string CaptureInvalidOperationMessage(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (InvalidOperationException exception)
+            {
+                return exception.Message;
+            }
+
+            return string.Empty;
+        }
+
+        private static string CaptureArgumentExceptionParameterName(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (ArgumentException exception)
+            {
+                return exception.ParamName;
+            }
+
+            return string.Empty;
+        }
+    }
+
     public class CSharpTestExecutorIntParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
