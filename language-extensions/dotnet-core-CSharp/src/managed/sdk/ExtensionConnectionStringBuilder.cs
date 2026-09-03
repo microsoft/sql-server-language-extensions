@@ -252,14 +252,23 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
                 server = NamedPipePrefix + server;
             }
 
-            DbConnectionStringBuilder builder = CreateConnectionStringBuilder(server, targetDb);
-            builder["Encrypt"] = "yes";
-            builder["TrustServerCertificate"] = "Yes";
-            builder["ClientCertificate"] = "sha1:" + certificateHash;
-            builder["Connection Timeout"] = 10;
-            builder["ConnectRetryCount"] = 0;
-            builder["APP"] = applicationName;
-            return ToOdbcConnectionString(builder);
+            DbConnectionStringBuilder head = CreateConnectionStringBuilder(server, targetDb);
+            head["Encrypt"] = "yes";
+            head["TrustServerCertificate"] = "Yes";
+
+            DbConnectionStringBuilder tail = new DbConnectionStringBuilder();
+            tail["Connection Timeout"] = 10;
+            tail["ConnectRetryCount"] = 0;
+            tail["APP"] = applicationName;
+
+            // ODBC Driver 18 requires the launchpad-published space-delimited sha1
+            // thumbprint UNQUOTED. Routing it through DbConnectionStringBuilder would
+            // wrap the spaced value in double quotes, which the driver's
+            // ClientCertificate parser rejects. The hash is validated to contain only
+            // hex digits and spaces, so emitting it raw is injection-safe.
+            return DriverClause + head.ConnectionString
+                + ";ClientCertificate=sha1:" + certificateHash
+                + ";" + tail.ConnectionString + ";";
         }
 
         /// <summary>

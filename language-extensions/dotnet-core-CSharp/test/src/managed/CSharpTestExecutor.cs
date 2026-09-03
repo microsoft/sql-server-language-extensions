@@ -146,7 +146,7 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                     "loopback-pipe");
                 Environment.SetEnvironmentVariable(
                     CertificateHashEnvVar,
-                    "0123456789ABCDEF");
+                    "01 23 45 67 89 AB CD EF");
                 sqlParams["@xdbImpliedAuth"] =
                     ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString("TestDb");
 
@@ -244,7 +244,7 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
                 Environment.SetEnvironmentVariable(PhysicalDbNameEnvVar, null);
                 Environment.SetEnvironmentVariable(IsXdbEnvVar, "TRUE");
                 Environment.SetEnvironmentVariable(LoopbackPipeEnvVar, "loopback-pipe");
-                Environment.SetEnvironmentVariable(CertificateHashEnvVar, "0123456789ABCDEF");
+                Environment.SetEnvironmentVariable(CertificateHashEnvVar, "01 23 45 67 89 AB CD EF");
                 sqlParams["@customApplicationName"] =
                     ExtensionConnectionStringBuilder.BuildOdbcLoopbackConnectionString(
                         "TestDb",
