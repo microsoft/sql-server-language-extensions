@@ -23,7 +23,7 @@ namespace ExtensionApiTest
         constexpr const char *XdbImpliedPrefix =
             "Driver={ODBC Driver 18 for SQL Server};Server=np:loopback-pipe;Database=TestDb;";
         constexpr const char *XdbCertificateOptions =
-            "Encrypt=yes;TrustServerCertificate=Yes;ClientCertificate=sha1:0123456789ABCDEF;"
+            "Encrypt=yes;TrustServerCertificate=Yes;ClientCertificate=sha1:01 23 45 67 89 AB CD EF;"
             "Connection Timeout=10;ConnectRetryCount=0;";
 
         constexpr const char *ParameterNames[] =
