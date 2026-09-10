@@ -260,12 +260,11 @@ namespace Microsoft.SqlServer.CSharpExtension.SDK
             tail["Connection Timeout"] = 10;
             tail["ConnectRetryCount"] = 0;
             tail["APP"] = applicationName;
-
-            // ODBC Driver 18 requires the launchpad-published space-delimited sha1
-            // thumbprint UNQUOTED. Routing it through DbConnectionStringBuilder would
-            // wrap the spaced value in double quotes, which the driver's
-            // ClientCertificate parser rejects. The hash is validated to contain only
-            // hex digits and spaces, so emitting it raw is injection-safe.
+            
+            // ODBC Driver 18 requires the host-published, space-delimited SHA-1
+            // thumbprint to be unquoted. The host derives the selector from 
+            // certificate bytes. The public entry path rejects ';', '{', '}', 
+            // and '=' before appending the value raw.
             return DriverClause + head.ConnectionString
                 + ";ClientCertificate=sha1:" + certificateHash
                 + ";" + tail.ConnectionString + ";";
