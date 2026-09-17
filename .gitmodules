@@ -1,0 +1,3 @@
+[submodule "samples/examples/tokenizers_cpp/externals/tokenizers-cpp"]
+	path = samples/examples/tokenizers_cpp/externals/tokenizers-cpp
+	url = https://github.com/mlc-ai/tokenizers-cpp
