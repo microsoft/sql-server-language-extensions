@@ -1007,7 +1007,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                     "already exists in the install directory and is not owned by this library.");
             }
 
-            File.Copy(libFilePath, installedDllPath, false);
+            CopyLibraryFile(libFilePath, installedDllPath);
 
             // Track the raw-DLL install in a manifest too. This is what makes
             // ALTER from raw-DLL to ZIP work: the ZIP path's CheckForConflicts
@@ -1283,7 +1283,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 {
                     continue;
                 }
-                File.Copy(file, Path.Combine(installDir, Path.GetFileName(file)), false);
+                CopyLibraryFile(file, Path.Combine(installDir, Path.GetFileName(file)));
             }
 
             foreach (string dir in Directory.GetDirectories(contentRoot))
@@ -1310,7 +1310,20 @@ namespace Microsoft.SqlServer.CSharpExtension
             string alias = Path.Combine(installDir, aliasFileName);
             if (File.Exists(aliasSrc))
             {
-                File.Copy(aliasSrc, alias, false);
+                CopyLibraryFile(aliasSrc, alias);
+            }
+        }
+
+        private static void CopyLibraryFile(string source, string destination)
+        {
+            File.Copy(source, destination, false);
+
+            if (!OperatingSystem.IsWindows())
+            {
+                UnixFileMode mode = File.GetUnixFileMode(destination);
+                File.SetUnixFileMode(
+                    destination,
+                    mode | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
             }
         }
 
@@ -1505,7 +1518,7 @@ namespace Microsoft.SqlServer.CSharpExtension
                 // overwrite: false so that if filesystem state changed between the
                 // conflict check and here (TOCTOU), we fail loud rather than silently
                 // replacing a file belonging to another library.
-                File.Copy(file, destFile, false);
+                CopyLibraryFile(file, destFile);
             }
 
             foreach (string dir in Directory.GetDirectories(sourceDir))
