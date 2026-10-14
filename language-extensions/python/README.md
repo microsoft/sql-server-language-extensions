@@ -61,12 +61,6 @@ The directory must contain `bootstrap.bat`, `Jamroot`, and `boost\version.hpp` m
 
 The selected tree is used for both the compiled-library cache and the Debug/Release Boost.Python and Boost.NumPy builds. Use a dedicated writable tree: builds generate files there, and CI builds prune unused library sources. If it is outside the default `packages\boost_1_90_0` location, set `BOOST_ROOT` to that tree and `BOOST_PYTHON_ROOT` to its `stage\lib` directory before running the extension build script.
 
-Regression tests for this restore flow can be run from the repository root using Windows PowerShell 5.1; they use isolated executable fixtures and do not download or compile Boost:
-
-```powershell
-powershell.exe -NoProfile -File language-extensions\python\test\build\windows\test-restore-packages.ps1
-```
-
 ### Linux
 There are two alternatives to building this project.
 
