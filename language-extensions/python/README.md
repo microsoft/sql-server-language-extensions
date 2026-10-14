@@ -48,6 +48,19 @@ B.	Installing needed packages from respective sources.
 		- PATH\TO\ENLISTMENT\build-output\pythonextension\windows\release\release\packages\python-lang-extension.zip \
 		This zip can be used in CREATE EXTERNAL LANGUAGE, as detailed in the tutorial in the Usage section below.
 
+#### Using pre-provisioned Boost sources
+
+The Windows restore script accepts an optional `BOOST_SOURCE_DIR` environment variable pointing to an extracted Boost source tree. This lets automated builds provision Boost separately while reusing the script's Python dependencies, VS2022 bootstrap/build, cache checks, and CI cleanup:
+
+```cmd
+set "BOOST_SOURCE_DIR=C:\dependencies\boost_1_90_0"
+call language-extensions\python\build\windows\restore-packages.cmd "C:\Python310"
+```
+
+The directory must contain `bootstrap.bat`, `Jamroot`, and `boost\version.hpp` matching the script's pinned Boost version (currently 1.90.0). Invalid supplied sources fail explicitly without falling back to a public download. When the variable is unset, the existing Boost download remains the default. Supplying local Boost sources does not disable Python or NuGet package restoration.
+
+The selected tree is used for both the compiled-library cache and the Debug/Release Boost.Python and Boost.NumPy builds. Use a dedicated writable tree: builds generate files there, and CI builds prune unused library sources. If it is outside the default `packages\boost_1_90_0` location, set `BOOST_ROOT` to that tree and `BOOST_PYTHON_ROOT` to its `stage\lib` directory before running the extension build script.
+
 ### Linux
 There are two alternatives to building this project.
 

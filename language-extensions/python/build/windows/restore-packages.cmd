@@ -1,7 +1,6 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 SET ENL_ROOT=%~dp0..\..\..\..
-CALL %ENL_ROOT%\restore-packages.cmd
 
 SET PACKAGES_ROOT=%ENL_ROOT%\packages
 
@@ -19,6 +18,30 @@ REM
 SET BOOST_VERSION=1.90.0
 SET BOOST_VERSION_IN_UNDERSCORE=1_90_0
 
+SET "BOOST_SOURCE_ROOT=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%"
+IF DEFINED BOOST_SOURCE_DIR (
+	FOR %%I IN ("%BOOST_SOURCE_DIR%") DO SET "BOOST_SOURCE_ROOT=%%~fI"
+	FOR %%F IN (bootstrap.bat Jamroot boost\version.hpp) DO (
+		IF NOT EXIST "!BOOST_SOURCE_ROOT!\%%F" (
+			ECHO Error: BOOST_SOURCE_DIR must contain Boost %BOOST_VERSION% sources; missing %%F.
+			EXIT /b 1
+		)
+	)
+	REM Boost headers encode the version as major*100000 + minor*100 + patch.
+	FOR /f "tokens=1-3 delims=." %%A IN ("%BOOST_VERSION%") DO SET /a "BOOST_VERSION_NUMBER=%%A*100000+%%B*100+%%C" >NUL
+	SET "BOOST_SOURCE_VERSION="
+	FOR /f "usebackq tokens=1-3" %%A IN ("!BOOST_SOURCE_ROOT!\boost\version.hpp") DO (
+		IF "%%A"=="#define" IF "%%B"=="BOOST_VERSION" SET "BOOST_SOURCE_VERSION=%%C"
+	)
+	IF NOT "!BOOST_SOURCE_VERSION!"=="!BOOST_VERSION_NUMBER!" (
+		ECHO Error: BOOST_SOURCE_DIR must contain Boost %BOOST_VERSION% sources; version header does not match.
+		EXIT /b 1
+	)
+)
+
+CALL "%ENL_ROOT%\restore-packages.cmd"
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
+
 REM Download and install Python from the official Python website
 REM
 SET PYTHON_DOWNLOAD_URL="https://www.python.org/ftp/python/%PYTHON_VERSION%/python-%PYTHON_VERSION%-amd64.exe"
@@ -27,7 +50,7 @@ REM If building in pipeline, Python is installed with `UsePythonVersion@0` task.
 REM We pass in the path to python installation when this script is called.
 REM Set PYTHON_INSTALLATION_PATH to the output from the task.
 REM
-if "%1"=="" (
+if "%~1"=="" (
 	REM Download and install Python using curl
 	REM
 	curl !PYTHON_DOWNLOAD_URL! -o "python-!PYTHON_VERSION!.exe"
@@ -46,8 +69,9 @@ if "%1"=="" (
 	REM
 	del "python-!PYTHON_VERSION!.exe"
 ) ELSE (
-	SET PYTHON_INSTALLATION_PATH=%1
-	SETX PYTHONLOCATION %PYTHON_INSTALLATION_PATH%
+	SET "PYTHON_INSTALLATION_PATH=%~1"
+	SETX PYTHONLOCATION "%PYTHON_INSTALLATION_PATH%"
+	IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 )
 
 SET "PYTHON_INSTALLATION_PATH_DOUBLE_SLASH=%PYTHON_INSTALLATION_PATH:\=\\%"
@@ -62,9 +86,10 @@ REM
 SET NUMPY_VERSION=1.22.3
 SET PANDAS_VERSION=1.4.2
 "%PYTHON_INSTALLATION_PATH%\python.exe" -m pip install --force-reinstall numpy==%NUMPY_VERSION% pandas==%PANDAS_VERSION%
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 
 REM BOOST artifact download, extract, build
-REM Download the specified version of Boost from SourceForge
+REM Download the specified version of Boost unless local sources were supplied
 REM Extract the downloaded Boost zip file to the packages directory
 REM Remove the Boost zip file
 REM Navigate to the extracted Boost directory
@@ -79,7 +104,7 @@ REM Debug and Release CMake builds. A failed/partial build or incomplete cache c
 REM contain only one configuration, or only shared import libraries, which would
 REM otherwise make the later CMake link step fail.
 REM
-SET "BOOST_STAGE_LIB=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\stage\lib"
+SET "BOOST_STAGE_LIB=%BOOST_SOURCE_ROOT%\stage\lib"
 SET "BOOST_RELEASE_LIB_SUFFIX=vc143-mt-x64-1_90"
 SET "BOOST_DEBUG_LIB_SUFFIX=vc143-mt-gd-x64-1_90"
 IF NOT EXIST "%BOOST_STAGE_LIB%\libboost_python%PYTHON_VERSION_NO_DOT%-%BOOST_RELEASE_LIB_SUFFIX%.lib" GOTO :BUILD_BOOST
@@ -91,23 +116,28 @@ echo -- Boost %BOOST_VERSION% cache hit with all required Debug/Release Boost.Py
 GOTO :BOOST_CACHED
 
 :BUILD_BOOST
+IF DEFINED BOOST_SOURCE_DIR GOTO :BOOST_SOURCE_READY
 curl -L -o boost_%BOOST_VERSION_IN_UNDERSCORE%.7z https://archives.boost.io/release/%BOOST_VERSION%/source/boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 
 REM -o Output directory
 REM 2nd param is the file to expand
 echo -- Beginning Boost ZIP extraction -- Time: %time% --
 %ARCHIVE_TOOL_PATH% x -y -o"%PACKAGES_ROOT%" "boost_%BOOST_VERSION_IN_UNDERSCORE%.7z"
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 echo -- Finished Boost Zip extration -- Time: %time% --
 
 REM Boost cleanup
 echo Delete 7z boost archive
 del boost_%BOOST_VERSION_IN_UNDERSCORE%.7z
 
+:BOOST_SOURCE_READY
 echo go to dir with boost unarchived
 echo %cd%
 dir
 echo %PACKAGES_ROOT%
-pushd %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
+pushd "%BOOST_SOURCE_ROOT%"
+IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 echo %cd%
 dir
 REM Run Boost's bootstrap script to build the b2 build engine
@@ -115,15 +145,23 @@ REM Initialize VS2022 compiler tooling before building Boost.Build.
 echo -- Beginning Boost b2.exe build -- Time: %time% --
 IF NOT DEFINED DevEnvDir (
 	CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
-	IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
+	IF ERRORLEVEL 1 (
+		SET "RESTORE_EXIT_CODE=!ERRORLEVEL!"
+		popd
+		EXIT /b !RESTORE_EXIT_CODE!
+	)
 )
 CALL bootstrap.bat vc143
-IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
+IF ERRORLEVEL 1 (
+	SET "RESTORE_EXIT_CODE=!ERRORLEVEL!"
+	popd
+	EXIT /b !RESTORE_EXIT_CODE!
+)
 
 REM bootstrap.bat may change the working directory (e.g. into tools\build\src\engine).
 REM Restore it to the Boost root so b2.exe can find Jamroot and build correctly.
 REM
-cd /d %PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%
+cd /d "%BOOST_SOURCE_ROOT%"
 
 REM Append Python configuration to project-config.jam (generated by bootstrap.bat above).
 REM This must be done AFTER bootstrap since bootstrap creates/overwrites project-config.jam.
@@ -132,8 +170,12 @@ REM
 echo using python : %PYTHON_VERSION_MAJOR_MINOR% : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\python" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\include" : "%PYTHON_INSTALLATION_PATH_DOUBLE_SLASH%\\libs" ; >> project-config.jam
 
 echo -- Beginning Boost build using compiled b2.exe -- Time: %time% --
-b2.exe -j12 --with-python toolset=msvc-14.3 address-model=64 link=static,shared threading=multi
-IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
+b2.exe -j12 --with-python toolset=msvc-14.3 address-model=64 link=static,shared threading=multi variant=debug,release
+IF ERRORLEVEL 1 (
+	SET "RESTORE_EXIT_CODE=!ERRORLEVEL!"
+	popd
+	EXIT /b !RESTORE_EXIT_CODE!
+)
 echo -- Finished Boost build -- Time: %time% --
 
 REM Remove unused Boost library sources to avoid false Component Governance alerts.
@@ -143,7 +185,7 @@ REM This runs after the build so that Jamfiles are available for b2's dependency
 REM Only performed in CI pipelines to avoid affecting local/customer environments.
 REM
 if NOT "%BUILD_BUILDID%"=="" (
-	SET BOOST_LIBS_DIR=%PACKAGES_ROOT%\boost_%BOOST_VERSION_IN_UNDERSCORE%\libs
+	SET "BOOST_LIBS_DIR=%BOOST_SOURCE_ROOT%\libs"
 	IF EXIST "!BOOST_LIBS_DIR!" (
 		echo -- Removing unused Boost library sources -- Time: !time! --
 		pushd "!BOOST_LIBS_DIR!"
@@ -168,4 +210,6 @@ REM pushd/popd above), so PYTHONHOME is always set for the subsequent build step
 REM
 if NOT "%BUILD_BUILDID%"=="" (
 	setx PYTHONHOME "%PYTHON_INSTALLATION_PATH%"
+	IF ERRORLEVEL 1 EXIT /b !ERRORLEVEL!
 )
+EXIT /b 0
