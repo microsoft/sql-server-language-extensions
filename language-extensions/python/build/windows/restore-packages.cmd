@@ -29,8 +29,11 @@ IF DEFINED BOOST_SOURCE_DIR (
 	)
 	REM Boost headers encode the version as major*100000 + minor*100 + patch.
 	FOR /f "tokens=1-3 delims=." %%A IN ("%BOOST_VERSION%") DO SET /a "BOOST_VERSION_NUMBER=%%A*100000+%%B*100+%%C" >NUL
-	FINDSTR /r /x /c:"#define[ ][ ]*BOOST_VERSION[ ][ ]*!BOOST_VERSION_NUMBER![ ]*" "!BOOST_SOURCE_ROOT!\boost\version.hpp" >NUL
-	IF ERRORLEVEL 1 (
+	SET "BOOST_SOURCE_VERSION="
+	FOR /f "usebackq tokens=1-3" %%A IN ("!BOOST_SOURCE_ROOT!\boost\version.hpp") DO (
+		IF "%%A"=="#define" IF "%%B"=="BOOST_VERSION" SET "BOOST_SOURCE_VERSION=%%C"
+	)
+	IF NOT "!BOOST_SOURCE_VERSION!"=="!BOOST_VERSION_NUMBER!" (
 		ECHO Error: BOOST_SOURCE_DIR must contain Boost %BOOST_VERSION% sources; version header does not match.
 		EXIT /b 1
 	)
