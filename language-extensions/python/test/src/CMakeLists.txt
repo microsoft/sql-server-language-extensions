@@ -43,9 +43,13 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN:${CMAKE_INSTALL_PREFIX}' -Wl,--no-as-needed -Wl,--export-dynamic")
 
 	set(USR_LIB_PATH /usr/local/lib)
-	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
-
-	find_library(PYTHON_LIB python${PYTHON_VERSION} ${PYTHON_LIB_PATH})
+	if(CMAKE_VERSION VERSION_LESS "3.18")
+		message(FATAL_ERROR "Linux Python builds require CMake 3.18 or newer.")
+	endif()
+	set(Python3_ROOT_DIR "${PYTHONHOME}")
+	set(Python3_USE_STATIC_LIBS FALSE)
+	find_package(Python3 ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development.Embed)
+	set(PYTHON_LIB Python3::Python)
 
 	# Same static archives the extension links - see language-extensions/python/src/CMakeLists.txt.
 	# The test links libPythonExtension and Boost both, so a shared Boost here would put two
@@ -69,10 +73,9 @@ if (${PLATFORM} STREQUAL linux)
 			"Override -DBOOST_PYTHON_ROOT=<dir> if the build moved them.")
 	endif()
 
-	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
 
-	set(ADDITIONAL_INCLUDES ${PYTHON_INCLUDE} ${BOOST_INCLUDE})
+	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE})
 
 	find_library(DL dl ${USR_LIB_PATH})
 

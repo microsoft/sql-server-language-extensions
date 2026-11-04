@@ -60,18 +60,13 @@ if (${PLATFORM} STREQUAL linux)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .so .so.1.0 ${CMAKE_FIND_LIBRARY_SUFFIXES})
 	
 	set(USR_LIB_PATH /usr/local/lib)
-	set(PYTHON_LIB_PATH ${PYTHONHOME}/lib/python${PYTHON_VERSION}/config-${PYTHON_VERSION}-x86_64-linux-gnu)
-
-	# Look for shared Python library in system locations
-	find_library(PYTHON_LIB python${PYTHON_VERSION} PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu /lib NO_DEFAULT_PATH)
-	if(NOT PYTHON_LIB)
-		# Try with explicit .so extension
-		find_library(PYTHON_LIB libpython${PYTHON_VERSION}.so PATHS /usr/lib/x86_64-linux-gnu /usr/lib NO_DEFAULT_PATH)
+	if(CMAKE_VERSION VERSION_LESS "3.18")
+		message(FATAL_ERROR "Linux Python builds require CMake 3.18 or newer.")
 	endif()
-	if(NOT PYTHON_LIB)
-		message(STATUS "Shared Python library not found in standard locations, trying system default search")
-		find_library(PYTHON_LIB python${PYTHON_VERSION})
-	endif()
+	set(Python3_ROOT_DIR "${PYTHONHOME}")
+	set(Python3_USE_STATIC_LIBS FALSE)
+	find_package(Python3 ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development.Embed)
+	set(PYTHON_LIB Python3::Python)
 
 	# Boost must not become a runtime dependency: the SQL container images ship no libboost_*.so,
 	# so a shared link fails at load time and every external script fails with it.
@@ -97,11 +92,10 @@ if (${PLATFORM} STREQUAL linux)
 			"build moved them.")
 	endif()
 
-	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/python${PYTHON_VERSION} PYTHON_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost BOOST_INCLUDE)
 	file(TO_CMAKE_PATH ${INCLUDE_ROOT}/boost/python BOOST_PYTHON_INCLUDE)
 
-	set(ADDITIONAL_INCLUDES ${PYTHON_INCLUDE} ${BOOST_INCLUDE} ${BOOST_PYTHON_INCLUDE})
+	set(ADDITIONAL_INCLUDES ${BOOST_INCLUDE} ${BOOST_PYTHON_INCLUDE})
 
 	target_link_libraries(PythonExtension 
 		stdc++fs

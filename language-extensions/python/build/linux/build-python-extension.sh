@@ -38,6 +38,7 @@ function build {
 		-DBOOST_PYTHON_ROOT=${BOOST_PYTHON_ROOT} \
 		-DINCLUDE_ROOT=${INCLUDE_ROOT} \
 		${PYTHONEXTENSION_HOME}/src
+	check_exit_code "Success: Configured Python extension" "Error: Failed to configure Python extension"
 	cmake --build ${PYTHONEXTENSION_WORKING_DIR} --target install
 
 	# Check the exit code of the compiler and exit appropriately so that build will fail.
@@ -71,7 +72,7 @@ PYTHONEXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/pythonextension/linux
 
 INCLUDE_ROOT=/usr/local/include
 
-DEFAULT_PYTHONHOME=/usr/local
+DEFAULT_PYTHONHOME=/usr
 DEFAULT_BOOST_ROOT=/usr/local/lib/boost_1_90_0
 
 # Find PYTHONHOME from user, or set to default for tests.
