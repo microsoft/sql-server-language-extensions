@@ -64,7 +64,6 @@ if (${PLATFORM} STREQUAL linux)
 		message(FATAL_ERROR "Linux Python builds require CMake 3.18 or newer.")
 	endif()
 	set(Python3_ROOT_DIR "${PYTHONHOME}")
-	set(Python3_USE_STATIC_LIBS FALSE)
 	find_package(Python3 ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development.Embed)
 	set(PYTHON_LIB Python3::Python)
 

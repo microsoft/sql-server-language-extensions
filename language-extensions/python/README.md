@@ -67,9 +67,9 @@ B.	Installing needed packages from respective sources.
 
 1. Download and build [Boost Python](https://www.boost.org/doc/libs/1_90_0/libs/python/doc/html/building/no_install_quickstart.html) with your version of Python. Make sure to build the static libraries.
 
-1. Set PYTHONHOME and BOOST_ROOT to point to your python installation and boost build folder respectively. Linux build scripts default PYTHONHOME to `/usr`, matching the restore script. Both the extension and test builds use CMake's `FindPython3` to locate Python 3.12 headers and its shared library independently of the Boost include directory. For a custom Python installation, supply its prefix through PYTHONHOME; missing or incompatible development files fail configuration.
+1. Set PYTHONHOME and BOOST_ROOT to point to your python installation and boost build folder respectively. On Linux, PYTHONHOME defaults to `/usr` and is used as the CMake `FindPython3` search prefix.
 
-1. If targeting a different Python ABI, update the Linux Python version settings in both [**CMakeLists.txt**](src/CMakeLists.txt) and [the test configuration](test/src/CMakeLists.txt), and rebuild Boost.Python/Boost.NumPy for the same version.
+1. Modify [**CMakeLists.txt**](src/CMakeLists.txt). On line 8 & 9, modify the python versions. On Windows, ensure each `find_library` call points to your custom python and boost libraries. 
 
 1. Modify [**PythonExtension.cpp**](src/PythonExtension.cpp). Change the value of `x_PythonSoFile` on line 37 to the name of your python so library file.
 
