@@ -12,6 +12,8 @@
 //*************************************************************************************************
 #include "PythonExtensionApiTests.h"
 
+#include <cstring>
+
 using namespace std;
 
 namespace ExtensionApiTest
@@ -1125,22 +1127,15 @@ namespace ExtensionApiTest
 
 			if (expectedParamValues[paramNumber] != nullptr)
 			{
-				EXPECT_NE(paramValue, nullptr);
+				ASSERT_NE(paramValue, nullptr);
 
-				wstring paramValueString(static_cast<wchar_t*>(paramValue),
-					strLen_or_Ind / sizeof(wchar_t));
-				wstring expectedParamValueString(expectedParamValues[paramNumber],
-					expectedStrLenOrInd[paramNumber] / sizeof(wchar_t));
-
-				// Compare the two wstrings byte by byte because EXPECT_STREQ and EXPECT_EQ
-				// don't work properly for wstrings in Linux with -fshort-wchar
+				// Compare the raw buffers instead of copying them into std::wstring. With -fshort-wchar
+				// on Linux, wstring copies call glibc's wmemcpy, which assumes a 4-byte wchar_t and
+				// overruns these 2-byte-per-character buffers.
 				//
-				const char *paramBytes = reinterpret_cast<const char*>(paramValueString.c_str());
-				const char *expectedParamBytes = reinterpret_cast<const char*>(expectedParamValueString.c_str());
-
-				for(SQLINTEGER i=0; i<strLen_or_Ind; ++i)
+				if (strLen_or_Ind == expectedStrLenOrInd[paramNumber])
 				{
-					EXPECT_EQ(paramBytes[i], expectedParamBytes[i]);
+					EXPECT_EQ(memcmp(paramValue, expectedParamValues[paramNumber], strLen_or_Ind), 0);
 				}
 			}
 			else
