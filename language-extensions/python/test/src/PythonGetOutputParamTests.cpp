@@ -1135,6 +1135,8 @@ namespace ExtensionApiTest
 				//
 				if (strLen_or_Ind == expectedStrLenOrInd[paramNumber])
 				{
+					// memcmp returns zero when all UTF-16 bytes match; the length check prevents overreads.
+					//
 					EXPECT_EQ(memcmp(paramValue, expectedParamValues[paramNumber], strLen_or_Ind), 0);
 				}
 			}
