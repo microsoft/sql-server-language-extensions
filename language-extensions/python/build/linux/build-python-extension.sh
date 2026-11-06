@@ -71,7 +71,7 @@ PYTHONEXTENSION_WORKING_DIR=${ENL_ROOT}/build-output/pythonextension/linux
 
 INCLUDE_ROOT=/usr/local/include
 
-DEFAULT_PYTHONHOME=/usr/local
+DEFAULT_PYTHONHOME=/usr
 DEFAULT_BOOST_ROOT=/usr/local/lib/boost_1_90_0
 
 # Find PYTHONHOME from user, or set to default for tests.

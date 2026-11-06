@@ -74,15 +74,15 @@ A.	Using the [**restore-packages.sh**](build/linux/restore-packages.sh) script
 
 B.	Installing needed packages from respective sources.
 
-1. Install [CMake for Linux](https://cmake.org/download/) and [Python](https://www.python.org/downloads/source/)
+1. Install [CMake for Linux](https://cmake.org/download/) 3.18 or newer and Python 3.12 development headers and shared library (for example, `python3.12-dev` on Ubuntu).
 
 1. Install the package numpy into your python. This is needed to build boost_numpy in the next step.
 
 1. Download and build [Boost Python](https://www.boost.org/doc/libs/1_90_0/libs/python/doc/html/building/no_install_quickstart.html) with your version of Python. Make sure to build the static libraries.
 
-1. Set PYTHONHOME and BOOST_ROOT to point to your python installation and boost build folder respectively.
+1. Set PYTHONHOME and BOOST_ROOT to point to your python installation and boost build folder respectively. On Linux, PYTHONHOME defaults to `/usr` and is used as the CMake `FindPython3` search prefix.
 
-1. Modify [**CMakeLists.txt**](src/CMakeLists.txt). On line 8 & 9, modify the python versions. Ensure each `find_library` call points to your custom python and boost libraries. 
+1. Modify [**CMakeLists.txt**](src/CMakeLists.txt). On line 8 & 9, modify the python versions. On Windows, ensure each `find_library` call points to your custom python and boost libraries. 
 
 1. Modify [**PythonExtension.cpp**](src/PythonExtension.cpp). Change the value of `x_PythonSoFile` on line 37 to the name of your python so library file.
 
