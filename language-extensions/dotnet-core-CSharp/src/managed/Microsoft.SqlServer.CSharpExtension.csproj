@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
@@ -12,6 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Analysis" Version="0.23.0"/>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2"/>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0"/>
   </ItemGroup>
 </Project>
