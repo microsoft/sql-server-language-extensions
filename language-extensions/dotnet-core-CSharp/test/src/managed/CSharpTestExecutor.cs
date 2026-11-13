@@ -439,6 +439,11 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
             sqlParams["@param3"] = "WORLD";
             sqlParams["@param4"] = null;
             sqlParams["@param5"] = null;
+            sqlParams["@param6"] = "你好";  // VARCHAR(6): all six UTF-8 bytes fit.
+            sqlParams["@param7"] = "你好";  // VARCHAR(3): the same value truncates to "你".
+            sqlParams["@param8"] = new string('A', 100000);
+            sqlParams["@param9"] = string.Concat(System.Linq.Enumerable.Repeat("你好世界€", 1000));
+            sqlParams["@param10"] = null;
             return null;
         }
     }
@@ -483,9 +488,9 @@ namespace Microsoft.SqlServer.CSharpExtensionTest
     public class CSharpTestExecutorWStringMaxParam: AbstractSqlServerExtensionExecutor
     {
         public override DataFrame Execute(DataFrame input, Dictionary<string, dynamic> sqlParams){
-            // Generate a large string (10,000 characters) to test NVARCHAR(MAX) handling
+            // Generate a large string (100,000 characters) to test NVARCHAR(MAX) handling
             //
-            sqlParams["@param0"] = new string('A', 10000);
+            sqlParams["@param0"] = new string('A', 100000);
 
             // Generate a string with repeating Unicode pattern (5,000 characters)
             //

@@ -250,13 +250,13 @@ namespace Microsoft.SqlServer.CSharpExtension
                     }
                     break;
                 case SqlDataType.DotNetChar:
-                    // For CHAR/VARCHAR, strLenOrNullMap is in bytes (1 byte per character for ANSI).
-                    // param.Size is the declared parameter size in characters (from SQL Server's CHAR(n)/VARCHAR(n)).
-                    // For ANSI strings, character count equals byte count.
+                    // CHAR/VARCHAR output is UTF-8; both its length and bounded size are in bytes.
+                    // Sizes at or above ushort.MaxValue indicate MAX.
                     //
-                    int charByteLen = param.Value.Length;
-                    int charMaxByteLen = (int)param.Size;
-                    *strLenOrNullMap = (charByteLen < charMaxByteLen) ? charByteLen : charMaxByteLen;
+                    int charByteLen = Encoding.UTF8.GetByteCount((string)param.Value);
+                    *strLenOrNullMap = param.Size < ushort.MaxValue
+                        ? Math.Min(charByteLen, (int)param.Size)
+                        : charByteLen;
                     ReplaceStringParam((string)param.Value, paramValue);
                     break;
                 case SqlDataType.DotNetWChar:
@@ -266,9 +266,10 @@ namespace Microsoft.SqlServer.CSharpExtension
                     // param.Size is the declared parameter size in characters (from SQL Server's NCHAR(n)/NVARCHAR(n)),
                     // so we multiply by sizeof(char) to convert to bytes.
                     //
-                    int wcharByteLen = param.Value.Length * sizeof(char);
-                    int wcharMaxByteLen = (int)param.Size * sizeof(char);
-                    *strLenOrNullMap = (wcharByteLen < wcharMaxByteLen) ? wcharByteLen : wcharMaxByteLen;
+                    int wcharByteLen = ((string)param.Value).Length * sizeof(char);
+                    *strLenOrNullMap = param.Size < ushort.MaxValue
+                        ? Math.Min(wcharByteLen, (int)param.Size * sizeof(char))
+                        : wcharByteLen;
                     ReplaceUnicodeStringParam((string)param.Value, paramValue);
                     break;
                 default:
