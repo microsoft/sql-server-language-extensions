@@ -9,6 +9,7 @@
 //
 //*********************************************************************
 #include "CSharpExtensionApiTests.h"
+#include <climits>
 
 using namespace std;
 
@@ -436,14 +437,14 @@ namespace ExtensionApiTest
         //
         InitializeSession(
             0,   // parametersNumber
-            6,   // inputSchemaColumnsNumber
+            11,  // inputSchemaColumnsNumber
             scriptString);
 
         // Note: The behavior of fixed and varying character types is same when it comes to output
         // parameters. So it doesn't matter if we initialize these output parameters as fixed type.
         //
-        vector<bool> isFixedType = { true, false, true, false, true, true };
-        vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5 };
+        vector<bool> isFixedType = { true, false, true, false, true, true, false, false, false, false, false };
+        vector<SQLULEN> paramSizes = { 5, 6, 10, 5, 5, 5, 6, 3, USHRT_MAX, 15000, USHRT_MAX };
 
         for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
         {
@@ -466,6 +467,13 @@ namespace ExtensionApiTest
         ASSERT_EQ(result, SQL_SUCCESS);
 
         EXPECT_EQ(outputSchemaColumnsNumber, 0);
+
+        string largeAsciiString(100000, 'A');
+        string largeUnicodeString;
+        for (int i = 0; i < 1000; ++i)
+        {
+            largeUnicodeString += u8"你好世界€";
+        }
 
         const vector<string> ExpectedParamValueStrings = {
             // Test simple CHAR(5) value with exact string length as the type allows i.e. here 5.
@@ -493,6 +501,14 @@ namespace ExtensionApiTest
 
             // Test None CHAR(5) value.
             //
+            nullptr,
+
+            // Two UTF-16 code units occupy six UTF-8 bytes; VARCHAR(3) retains one character.
+            //
+            u8"你好",
+            u8"你",
+            largeAsciiString.c_str(),
+            largeUnicodeString.c_str(),
             nullptr };
 
         vector<SQLINTEGER> expectedStrLenOrInd = {
@@ -501,6 +517,11 @@ namespace ExtensionApiTest
             static_cast<SQLINTEGER>(ExpectedParamValueStrings[2].length()),
             static_cast<SQLINTEGER>(ExpectedParamValueStrings[3].length()),
             SQL_NULL_DATA,
+            SQL_NULL_DATA,
+            6,
+            3,
+            static_cast<SQLINTEGER>(largeAsciiString.length()),
+            static_cast<SQLINTEGER>(largeUnicodeString.length()),
             SQL_NULL_DATA };
 
         GetStringOutputParam(
@@ -627,7 +648,7 @@ namespace ExtensionApiTest
         // SQL Server NVARCHAR(MAX) can hold up to 2^30-1 characters
         //
         vector<bool> isFixedType = { false, false, false };
-        vector<SQLINTEGER> paramSizes = { 10000, 5000, 10000 };
+        vector<SQLINTEGER> paramSizes = { USHRT_MAX, 5000, USHRT_MAX };
 
         for(size_t paramNumber=0; paramNumber < paramSizes.size(); ++paramNumber)
         {
@@ -653,7 +674,7 @@ namespace ExtensionApiTest
 
         // Build expected values to match what the C# executor returns
         //
-        wstring largeAsciiString(10000, L'A');
+        wstring largeAsciiString(100000, L'A');
 
         // Build Unicode pattern string: "你好世界€" repeated 1000 times = 5000 characters
         //
